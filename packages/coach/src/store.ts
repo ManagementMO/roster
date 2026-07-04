@@ -53,6 +53,8 @@ const SOFT_FAIL_LOOKBACK = 3;
 const QUARANTINE_DWELL_MS = 24 * 3600 * 1000;
 const HYBRID_LEX_WEIGHT = 0.3;
 const HYBRID_COS_WEIGHT = 0.7;
+/** Below this cosine span across candidates, the dense channel is noise and abstains. */
+const MIN_INFORMATIVE_COS_SPAN = 0.15;
 
 export function defHash(entry: CapabilityEntry): string {
   return sha256Hex(
@@ -188,8 +190,29 @@ export class CoachStore {
         }
       }
     });
-    run();
+    run.immediate();
     return result;
+  }
+
+  /**
+   * Model-switch guard: OATS-adjusted vectors and cached need vectors are only
+   * meaningful in the embedding space they were computed in. When the active
+   * model changes (RAM boundary crossed, DB moved between machines), stale
+   * `adj` blobs would otherwise be read at the new dims — silently poisoning
+   * exactly the best-learned tools. Call before any backfill.
+   */
+  ensureEmbeddingModel(modelId: string): { switched: boolean } {
+    const prev = this.getMeta("embedding_model");
+    if (prev === modelId) return { switched: false };
+    const run = this.db.transaction(() => {
+      if (prev !== null) {
+        this.db.prepare("UPDATE vec SET adj = NULL").run();
+        this.db.prepare("DELETE FROM need_vec").run();
+      }
+      this.setMeta("embedding_model", modelId);
+    });
+    run.immediate();
+    return { switched: prev !== null };
   }
 
   listCapabilities(opts: { includeQuarantined?: boolean; kind?: "tool" | "skill" } = {}): CapabilityEntry[] {
@@ -228,16 +251,28 @@ export class CoachStore {
    * Remove capabilities that no longer exist upstream (server removed, skill
    * deleted). Vectors and FTS rows go with them; outcome history is kept.
    */
-  pruneMissing(presentIds: ReadonlySet<string>, protectedSources: ReadonlySet<string> = new Set()): string[] {
-    const all = this.db.prepare("SELECT id, source FROM capability").all() as Array<{
+  pruneMissing(
+    presentIds: ReadonlySet<string>,
+    protectedSources: ReadonlySet<string> = new Set(),
+    opts: { keepSeenSince?: number } = {},
+  ): string[] {
+    const all = this.db.prepare("SELECT id, source, last_seen FROM capability").all() as Array<{
       id: string;
       source: string;
+      last_seen: number;
     }>;
-    // protectedSources: backends that are CONFIGURED but failed to connect this
-    // boot — a transient outage must never delete learned vectors or the drift
-    // baseline (re-entry would bypass quarantine as a fresh "add").
+    // protectedSources: backends CONFIGURED but unreachable this boot — a
+    // transient outage must never delete learned vectors or the drift baseline.
+    // keepSeenSince: rows another process upserted while WE were booting (its
+    // config is newer than the one we read) also survive — without this, a
+    // freshly-synced server's state could be pruned by a sibling serve racing
+    // on a stale roster.json.
+    const keepSince = opts.keepSeenSince ?? Number.POSITIVE_INFINITY;
     const gone = all
-      .filter((r) => !presentIds.has(r.id) && !protectedSources.has(r.source))
+      .filter(
+        (r) =>
+          !presentIds.has(r.id) && !protectedSources.has(r.source) && r.last_seen < keepSince,
+      )
       .map((r) => r.id);
     const run = this.db.transaction(() => {
       const delCap = this.db.prepare("DELETE FROM capability WHERE id = ?");
@@ -460,7 +495,8 @@ export class CoachStore {
     const candidateIds = new Set<string>(lexById.keys());
     if (needVec) for (const id of vecs.keys()) candidateIds.add(id);
 
-    const out: Candidate[] = [];
+    // Pass 1: gather raw signals.
+    const gathered: Array<{ entry: CapabilityEntry; lexScore: number | null; cosScore: number | null }> = [];
     for (const id of candidateIds) {
       const entry = this.activeCapability(id);
       if (!entry) continue; // quarantined or removed
@@ -470,11 +506,30 @@ export class CoachStore {
         const v = vecs.get(id);
         if (v && v.length === needVec.length) cosScore = cosine(needVec, v);
       }
-      const score =
-        needVec && cosScore !== null
-          ? HYBRID_LEX_WEIGHT * (lexScore ?? 0) + HYBRID_COS_WEIGHT * ((cosScore + 1) / 2)
-          : (lexScore ?? 0);
-      if (score > 0) out.push({ entry, score, lexScore, cosScore });
+      gathered.push({ entry, lexScore, cosScore });
+    }
+
+    // Pass 2: fuse — signal-adaptively. The cosine channel is min-max
+    // normalized WITHIN the candidate set (raw (cos+1)/2 made every
+    // vec-bearing tool score ~0.35 and turned 70/30 fusion into ~10/90,
+    // live-measured). But when the whole cosine SPAN is tiny, the dense
+    // channel is noise (MiniLM on short tool blurbs) and min-max would
+    // amplify it — so dense ABSTAINS and lexical decides. With a healthy
+    // span (Gemma, or OATS-refined vectors) dense governs at weight 0.7.
+    const cosVals = gathered.map((g) => g.cosScore).filter((c): c is number => c !== null);
+    const cosMin = cosVals.length > 0 ? Math.min(...cosVals) : 0;
+    const cosSpan = cosVals.length > 0 ? Math.max(...cosVals) - cosMin : 0;
+    const denseInformative = cosVals.length > 1 && cosSpan >= MIN_INFORMATIVE_COS_SPAN;
+    const out: Candidate[] = [];
+    for (const g of gathered) {
+      let score: number;
+      if (needVec && denseInformative && g.cosScore !== null) {
+        const cosNorm = (g.cosScore - cosMin) / cosSpan;
+        score = HYBRID_LEX_WEIGHT * (g.lexScore ?? 0) + HYBRID_COS_WEIGHT * cosNorm;
+      } else {
+        score = g.lexScore ?? 0;
+      }
+      if (score > 0) out.push({ entry: g.entry, score, lexScore: g.lexScore, cosScore: g.cosScore });
     }
     out.sort((a, b) => b.score - a.score);
     if (out.length >= k) return out.slice(0, k);
@@ -518,7 +573,11 @@ export class CoachStore {
     this.db
       .prepare(
         `INSERT INTO vec(capability, dims, base, adj, updated_at) VALUES(?,?,?,NULL,?)
-         ON CONFLICT(capability) DO UPDATE SET dims=excluded.dims, base=excluded.base, updated_at=excluded.updated_at`,
+         ON CONFLICT(capability) DO UPDATE SET
+           -- a dims change means a different embedding space: the old adj is
+           -- meaningless there and must not survive the base rewrite
+           adj = CASE WHEN vec.dims != excluded.dims THEN NULL ELSE vec.adj END,
+           dims = excluded.dims, base = excluded.base, updated_at = excluded.updated_at`,
       )
       .run(capability, normalized.length, vecToBlob(normalized), now);
   }
@@ -540,7 +599,12 @@ export class CoachStore {
       .all() as Array<{ capability: string; dims: number; base: Buffer; adj: Buffer | null }>;
     const map = new Map<string, Float32Array>();
     for (const row of rows) {
-      map.set(row.capability, blobToVec(row.adj ?? row.base, row.dims));
+      try {
+        map.set(row.capability, blobToVec(row.adj ?? row.base, row.dims));
+      } catch {
+        // Length-mismatched blob (pre-guard data): drop from dense; the next
+        // warmup backfill rewrites it in the active model's space.
+      }
     }
     return map;
   }
@@ -559,10 +623,18 @@ export class CoachStore {
       base: Buffer;
     }>;
     const needVecStmt = this.db.prepare("SELECT dims, vec FROM need_vec WHERE need_hash = ?");
-    const outcomesStmt = this.db.prepare(
+    // Caps are PER SIDE: one shared limit let a chatty failing tool fill the
+    // whole window and starve positives, freezing its adjustment forever.
+    const positivesStmt = this.db.prepare(
       `SELECT need_hash, class FROM outcome
        WHERE capability = ? AND ts >= ? AND need_hash IS NOT NULL
-         AND explored = 0 AND soft_fail = 0
+         AND explored = 0 AND soft_fail = 0 AND class = 'success'
+       ORDER BY ts DESC LIMIT 500`,
+    );
+    const negativesStmt = this.db.prepare(
+      `SELECT need_hash, class FROM outcome
+       WHERE capability = ? AND ts >= ? AND need_hash IS NOT NULL
+         AND explored = 0 AND soft_fail = 0 AND class != 'success'
        ORDER BY ts DESC LIMIT 500`,
     );
 
@@ -571,10 +643,10 @@ export class CoachStore {
     const writeAdj = this.db.prepare("UPDATE vec SET adj = ?, updated_at = ? WHERE capability = ?");
 
     for (const cap of caps) {
-      const rows = outcomesStmt.all(cap.capability, since) as Array<{
-        need_hash: string;
-        class: OutcomeClass;
-      }>;
+      const rows = [
+        ...(positivesStmt.all(cap.capability, since) as Array<{ need_hash: string; class: OutcomeClass }>),
+        ...(negativesStmt.all(cap.capability, since) as Array<{ need_hash: string; class: OutcomeClass }>),
+      ];
       const positives: Float32Array[] = [];
       const negatives: Float32Array[] = [];
       for (const row of rows) {

@@ -7,7 +7,7 @@ This file is the schema of record for Roster's opt-in telemetry. If an event isn
 - **OFF by default.** A fresh install sends nothing, ever. Before launch, the OFF default is verified by packet capture, and that verification is part of the release checklist.
 - **Opt-in only.** Upload happens only after an explicit `roster telemetry on`. `roster telemetry status` prints your current setting and points here for the exact schema and what would be sent; `roster telemetry off` stops it.
 - **Local-first.** All outcome data collects on your own disk regardless, and the Coach's learning runs entirely locally. Telemetry adds nothing you need — it exists solely to feed the League's observational (Street) statistics, and it is anonymized and thresholded as described below.
-- **The upload endpoint does not exist yet.** It is stubbed in code and will not be stood up without owner approval. Today, nothing leaves your machine even with telemetry switched on.
+- **The upload endpoint does not exist yet.** No event-builder or upload code exists — `roster telemetry on` records a local consent flag and nothing more. Nothing can leave your machine even with telemetry switched on, and no endpoint will be stood up without owner approval.
 
 ## The event
 

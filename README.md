@@ -30,6 +30,7 @@ npx roster init   # detect clients, import every server, print your Day-0 receip
 roster sync       # swap N config entries for one (originals backed up first)
 roster serve      # run the router
 roster eject      # put every config back, byte-for-byte
+roster receipt    # re-print your audit  ·  roster unquarantine <id>  # re-admit a drift-benched tool
 ```
 
 `init` is designed to take under 60 seconds: no account, no API key, no cloud. It prints a Day-0 receipt of your setup — clients, servers, tools, and schema-token weight. Receipt numbers are **labeled estimates** (documented ±15% accuracy) and modeled truthfully per client: clients that already defer tool schemas natively, like Claude Code, are reported as such rather than credited with savings they don't need.
@@ -48,9 +49,9 @@ The League is the show; these earn the install without it:
 
 ## Privacy
 
-- **Local-first, by law.** No account, no API key, no cloud calls at runtime. State lives in `~/.roster/`. First run serves instantly in lexical (full-text) search mode with zero downloads; a small embedding model is fetched once in the background (checksummed, never bundled) to upgrade retrieval. Permanently offline machines simply stay in lexical mode — that's the honest trade, stated here rather than hidden.
+- **Local-first, by law.** No account, no API key, no cloud calls at runtime. State lives in `~/.roster/`. First run serves instantly in lexical (full-text) search mode with zero downloads; a small embedding model is fetched once from Hugging Face in the background (never bundled) to upgrade retrieval. Permanently offline machines simply stay in lexical mode — that's the honest trade, stated here rather than hidden.
 - **Your content never leaves.** Prompts, tool arguments, and results never leave the machine, never enter telemetry, and never appear in logs above debug level (debug redacts string values by default).
-- **Telemetry is OFF by default and opt-in only.** `roster telemetry status|on|off` shows the schema and exactly what would be sent — coarse outcome events only, with hard exclusions for prompts, args, results, embeddings, hostnames, and paths. Aggregates publish only past k-anonymity thresholds. Full schema: [docs/telemetry-schema.md](docs/telemetry-schema.md). The upload endpoint does not exist yet, so today nothing leaves your machine even if you opt in. Before launch, the OFF default gets verified by packet capture.
+- **Telemetry is OFF by default and opt-in only.** `roster telemetry status|on|off` controls it; the published schema in [docs/telemetry-schema.md](docs/telemetry-schema.md) defines exactly what could ever be sent — coarse outcome events only, with hard exclusions for prompts, args, results, embeddings, hostnames, and paths. Aggregates publish only past k-anonymity thresholds. Full schema: [docs/telemetry-schema.md](docs/telemetry-schema.md). The upload endpoint does not exist yet, so today nothing leaves your machine even if you opt in. Before launch, the OFF default gets verified by packet capture.
 
 ## Status: pre-release
 
@@ -64,7 +65,7 @@ The League is the show; these earn the install without it:
 
 ## Built with agents, reviewed by hand
 
-Roster is developed with heavy agentic AI assistance, under written discipline: specs are amended before code, security-critical paths (eject/config rewriting, credential passthrough, telemetry redaction, write classification, HTTP auth) get line-by-line human review, and no named public score ever comes from a verifier a human didn't sign. The full disclosure, the rules, and the running human-review log live at [docs/PROVENANCE.md](docs/PROVENANCE.md).
+Roster is developed with heavy agentic AI assistance, under written discipline: specs are amended before code, security-critical paths (eject/config rewriting, credential passthrough, telemetry redaction) are committed to line-by-line human review before launch, and no named public score ever comes from a verifier a human didn't sign. The full disclosure, the rules, and the running human-review log live at [docs/PROVENANCE.md](docs/PROVENANCE.md).
 
 ## License
 

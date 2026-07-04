@@ -242,6 +242,64 @@ describe("Sixth Man suggestion logging", () => {
   });
 });
 
+describe("model-switch guards", () => {
+  it("ensureEmbeddingModel wipes adj + need vectors on model change, keeps them otherwise", () => {
+    store.upsertCapabilities([tool("a__t", "t", "d")]);
+    store.storeBaseVec("a__t", new Float32Array([1, 0]));
+    db.prepare("UPDATE vec SET adj = base").run();
+    store.storeNeedVec("nh", new Float32Array([0, 1]));
+
+    expect(store.ensureEmbeddingModel("model-A")).toEqual({ switched: false }); // first set
+    expect(db.prepare("SELECT adj FROM vec").get()).toHaveProperty("adj"); // untouched
+    expect(store.ensureEmbeddingModel("model-A").switched).toBe(false);
+
+    const res = store.ensureEmbeddingModel("model-B");
+    expect(res.switched).toBe(true);
+    expect((db.prepare("SELECT adj FROM vec").get() as { adj: Buffer | null }).adj).toBeNull();
+    expect(db.prepare("SELECT COUNT(*) c FROM need_vec").get()).toEqual({ c: 0 });
+  });
+
+  it("storeBaseVec clears adj when dims change (different embedding space)", () => {
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    db.prepare("UPDATE vec SET adj = base").run();
+    store.storeBaseVec("a__t", new Float32Array([0, 1])); // 3d → 2d
+    expect((db.prepare("SELECT adj, dims FROM vec").get() as { adj: Buffer | null; dims: number })).toMatchObject({ adj: null, dims: 2 });
+  });
+
+  it("loadVecs drops length-mismatched blobs instead of reading garbage", () => {
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    db.prepare("UPDATE vec SET dims = 7").run(); // corrupt: blob is 12B, dims says 28B
+    expect(store.loadVecs().has("a__t")).toBe(false);
+  });
+});
+
+describe("hybrid fusion normalization", () => {
+  it("min-max normalizes the cosine channel so a vec-less tool can still win on lexical", () => {
+    store.upsertCapabilities([
+      tool("a__exact", "exact_match_tool", "read a text file from the filesystem now"),
+      tool("b__vec1", "unrelated_one", "totally different topic entirely"),
+      tool("c__vec2", "unrelated_two", "another unrelated capability here"),
+    ]);
+    // b and c have vectors (both mediocre for the need); a has NO vector but a perfect lexical hit.
+    const needVec = new Float32Array([1, 0, 0]);
+    store.storeBaseVec("b__vec1", new Float32Array([0.3, 0.6, 0.74]));
+    store.storeBaseVec("c__vec2", new Float32Array([0.28, 0.62, 0.73]));
+    const ranked = store.draftCandidates("read a text file from the filesystem now", 3, needVec);
+    expect(ranked[0]?.entry.id).toBe("a__exact");
+  });
+});
+
+describe("pruneMissing grace window", () => {
+  it("keeps rows another process touched during our boot window", () => {
+    const t0 = 1_000_000;
+    store.upsertCapabilities([tool("x__old", "old", "seen long ago")], t0);
+    store.upsertCapabilities([tool("y__fresh", "fresh", "sibling just upserted this")], t0 + 5_000);
+    const gone = store.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
+    expect(gone).toEqual(["x__old"]);
+    expect(store.listCapabilities().map((c) => c.id)).toEqual(["y__fresh"]);
+  });
+});
+
 describe("OATS nightly", () => {
   it("adjusts only capabilities with ≥4 success needs and stores adj", () => {
     store.upsertCapabilities([tool("fs__read_file", "read_file", "Read a file")]);

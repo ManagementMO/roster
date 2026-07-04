@@ -10,7 +10,7 @@ We don't consider this a confession. A tool router that *measures* AI tooling, b
 
 **2. Validated-only ships.** Anything an agent built that no human verified is not an asset on launch day. It doesn't ship.
 
-**3. Human-signed verifiers behind every named score.** Every Combine task and verify script is drafted by one agent, attacked by a second adversarial agent (false-pass and false-fail hunting), and mutation-tested against seeded known-bad states it must catch. Then a human certifies it — runs the pass case, forces a fail case, confirms it matches the server's real semantics — and the task is flagged `signed: true`. **Only human-signed tasks feed named public scores.** Unsigned tasks may run for internal or anonymized aggregates only, and coverage never outruns signing.
+**3. Human-signed verifiers behind every named score.** Every Combine task and its verifiers are drafted by one agent, attacked by a second adversarial agent (false-pass and false-fail hunting), and mutation-tested against seeded known-bad states it must catch. Then a human certifies it — runs the pass case, forces a fail case, confirms it matches the server's real semantics — and the task is flagged `signed: true`. **Only human-signed tasks feed named public scores.** Unsigned tasks may run for internal or anonymized aggregates only, and coverage never outruns signing.
 
 **4. Line-by-line human review for security-critical paths.** These paths are velocity-exempt — no agent-written change lands in them without a human reading every line:
 

@@ -60,19 +60,21 @@ const lexOnly = store.draftCandidates(need, 4);
 const hybrid = store.draftCandidates(need, 4, needVec);
 say(`  lexical-only order:  ${lexOnly.map((c) => c.entry.id).join(", ")}`);
 say(`  hybrid (dense) order: ${hybrid.map((c) => c.entry.id).join(", ")}`);
-// Calibration note (learned live): MiniLM's ABSOLUTE cosines on short tool
-// blurbs are small (~0.0–0.05 here; sanity probe: dog~puppy=0.81, so the
-// provider is healthy) — routing uses RELATIVE order, which is what we assert.
-// Gemma (the ≥8GB default) has stronger absolute geometry; OATS then
-// personalizes on top of whichever base is active.
-assert(
-  hybrid[0].entry.id.startsWith("memory__") && hybrid[1].entry.id.startsWith("memory__"),
-  `dense puts both memory tools on top for "${need}" (top cos=${hybrid[0].cosScore?.toFixed(3)})`,
-);
-assert(
-  hybrid[hybrid.length - 1].entry.id === "fs__read_text_file",
-  "the file tool — #2 lexically on token noise — is demoted to last by dense fusion",
-);
+// Calibration (learned live): MiniLM's cosines on short tool blurbs span
+// ~0.0–0.1 — genuine noise (sanity probe: dog~puppy=0.81, provider healthy).
+// The fusion is signal-adaptive: below a 0.15 span the dense channel ABSTAINS
+// and ordering must equal lexical exactly (no noise amplification). Section 3
+// then proves dense GOVERNS once OATS produces a real span.
+const lexOrder = lexOnly.map((c) => c.entry.id).join(",");
+const hybOrder = hybrid.map((c) => c.entry.id).join(",");
+const span =
+  Math.max(...hybrid.map((c) => c.cosScore ?? 0)) - Math.min(...hybrid.map((c) => c.cosScore ?? 0));
+say(`  observed cosine span: ${span.toFixed(3)} (< 0.15 ⇒ dense abstains by design)`);
+if (span < 0.15) {
+  assert(hybOrder === lexOrder, "uninformative dense channel abstains — hybrid order equals lexical exactly");
+} else {
+  assert(hybrid[0].entry.id.startsWith("memory__"), "informative dense channel ranks a memory tool #1");
+}
 
 say("");
 say("## 3. OATS refinement from real outcome vectors shifts ranking");

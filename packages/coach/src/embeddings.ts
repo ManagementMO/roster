@@ -5,9 +5,12 @@ import os from "node:os";
  * if @huggingface/transformers is missing or the model was never fetched,
  * Roster keeps serving from FTS5 — nothing ever blocks on this module.
  */
+export type EmbedKind = "query" | "document";
+
 export interface EmbeddingsProvider {
   readonly dims: number;
-  embed(texts: readonly string[]): Promise<Float32Array[]>;
+  readonly modelId: string;
+  embed(texts: readonly string[], kind?: EmbedKind): Promise<Float32Array[]>;
   dispose(): Promise<void>;
 }
 
@@ -36,29 +39,37 @@ export function truncateAndNormalize(vec: Float32Array, dims = MATRYOSHKA_DIMS):
   return out;
 }
 
-type FeaturePipeline = (
-  texts: string[],
-  opts: { pooling: "mean"; normalize: boolean },
-) => Promise<{ tolist(): number[][] }>;
+/**
+ * EmbeddingGemma is prompt-trained: its model card mandates task prefixes for
+ * queries vs documents; embedding raw text on both sides measurably degrades
+ * retrieval. MiniLM has no such convention.
+ */
+export function gemmaPrefix(kind: EmbedKind, text: string): string {
+  return kind === "query" ? `task: search result | query: ${text}` : `title: none | text: ${text}`;
+}
+
+interface RawPipeline {
+  (texts: string[], opts: { pooling: "mean"; normalize: boolean }): Promise<{ tolist(): number[][] }>;
+  dispose?: () => Promise<void>;
+}
 
 /**
  * transformers.js v4 provider. Lazy: nothing loads until the first embed().
  * Serialized: transformers.js does not support concurrent sessions, so every
- * call goes through one promise chain. Idle: the pipeline unloads after
- * 10 minutes so resident RAM stays near zero for light users.
+ * call goes through one promise chain. Idle: after 10 minutes the pipeline is
+ * properly DISPOSED (ONNX native memory released — nulling the JS ref alone
+ * left ~300MB waiting on GC). Disposed providers are latched: further embeds
+ * reject instead of silently re-downloading.
  */
 export class TransformersEmbeddings implements EmbeddingsProvider {
-  /**
-   * Matryoshka truncation applies ONLY to models trained for it (Gemma).
-   * Slicing MiniLM's 384 dims to 256 scrambles its geometry — live-verified:
-   * cosines collapsed to ~0 and rankings degraded (docs/verification/).
-   */
+  /** Matryoshka truncation applies ONLY to models trained for it (Gemma). */
   readonly dims: number;
-  private pipe: FeaturePipeline | null = null;
+  private pipe: RawPipeline | null = null;
   private queue: Promise<unknown> = Promise.resolve();
   private idleTimer: NodeJS.Timeout | null = null;
+  private disposed = false;
 
-  constructor(private readonly modelId = selectModelId()) {
+  constructor(readonly modelId = selectModelId()) {
     this.dims = modelId === GEMMA_MODEL ? MATRYOSHKA_DIMS : MINILM_NATIVE_DIMS;
   }
 
@@ -71,16 +82,18 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
     }
   }
 
-  async embed(texts: readonly string[]): Promise<Float32Array[]> {
+  async embed(texts: readonly string[], kind: EmbedKind = "document"): Promise<Float32Array[]> {
+    if (this.disposed) throw new Error("embeddings provider disposed");
+    const isGemma = this.modelId === GEMMA_MODEL;
+    const prepared = isGemma ? texts.map((t) => gemmaPrefix(kind, t)) : [...texts];
     const run = this.queue.then(async () => {
       const pipe = await this.loadPipeline();
-      const output = await pipe([...texts], { pooling: "mean", normalize: true });
+      const output = await pipe(prepared, { pooling: "mean", normalize: true });
       this.touchIdleTimer();
-      const truncate = this.modelId === GEMMA_MODEL;
       return output
         .tolist()
         .map((row) =>
-          truncate ? truncateAndNormalize(new Float32Array(row)) : new Float32Array(row),
+          isGemma ? truncateAndNormalize(new Float32Array(row)) : new Float32Array(row),
         );
     });
     // Keep the chain alive even when a call rejects.
@@ -89,17 +102,19 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
   }
 
   async dispose(): Promise<void> {
+    this.disposed = true;
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = null;
-    this.pipe = null;
+    await this.unloadThroughQueue();
   }
 
-  private async loadPipeline(): Promise<FeaturePipeline> {
+  private async loadPipeline(): Promise<RawPipeline> {
     if (this.pipe) return this.pipe;
+    if (this.disposed) throw new Error("embeddings provider disposed");
     const { pipeline } = await import("@huggingface/transformers");
     this.pipe = (await pipeline("feature-extraction", this.modelId, {
       dtype: "q8",
-    })) as unknown as FeaturePipeline;
+    })) as unknown as RawPipeline;
     this.touchIdleTimer();
     return this.pipe;
   }
@@ -107,8 +122,21 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
   private touchIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
-      this.pipe = null;
+      void this.unloadThroughQueue();
     }, IDLE_UNLOAD_MS);
     this.idleTimer.unref?.();
+  }
+
+  /** Unload serialized behind in-flight embeds so a session is never freed mid-call. */
+  private async unloadThroughQueue(): Promise<void> {
+    const run = this.queue.then(async () => {
+      const pipe = this.pipe;
+      this.pipe = null;
+      if (pipe?.dispose) {
+        await pipe.dispose().catch(() => undefined);
+      }
+    });
+    this.queue = run.catch(() => undefined);
+    await run;
   }
 }

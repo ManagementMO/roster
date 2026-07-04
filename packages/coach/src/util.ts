@@ -41,6 +41,12 @@ export function vecToBlob(vec: Float32Array): Buffer {
 }
 
 export function blobToVec(blob: Buffer, dims: number): Float32Array {
+  // Length-strict: trusting `dims` over the blob would read adjacent Buffer
+  // pool memory when a stored vector predates a model switch (384-d MiniLM
+  // blob viewed as 256/1024 floats) — nondeterministic garbage into rankings.
+  if (blob.byteLength !== dims * 4) {
+    throw new RangeError(`vector blob is ${blob.byteLength}B but dims=${dims} expects ${dims * 4}B`);
+  }
   const copy = Buffer.from(blob); // ensure alignment
   return new Float32Array(copy.buffer, copy.byteOffset, dims);
 }

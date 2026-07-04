@@ -58,7 +58,11 @@ export function loadConfig(): RosterConfig {
 
 export function saveConfig(config: RosterConfig): void {
   fs.mkdirSync(rosterHome(), { recursive: true });
-  fs.writeFileSync(rosterConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
+  // tmp + rename: a serve booting mid-write must never read truncated JSON.
+  const target = rosterConfigPath();
+  const tmp = `${target}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`);
+  fs.renameSync(tmp, target);
 }
 
 /**

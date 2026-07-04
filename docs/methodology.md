@@ -17,7 +17,7 @@ Within a category, servers (and skills) rank by the **lower bound of the Wilson 
 wilson_lb = ( p̂ + z²/2n − z·√( p̂(1−p̂)/n + z²/4n² ) ) / ( 1 + z²/n )
 ```
 
-where p̂ = successes / n over the category's signed task set.
+where p̂ = successes / n over the category's signed task set. (Run artifacts also carry an all-tasks Wilson for internal/anonymized use — `signedWilsonLb` is the only figure that may back a named public score.)
 
 Reference: Evan Miller, *How Not to Sort by Average Rating* — <https://www.evanmiller.org/how-not-to-sort-by-average-rating.html>
 
@@ -31,7 +31,7 @@ Why this key: it is humble with small samples by construction — a perfect scor
 
 Every published number carries its tier.
 
-- **Lab (controlled).** Results from the Combine: standardized, category-specific task suites, identical for every server in the category. Write-capable suites run **only** against sandboxed self-hosted instances (per-server docker-compose environments, seeded to a known state). Read-only live suites (search/fetch/list) may probe live endpoints at most once per server per week, with an identifiable User-Agent and opt-out honored. Verification is programmatic state checking — a verify script exits 0 or it doesn't; no LLM judge. Every result pins its suite version and environment digest, and the harness is open source, so third parties can reproduce runs (a first-class `roster combine self` for authors is planned).
+- **Lab (controlled).** Results from the Combine: standardized, category-specific task suites, identical for every server in the category. Write-capable suites run **only** against sandboxed self-hosted instances (per-server docker-compose environments, seeded to a known state). Read-only live suites (search/fetch/list) may probe live endpoints at most once per server per week, with an identifiable User-Agent and opt-out honored. Verification is programmatic state checking — declarative end-state verifiers (file-equals/contains/exists/absent, result-contains) evaluated by the open-source runner; no LLM judge. Script-based verifiers may be added later behind review. Every result pins its suite version and environment digest, and the harness is open source, so third parties can reproduce runs (a first-class `roster combine self` for authors is planned).
 - **Street (observational).** Opt-in, k-anonymous field telemetry (schema: [telemetry-schema.md](telemetry-schema.md)): in-the-wild outcome classes, latency buckets, drift incidents, usage share. Always labeled observational; never mixed into Lab standings. Publishes only past **≥5 distinct installs and ≥200 calls per (server, category)**. The pipeline ships before the table: the public Street table activates only when real data crosses those thresholds. **(implementation pending)**
 - **Universal protocol checks.** Baseline conformance checks every listed server runs regardless of category: transport behavior, handshake, schema validity, error semantics. **(implementation pending)**
 
@@ -39,7 +39,7 @@ Every published number carries its tier.
 
 Every task carries a public provenance flag.
 
-Certification pipeline: (1) an agent drafts the task and its verify script; (2) a second, adversarial agent attacks it — wrong-field checks, false-pass and false-fail hunting; (3) the verifier is mutation-tested against seeded known-bad sandbox states and must catch them all; (4) a human certifies it — runs the pass case, forces a fail case, confirms the check matches the server's real semantics — and the task becomes `signed: true`.
+Certification pipeline: (1) an agent drafts the task and its verifiers; (2) a second, adversarial agent attacks it — wrong-field checks, false-pass and false-fail hunting; (3) the verifier is mutation-tested against seeded known-bad sandbox states and must catch them all; (4) a human certifies it — runs the pass case, forces a fail case, confirms the check matches the server's real semantics — and the task becomes `signed: true`.
 
 **Only human-signed tasks feed named public scores.** Unsigned tasks may run for internal or anonymized aggregate statistics only. Coverage never outruns signing: if signing lags, the League is smaller, not looser.
 

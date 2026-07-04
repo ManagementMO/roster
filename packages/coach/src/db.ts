@@ -13,6 +13,10 @@ export function openCoachDb(path: string): CoachDb {
   const db = new Database(path);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  // Every client session spawns its own `roster serve`; several processes
+  // share this file. Without a busy timeout, a concurrent writer surfaces as
+  // SQLITE_BUSY crashes instead of a short wait.
+  db.pragma("busy_timeout = 5000");
   migrate(db);
   return db;
 }

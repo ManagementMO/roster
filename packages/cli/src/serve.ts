@@ -11,6 +11,7 @@ import { loadConfig } from "./rosterfile.js";
  * the dense rung warms in the background and is never awaited on the hot path.
  */
 export async function serve(modeOverride?: RouterMode): Promise<void> {
+  const bootStarted = Date.now();
   const config = loadConfig();
   const mode = modeOverride ?? config.mode;
 
@@ -42,11 +43,21 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
 
   let embedNeed: ((need: string) => Promise<Float32Array | null>) | undefined;
   if (config.embeddings === "auto" && !process.env.ROSTER_NO_FETCH) {
-    embedNeed = makeLazyEmbedder(store, manager);
+    embedNeed = makeLazyEmbedder(store);
   }
 
   const roster = new RosterServer({ mode, manager, store, skills, embedNeed });
-  roster.syncCapabilities(unavailable);
+  try {
+    // keepSeenSince: rows a sibling serve touched during OUR boot window are
+    // never pruned — its roster.json may be newer than the one we read.
+    roster.syncCapabilities(unavailable, bootStarted);
+  } catch (err) {
+    // A capability-index hiccup (e.g. rare write contention) must degrade,
+    // not kill the router the client just launched.
+    process.stderr.write(
+      `roster: capability sync failed (serving with existing index): ${err instanceof Error ? err.message : err}\n`,
+    );
+  }
 
   // The nightly job, run opportunistically at boot (debounced ~20h): recompute
   // ratings and refine routing vectors from logged outcomes. This is the Coach
@@ -72,39 +83,62 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
  * first ever run); drafts return lexical results (null vector) until warm.
  * Nothing here can ever block or fail a draft.
  */
+const WARMUP_MAX_ATTEMPTS = 3;
+const WARMUP_RETRY_BACKOFF_MS = 60_000;
+
 function makeLazyEmbedder(
   store: CoachStore,
-  manager: BackendManager,
 ): (need: string) => Promise<Float32Array | null> {
+  // ONE provider for the process: a fresh instance per retry would restart the
+  // full model download on flaky networks — once per draft, forever.
   let provider: TransformersEmbeddings | null = null;
   let warm = false;
   let warming: Promise<void> | null = null;
+  let attempts = 0;
+  let nextRetryAt = 0;
 
   const warmup = async (): Promise<void> => {
-    if (!(await TransformersEmbeddings.isAvailable())) return;
-    provider = new TransformersEmbeddings();
+    if (!(await TransformersEmbeddings.isAvailable())) {
+      attempts = WARMUP_MAX_ATTEMPTS; // package absent: no point retrying
+      return;
+    }
+    provider ??= new TransformersEmbeddings();
     await provider.embed(["roster warmup"]);
-    // Backfill base vectors for everything we front (name + description + body).
+    // Model-switch guard: stale OATS vectors from a different embedding space
+    // are wiped before we backfill in this one.
+    store.ensureEmbeddingModel(provider.modelId);
+    // Backfill base vectors for everything we front, chunked so a 200-tool
+    // roster can't spike RAM or starve the queue for the first live draft.
     const entries = store.listCapabilities({ includeQuarantined: true });
-    const texts = entries.map((e) => `${e.name}\n${e.description}\n${e.body ?? ""}`.slice(0, 2000));
-    const vecs = await provider.embed(texts);
-    entries.forEach((entry, i) => {
-      const vec = vecs[i];
-      if (vec) store.storeBaseVec(entry.id, vec);
-    });
-    void manager; // reserved for per-backend vec policies later
+    const BATCH = 16;
+    for (let i = 0; i < entries.length; i += BATCH) {
+      const batch = entries.slice(i, i + BATCH);
+      const texts = batch.map((e) => `${e.name}\n${e.description}\n${e.body ?? ""}`.slice(0, 2000));
+      const vecs = await provider.embed(texts, "document");
+      batch.forEach((entry, j) => {
+        const vec = vecs[j];
+        if (vec) store.storeBaseVec(entry.id, vec);
+      });
+    }
     warm = true;
   };
 
   return async (need: string) => {
     if (!warm) {
-      warming ??= warmup().catch(() => {
-        warming = null; // allow a later retry; lexical keeps serving meanwhile
-      });
-      return null;
+      if (warming === null && attempts < WARMUP_MAX_ATTEMPTS && Date.now() >= nextRetryAt) {
+        attempts += 1;
+        warming = warmup()
+          .catch(() => {
+            nextRetryAt = Date.now() + WARMUP_RETRY_BACKOFF_MS;
+          })
+          .finally(() => {
+            if (!warm) warming = null; // allow the next (bounded) retry
+          });
+      }
+      return null; // lexical keeps serving; a draft never waits on warmup
     }
     if (!provider) return null;
-    const [vec] = await provider.embed([need]);
+    const [vec] = await provider.embed([need], "query");
     return vec ?? null;
   };
 }

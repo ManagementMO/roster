@@ -135,13 +135,18 @@ export class RosterServer {
    * Pass the sources that are configured but unreachable this boot — their
    * capabilities are preserved, not pruned (transient outage ≠ removal).
    */
-  syncCapabilities(unavailableSources: ReadonlySet<string> = new Set()): void {
+  syncCapabilities(
+    unavailableSources: ReadonlySet<string> = new Set(),
+    keepSeenSince?: number,
+  ): void {
     const entries: CapabilityEntry[] = [
       ...this.manager.allTools(),
       ...[...this.skills.values()].map(skillToCapabilityEntry),
     ];
     this.store.upsertCapabilities(entries);
-    this.store.pruneMissing(new Set(entries.map((e) => e.id)), unavailableSources);
+    this.store.pruneMissing(new Set(entries.map((e) => e.id)), unavailableSources, {
+      keepSeenSince,
+    });
   }
 
   private listTools(): Array<Record<string, unknown>> {
