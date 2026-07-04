@@ -17,6 +17,7 @@
 | Dense rung — MiniLM live (real inference) | **verified** (hybrid fusion + OATS: cos ~0 → 0.491 after 4 real outcomes) |
 | Dense rung — Gemma via real `roster serve` | **verified**: auto-selected, downloaded in background, **warm in ~40s, 256-dim, drafts never blocked, memory tool #1 post-warm** |
 | Trust laws (privacy/telemetry-off/suggest-only/eject) | **verified by 3 independent reviewers + hostile QA** |
+| Experiment swarm (16 charters — real models/servers/processes) | **15/16 reported · 100 findings recorded** (58/70 verifiers died on a session limit → most findings unverified) · digest: `docs/lab/campaign-digest.md` · **fix wave pending your go** |
 
 **Answer to your question "is the dense-embedding path fully implemented and working?" — YES, now.** Both models live-verified end-to-end, plus this sweep hardened it: model-switch guard (stale learned vectors are wiped when the embedding model changes — previously they silently poisoned rankings and could read out-of-bounds memory), Gemma's mandated prompt prefixes added, real ONNX session disposal on idle (previously ~300MB waited on GC), bounded warmup retries with backoff (no more download-restart storms), chunked backfill for big rosters, and hybrid fusion made **signal-adaptive** (cosine channel min-max scaled per draft; when its span is noise-level the dense channel abstains and lexical decides — live-proven both ways: abstains on MiniLM blur, governs after OATS refinement).
 
@@ -51,7 +52,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 
 ## 4. 🔧 MY READY QUEUE (zero input needed — building on your "go")
 
-League site (standings + profiles + box scores from `lab-results.json`) → static badges → weekly-rerun CI → suites: memory/Gitea-git/sqlite (drafted for your signing) → dashboard page → OpenClaw skills-allowlist writer → receipt depth (per-serve token measurement, $ estimate) → router niceties (HTTP backends + `http_5xx` class, roster-cache TTL, adaptive ~10K rule, health checks) → launch assets.
+**Lab fix wave first** (from `docs/lab/campaign-digest.md`: trust-critical items — config write races, prune/namespace identity bugs, eject manifest integrity, Combine verifier hardening BEFORE your signing session, BOM parse fix) → then: League site (standings + profiles + box scores from `lab-results.json`) → static badges → weekly-rerun CI → suites: memory/Gitea-git/sqlite (drafted for your signing) → dashboard page → OpenClaw skills-allowlist writer → receipt depth (per-serve token measurement, $ estimate) → router niceties (HTTP backends + `http_5xx` class, roster-cache TTL, adaptive ~10K rule, health checks) → launch assets.
 
 ---
 
