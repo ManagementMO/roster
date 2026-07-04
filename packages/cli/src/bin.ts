@@ -2,7 +2,7 @@
 import { ejectClient } from "./eject.js";
 import { init } from "./init.js";
 import { discoverClients } from "./clients.js";
-import { buildReceipt, renderReceipt } from "./receipt.js";
+import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
 import { serve } from "./serve.js";
 import { syncClient, WRITE_CLIENTS } from "./sync.js";
 import { telemetry } from "./telemetry.js";
@@ -41,7 +41,9 @@ async function main(): Promise<number> {
       const config = loadConfig();
       const skills = scanSkillSources(config.skillSources);
       const review = skills.filter((s) => trustScan(s).status === "review").length;
-      process.stdout.write(`${renderReceipt(buildReceipt(discoveries, skills, review))}\n`);
+      const receipt = buildReceipt(discoveries, skills, review);
+      saveReceipt(receipt); // spec §6.3: "re-print/update the audit"
+      process.stdout.write(`${renderReceipt(receipt)}\n`);
       return 0;
     }
 
@@ -132,8 +134,12 @@ async function main(): Promise<number> {
     }
 
     case "telemetry": {
-      const action = (rest[0] ?? "status") as "status" | "on" | "off";
-      telemetry(["status", "on", "off"].includes(action) ? action : "status");
+      const action = rest[0] ?? "status";
+      if (!["status", "on", "off"].includes(action)) {
+        process.stderr.write(`roster: unknown telemetry action "${action}" (use status|on|off)\n`);
+        return 1;
+      }
+      telemetry(action as "status" | "on" | "off");
       return 0;
     }
 
