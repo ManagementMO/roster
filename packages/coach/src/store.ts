@@ -51,10 +51,51 @@ interface CapabilityRow {
 
 const SOFT_FAIL_LOOKBACK = 3;
 const QUARANTINE_DWELL_MS = 24 * 3600 * 1000;
-const HYBRID_LEX_WEIGHT = 0.3;
-const HYBRID_COS_WEIGHT = 0.7;
-/** Below this cosine span across candidates, the dense channel is noise and abstains. */
+// Lab weight sweep (real MiniLM, 133-tool corpus, 66 ground-truthed needs):
+// quality rises monotonically with cosine weight and plateaus near lex 0.1–0.15;
+// 0.15/0.85 beat the former 0.3/0.7 on hit@1/hit@5/MRR, and a small retained
+// lexical weight still beat pure cosine (it breaks ties on verbose/typo needs).
+const HYBRID_LEX_WEIGHT = 0.15;
+const HYBRID_COS_WEIGHT = 0.85;
+// Cheap floor that guards ONLY degenerate tiny rosters. Honest scope (lab-
+// measured): with a handful of tools MiniLM cosines span ~0.04 (noise), so the
+// gate keeps dense from amplifying noise there. At realistic corpus scale it
+// never fires (min observed span 0.22 across 66 needs / 133 tools) and it does
+// NOT reject Gemma gibberish (whose noise spans also exceed 0.15) — it is a
+// small-set safety floor, not a production noise filter. Do not oversell it.
 const MIN_INFORMATIVE_COS_SPAN = 0.15;
+/** Every genuine FTS hit keeps at least this score, so min-max never zeroes the
+ *  worst real match out of a draft (which then displaced it with an unrelated
+ *  rated tool — lab-measured on 87.6% of narrow needs). */
+const LEX_SCORE_FLOOR = 0.05;
+
+// Function words that carry no routing signal. Query tokens matching only these
+// drove wrong-source tools into the visible top-5 for ~26% of needs (lab), incl.
+// #1 slots (a stopword-dense description scoring bm25 1.0). Filtered from the
+// QUERY only — never from the index — and only when content tokens survive.
+const STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "is", "are", "be",
+  "my", "that", "this", "it", "its", "with", "as", "at", "by", "from", "into",
+  "do", "does", "me", "we", "us", "your", "you", "i", "so", "if", "then",
+]);
+
+/**
+ * Tokenize for lexical matching, splitting camelCase and letter/digit
+ * boundaries so a name like `printEnv` or `getCurrentTime` is reachable by the
+ * words `print env` / `current time` (unicode61 keeps camelCase as one token,
+ * so these were previously unmatchable in both directions).
+ */
+function lexTokens(text: string): string[] {
+  const spaced = text
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Za-z])([0-9])/g, "$1 $2");
+  return spaced.toLowerCase().match(/[a-z0-9]{2,}/g) ?? [];
+}
+
+/** FTS name-column text: source + raw name + camelCase-split subwords. */
+function ftsNameText(source: string, name: string): string {
+  return `${source} ${name} ${lexTokens(name).join(" ")}`;
+}
 
 export function defHash(entry: CapabilityEntry): string {
   return sha256Hex(
@@ -159,17 +200,16 @@ export class CoachStore {
         if (!row) {
           insert.run(params);
           // Source name is part of the lexical surface: "memory" must find
-          // memory__* tools even when descriptions never say the word.
-          ftsInsert.run(entry.id, `${entry.source} ${entry.name}`, entry.description, entry.body ?? "");
+          // memory__* tools even when descriptions never say the word; and
+          // camelCase names are split so `print env` reaches `printEnv`.
+          ftsInsert.run(entry.id, ftsNameText(entry.source, entry.name), entry.description, entry.body ?? "");
           result.added.push(entry.id);
         } else if (row.def_hash !== hash) {
           // Definition drifted: record the event and quarantine from default rosters.
           drift.run(now, entry.id, row.def_hash, hash);
           update.run({ ...params, quarantined: 1 });
           ftsDelete.run(entry.id);
-          // Source name is part of the lexical surface: "memory" must find
-          // memory__* tools even when descriptions never say the word.
-          ftsInsert.run(entry.id, `${entry.source} ${entry.name}`, entry.description, entry.body ?? "");
+          ftsInsert.run(entry.id, ftsNameText(entry.source, entry.name), entry.description, entry.body ?? "");
           result.changed.push(entry.id);
           result.driftEvents += 1;
         } else {
@@ -268,10 +308,18 @@ export class CoachStore {
     // freshly-synced server's state could be pruned by a sibling serve racing
     // on a stale roster.json.
     const keepSince = opts.keepSeenSince ?? Number.POSITIVE_INFINITY;
+    // A stored source may carry a "-N" collision suffix its config name never
+    // had, so protection matches the exact source AND its de-suffixed base —
+    // otherwise an unavailable backend's learned state is pruned despite being
+    // protected (over-protection is the safe direction: keep, never wrongly delete).
+    const deSuffix = (source: string): string => source.replace(/-\d+$/, "");
     const gone = all
       .filter(
         (r) =>
-          !presentIds.has(r.id) && !protectedSources.has(r.source) && r.last_seen < keepSince,
+          !presentIds.has(r.id) &&
+          !protectedSources.has(r.source) &&
+          !protectedSources.has(deSuffix(r.source)) &&
+          r.last_seen < keepSince,
       )
       .map((r) => r.id);
     const run = this.db.transaction(() => {
@@ -382,12 +430,20 @@ export class CoachStore {
    * capability performs when it works.
    */
   recomputeRatings(category = "all", now = Date.now()): void {
-    const rows = this.db
-      .prepare(
-        `SELECT capability, class, latency_ms FROM outcome
-         WHERE explored = 0 AND soft_fail = 0`,
-      )
-      .all() as Array<{ capability: string; class: OutcomeClass; latency_ms: number }>;
+    // category != "all" must aggregate ONLY that intent category's outcomes —
+    // otherwise every capability's global stats get written under the requested
+    // label, fabricating an entire fake per-category leaderboard.
+    const rows = (
+      category === "all"
+        ? this.db.prepare(
+            `SELECT capability, class, latency_ms FROM outcome
+             WHERE explored = 0 AND soft_fail = 0`,
+          ).all()
+        : this.db.prepare(
+            `SELECT capability, class, latency_ms FROM outcome
+             WHERE explored = 0 AND soft_fail = 0 AND intent_cat = ?`,
+          ).all(category)
+    ) as Array<{ capability: string; class: OutcomeClass; latency_ms: number }>;
 
     const byCap = new Map<string, { n: number; successes: number; latencies: number[] }>();
     for (const row of rows) {
@@ -410,7 +466,18 @@ export class CoachStore {
       ON CONFLICT(capability, category) DO UPDATE SET
         n=@n, successes=@successes, wilson_lb=@wilson_lb, p50_ms=@p50, p95_ms=@p95, updated_at=@now
     `);
+    // Ratings must not outlive their evidence: a capability whose attributable
+    // outcomes all vanished (deleted, or all became soft_fail/explored) keeps a
+    // stale rating that still ranks it in the fallback. Drop rows for this
+    // category that no longer have any attributable evidence.
+    const existing = this.db
+      .prepare("SELECT capability FROM rating WHERE category = ?")
+      .all(category) as Array<{ capability: string }>;
+    const deleteRating = this.db.prepare("DELETE FROM rating WHERE capability = ? AND category = ?");
     const run = this.db.transaction(() => {
+      for (const { capability } of existing) {
+        if (!byCap.has(capability)) deleteRating.run(capability, category);
+      }
       for (const [capability, agg] of byCap) {
         const sorted = [...agg.latencies].sort((a, b) => a - b);
         upsert.run({
@@ -456,7 +523,11 @@ export class CoachStore {
 
   /** Rung 1: FTS5/BM25 — instant, zero-download. */
   lexicalSearch(need: string, k = 30): Array<{ id: string; lexScore: number }> {
-    const tokens = [...new Set(need.toLowerCase().match(/[a-z0-9]{2,}/g) ?? [])];
+    const all = [...new Set(lexTokens(need))];
+    // Drop function words that only add noise — but if the need is ALL
+    // stopwords, keep them rather than return nothing.
+    const content = all.filter((t) => !STOPWORDS.has(t));
+    const tokens = content.length > 0 ? content : all;
     if (tokens.length === 0) return [];
     const match = tokens.map((t) => `"${t}"`).join(" OR ");
     try {
@@ -474,9 +545,11 @@ export class CoachStore {
       const best = Math.min(...ranks);
       const worst = Math.max(...ranks);
       const span = worst - best;
+      // Map into [LEX_SCORE_FLOOR, 1], not [0, 1]: the worst of N genuine matches
+      // is still a real match and must survive the `score > 0` draft filter.
       return rows.map((r) => ({
         id: r.id,
-        lexScore: span === 0 ? 1 : (worst - r.rank) / span,
+        lexScore: span === 0 ? 1 : LEX_SCORE_FLOOR + (1 - LEX_SCORE_FLOOR) * ((worst - r.rank) / span),
       }));
     } catch {
       return []; // malformed MATCH input must never break a draft
@@ -484,7 +557,7 @@ export class CoachStore {
   }
 
   /**
-   * Rung 2 fusion: 0.3·lexical + 0.7·cosine when a need vector is available.
+   * Rung 2 fusion: 0.15·lexical + 0.85·cosine when a need vector is available.
    * Quarantined capabilities never enter a roster.
    */
   draftCandidates(need: string, k: number, needVec?: Float32Array | null): Candidate[] {
@@ -509,13 +582,12 @@ export class CoachStore {
       gathered.push({ entry, lexScore, cosScore });
     }
 
-    // Pass 2: fuse — signal-adaptively. The cosine channel is min-max
-    // normalized WITHIN the candidate set (raw (cos+1)/2 made every
-    // vec-bearing tool score ~0.35 and turned 70/30 fusion into ~10/90,
-    // live-measured). But when the whole cosine SPAN is tiny, the dense
-    // channel is noise (MiniLM on short tool blurbs) and min-max would
-    // amplify it — so dense ABSTAINS and lexical decides. With a healthy
-    // span (Gemma, or OATS-refined vectors) dense governs at weight 0.7.
+    // Pass 2: fuse. The cosine channel is min-max normalized WITHIN the
+    // candidate set (raw (cos+1)/2 made every vec-bearing tool score ~0.35 and
+    // turned the intended blend into ~10/90, live-measured). The span-abstain
+    // guard below only engages on degenerate tiny rosters (see
+    // MIN_INFORMATIVE_COS_SPAN); at realistic scale the dense channel governs
+    // every draft, which is what the lab retrieval numbers want.
     const cosVals = gathered.map((g) => g.cosScore).filter((c): c is number => c !== null);
     const cosMin = cosVals.length > 0 ? Math.min(...cosVals) : 0;
     const cosSpan = cosVals.length > 0 ? Math.max(...cosVals) - cosMin : 0;

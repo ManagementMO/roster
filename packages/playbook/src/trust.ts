@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { ParsedSkill } from "./skill.js";
 
 /**
@@ -59,13 +61,52 @@ const BODY_RULES: Rule[] = [
   },
 ];
 
-export function trustScan(skill: Pick<ParsedSkill, "body" | "scripts">): TrustReport {
+/** Bytes of any one bundled script we read before scanning (safety cap). */
+const MAX_SCRIPT_BYTES = 256 * 1024;
+
+/**
+ * Scans body AND the two blind spots the lab surfaced: the `description` (the
+ * exact text OpenClaw injects into every prompt and retrieval indexes — the
+ * highest-value injection surface) and the CONTENTS of bundled scripts (a path
+ * list alone hid curl|bash and base64-exec). Findings are advisory ("review"),
+ * never an automated verdict — so a false positive just asks a human to look.
+ * `name`/`description`/`dir` are optional so existing pure-data callers still
+ * type-check; when `dir` is present, scripts are read from disk and scanned.
+ */
+export function trustScan(
+  skill: Pick<ParsedSkill, "body" | "scripts"> &
+    Partial<Pick<ParsedSkill, "name" | "description" | "dir">>,
+): TrustReport {
   const findings: TrustFinding[] = [];
-  for (const rule of BODY_RULES) {
-    if (rule.pattern.test(skill.body)) {
-      findings.push({ rule: rule.id, detail: rule.detail });
+  const seen = new Set<string>();
+  const scan = (text: string, where: string, rules: Rule[]): void => {
+    for (const rule of rules) {
+      if (!rule.pattern.test(text)) continue;
+      const key = `${rule.id}:${where}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      findings.push({ rule: rule.id, detail: `${rule.detail} (${where})` });
+    }
+  };
+
+  scan(`${skill.name ?? ""}\n${skill.description ?? ""}`, "metadata", BODY_RULES);
+  scan(skill.body, "body", BODY_RULES);
+
+  // Real code is full of base64-looking and env-reading fragments, so scripts
+  // are scanned for the actionable threats only — not the generic base64 rule,
+  // which would flag every minified bundle. `dir` present ⇒ read from disk.
+  const scriptRules = BODY_RULES.filter((r) => r.id !== "base64-blob");
+  if (skill.dir) {
+    for (const rel of skill.scripts) {
+      try {
+        const content = fs.readFileSync(path.join(skill.dir, rel), "utf8").slice(0, MAX_SCRIPT_BYTES);
+        scan(content, `script:${rel}`, scriptRules);
+      } catch {
+        // Unreadable script: the bundled-scripts advisory below still fires.
+      }
     }
   }
+
   if (skill.scripts.length > 0) {
     findings.push({
       rule: "bundled-scripts",

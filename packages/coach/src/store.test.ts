@@ -69,12 +69,32 @@ describe("lexical search", () => {
   });
 
   it("normalizes bm25 so the worst match never scores 1.0 (regression: || 1 bug)", () => {
-    const hits = store.lexicalSearch("read a text file from the filesystem");
+    // Two genuine CONTENT-word matches (web←search, mail←email) — not the
+    // stopword pollution the old query accidentally relied on.
+    const hits = store.lexicalSearch("search email message");
     expect(hits.length).toBeGreaterThanOrEqual(2);
     expect(hits[0]!.lexScore).toBe(1);
     const last = hits[hits.length - 1]!;
     expect(last.lexScore).toBeLessThan(hits[0]!.lexScore);
     expect(last.lexScore).toBeGreaterThanOrEqual(0);
+  });
+
+  it("stopword-only overlap no longer drags a wrong-source tool into results", () => {
+    // A stopword-dense tool that shares ONLY function words with the need.
+    store.upsertCapabilities([
+      tool("junk__noise", "noise", "the one for you to be with as it does that"),
+    ]);
+    // Need has real content (read, file) plus stopwords (the, for, me).
+    const ids = store.lexicalSearch("read the file for me").map((h) => h.id);
+    expect(ids).toContain("fs__read_file");
+    expect(ids).not.toContain("junk__noise"); // matched only via stopwords → filtered out
+  });
+
+  it("reaches a camelCase-named tool by its split words", () => {
+    store.upsertCapabilities([
+      tool("everything__printEnv", "printEnv", "Prints all environment variables"),
+    ]);
+    expect(store.lexicalSearch("print env").map((h) => h.id)).toContain("everything__printEnv");
   });
 
   it("auto-clears quarantine on stable re-sight — but only after the 24h dwell", () => {
@@ -330,5 +350,52 @@ describe("OATS nightly", () => {
     store.upsertCapabilities([tool("a__t", "t", "d")]);
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
     expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+  });
+});
+
+describe("fix-wave regressions (lab swarm)", () => {
+  it("keeps the worst genuine lexical hit in a draft (no min-max zeroing displacement)", () => {
+    // Two real matches for "write": the worst was scored 0 by min-max and then
+    // dropped by the score>0 filter, displaced by an unrelated rated tool.
+    store.upsertCapabilities([
+      tool("fs__write_file", "write_file", "write text content to a file on disk"),
+      tool("sqlite__write_query", "write_query", "write rows via an insert query"),
+      tool("x__unrelated", "unrelated", "totally different domain no overlap"),
+    ]);
+    const ids = store.draftCandidates("write", 5).map((c) => c.entry.id);
+    expect(ids).toContain("fs__write_file");
+    expect(ids).toContain("sqlite__write_query");
+  });
+
+  it("recomputeRatings(category) aggregates ONLY that intent category, never global stats", () => {
+    store.upsertCapabilities([tool("fs__read_file", "read_file", "Read a file")]);
+    // 3 web-category successes, 1 db-category failure — different categories.
+    for (let i = 0; i < 3; i++) {
+      store.recordOutcome({ session: `w${i}`, source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 10, intentCategory: "web" });
+    }
+    store.recordOutcome({ session: "d0", source: "fs", capability: "fs__read_file", outcomeClass: "tool_fail:internal", latencyMs: 10, intentCategory: "db" });
+    store.recomputeRatings("web");
+    const web = store.getRating("fs__read_file", "web");
+    expect(web).toMatchObject({ n: 3, successes: 3 }); // NOT n:4 (the db failure must not leak in)
+  });
+
+  it("recomputeRatings drops a rating whose evidence has vanished", () => {
+    store.upsertCapabilities([tool("fs__read_file", "read_file", "Read a file")]);
+    store.recordOutcome({ session: "s", source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 10 });
+    store.recomputeRatings();
+    expect(store.getRating("fs__read_file")).not.toBeNull();
+    // Evidence gone → the stale rating must not survive to keep ranking it.
+    db.prepare("DELETE FROM outcome").run();
+    store.recomputeRatings();
+    expect(store.getRating("fs__read_file")).toBeNull();
+  });
+
+  it("pruneMissing protects a source under its de-suffixed base (collision-suffixed key)", () => {
+    // Capability stored under the collision-suffixed key "mail-2"; the config
+    // name protects only the base "mail". It must survive an outage.
+    store.upsertCapabilities([tool("mail-2__send", "send", "Send an email message")]);
+    const gone = store.pruneMissing(new Set(), new Set(["mail"]));
+    expect(gone).toEqual([]);
+    expect(store.getCapability("mail-2__send")).not.toBeNull();
   });
 });

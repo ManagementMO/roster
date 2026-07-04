@@ -85,9 +85,6 @@ export class RosterServer {
   private readonly embedNeed?: (need: string) => Promise<Float32Array | null>;
   private readonly defaultK: number;
   private readonly sessionId: string;
-  // 2020-12 is MCP's schema dialect; plain Ajv can't compile it and every
-  // args_compatible would silently read false.
-  private readonly ajv = new Ajv2020({ strict: false });
   /** Recent drafts by id — parallel draft/call pairs must not cross-attribute. */
   private readonly drafts = new Map<string, DraftCache>();
   private lastDraftId: string | null = null;
@@ -323,11 +320,7 @@ export class RosterServer {
       let compatible = false;
       try {
         if (entry.inputSchema) {
-          // Strip $schema: backends declare draft-07 or 2020-12 dialects; we
-          // validate STRUCTURE only, and a dialect ref must not throw us into
-          // a false "incompatible".
-          const { $schema: _dialect, ...schema } = entry.inputSchema;
-          compatible = this.ajv.validate(schema, args ?? {}) as boolean;
+          compatible = argsMatchSchema(entry.inputSchema, args ?? {});
         }
       } catch {
         compatible = false;
@@ -363,6 +356,34 @@ export class RosterServer {
     });
     return outcomeClass;
   }
+}
+
+/**
+ * Structure-only arg validation for the (rare) suggest-only path. A FRESH Ajv
+ * per call is deliberate: a single shared instance registered each schema's
+ * `$id` into its permanent registry, so the second suggestion carrying any
+ * `$id` threw "already exists" (caught → false) — args_compatible read `true`
+ * once then `false` forever for identical args — and `_cache` grew one entry
+ * per call, never hitting. Identity keys are stripped recursively so no `$id`
+ * can register at all, and dialect `$schema` refs can't force a false negative.
+ */
+export function argsMatchSchema(schema: Record<string, unknown>, args: unknown): boolean {
+  const ajv = new Ajv2020({ strict: false });
+  return ajv.validate(stripSchemaIdentity(schema) as Record<string, unknown>, args) as boolean;
+}
+
+/** Drop $id/$schema/$anchor everywhere (they only matter for a shared registry we don't use). */
+function stripSchemaIdentity(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripSchemaIdentity);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (k === "$id" || k === "$schema" || k === "$anchor") continue;
+      out[k] = stripSchemaIdentity(v);
+    }
+    return out;
+  }
+  return value;
 }
 
 function clampK(k: unknown): number {

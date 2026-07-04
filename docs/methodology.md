@@ -61,11 +61,21 @@ Roster hashes each tool's (name, inputSchema, description) at every connect. A c
 
 ## 8. Attribution fairness
 
-Ratings use only tool-attributable outcome classes: transport/protocol failures, tool-reported errors (`isError`), and schema-drift suspicion. Agent-side confusion — e.g. the agent re-calling a tool with adjusted arguments — is a local routing signal, never a League stat. Rationale: most in-the-wild task failures are agent-cognitive rather than tool faults ([MCP-Atlas](https://arxiv.org/abs/2602.00933) attributes 63.3% of failures to agent cognition), and a tool must not be punished for its caller's plan.
+Ratings use only tool-attributable outcome classes: transport/protocol failures, tool-reported errors (`isError`), and output-schema drift suspicion. Agent-side confusion — e.g. the agent re-calling a tool with adjusted arguments — is a local routing signal, never a League stat. Rationale: most in-the-wild task failures are agent-cognitive rather than tool faults ([MCP-Atlas](https://arxiv.org/abs/2602.00933) attributes 63.3% of failures to agent cognition), and a tool must not be punished for its caller's plan.
+
+**Input-validation rejections are explicitly non-attributable** (added after empirical review, 2026-07-04). Modern MCP servers fold JSON-RPC `-32602 Invalid params` into an `isError` result, so a tool rejecting the *caller's* malformed arguments would otherwise land as an attributable `tool_fail:schema` row and depress the tool's public Wilson score for the agent's mistake. Roster therefore treats `tool_fail:schema` as a local routing signal only, never a League stat. The distinction is directional: **input** validation failure = caller's fault (excluded); **output** schema drift (`schema_drift_suspect`) = the tool's fault (attributable).
 
 ## 9. Skills Division
 
 Skills rank with the same math — Wilson LB over distinct signed tasks — in their own division. No skill is listed before passing the Trust scan (description-poisoning heuristics, script static-scan, provenance flags). Launch-depth verification is structural + safety + behavioral; task-depth suites grow weekly under the same signing rule. **(implementation pending)**
+
+## 9a. Retrieval & learning — measured limits (honest scope)
+
+The routing ladder was benchmarked live against a 133-tool corpus over 66 ground-truthed needs (real MiniLM + Gemma inference, 2026-07-04; artifacts in `docs/lab/`). What the numbers actually say, stated so they aren't oversold:
+
+- **Hybrid fusion weights are 0.15 lexical / 0.85 cosine.** Quality rose monotonically with cosine weight and plateaued near lex 0.1–0.15; a small retained lexical weight beats pure cosine (it breaks ties on verbose/typo needs). Hybrid beats lexical-only by ~15 points hit@1/hit@5/MRR.
+- **The cosine-span abstain gate is a tiny-roster floor, not a production noise filter.** It only fires on degenerate small candidate sets (a handful of tools); at realistic scale the observed span never drops near the threshold, and it does not reject Gemma's confident-looking gibberish (whose noise geometry also clears the threshold). It is cheap and harmless, not a safety guarantee.
+- **OATS is single-centroid and success-dominant by design.** It refines a tool's vector toward the need-shapes it succeeded on, replacing the base once ≥4 attributable successes exist. Consequences, accepted for v1: learning saturates at a small outcome count; a tool used for two orthogonal purposes is pulled toward whichever it succeeds at more (no per-mode vectors); negative (failure) evidence moves rankings weakly. Per-mode / multi-centroid refinement and stronger negative weighting are post-v1 work. OATS never runs on non-attributable rows, so the input-validation exclusion in §8 also protects it from mislearning on caller-side errors.
 
 ## 10. Beyond v0.1 (explicitly not in v1)
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:57:14.890Z",
+  "generatedAt": "2026-07-04T23:45:29.798Z",
   "environment": {
     "node": "v22.22.3",
     "platform": "darwin",
@@ -19,7 +19,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 1047
+          "latencyMs": 892
         },
         {
           "taskId": "fs.read-text-file.v1",
@@ -27,7 +27,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 582
+          "latencyMs": 420
         },
         {
           "taskId": "fs.create-directory.v1",
@@ -35,7 +35,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 502
+          "latencyMs": 590
         },
         {
           "taskId": "fs.list-directory.v1",
@@ -43,7 +43,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 553
+          "latencyMs": 379
         },
         {
           "taskId": "fs.move-file.v1",
@@ -51,7 +51,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 453
+          "latencyMs": 386
         },
         {
           "taskId": "fs.get-file-info.v1",
@@ -59,7 +59,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 438
+          "latencyMs": 382
         },
         {
           "taskId": "fs.search-files.v1",
@@ -67,7 +67,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 414
+          "latencyMs": 381
         },
         {
           "taskId": "fs.list-allowed.v1",
@@ -75,7 +75,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 420
+          "latencyMs": 376
         }
       ],
       "summary": {

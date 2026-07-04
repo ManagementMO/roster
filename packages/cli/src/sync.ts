@@ -2,9 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import { sha256Hex } from "@rosterhq/coach";
-import { CLIENTS, type ClientId } from "./clients.js";
+import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
-import { backupDirFor, loadConfig, mergeServers, saveConfig } from "./rosterfile.js";
+import { atomicWriteFileSync, backupDirFor, loadConfig, mergeServers, saveConfig } from "./rosterfile.js";
 
 /** The four write clients (handoff §6.3). Read-import covers everything; writes stay narrow. */
 export const WRITE_CLIENTS: ClientId[] = ["claude-code", "cursor", "codex", "openclaw"];
@@ -44,18 +44,22 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
 
   const originalBytes = fs.readFileSync(configPath);
 
-  // Step 1 — import before we overwrite anything.
+  // Step 1 — import before we overwrite anything. ONLY the parse may fail
+  // benignly (unparseable config = nothing to import). A failure of the import
+  // SAVE must propagate: swallowing it let sync report "synced" while the
+  // user's servers were never persisted to roster.json — routed nowhere.
   let imported = 0;
+  let servers: ImportedServer[] = [];
   try {
-    const servers = spec.parse(originalBytes.toString("utf8"), configPath);
-    if (servers.length > 0) {
-      const config = loadConfig();
-      const { added } = mergeServers(config, servers);
-      if (added.length > 0) saveConfig(config);
-      imported = added.length;
-    }
+    servers = spec.parse(originalBytes.toString("utf8"), configPath);
   } catch {
-    // Unparseable config: nothing to import; the backup still protects the bytes.
+    servers = []; // unparseable: the backup still protects the original bytes
+  }
+  if (servers.length > 0) {
+    const config = loadConfig();
+    const { added } = mergeServers(config, servers);
+    if (added.length > 0) saveConfig(config);
+    imported = added.length;
   }
 
   const rewritten = rewriteConfig(clientId, originalBytes.toString("utf8"));
@@ -78,10 +82,8 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
   fs.writeFileSync(path.join(backupDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp);
 
-  // Step 3 — atomic-ish config replacement.
-  const tmpPath = `${configPath}.roster-tmp`;
-  fs.writeFileSync(tmpPath, rewritten);
-  fs.renameSync(tmpPath, configPath);
+  // Step 3 — atomic config replacement (private tmp + rename).
+  atomicWriteFileSync(configPath, rewritten);
 
   return { client: clientId, configPath, action: "synced", backupDir, imported };
 }
@@ -113,27 +115,58 @@ export interface BackupRef {
   manifest: BackupManifest;
 }
 
-export function listBackups(clientId: ClientId): BackupRef[] {
-  const clientDir = path.dirname(backupDirFor(clientId, "x"));
-  if (!fs.existsSync(clientDir)) return [];
-  const refs: BackupRef[] = [];
-  for (const entry of fs.readdirSync(clientDir)) {
-    const manifestPath = path.join(clientDir, entry, "manifest.json");
-    if (!fs.existsSync(manifestPath)) continue;
-    try {
-      refs.push({
-        dir: path.join(clientDir, entry),
-        manifest: JSON.parse(fs.readFileSync(manifestPath, "utf8")) as BackupManifest,
-      });
-    } catch {
-      // corrupt manifest: skip; eject reports if nothing usable remains
-    }
-  }
-  return refs.sort((a, b) => a.manifest.timestamp.localeCompare(b.manifest.timestamp));
+export interface RawBackup {
+  dir: string;
+  /** Directory basename = the immutable, timestamp-derived ordering key. */
+  name: string;
+  /** null when the manifest is missing or unparseable — surfaced, never skipped. */
+  manifest: BackupManifest | null;
 }
 
-/** The pristine pre-Roster snapshot: the OLDEST backup — what eject restores. */
+/**
+ * Every backup dir for a client, OLDEST FIRST by DIRECTORY NAME. Ordering must
+ * key off the immutable, timestamp-derived directory name — never a mutable
+ * manifest field — so editing a manifest can't reorder or hide a backup. A
+ * corrupt/missing manifest is returned as null (not silently dropped) so eject
+ * can refuse rather than advance to a different backup (a silent wrong-restore).
+ */
+export function rawBackups(clientId: ClientId): RawBackup[] {
+  const clientDir = path.dirname(backupDirFor(clientId, "x"));
+  if (!fs.existsSync(clientDir)) return [];
+  const out: RawBackup[] = [];
+  for (const name of fs.readdirSync(clientDir).sort()) {
+    const dir = path.join(clientDir, name);
+    try {
+      if (!fs.statSync(dir).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    let manifest: BackupManifest | null = null;
+    try {
+      manifest = JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"), "utf8")) as BackupManifest;
+    } catch {
+      manifest = null; // missing or corrupt — kept as a null slot, not skipped
+    }
+    out.push({ dir, name, manifest });
+  }
+  return out;
+}
+
+/** Backups with a valid manifest, oldest first — used for the modified-since guard. */
+export function listBackups(clientId: ClientId): BackupRef[] {
+  return rawBackups(clientId)
+    .filter((b): b is RawBackup & { manifest: BackupManifest } => b.manifest !== null)
+    .map((b) => ({ dir: b.dir, manifest: b.manifest }));
+}
+
+/** The pristine pre-Roster snapshot: the OLDEST backup dir (manifest maybe null). */
+export function pristineRawBackup(clientId: ClientId): RawBackup | null {
+  const all = rawBackups(clientId);
+  return all.length > 0 ? all[0]! : null;
+}
+
+/** Back-compat: the oldest backup only when its manifest is intact. */
 export function oldestBackup(clientId: ClientId): BackupRef | null {
-  const refs = listBackups(clientId);
-  return refs.length > 0 ? refs[0]! : null;
+  const p = pristineRawBackup(clientId);
+  return p && p.manifest ? { dir: p.dir, manifest: p.manifest } : null;
 }

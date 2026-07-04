@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { namespacedId, parseNamespacedId, sanitizeSegment, sanitizeSource } from "./namespacing.js";
+import {
+  namespacedId,
+  normalizeBackendName,
+  parseNamespacedId,
+  sanitizeSegment,
+  sanitizeSource,
+} from "./namespacing.js";
 
 describe("namespacing", () => {
   it("builds server__tool ids", () => {
@@ -16,6 +22,22 @@ describe("namespacing", () => {
     const id = namespacedId("a__b", "tool__name");
     const parsed = parseNamespacedId(id);
     expect(parsed).toEqual({ source: "a_b", name: "tool__name" });
+  });
+
+  it("a source ending in '_' can never collide with a name starting in '_'", () => {
+    // Pre-fix these both minted "a___b" and routed to the wrong backend.
+    const trailing = namespacedId("a_", "b");
+    const leading = namespacedId("a", "_b");
+    expect(trailing).not.toBe(leading);
+    // And each still round-trips to a non-empty, correctly-split identity.
+    expect(parseNamespacedId(trailing)).toEqual({ source: "a", name: "b" });
+    expect(parseNamespacedId(leading)).toEqual({ source: "a", name: "_b" });
+  });
+
+  it("normalizeBackendName applies the reserved-namespace rename deterministically", () => {
+    expect(normalizeBackendName("skill")).toBe("skill-server");
+    expect(normalizeBackendName("my server")).toBe("my-server");
+    expect(normalizeBackendName("memory")).toBe("memory");
   });
 
   it("round-trips parse", () => {

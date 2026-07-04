@@ -319,4 +319,35 @@ args = ["-y", "late-mcp"]
     expect(ejected.action).toBe("restored");
     expect(Buffer.compare(fs.readFileSync(configPath), pristineBytes)).toBe(0);
   });
+
+  it("refuses loudly when the pristine manifest is corrupt (never silently restores a different backup)", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    syncClient("codex", new Date("2026-07-05T01:00:00Z")); // pristine backup
+    // A second era backup exists (user edited, re-synced) — the wrong-restore target.
+    fs.writeFileSync(configPath, `model = "gpt-5"\n\n[mcp_servers.roster]\ncommand = "roster"\nargs = ["serve"]\n`);
+    syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    const configBefore = fs.readFileSync(configPath);
+
+    // Corrupt ONLY the OLDEST (pristine) backup's manifest.
+    const clientDir = path.join(home, ".roster/backups/codex");
+    const oldest = fs.readdirSync(clientDir).filter((d) => d !== "latest").sort()[0]!;
+    fs.writeFileSync(path.join(clientDir, oldest, "manifest.json"), "{ not valid json");
+
+    const result = ejectClient("codex");
+    expect(result.action).toBe("no-backup");
+    expect(result.detail).toContain("INTEGRITY");
+    // The rosterized config was NOT overwritten with the wrong backup's bytes.
+    expect(Buffer.compare(fs.readFileSync(configPath), configBefore)).toBe(0);
+  });
+
+  it("does not report 'synced' (or clobber the client config) when the import step genuinely fails", () => {
+    const configPath = path.join(home, ".codex/config.toml"); // beforeEach seeds context7 to import
+    // Corrupt roster.json so loadConfig() throws DURING import — previously swallowed.
+    fs.mkdirSync(path.join(home, ".roster"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".roster/roster.json"), "{ not valid json");
+
+    expect(() => syncClient("codex", new Date("2026-07-05T01:00:00Z"))).toThrow();
+    // Trust invariant: the client config is untouched — servers still route to context7, not nowhere.
+    expect(fs.readFileSync(configPath, "utf8")).toContain("context7");
+  });
 });

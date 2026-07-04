@@ -10,6 +10,7 @@ export type Verifier =
   | { kind: "fileEquals"; path: string; equals: string }
   | { kind: "fileContains"; path: string; contains: string }
   | { kind: "fileExists"; path: string }
+  | { kind: "dirExists"; path: string }
   | { kind: "fileAbsent"; path: string }
   | { kind: "resultContains"; contains: string };
 
@@ -32,7 +33,14 @@ export interface Suite {
   tasks: CombineTask[];
 }
 
-const VERIFIER_KINDS = new Set(["fileEquals", "fileContains", "fileExists", "fileAbsent", "resultContains"]);
+const VERIFIER_KINDS = new Set([
+  "fileEquals",
+  "fileContains",
+  "fileExists",
+  "dirExists",
+  "fileAbsent",
+  "resultContains",
+]);
 
 export function parseSuite(yamlContent: string): Suite {
   const raw = parseYaml(yamlContent) as Record<string, unknown>;
@@ -75,7 +83,7 @@ function parseTask(raw: Record<string, unknown>, category: string, index: number
     } else if (kind === "fileContains") {
       requireField("path");
       requireField("contains");
-    } else if (kind === "fileExists" || kind === "fileAbsent") {
+    } else if (kind === "fileExists" || kind === "dirExists" || kind === "fileAbsent") {
       requireField("path");
     } else if (kind === "resultContains") {
       requireField("contains");

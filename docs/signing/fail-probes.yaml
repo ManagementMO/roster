@@ -32,12 +32,12 @@ tasks:
       - { kind: resultContains, contains: "SABOTAGE-{{run_id}}-never-present" }
 
   - id: fs.create-directory.v1.failprobe
-    description: "PROBE: fileExists must reject a never-created path"
+    description: "PROBE: dirExists must reject a never-created path"
     invoke:
       tool: create_directory
       args: { path: "{{sandbox}}/newdir-{{run_id}}" }
     verify:
-      - { kind: fileExists, path: "never-created-{{run_id}}" }
+      - { kind: dirExists, path: "never-created-{{run_id}}" }
 
   - id: fs.list-directory.v1.failprobe
     description: "PROBE: listing verifier must reject a file that is not there"

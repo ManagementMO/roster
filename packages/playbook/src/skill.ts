@@ -35,6 +35,10 @@ export function parseSkillMd(
   slug: string,
   dir: string,
 ): Omit<ParsedSkill, "resources" | "scripts"> | null {
+  // A leading UTF-8 BOM sits before the "---", so ^--- never matches and the
+  // ENTIRE frontmatter is silently voided (name→slug, description→""). Strip it
+  // before parsing; String.trim() later hides the BOM, so this is invisible otherwise.
+  if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
   const match = FRONTMATTER.exec(content);
   let frontmatter: Record<string, unknown> = {};
   let body = content;

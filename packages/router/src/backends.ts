@@ -4,7 +4,7 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import type { CallEvidence } from "@rosterhq/coach";
 import type { CapabilityEntry } from "@rosterhq/shared";
-import { namespacedId, sanitizeSource } from "@rosterhq/shared";
+import { namespacedId, normalizeBackendName } from "@rosterhq/shared";
 
 export interface StdioBackendConfig {
   name: string;
@@ -46,10 +46,11 @@ export class BackendManager {
   constructor(private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS) {}
 
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
-    let name = sanitizeSource(config.name);
-    // "skill" is the Playbook's reserved namespace; and two configured names
-    // must never silently collapse onto one key after sanitization.
-    if (name === "skill") name = "skill-server";
+    // normalizeBackendName = sanitize + reserved-namespace rename; serve reuses
+    // the SAME helper to protect an unavailable backend's learned state, so the
+    // keys can never drift apart. Two configured names that collapse to one base
+    // get a "-N" suffix here so they never share a source key.
+    let name = normalizeBackendName(config.name);
     let suffix = 2;
     const base = name;
     while (this.backends.has(name)) name = `${base}-${suffix++}`;
@@ -138,6 +139,14 @@ export class BackendManager {
       if (err instanceof McpError) {
         if (err.code === ErrorCode.RequestTimeout) {
           return { result: null, evidence: { timedOut: true }, latencyMs };
+        }
+        // A server that dies mid-call surfaces as McpError ConnectionClosed
+        // (-32000), not a stream break — but it IS a transport death, not a
+        // protocol fault. Classifying it as transport also re-arms the Sixth
+        // Man, which keys on hard_fail:transport and would otherwise go silent
+        // exactly when a backend crashes and an alternate would help most.
+        if (err.code === ErrorCode.ConnectionClosed) {
+          return { result: null, evidence: { transportError: true, errorText: err.message }, latencyMs };
         }
         return {
           result: null,

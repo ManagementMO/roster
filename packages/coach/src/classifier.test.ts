@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyOutcome, classifyToolFailKind } from "./classifier.js";
+import { classifyOutcome, classifyToolFailKind, isAttributable } from "./classifier.js";
 
 describe("classifyOutcome precedence", () => {
   it("transport beats everything", () => {
@@ -53,5 +53,19 @@ describe("classifyToolFailKind ordering", () => {
   it("timeout phrasings", () => {
     expect(classifyToolFailKind("request timed out after 30s")).toBe("timeout");
     expect(classifyToolFailKind("ETIMEDOUT")).toBe("timeout");
+  });
+});
+
+describe("attribution fairness (methodology §8)", () => {
+  it("input-validation rejections do NOT ding a tool's public score", () => {
+    // Modern servers fold JSON-RPC -32602 into isError text → tool_fail:schema;
+    // that's the caller's malformed args, not a tool defect.
+    expect(isAttributable("tool_fail:schema")).toBe(false);
+  });
+  it("genuine faults stay attributable", () => {
+    expect(isAttributable("success")).toBe(true);
+    expect(isAttributable("hard_fail:transport")).toBe(true);
+    expect(isAttributable("tool_fail:internal")).toBe(true);
+    expect(isAttributable("schema_drift_suspect")).toBe(true); // OUTPUT drift = tool's fault
   });
 });

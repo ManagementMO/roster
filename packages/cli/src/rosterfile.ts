@@ -1,8 +1,32 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import type { ImportedServer } from "./clients.js";
 import { rosterConfigPath, rosterHome } from "./paths.js";
+
+/**
+ * Atomic write via a PRIVATE tmp + rename. The tmp name must be unique per
+ * writer: a shared "<target>.tmp" let two concurrent writers truncate each
+ * other's file (torn/corrupt output) and race the rename to ENOENT — measured
+ * at 56.8% crash / occasional permanent corruption. pid + random makes the tmp
+ * this write's alone; the rename is the only publish. Cross-process
+ * last-writer-wins on the target is expected; a half-written target is not.
+ */
+export function atomicWriteFileSync(target: string, data: string | Buffer): void {
+  const tmp = `${target}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+  try {
+    fs.writeFileSync(tmp, data);
+    fs.renameSync(tmp, target);
+  } catch (err) {
+    try {
+      fs.rmSync(tmp, { force: true });
+    } catch {
+      /* best effort: the failing write is what matters */
+    }
+    throw err;
+  }
+}
 
 export interface RosterServerEntry {
   command?: string;
@@ -58,11 +82,9 @@ export function loadConfig(): RosterConfig {
 
 export function saveConfig(config: RosterConfig): void {
   fs.mkdirSync(rosterHome(), { recursive: true });
-  // tmp + rename: a serve booting mid-write must never read truncated JSON.
-  const target = rosterConfigPath();
-  const tmp = `${target}.tmp`;
-  fs.writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`);
-  fs.renameSync(tmp, target);
+  // Private-tmp + rename: a serve booting mid-write, or a sibling writer, must
+  // never read truncated JSON or clobber the tmp mid-flight.
+  atomicWriteFileSync(rosterConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
 }
 
 /**

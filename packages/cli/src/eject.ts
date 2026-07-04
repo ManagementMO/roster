@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import type { ClientId } from "./clients.js";
-import { backupDirFor } from "./rosterfile.js";
-import { listBackups, oldestBackup } from "./sync.js";
+import { atomicWriteFileSync, backupDirFor } from "./rosterfile.js";
+import { listBackups, pristineRawBackup } from "./sync.js";
 
 export interface EjectResult {
   client: ClientId;
@@ -22,15 +22,28 @@ export interface EjectResult {
  * a fresh pristine — sync→eject cycles can never destroy in-between changes.
  */
 export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}): EjectResult {
-  const pristine = oldestBackup(clientId);
+  const pristine = pristineRawBackup(clientId);
   if (!pristine) return { client: clientId, action: "no-backup" };
-  const targetPath = pristine.manifest.sourcePath;
+  // The OLDEST backup's manifest is missing or corrupt. Advancing to a newer
+  // backup would silently restore the WRONG (user-edited, still-rosterized)
+  // bytes — the measured 1-byte-tamper wrong-restore. Refuse loudly instead;
+  // no --force can conjure a manifest we can trust to identify the pristine.
+  if (!pristine.manifest) {
+    return {
+      client: clientId,
+      action: "no-backup",
+      detail:
+        "BACKUP INTEGRITY FAILURE: the pristine backup's manifest is missing or corrupt — refusing to restore a different backup; inspect the backup dir",
+    };
+  }
+  const manifest = pristine.manifest;
+  const targetPath = manifest.sourcePath;
   // Config paths can be cwd-dependent; the guard must compare against the
   // latest write to the SAME file, never a different candidate path.
   const latest =
     listBackups(clientId)
       .filter((b) => b.manifest.sourcePath === targetPath)
-      .pop() ?? pristine;
+      .pop() ?? { dir: pristine.dir, manifest };
 
   const originalPath = path.join(pristine.dir, "original");
   if (!fs.existsSync(originalPath)) {
@@ -60,7 +73,7 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   }
 
   const originalBytes = fs.readFileSync(originalPath);
-  if (sha256Hex(originalBytes) !== pristine.manifest.originalSha256) {
+  if (sha256Hex(originalBytes) !== manifest.originalSha256) {
     return {
       client: clientId,
       action: "no-backup",
@@ -71,9 +84,7 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   }
 
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  const tmpPath = `${targetPath}.roster-tmp`;
-  fs.writeFileSync(tmpPath, originalBytes);
-  fs.renameSync(tmpPath, targetPath);
+  atomicWriteFileSync(targetPath, originalBytes);
   archiveEra(clientId);
   return { client: clientId, action: "restored", configPath: targetPath };
 }

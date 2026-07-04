@@ -1,6 +1,6 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CoachStore, openCoachDb, TransformersEmbeddings } from "@rosterhq/coach";
-import { sanitizeSource } from "@rosterhq/shared";
+import { normalizeBackendName } from "@rosterhq/shared";
 import { defaultSkillSources, scanSkillSources } from "@rosterhq/playbook";
 import { BackendManager, RosterServer, type RouterMode } from "@rosterhq/router";
 import { coachDbPath, homeDir } from "./paths.js";
@@ -18,17 +18,21 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   const store = new CoachStore(openCoachDb(coachDbPath()));
   const manager = new BackendManager();
 
+  // Protect under the SAME key the router stores capabilities: normalizeBackendName
+  // (sanitize + reserved-word rename), not raw sanitizeSource. The mismatch made
+  // a backend configured as e.g. "skill" (stored as skill-server__*) lose ALL its
+  // learned state on its first unavailable boot despite the "preserved" promise.
   const unavailable = new Set<string>();
   for (const [name, entry] of Object.entries(config.servers)) {
     if (!entry.command) {
       process.stderr.write(`roster: skipping "${name}" (url backends land post-launch; stdio only for now)\n`);
-      unavailable.add(sanitizeSource(name));
+      unavailable.add(normalizeBackendName(name));
       continue;
     }
     try {
       await manager.connect({ name, command: entry.command, args: entry.args, env: entry.env });
     } catch (err) {
-      unavailable.add(sanitizeSource(name));
+      unavailable.add(normalizeBackendName(name));
       process.stderr.write(
         `roster: backend "${name}" failed to connect (its learned state is preserved): ${err instanceof Error ? err.message : err}\n`,
       );

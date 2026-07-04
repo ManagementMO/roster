@@ -47,8 +47,17 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
   return "other";
 }
 
-/** Only these classes may ever feed a rating; soft_fail and explored rows never do. */
+/**
+ * Only these classes may ever feed a rating; soft_fail and explored rows never
+ * do. `tool_fail:schema` is deliberately EXCLUDED: an input-validation rejection
+ * is dominantly the caller's malformed args, not a tool defect (methodology §8,
+ * "a tool must not be punished for its caller's plan"), and modern MCP servers
+ * fold JSON-RPC -32602 "invalid params" into isError text — so counting it would
+ * ding a tool's public Wilson score for the agent's mistake. Genuine OUTPUT
+ * drift (`schema_drift_suspect`) stays attributable: that IS the tool's fault.
+ */
 export function isAttributable(cls: OutcomeClass): boolean {
+  if (cls === "tool_fail:schema") return false;
   return (
     cls === "success" ||
     cls.startsWith("hard_fail:") ||

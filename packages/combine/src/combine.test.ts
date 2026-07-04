@@ -23,7 +23,7 @@ tasks:
       args: { path: "out/hello-{{run_id}}.txt", content: "hello combine" }
     verify:
       - { kind: fileEquals, path: "out/hello-{{run_id}}.txt", equals: "hello combine" }
-      - { kind: fileExists, path: "out" }
+      - { kind: dirExists, path: "out" }
   - id: fs.read-seeded
     description: read a seeded file back
     setup:
@@ -92,6 +92,40 @@ describe("runner against a real stdio server", () => {
     expect(byId["fs.read-seeded"]).toMatchObject({ pass: true });
     expect(byId["fs.failure-is-a-failure"]).toMatchObject({ pass: false, stage: "invoke" });
     expect(byId["fs.verify-catches-wrong-state"]).toMatchObject({ pass: false, stage: "verify" });
+  }, 30_000);
+
+  it("distinguishes a directory from a regular file (dirExists vs fileExists)", async () => {
+    // A server that writes a FILE must NOT certify a task expecting a DIRECTORY,
+    // and vice-versa — the create_directory certification hole.
+    const typesSuite = parseSuite(`
+suite: types
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: ok.dir-and-file
+    invoke: { tool: write_file, args: { path: "d/f-{{run_id}}.txt", content: "x" } }
+    verify:
+      - { kind: dirExists, path: "d" }
+      - { kind: fileExists, path: "d/f-{{run_id}}.txt" }
+  - id: bad.file-cannot-satisfy-dir
+    invoke: { tool: write_file, args: { path: "g-{{run_id}}.txt", content: "x" } }
+    verify:
+      - { kind: dirExists, path: "g-{{run_id}}.txt" }
+  - id: bad.dir-cannot-satisfy-file
+    invoke: { tool: write_file, args: { path: "e/f-{{run_id}}.txt", content: "x" } }
+    verify:
+      - { kind: fileExists, path: "e" }
+`);
+    const run = await runSuite(typesSuite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+    const byId = Object.fromEntries(run.results.map((r) => [r.taskId, r]));
+    expect(byId["ok.dir-and-file"]).toMatchObject({ pass: true });
+    expect(byId["bad.file-cannot-satisfy-dir"]).toMatchObject({ pass: false, stage: "verify" });
+    expect(byId["bad.dir-cannot-satisfy-file"]).toMatchObject({ pass: false, stage: "verify" });
   }, 30_000);
 
   it("summarizes into lab-results with Wilson and signed separation", async () => {

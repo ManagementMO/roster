@@ -17,7 +17,8 @@
 | Dense rung — MiniLM live (real inference) | **verified** (hybrid fusion + OATS: cos ~0 → 0.491 after 4 real outcomes) |
 | Dense rung — Gemma via real `roster serve` | **verified**: auto-selected, downloaded in background, **warm in ~40s, 256-dim, drafts never blocked, memory tool #1 post-warm** |
 | Trust laws (privacy/telemetry-off/suggest-only/eject) | **verified by 3 independent reviewers + hostile QA** |
-| Experiment swarm (16 charters — real models/servers/processes) | **15/16 reported · 100 findings recorded** (58/70 verifiers died on a session limit → most findings unverified) · digest: `docs/lab/campaign-digest.md` · **fix wave pending your go** |
+| Experiment swarm (16 charters — real models/servers/processes) | **15/16 reported · 100 findings recorded** · digest: `docs/lab/campaign-digest.md` |
+| Fix wave from swarm findings | **DONE** — every real bug fixed + regression-tested (120 tests), live paths re-verified · record: `docs/lab/fixes-applied.md` · ⚠️ one reversible policy change flagged below |
 
 **Answer to your question "is the dense-embedding path fully implemented and working?" — YES, now.** Both models live-verified end-to-end, plus this sweep hardened it: model-switch guard (stale learned vectors are wiped when the embedding model changes — previously they silently poisoned rankings and could read out-of-bounds memory), Gemma's mandated prompt prefixes added, real ONNX session disposal on idle (previously ~300MB waited on GC), bounded warmup retries with backoff (no more download-restart storms), chunked backfill for big rosters, and hybrid fusion made **signal-adaptive** (cosine channel min-max scaled per draft; when its span is noise-level the dense channel abstains and lexical decides — live-proven both ways: abstains on MiniLM blur, governs after OATS refinement).
 
@@ -37,6 +38,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 | **P4** | Combine signing | 🔶 **Partial** — you sign later, and I've shrunk the session to **~15–20 min**: `docs/signing/session-1-checklist.md` (one pass run, one ready-made fail-probe run, flip, PROVENANCE entry). I cannot flip `signed: true` myself — human-signed-only is a law and agent-signing would falsify the provenance the League sells; the checklist header explains |
 | **P5** | Next build | ✅ **Resolved: League site** — shipped in `apps/league` (its own top-level home for the frontend extension; static, artifact-driven, methodology rules enforced in code) |
 | **P6** | Launch-day rollout shape | ⏳ **Open**: one big drop · staged over 2–3 days (my rec: staged — repo+receipt day 1, League reveal day 2). Decide any time before Jul 28 |
+| **P7** | Attribution policy (from the fix wave) | ⏳ **Confirm/veto**: I made input-validation rejections (`tool_fail:schema`) **non-attributable** — modern servers fold "invalid params" into an error result, so counting it would ding a tool's public score for the *agent's* malformed args (methodology §8's own principle). Output-schema drift still counts. Reversible one-liner + doc if you'd rather keep all errors attributable |
 
 ---
 

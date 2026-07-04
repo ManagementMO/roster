@@ -27,12 +27,12 @@ tasks:
       - { kind: resultContains, contains: "needle-{{run_id}}" }
 
   - id: fs.create-directory.v1
-    description: create a directory; verify it exists (server does not mkdir -p)
+    description: create a directory; verify a DIRECTORY (not a file) exists at the path
     invoke:
       tool: create_directory
       args: { path: "{{sandbox}}/newdir-{{run_id}}" }
     verify:
-      - { kind: fileExists, path: "newdir-{{run_id}}" }
+      - { kind: dirExists, path: "newdir-{{run_id}}" }
 
   - id: fs.list-directory.v1
     description: list a seeded directory; result must name the seeded file

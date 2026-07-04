@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:57:30.533Z",
+  "generatedAt": "2026-07-04T23:45:33.569Z",
   "environment": {
     "node": "v22.22.3",
     "platform": "darwin",
@@ -8,7 +8,7 @@
   "environmentDigest": "8259cf58a5756d5a236678b35bdddfcd9345cdd3c31828f024f2cd1338f42e30",
   "runs": [
     {
-      "server": "filesystem-failprobe",
+      "server": "failprobe",
       "suite": "filesystem-core-failprobes",
       "suiteVersion": "0.1.0-failprobe",
       "category": "filesystem",
@@ -19,7 +19,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "content mismatch in combine-{{run_id}}.txt",
-          "latencyMs": 580
+          "latencyMs": 382
         },
         {
           "taskId": "fs.read-text-file.v1.failprobe",
@@ -27,15 +27,15 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 439
+          "latencyMs": 411
         },
         {
           "taskId": "fs.create-directory.v1.failprobe",
           "signed": false,
           "pass": false,
           "stage": "verify",
-          "detail": "expected never-created-{{run_id}} to exist",
-          "latencyMs": 500
+          "detail": "expected directory never-created-{{run_id}} to exist",
+          "latencyMs": 401
         },
         {
           "taskId": "fs.list-directory.v1.failprobe",
@@ -43,7 +43,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 470
+          "latencyMs": 386
         },
         {
           "taskId": "fs.move-file.v1.failprobe",
@@ -51,7 +51,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "expected dst-{{run_id}}.txt to be absent",
-          "latencyMs": 447
+          "latencyMs": 378
         },
         {
           "taskId": "fs.get-file-info.v1.failprobe",
@@ -59,7 +59,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 470
+          "latencyMs": 628
         },
         {
           "taskId": "fs.search-files.v1.failprobe",
@@ -67,7 +67,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 456
+          "latencyMs": 657
         },
         {
           "taskId": "fs.list-allowed.v1.failprobe",
@@ -75,7 +75,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 424
+          "latencyMs": 375
         }
       ],
       "summary": {

@@ -1,14 +1,14 @@
-# Dense rung live verification — 2026-07-04T16:59:49.033Z
+# Dense rung live verification — 2026-07-04T23:48:32.645Z
 model: Xenova/all-MiniLM-L6-v2 (real download + inference via transformers.js)
 
 ## 1. Real embeddings load and run (background-fetch path)
-  embedded 4 tool texts in 165ms (includes first-run model fetch if uncached)
+  embedded 4 tool texts in 157ms (includes first-run model fetch if uncached)
   ✓ MiniLM vectors kept at native 384 dims (Matryoshka truncation is Gemma-only — live-verified fix)
 
 ## 2. Semantic beats lexical: paraphrased need, zero token overlap
-  lexical-only order:  memory__search_nodes, fs__read_text_file, memory__create_entities, web__fetch_page
-  hybrid (dense) order: memory__search_nodes, fs__read_text_file, memory__create_entities, web__fetch_page
-  observed cosine span: 0.041 (< 0.15 ⇒ dense abstains by design)
+  lexical-only order:  memory__create_entities, memory__search_nodes, fs__read_text_file, web__fetch_page
+  hybrid (dense) order: memory__create_entities, memory__search_nodes, fs__read_text_file, web__fetch_page
+  observed cosine span: 0.000 (< 0.15 ⇒ dense abstains by design)
   ✓ uninformative dense channel abstains — hybrid order equals lexical exactly
 
 ## 3. OATS refinement from real outcome vectors shifts ranking
