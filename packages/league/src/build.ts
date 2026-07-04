@@ -26,7 +26,9 @@ function loadTaskDescriptions(suitesDir: string): Map<string, string> {
     if (!fs.existsSync(file)) continue;
     try {
       const suite = parseSuite(fs.readFileSync(file, "utf8"));
-      for (const task of suite.tasks) out.set(task.id, task.description);
+      for (const task of suite.tasks) {
+        if (task.description !== undefined) out.set(task.id, task.description);
+      }
     } catch {
       // Descriptions are cosmetic; a malformed suite must not block standings.
     }
