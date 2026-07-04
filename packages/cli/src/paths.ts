@@ -10,10 +10,6 @@ export function rosterHome(): string {
   return process.env.ROSTER_HOME ?? path.join(homeDir(), ".roster");
 }
 
-export function backupsDir(): string {
-  return path.join(rosterHome(), "backups");
-}
-
 export function rosterConfigPath(): string {
   return path.join(rosterHome(), "roster.json");
 }

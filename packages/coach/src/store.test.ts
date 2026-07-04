@@ -207,6 +207,24 @@ describe("outcomes, soft-fail, ratings", () => {
   });
 });
 
+describe("runMaintenanceIfDue (the nightly job)", () => {
+  it("runs once, is debounced, and actually populates ratings", () => {
+    store.upsertCapabilities([tool("fs__read_file", "read_file", "Read a file")]);
+    for (let i = 0; i < 6; i++) {
+      store.recordOutcome({ session: `s${i}`, source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 20 });
+    }
+    const t0 = 1_000_000_000_000;
+    const first = store.runMaintenanceIfDue(20 * 3600 * 1000, t0);
+    expect(first.ran).toBe(true);
+    expect(store.getRating("fs__read_file")?.n).toBe(6);
+
+    // Debounced: a second call an hour later does nothing.
+    expect(store.runMaintenanceIfDue(20 * 3600 * 1000, t0 + 3600 * 1000).ran).toBe(false);
+    // Due again after the interval.
+    expect(store.runMaintenanceIfDue(20 * 3600 * 1000, t0 + 21 * 3600 * 1000).ran).toBe(true);
+  });
+});
+
 describe("Sixth Man suggestion logging", () => {
   it("records suggestions and flips taken when the agent follows one", () => {
     store.recordSuggestion("s1", "alpha__flaky", "beta__echo");

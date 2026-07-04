@@ -12,6 +12,7 @@ import { classifyOutcome, hashArgs, hashNeed } from "@rosterhq/coach";
 import type { ParsedSkill } from "@rosterhq/playbook";
 import { skillInvocationResult, skillToCapabilityEntry } from "@rosterhq/playbook";
 import type { CapabilityEntry, OutcomeClass } from "@rosterhq/shared";
+import { parseNamespacedId } from "@rosterhq/shared";
 import type { BackendManager } from "./backends.js";
 import { toCard } from "./cards.js";
 
@@ -165,14 +166,11 @@ export class RosterServer {
     if (!target) {
       throw new McpError(ErrorCode.InvalidParams, `Unknown tool: ${namespacedName}`);
     }
-    const entry = this.manager
-      .allTools()
-      .find((t) => t.id === namespacedName);
     const outcome = await this.manager.call(
       target.backend,
       target.toolName,
       args,
-      entry?.outputSchema,
+      target.entry.outputSchema,
     );
     this.record(namespacedName, target.backend, outcome.evidence, outcome.latencyMs, args, null);
     if (outcome.result) return outcome.result;
@@ -214,6 +212,8 @@ export class RosterServer {
     const draftId = `d${++this.draftCounter}`;
     this.drafts.set(draftId, { need, needHash, rankedIds: candidates.map((c) => c.entry.id) });
     this.lastDraftId = draftId;
+    // Keep only the most recent drafts so a long-lived connection doesn't grow
+    // unbounded; 16 comfortably covers an agent's parallel in-flight drafts.
     if (this.drafts.size > 16) {
       const oldest = this.drafts.keys().next().value;
       if (oldest) this.drafts.delete(oldest);
@@ -266,8 +266,7 @@ export class RosterServer {
 
     const target = this.manager.lookup(id);
     if (!target) throw new McpError(ErrorCode.InvalidParams, `Unknown capability: ${id}`);
-    const entry = this.manager.allTools().find((t) => t.id === id);
-    const outcome = await this.manager.call(target.backend, target.toolName, callArgs, entry?.outputSchema);
+    const outcome = await this.manager.call(target.backend, target.toolName, callArgs, target.entry.outputSchema);
     const cls = this.record(
       id,
       target.backend,
@@ -306,13 +305,16 @@ export class RosterServer {
     args: Record<string, unknown> | undefined,
   ): { tool: string; reason: string; args_compatible: boolean } | null {
     if (!draft) return null;
-    const failedSource = failedId.split("__")[0];
+    const failedSource = parseNamespacedId(failedId)?.source;
     for (const candidateId of draft.rankedIds) {
       if (candidateId === failedId) continue;
-      if (candidateId.split("__")[0] === failedSource) continue;
+      // A useful alternate comes from a DIFFERENT server (same-server retry
+      // rarely helps when the server itself failed).
+      if (parseNamespacedId(candidateId)?.source === failedSource) continue;
       if (this.skills.has(candidateId)) continue;
-      const entry = this.manager.allTools().find((t) => t.id === candidateId);
-      if (!entry) continue;
+      const found = this.manager.lookup(candidateId);
+      if (!found) continue;
+      const entry = found.entry;
       let compatible = false;
       try {
         if (entry.inputSchema) {

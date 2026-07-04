@@ -19,9 +19,20 @@ const HELP = `roster — the tool router for AI agents
                               restore original configs byte-for-byte from backup
   roster serve [--five|--transparent]
                               run the router over stdio (default mode: transparent)
+  roster unquarantine <id>    clear a drift-quarantined capability so it can be drafted again
+  roster combine run <suite.yaml> --name <server> -- <command> [args…]
+                              probe a server against a Combine suite → lab-results.json
   roster telemetry [status|on|off]
                               local-first, OFF by default; no endpoint exists yet
 `;
+
+function assertWriteClient(id: string | undefined): ClientId | undefined {
+  if (id === undefined) return undefined;
+  if (!(WRITE_CLIENTS as string[]).includes(id)) {
+    throw new Error(`unknown --client "${id}" (write clients: ${WRITE_CLIENTS.join(", ")})`);
+  }
+  return id as ClientId;
+}
 
 async function main(): Promise<number> {
   const [, , command, ...rest] = process.argv;
@@ -48,7 +59,7 @@ async function main(): Promise<number> {
     }
 
     case "sync": {
-      const only = flagValue("--client") as ClientId | undefined;
+      const only = assertWriteClient(flagValue("--client"));
       const targets = only ? [only] : WRITE_CLIENTS;
       for (const client of targets) {
         const result = syncClient(client);
@@ -64,21 +75,38 @@ async function main(): Promise<number> {
     }
 
     case "eject": {
-      const only = flagValue("--client") as ClientId | undefined;
+      const only = assertWriteClient(flagValue("--client"));
       const targets = only ? [only] : WRITE_CLIENTS;
       let failures = 0;
+      let restored = 0;
       for (const client of targets) {
         const result = ejectClient(client, { force: flags.has("--force") });
         if (result.action === "restored") {
+          restored++;
           process.stdout.write(`restored ${client}  ${result.configPath}${result.detail ? `  ${result.detail}` : ""}\n`);
         } else if (result.action === "no-backup") {
-          process.stdout.write(`skipped  ${client}  no backup recorded\n`);
+          process.stdout.write(`skipped  ${client}  ${result.detail ?? "no backup recorded"}\n`);
         } else {
           failures++;
           process.stdout.write(`REFUSED  ${client}  ${result.detail}\n`);
         }
       }
+      if (targets.length > 1) process.stdout.write(`\n${restored} restored, ${failures} refused\n`);
       return failures > 0 ? 1 : 0;
+    }
+
+    case "unquarantine": {
+      const id = rest.find((a) => !a.startsWith("--"));
+      if (!id) {
+        process.stdout.write("usage: roster unquarantine <capability-id>\n");
+        return 1;
+      }
+      const { CoachStore, openCoachDb } = await import("@rosterhq/coach");
+      const { coachDbPath } = await import("./paths.js");
+      const store = new CoachStore(openCoachDb(coachDbPath()));
+      store.clearQuarantine(id);
+      process.stdout.write(`cleared quarantine for ${id} (it can be drafted again)\n`);
+      return 0;
     }
 
     case "serve":

@@ -4,10 +4,10 @@
  * the receipt's integrity law forbids presenting it as an exact count.
  */
 export function estimateTokens(text: string): number {
-  if (text.length === 0) return 0;
-  return Math.ceil(text.length / 4);
+  return estimateTokensFromChars(text.length);
 }
 
-export function estimateTokensForJson(value: unknown): number {
-  return estimateTokens(JSON.stringify(value) ?? "");
+/** Same estimate from a known character count — avoids allocating a huge string just to divide by 4. */
+export function estimateTokensFromChars(chars: number): number {
+  return chars <= 0 ? 0 : Math.ceil(chars / 4);
 }

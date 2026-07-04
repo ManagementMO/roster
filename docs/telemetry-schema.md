@@ -5,7 +5,7 @@ This file is the schema of record for Roster's opt-in telemetry. If an event isn
 ## The stance
 
 - **OFF by default.** A fresh install sends nothing, ever. Before launch, the OFF default is verified by packet capture, and that verification is part of the release checklist.
-- **Opt-in only.** Upload happens only after an explicit `roster telemetry on`. `roster telemetry status` prints this schema and exactly what would be sent; `roster telemetry off` stops it.
+- **Opt-in only.** Upload happens only after an explicit `roster telemetry on`. `roster telemetry status` prints your current setting and points here for the exact schema and what would be sent; `roster telemetry off` stops it.
 - **Local-first.** All outcome data collects on your own disk regardless, and the Coach's learning runs entirely locally. Telemetry adds nothing you need — it exists solely to feed the League's observational (Street) statistics, and it is anonymized and thresholded as described below.
 - **The upload endpoint does not exist yet.** It is stubbed in code and will not be stood up without owner approval. Today, nothing leaves your machine even with telemetry switched on.
 
@@ -57,4 +57,4 @@ Below threshold, nothing about that pair appears publicly — no partial rows, n
 
 ## Versioning promise
 
-The schema lives here, in the repo, versioned with the code. Any change — field added, removed, or redefined — bumps `v` and is announced before shipping. `roster telemetry status` always prints the schema actually in effect, so what the docs say and what the binary does can be compared at any time.
+The schema lives here, in the repo, versioned with the code. Any change — field added, removed, or redefined — bumps `v` and is announced before shipping. this file is the schema of record, versioned with the code, so what the docs say and what the binary sends can be compared at any time.

@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { estimateTokens } from "@rosterhq/shared";
+import { estimateTokensFromChars } from "@rosterhq/shared";
 import { openclawInjectionChars, type ParsedSkill } from "@rosterhq/playbook";
 import type { Discovery } from "./clients.js";
 import { receiptPath, rosterHome } from "./paths.js";
@@ -56,9 +56,7 @@ export function buildReceipt(discoveries: Discovery[], skills: ParsedSkill[], tr
     skills: {
       count: skills.length,
       trustReview,
-      openclaw: hasOpenclaw
-        ? { chars, estTokens: estimateTokens("x".repeat(chars)) }
-        : null,
+      openclaw: hasOpenclaw ? { chars, estTokens: estimateTokensFromChars(chars) } : null,
     },
     methodology:
       "Counts are read from your configs. Token figures are estimates (~4 chars/token, ±15%). OpenClaw skill-injection chars follow its deterministic <available_skills> formula.",

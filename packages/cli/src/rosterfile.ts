@@ -36,8 +36,24 @@ export function defaultConfig(): RosterConfig {
 export function loadConfig(): RosterConfig {
   const p = rosterConfigPath();
   if (!fs.existsSync(p)) return defaultConfig();
-  const parsed = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RosterConfig>;
-  return { ...defaultConfig(), ...parsed, telemetry: { enabled: parsed.telemetry?.enabled ?? false } };
+  let parsed: Partial<RosterConfig>;
+  try {
+    parsed = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RosterConfig>;
+  } catch (err) {
+    throw new Error(`~/.roster/roster.json is malformed JSON: ${err instanceof Error ? err.message : err}`);
+  }
+  const base = defaultConfig();
+  // Normalize each field so a hand-edited null/wrong-type can't crash serve.
+  return {
+    ...base,
+    ...parsed,
+    servers:
+      parsed.servers && typeof parsed.servers === "object" ? parsed.servers : base.servers,
+    skillSources: Array.isArray(parsed.skillSources) ? parsed.skillSources : base.skillSources,
+    telemetry: { enabled: parsed.telemetry?.enabled === true },
+    embeddings: parsed.embeddings === "off" ? "off" : "auto",
+    mode: parsed.mode === "five" ? "five" : "transparent",
+  };
 }
 
 export function saveConfig(config: RosterConfig): void {

@@ -31,7 +31,7 @@ Why this key: it is humble with small samples by construction — a perfect scor
 
 Every published number carries its tier.
 
-- **Lab (controlled).** Results from the Combine: standardized, category-specific task suites, identical for every server in the category. Write-capable suites run **only** against sandboxed self-hosted instances (per-server docker-compose environments, seeded to a known state). Read-only live suites (search/fetch/list) may probe live endpoints at most once per server per week, with an identifiable User-Agent and opt-out honored. Verification is programmatic state checking — a verify script exits 0 or it doesn't; no LLM judge. Every result pins its suite version and environment digest, and the harness is open source, so third parties (including server authors, via `roster combine self`) can reproduce runs.
+- **Lab (controlled).** Results from the Combine: standardized, category-specific task suites, identical for every server in the category. Write-capable suites run **only** against sandboxed self-hosted instances (per-server docker-compose environments, seeded to a known state). Read-only live suites (search/fetch/list) may probe live endpoints at most once per server per week, with an identifiable User-Agent and opt-out honored. Verification is programmatic state checking — a verify script exits 0 or it doesn't; no LLM judge. Every result pins its suite version and environment digest, and the harness is open source, so third parties can reproduce runs (a first-class `roster combine self` for authors is planned).
 - **Street (observational).** Opt-in, k-anonymous field telemetry (schema: [telemetry-schema.md](telemetry-schema.md)): in-the-wild outcome classes, latency buckets, drift incidents, usage share. Always labeled observational; never mixed into Lab standings. Publishes only past **≥5 distinct installs and ≥200 calls per (server, category)**. The pipeline ships before the table: the public Street table activates only when real data crosses those thresholds. **(implementation pending)**
 - **Universal protocol checks.** Baseline conformance checks every listed server runs regardless of category: transport behavior, handshake, schema validity, error semantics. **(implementation pending)**
 
@@ -47,7 +47,7 @@ Certification pipeline: (1) an agent drafts the task and its verify script; (2) 
 
 - **Named at launch: top tiers only.** Strong performers are named; everyone else appears inside anonymized distribution statistics (the shape of the field, not names).
 - **Author reply window.** Before any below-top-tier named publication, the server's author receives the full results with reproduction instructions and a **14-day reply window**. Named-bottom placements happen only after that window has run — never on day one.
-- Server authors can run the exact suites themselves (`roster combine self`) before and after listing.
+- Server authors will be able to run the exact suites themselves before and after listing (a dedicated `roster combine self` is planned; today `roster combine run` works against any server).
 
 ## 6. Drift events
 

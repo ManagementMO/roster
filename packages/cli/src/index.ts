@@ -10,6 +10,6 @@ export {
   serverIdentity,
   type RosterConfig,
 } from "./rosterfile.js";
-export { latestBackup, syncClient, WRITE_CLIENTS, type SyncResult } from "./sync.js";
+export { syncClient, WRITE_CLIENTS, type SyncResult } from "./sync.js";
 export { init } from "./init.js";
 export { serve } from "./serve.js";

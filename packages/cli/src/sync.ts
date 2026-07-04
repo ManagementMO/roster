@@ -132,11 +132,6 @@ export function listBackups(clientId: ClientId): BackupRef[] {
   return refs.sort((a, b) => a.manifest.timestamp.localeCompare(b.manifest.timestamp));
 }
 
-export function latestBackup(clientId: ClientId): BackupRef | null {
-  const refs = listBackups(clientId);
-  return refs.length > 0 ? refs[refs.length - 1]! : null;
-}
-
 /** The pristine pre-Roster snapshot: the OLDEST backup — what eject restores. */
 export function oldestBackup(clientId: ClientId): BackupRef | null {
   const refs = listBackups(clientId);

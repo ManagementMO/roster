@@ -1,6 +1,6 @@
 /**
- * Minimal JSONC → JSON: strips // and 【*】 comments (string-aware) and
- * trailing commas. VS Code and Zed configs legitimately contain both.
+ * Minimal JSONC -> JSON: strips // line and /* *​/ block comments (string-aware)
+ * and trailing commas. VS Code and Zed configs legitimately contain both.
  */
 export function parseJsonc(input: string): unknown {
   return JSON.parse(stripTrailingCommas(stripComments(input)));

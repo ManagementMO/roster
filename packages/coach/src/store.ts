@@ -78,6 +78,39 @@ export class CoachStore {
     );
   }
 
+  // ── maintenance (the nightly job) ─────────────────────────────────────────
+
+  private getMeta(key: string): string | null {
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = ?").get(key) as
+      | { value: string }
+      | undefined;
+    return row?.value ?? null;
+  }
+
+  private setMeta(key: string, value: string): void {
+    this.db
+      .prepare("INSERT INTO meta(key, value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
+      .run(key, value);
+  }
+
+  /**
+   * The nightly job, run opportunistically at serve boot: recompute ratings
+   * from logged outcomes and refine tool vectors (OATS). Debounced by
+   * `intervalMs` so frequent client restarts don't thrash. Returns what ran.
+   * This is what makes the README's "learns from outcomes" true at runtime.
+   */
+  runMaintenanceIfDue(intervalMs = 20 * 3600 * 1000, now = Date.now()): {
+    ran: boolean;
+    oats?: { adjusted: number; skipped: number };
+  } {
+    const last = Number(this.getMeta("last_maintenance") ?? 0);
+    if (now - last < intervalMs) return { ran: false };
+    this.recomputeRatings("all", now);
+    const oats = this.runOats(now);
+    this.setMeta("last_maintenance", String(now));
+    return { ran: true, oats };
+  }
+
   // ── capabilities ────────────────────────────────────────────────────────
 
   upsertCapabilities(entries: readonly CapabilityEntry[], now = Date.now()): UpsertResult {

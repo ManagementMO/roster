@@ -45,10 +45,6 @@ export class BackendManager {
 
   constructor(private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS) {}
 
-  get names(): string[] {
-    return [...this.backends.keys()];
-  }
-
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
     let name = sanitizeSource(config.name);
     // "skill" is the Playbook's reserved namespace; and two configured names
@@ -102,10 +98,10 @@ export class BackendManager {
     return [...this.backends.values()].flatMap((b) => b.tools);
   }
 
-  lookup(namespaced: string): { backend: string; toolName: string } | null {
+  lookup(namespaced: string): { backend: string; toolName: string; entry: CapabilityEntry } | null {
     for (const backend of this.backends.values()) {
       const entry = backend.tools.find((t) => t.id === namespaced);
-      if (entry) return { backend: backend.name, toolName: entry.name };
+      if (entry) return { backend: backend.name, toolName: entry.name, entry };
     }
     return null;
   }

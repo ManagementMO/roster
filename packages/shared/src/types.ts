@@ -30,28 +30,3 @@ export type OutcomeClass =
 
 export type LatencyBucket = "<250" | "250-1000" | "1000-4000" | ">4000";
 
-export interface OutcomeRecord {
-  ts: number;
-  session: string;
-  source: string;
-  capability: string;
-  needHash: string | null;
-  intentCategory: string | null;
-  outcomeClass: OutcomeClass;
-  latencyMs: number;
-  softFail: boolean;
-  substituted: boolean;
-  explored: boolean;
-  specVersion: string | null;
-}
-
-export interface RatingRow {
-  capabilityId: string;
-  category: string;
-  n: number;
-  successes: number;
-  wilsonLb: number;
-  p50Ms: number | null;
-  p95Ms: number | null;
-  updatedAt: number;
-}

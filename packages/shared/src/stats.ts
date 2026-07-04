@@ -1,3 +1,5 @@
+import type { LatencyBucket } from "./types.js";
+
 /**
  * Wilson score lower bound — the League's ranking key.
  * Humble with small samples by construction: wilson(3,3) < wilson(84,100).
@@ -22,8 +24,6 @@ export function percentile(sortedAscending: readonly number[], p: number): numbe
   );
   return sortedAscending[idx] ?? null;
 }
-
-import type { LatencyBucket } from "./types.js";
 
 export function latencyBucket(ms: number): LatencyBucket {
   if (ms < 250) return "<250";

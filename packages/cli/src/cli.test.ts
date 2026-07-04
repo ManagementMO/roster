@@ -246,6 +246,22 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(ejectClient("cursor").action).toBe("no-backup");
   });
 
+  it("eject refuses to restore corrupted backup bytes (integrity guard)", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    syncClient("codex", new Date("2026-07-05T01:00:00Z"));
+    // Corrupt the stored pristine bytes.
+    const clientDir = path.join(home, ".roster/backups/codex");
+    const ts = fs.readdirSync(clientDir).find((d) => d !== "latest")!;
+    fs.writeFileSync(path.join(clientDir, ts, "original"), "TAMPERED");
+    const configBefore = fs.readFileSync(configPath);
+
+    const result = ejectClient("codex");
+    expect(result.action).toBe("no-backup");
+    expect(result.detail).toContain("INTEGRITY");
+    // The (rosterized) config was NOT overwritten with corrupt bytes.
+    expect(Buffer.compare(fs.readFileSync(configPath), configBefore)).toBe(0);
+  });
+
   it("re-sync imports servers the user added after first sync; eject restores the PRISTINE original", () => {
     const configPath = path.join(home, ".codex/config.toml");
     const pristineBytes = fs.readFileSync(configPath);

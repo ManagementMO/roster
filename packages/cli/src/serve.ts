@@ -48,6 +48,18 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   const roster = new RosterServer({ mode, manager, store, skills, embedNeed });
   roster.syncCapabilities(unavailable);
 
+  // The nightly job, run opportunistically at boot (debounced ~20h): recompute
+  // ratings and refine routing vectors from logged outcomes. This is the Coach
+  // actually learning — without it, ratings stay empty and OATS never fires.
+  try {
+    const maint = store.runMaintenanceIfDue();
+    if (maint.ran && maint.oats) {
+      process.stderr.write(`roster: refreshed routing (${maint.oats.adjusted} tools tuned from your outcomes)\n`);
+    }
+  } catch (err) {
+    process.stderr.write(`roster: maintenance skipped: ${err instanceof Error ? err.message : err}\n`);
+  }
+
   const transport = new StdioServerTransport();
   await roster.server.connect(transport);
   process.stderr.write(
