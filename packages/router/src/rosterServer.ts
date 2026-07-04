@@ -63,6 +63,7 @@ const CALL_TOOL = {
     properties: {
       tool: { type: "string", description: "namespaced id, e.g. github__create_issue" },
       args: { type: "object" },
+      draft_id: { type: "string", description: "the draft this call belongs to (from draft's response)" },
     },
     required: ["tool"],
   },
@@ -128,14 +129,18 @@ export class RosterServer {
     });
   }
 
-  /** Index everything the router fronts (drift detection) and prune ghosts. */
-  syncCapabilities(): void {
+  /**
+   * Index everything the router fronts (drift detection) and prune ghosts.
+   * Pass the sources that are configured but unreachable this boot — their
+   * capabilities are preserved, not pruned (transient outage ≠ removal).
+   */
+  syncCapabilities(unavailableSources: ReadonlySet<string> = new Set()): void {
     const entries: CapabilityEntry[] = [
       ...this.manager.allTools(),
       ...[...this.skills.values()].map(skillToCapabilityEntry),
     ];
     this.store.upsertCapabilities(entries);
-    this.store.pruneMissing(new Set(entries.map((e) => e.id)));
+    this.store.pruneMissing(new Set(entries.map((e) => e.id)), unavailableSources);
   }
 
   private listTools(): Array<Record<string, unknown>> {
@@ -240,10 +245,14 @@ export class RosterServer {
     const id = args?.tool ?? "";
     const callArgs = args?.args;
     if (id === "") throw new McpError(ErrorCode.InvalidParams, "call requires `tool`");
-    const draft =
-      (args?.draft_id ? this.drafts.get(args.draft_id) : undefined) ??
-      (this.lastDraftId ? this.drafts.get(this.lastDraftId) : undefined) ??
-      null;
+    // Strict attribution: an explicitly-provided-but-unknown draft_id must
+    // NEVER fall back to someone else's draft (that was the cross-attribution
+    // bug this map exists to close). Fallback applies only when omitted.
+    const draft = args?.draft_id
+      ? (this.drafts.get(args.draft_id) ?? null)
+      : this.lastDraftId
+        ? (this.drafts.get(this.lastDraftId) ?? null)
+        : null;
 
     const skill = id.startsWith("skill__") ? this.skills.get(id) : undefined;
     if (skill) {
@@ -306,9 +315,13 @@ export class RosterServer {
       if (!entry) continue;
       let compatible = false;
       try {
-        compatible = entry.inputSchema
-          ? (this.ajv.validate(entry.inputSchema, args ?? {}) as boolean)
-          : false;
+        if (entry.inputSchema) {
+          // Strip $schema: backends declare draft-07 or 2020-12 dialects; we
+          // validate STRUCTURE only, and a dialect ref must not throw us into
+          // a false "incompatible".
+          const { $schema: _dialect, ...schema } = entry.inputSchema;
+          compatible = this.ajv.validate(schema, args ?? {}) as boolean;
+        }
       } catch {
         compatible = false;
       }

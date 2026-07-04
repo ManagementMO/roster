@@ -50,6 +50,7 @@ interface CapabilityRow {
 }
 
 const SOFT_FAIL_LOOKBACK = 3;
+const QUARANTINE_DWELL_MS = 24 * 3600 * 1000;
 const HYBRID_LEX_WEIGHT = 0.3;
 const HYBRID_COS_WEIGHT = 0.7;
 
@@ -122,23 +123,35 @@ export class CoachStore {
         };
         if (!row) {
           insert.run(params);
-          ftsInsert.run(entry.id, entry.name, entry.description, entry.body ?? "");
+          // Source name is part of the lexical surface: "memory" must find
+          // memory__* tools even when descriptions never say the word.
+          ftsInsert.run(entry.id, `${entry.source} ${entry.name}`, entry.description, entry.body ?? "");
           result.added.push(entry.id);
         } else if (row.def_hash !== hash) {
           // Definition drifted: record the event and quarantine from default rosters.
           drift.run(now, entry.id, row.def_hash, hash);
           update.run({ ...params, quarantined: 1 });
           ftsDelete.run(entry.id);
-          ftsInsert.run(entry.id, entry.name, entry.description, entry.body ?? "");
+          // Source name is part of the lexical surface: "memory" must find
+          // memory__* tools even when descriptions never say the word.
+          ftsInsert.run(entry.id, `${entry.source} ${entry.name}`, entry.description, entry.body ?? "");
           result.changed.push(entry.id);
           result.driftEvents += 1;
         } else {
-          // Stable re-sight of the SAME definition clears an earlier quarantine:
-          // the alarm fired once; a second boot with an unchanged hash means the
-          // new definition is what upstream now ships (no one-way door).
-          this.db
-            .prepare("UPDATE capability SET quarantined = 0, last_seen = ? WHERE id = ?")
-            .run(now, entry.id);
+          // Stable re-sight of the SAME definition clears an earlier quarantine —
+          // but only after a dwell period: fresh serves happen minutes apart, and
+          // a drift alarm that clears in minutes protects nobody.
+          const lastDrift = this.db
+            .prepare("SELECT ts FROM drift_event WHERE capability = ? ORDER BY id DESC LIMIT 1")
+            .get(entry.id) as { ts: number } | undefined;
+          const dwellOver = !lastDrift || now - lastDrift.ts >= QUARANTINE_DWELL_MS;
+          if (dwellOver) {
+            this.db
+              .prepare("UPDATE capability SET quarantined = 0, last_seen = ? WHERE id = ?")
+              .run(now, entry.id);
+          } else {
+            touch.run(now, entry.id);
+          }
         }
       }
     });
@@ -182,9 +195,17 @@ export class CoachStore {
    * Remove capabilities that no longer exist upstream (server removed, skill
    * deleted). Vectors and FTS rows go with them; outcome history is kept.
    */
-  pruneMissing(presentIds: ReadonlySet<string>): string[] {
-    const all = this.db.prepare("SELECT id FROM capability").all() as Array<{ id: string }>;
-    const gone = all.map((r) => r.id).filter((id) => !presentIds.has(id));
+  pruneMissing(presentIds: ReadonlySet<string>, protectedSources: ReadonlySet<string> = new Set()): string[] {
+    const all = this.db.prepare("SELECT id, source FROM capability").all() as Array<{
+      id: string;
+      source: string;
+    }>;
+    // protectedSources: backends that are CONFIGURED but failed to connect this
+    // boot — a transient outage must never delete learned vectors or the drift
+    // baseline (re-entry would bypass quarantine as a fresh "add").
+    const gone = all
+      .filter((r) => !presentIds.has(r.id) && !protectedSources.has(r.source))
+      .map((r) => r.id);
     const run = this.db.transaction(() => {
       const delCap = this.db.prepare("DELETE FROM capability WHERE id = ?");
       const delFts = this.db.prepare("DELETE FROM capability_fts WHERE id = ?");
@@ -423,7 +444,38 @@ export class CoachStore {
       if (score > 0) out.push({ entry, score, lexScore, cosScore });
     }
     out.sort((a, b) => b.score - a.score);
+    if (out.length >= k) return out.slice(0, k);
+
+    // Graceful fallback: in pure-lexical mode a paraphrased need ("remember a
+    // fact" vs a tool named create_entities) can share no tokens and return
+    // nothing. A draft must never come back empty when capabilities exist —
+    // backfill by rating (proven performers first), then by recency. Dense
+    // routing supersedes this once the embedding model warms.
+    const have = new Set(out.map((c) => c.entry.id));
+    for (const entry of this.ratedFallback(k - out.length, have)) {
+      out.push({ entry, score: 0, lexScore: null, cosScore: null });
+    }
     return out.slice(0, k);
+  }
+
+  private ratedFallback(limit: number, exclude: ReadonlySet<string>): CapabilityEntry[] {
+    const rows = this.db
+      .prepare(
+        `SELECT c.id FROM capability c
+         LEFT JOIN rating r ON r.capability = c.id AND r.category = 'all'
+         WHERE c.quarantined = 0
+         ORDER BY COALESCE(r.wilson_lb, 0) DESC, c.last_seen DESC
+         LIMIT ?`,
+      )
+      .all(Math.max(limit + exclude.size, limit)) as Array<{ id: string }>;
+    const out: CapabilityEntry[] = [];
+    for (const row of rows) {
+      if (exclude.has(row.id)) continue;
+      const entry = this.activeCapability(row.id);
+      if (entry) out.push(entry);
+      if (out.length >= limit) break;
+    }
+    return out;
   }
 
   // ── vectors & OATS ──────────────────────────────────────────────────────

@@ -138,8 +138,13 @@ async function main(): Promise<number> {
     }
 
     default:
+      if (command !== undefined && command !== "help" && command !== "--help") {
+        process.stderr.write(`roster: unknown command "${command}"\n\n`);
+        process.stdout.write(HELP);
+        return 1;
+      }
       process.stdout.write(HELP);
-      return command === undefined || command === "help" || command === "--help" ? 0 : 1;
+      return 0;
   }
 }
 

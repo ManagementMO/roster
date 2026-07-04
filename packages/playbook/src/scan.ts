@@ -10,7 +10,9 @@ import { isScriptPath, parseSkillMd, type ParsedSkill } from "./skill.js";
  * convention, OpenClaw's library.
  */
 export function defaultSkillSources(opts: { home?: string; cwd?: string } = {}): string[] {
-  const home = opts.home ?? os.homedir();
+  // ROSTER_TEST_HOME keeps discovery hermetic under test — without it, init in
+  // a fixture home read the developer's real ~/.claude/skills.
+  const home = opts.home ?? process.env.ROSTER_TEST_HOME ?? os.homedir();
   const cwd = opts.cwd ?? process.cwd();
   return [
     path.join(home, ".claude", "skills"),

@@ -55,6 +55,14 @@ describe("lexical search", () => {
     expect(hits[0]?.id).toBe("fs__read_file");
   });
 
+  it("finds a tool by its SERVER name even when descriptions never say it", () => {
+    store.upsertCapabilities([
+      { id: "memory__create_entities", kind: "tool", source: "memory", name: "create_entities", description: "Add nodes to the graph", inputSchema: { type: "object" } },
+    ]);
+    const hits = store.lexicalSearch("memory");
+    expect(hits.map((h) => h.id)).toContain("memory__create_entities");
+  });
+
   it("returns empty on nonsense input instead of throwing", () => {
     expect(store.lexicalSearch("!!! ??? ~~")).toEqual([]);
     expect(store.lexicalSearch("")).toEqual([]);
@@ -69,13 +77,25 @@ describe("lexical search", () => {
     expect(last.lexScore).toBeGreaterThanOrEqual(0);
   });
 
-  it("auto-clears quarantine when the drifted definition re-appears unchanged", () => {
+  it("auto-clears quarantine on stable re-sight — but only after the 24h dwell", () => {
+    const t0 = Date.now();
     const drifted = tool("fs__read_file", "read_file", "a NEW description");
-    store.upsertCapabilities([drifted]); // drift vs beforeEach seed → quarantined
+    store.upsertCapabilities([drifted], t0); // drift vs beforeEach seed → quarantined
     expect(store.listCapabilities().find((c) => c.id === "fs__read_file")).toBeUndefined();
-    store.upsertCapabilities([drifted]); // stable re-sight of the same new hash
+
+    store.upsertCapabilities([drifted], t0 + 60_000); // minutes later: still quarantined
+    expect(store.listCapabilities().find((c) => c.id === "fs__read_file")).toBeUndefined();
+
+    store.upsertCapabilities([drifted], t0 + 25 * 3600 * 1000); // past dwell: clears
     expect(store.listCapabilities().find((c) => c.id === "fs__read_file")).toBeDefined();
     expect(store.driftEvents()).toHaveLength(1); // alarm fired exactly once
+  });
+
+  it("indexes the source name lexically ('memory' finds memory__* tools)", () => {
+    store.upsertCapabilities([
+      tool("memory__create_entities", "create_entities", "Create multiple new entities in the knowledge graph"),
+    ]);
+    expect(store.lexicalSearch("memory")[0]?.id).toBe("memory__create_entities");
   });
 
   it("pruneMissing removes ghosts but keeps present ids", () => {
@@ -84,6 +104,22 @@ describe("lexical search", () => {
     expect(gone.sort()).toEqual(["mail__send", "web__search"]);
     expect(store.listCapabilities().map((c) => c.id)).toEqual(["fs__read_file"]);
     expect(store.lexicalSearch("email message")).toEqual([]);
+  });
+
+  it("pruneMissing protects capabilities of unreachable-but-configured sources", () => {
+    // 'mail' is down this boot (not in presentIds) but still configured →
+    // its tools must survive the outage, not be pruned and re-added fresh.
+    const gone = store.pruneMissing(new Set(["fs__read_file"]), new Set(["mail"]));
+    expect(gone).toEqual(["web__search"]);
+    expect(store.listCapabilities().map((c) => c.id).sort()).toEqual(["fs__read_file", "mail__send"]);
+  });
+
+  it("never returns an empty draft when capabilities exist (paraphrase fallback)", () => {
+    // "remember a fact" shares no tokens with any seeded tool — lexical is 0,
+    // but the draft must still surface tools to work with.
+    const candidates = store.draftCandidates("remember a fact xyzzy", 5);
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.length).toBeLessThanOrEqual(3);
   });
 
   it("draftCandidates excludes quarantined entries", () => {

@@ -241,4 +241,34 @@ describe("five mode", () => {
   it("draft with empty need is rejected", async () => {
     await expect(rig.client.callTool({ name: "draft", arguments: { need: " " } })).rejects.toThrow();
   });
+
+  it("a provided-but-unknown draft_id does NOT cross-attribute to another draft", async () => {
+    const draftRes = await rig.client.callTool({ name: "draft", arguments: { need: "echo text" } });
+    const realId = JSON.parse((draftRes.content as Array<{ text: string }>)[0]!.text).draft_id as string;
+    expect(realId).toMatch(/^d\d+$/);
+    // call with a bogus draft_id: must still execute, but attribute to NO need
+    const res = await rig.client.callTool({
+      name: "call",
+      arguments: { tool: "alpha__echo", args: { text: "x" }, draft_id: "d9999" },
+    });
+    expect((res.content as Array<{ text: string }>)[0]?.text).toBe("x");
+    const row = rig.db
+      .prepare("SELECT need_hash FROM outcome ORDER BY id DESC LIMIT 1")
+      .get() as { need_hash: string | null };
+    expect(row.need_hash).toBeNull();
+  });
+
+  it("logs Sixth Man suggestions to the suggestion table", async () => {
+    await rig.client.callTool({ name: "draft", arguments: { need: "echo text please" } });
+    await rig.client.callTool({ name: "call", arguments: { tool: "alpha__flaky", args: { text: "x" } } });
+    const sugg = rig.db.prepare("SELECT failed_capability, suggested_capability, taken FROM suggestion").all() as Array<{
+      failed_capability: string;
+      suggested_capability: string;
+      taken: number;
+    }>;
+    expect(sugg).toHaveLength(1);
+    expect(sugg[0]?.failed_capability).toBe("alpha__flaky");
+    expect(sugg[0]?.suggested_capability.startsWith("beta__")).toBe(true);
+    expect(sugg[0]?.taken).toBe(0);
+  });
 });

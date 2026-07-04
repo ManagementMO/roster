@@ -37,6 +37,9 @@ function migrate(db: CoachDb): void {
       last_seen INTEGER NOT NULL
     );
 
+    -- The "name" column carries "<source> <tool>" so a user searching "memory"
+    -- or a server's own name finds its tools even when descriptions never say
+    -- the word (empty-draft bug in default lexical mode).
     CREATE VIRTUAL TABLE IF NOT EXISTS capability_fts USING fts5(id UNINDEXED, name, description, body);
 
     CREATE TABLE IF NOT EXISTS suggestion(
