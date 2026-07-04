@@ -1,0 +1,21 @@
+{
+  "name": "@rosterhq/router",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@rosterhq/coach": "workspace:*",
+    "@rosterhq/playbook": "workspace:*",
+    "@rosterhq/shared": "workspace:*",
+    "ajv": "^8.17.0"
+  }
+}
