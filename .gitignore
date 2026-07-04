@@ -6,3 +6,4 @@ coverage/
 *.log
 .roster-tmp/
 docs/verification/tmp/
+dist-site/

@@ -26,24 +26,22 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 
 ---
 
-## 2. ⚖️ AWAITING YOUR DECISION (with my recommendation each)
+## 2. ⚖️ Decision board — updated after your 2026-07-04 pass
 
-| # | Decision | Options | My rec |
-|---|---|---|---|
-| **P1** | **npm package name fallback** — `roster` is a common word; the sweep may find it taken. CLI command stays `roster` regardless. | `rosterhq` · `getroster` · `roster-mcp` | `rosterhq` (cleanest, matches an @handle) |
-| **P2** | **Strategy docs & the public repo** — the repo contains ROSTER.md + the decision log (competitive analysis, launch playbook). Going public publishes them. | (a) move strategy docs private, open code only · (b) publish everything (radical transparency) · (c) publish master doc + code, keep decision log private | (c) |
-| **P3** | **When the repo flips public** | at launch (Jul 28) · ~1 week early for build-in-public momentum | ~1 week early, after the name sweep |
-| **P4** | **Launch Combine scope = your signing hours** | floor: filesystem only (~2h signing) · comfortable: + memory, Gitea-git, sqlite (~4–6h total) | comfortable tier |
-| **P5** | **My next build target** | League site (makes everything visible) · more suites first · dashboard | League site |
-| **P6** | **Launch-day rollout shape** — everything targets ready-by-Jul-28; the release moment(s) are yours | one big drop · staged over 2–3 days | staged: repo+receipt demo day 1, League reveal day 2 |
-
-*Reply in shorthand whenever ready — e.g. "P1 rosterhq, P2 c, P3 early, P4 comfortable, P5 league, P6 staged" — and I'll execute.*
+| # | Decision | Status |
+|---|---|---|
+| **P1** | npm package name | ✅ **Resolved: ship as `roster`** — revisit only if your clearance sweep finds it taken (fallbacks stand: `rosterhq` · `getroster` · `roster-mcp`) |
+| **P2** | Strategy docs & public repo | ✅ **Resolved: everything goes public at flip time** — gated on a personal/work-info sweep first (I'll run the sweep and show you its report before any flip) |
+| **P3** | When the repo flips public | ⏳ **Deferred** — you decide with me later; repo stays private until then |
+| **P4** | Combine signing | 🔶 **Partial** — you sign later, and I've shrunk the session to **~15–20 min**: `docs/signing/session-1-checklist.md` (one pass run, one ready-made fail-probe run, flip, PROVENANCE entry). I cannot flip `signed: true` myself — human-signed-only is a law and agent-signing would falsify the provenance the League sells; the checklist header explains |
+| **P5** | Next build | ✅ **Resolved: League site** — shipped in `packages/league` (static, artifact-driven, methodology rules enforced in code) |
+| **P6** | Launch-day rollout shape | ⏳ **Open**: one big drop · staged over 2–3 days (my rec: staged — repo+receipt day 1, League reveal day 2). Decide any time before Jul 28 |
 
 ---
 
 ## 3. 🧍 FOUNDER-ONLY TASKS (nobody else can do these)
 
-1. **Signing session #1 (~2h).** Certify the 8 filesystem tasks: run each pass case, force a fail case, flip `signed: true`. **This is THE unlock** — until then, the League may not publish a single named score (`signedWilsonLb` is the only number allowed to back one, and it's currently n=0). I'll prep a guided checklist.
+1. **Signing session #1 (~15–20 min now).** Everything is prepped in `docs/signing/session-1-checklist.md`: one command runs all 8 pass cases, one command runs 8 ready-made fail probes (each must FAIL — proving the verifiers catch wrongness), then you flip `signed: true` and log a PROVENANCE entry (template included). **This is THE unlock** — until then, the League may not publish a single named score (`signedWilsonLb` is the only number allowed to back one, and it's currently n=0).
 2. **Name clearance sweep (~30–60 min).** npm / GitHub org / domains (`getroster.dev`, `roster.tools`) / @handle / USPTO glance. Blocks anything public.
 3. **SaaS test accounts (optional, ~1–2h).** Fresh Gmail/Slack/Notion orgs unlock those divisions; launch is honest without them.
 4. **Early testers (launch week).** 3–5 OpenClaw/Cursor power users from your network.

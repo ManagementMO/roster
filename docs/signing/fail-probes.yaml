@@ -1,0 +1,88 @@
+# Signing fail probes — filesystem suite v0.1.0
+#
+# Purpose: prove each verifier can CATCH wrongness before a human signs it.
+# Every probe keeps the REAL invocation but sabotages the expected end state,
+# so against a correctly-behaving server EVERY task below must FAIL at the
+# verify stage. A probe that PASSES means its verifier cannot detect a wrong
+# outcome → do NOT sign the corresponding real task; fix the verifier first.
+#
+# These are certification instruments (methodology §4 step 3, mutation
+# analog). They are never signed and never feed any statistic.
+suite: filesystem-core-failprobes
+version: "0.1.0-failprobe"
+category: filesystem
+
+tasks:
+  - id: fs.write-file.v1.failprobe
+    description: "PROBE: fileEquals must reject wrong expected content"
+    invoke:
+      tool: write_file
+      args: { path: "{{sandbox}}/combine-{{run_id}}.txt", content: "roster combine {{run_id}}" }
+    verify:
+      - { kind: fileEquals, path: "combine-{{run_id}}.txt", equals: "SABOTAGE not what the tool wrote {{run_id}}" }
+
+  - id: fs.read-text-file.v1.failprobe
+    description: "PROBE: resultContains must reject absent needle"
+    setup:
+      files: { "seeded-{{run_id}}.txt": "needle-{{run_id}}" }
+    invoke:
+      tool: read_text_file
+      args: { path: "{{sandbox}}/seeded-{{run_id}}.txt" }
+    verify:
+      - { kind: resultContains, contains: "SABOTAGE-{{run_id}}-never-present" }
+
+  - id: fs.create-directory.v1.failprobe
+    description: "PROBE: fileExists must reject a never-created path"
+    invoke:
+      tool: create_directory
+      args: { path: "{{sandbox}}/newdir-{{run_id}}" }
+    verify:
+      - { kind: fileExists, path: "never-created-{{run_id}}" }
+
+  - id: fs.list-directory.v1.failprobe
+    description: "PROBE: listing verifier must reject a file that is not there"
+    setup:
+      files: { "listing/alpha-{{run_id}}.md": "x" }
+    invoke:
+      tool: list_directory
+      args: { path: "{{sandbox}}/listing" }
+    verify:
+      - { kind: resultContains, contains: "SABOTAGE-missing-{{run_id}}.md" }
+
+  - id: fs.move-file.v1.failprobe
+    description: "PROBE: fileAbsent must reject the destination that DOES exist after a correct move"
+    setup:
+      files: { "src-{{run_id}}.txt": "move me" }
+    invoke:
+      tool: move_file
+      args: { source: "{{sandbox}}/src-{{run_id}}.txt", destination: "{{sandbox}}/dst-{{run_id}}.txt" }
+    verify:
+      - { kind: fileAbsent, path: "dst-{{run_id}}.txt" }
+
+  - id: fs.get-file-info.v1.failprobe
+    description: "PROBE: stat verifier must reject a field the server never reports"
+    setup:
+      files: { "info-{{run_id}}.txt": "12345" }
+    invoke:
+      tool: get_file_info
+      args: { path: "{{sandbox}}/info-{{run_id}}.txt" }
+    verify:
+      - { kind: resultContains, contains: "SABOTAGE-not-a-real-stat-field" }
+
+  - id: fs.search-files.v1.failprobe
+    description: "PROBE: search verifier must reject a ghost filename"
+    setup:
+      files: { "deep/haystack/unique-{{run_id}}.log": "z" }
+    invoke:
+      tool: search_files
+      args: { path: "{{sandbox}}", pattern: "**/*unique-{{run_id}}*" }
+    verify:
+      - { kind: resultContains, contains: "SABOTAGE-{{run_id}}-ghost.log" }
+
+  - id: fs.list-allowed.v1.failprobe
+    description: "PROBE: allowed-dirs verifier must reject a path outside the sandbox"
+    invoke:
+      tool: list_allowed_directories
+      args: {}
+    verify:
+      - { kind: resultContains, contains: "/SABOTAGE/definitely/not/the/sandbox" }

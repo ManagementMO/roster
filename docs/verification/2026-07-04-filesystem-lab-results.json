@@ -1,10 +1,11 @@
 {
-  "generatedAt": "2026-07-04T07:03:08.931Z",
+  "generatedAt": "2026-07-04T19:57:14.890Z",
   "environment": {
     "node": "v22.22.3",
     "platform": "darwin",
     "arch": "arm64"
   },
+  "environmentDigest": "192ca160ad31db34e03047d7a54da963701166ce695de6339bd684ab7ecb9112",
   "runs": [
     {
       "server": "filesystem",
@@ -18,7 +19,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 699
+          "latencyMs": 1047
         },
         {
           "taskId": "fs.read-text-file.v1",
@@ -26,7 +27,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 516
+          "latencyMs": 582
         },
         {
           "taskId": "fs.create-directory.v1",
@@ -34,7 +35,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 421
+          "latencyMs": 502
         },
         {
           "taskId": "fs.list-directory.v1",
@@ -42,7 +43,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 427
+          "latencyMs": 553
         },
         {
           "taskId": "fs.move-file.v1",
@@ -50,7 +51,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 483
+          "latencyMs": 453
         },
         {
           "taskId": "fs.get-file-info.v1",
@@ -58,7 +59,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 462
+          "latencyMs": 438
         },
         {
           "taskId": "fs.search-files.v1",
@@ -66,7 +67,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 477
+          "latencyMs": 414
         },
         {
           "taskId": "fs.list-allowed.v1",
@@ -74,7 +75,7 @@
           "pass": true,
           "stage": null,
           "detail": null,
-          "latencyMs": 465
+          "latencyMs": 420
         }
       ],
       "summary": {
@@ -83,7 +84,8 @@
         "passRate": 1,
         "wilsonLb": 0.6755843804891231,
         "signedN": 0,
-        "signedPasses": 0
+        "signedPasses": 0,
+        "signedWilsonLb": 0
       }
     }
   ]

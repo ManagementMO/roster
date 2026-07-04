@@ -6,6 +6,7 @@
     { "path": "packages/playbook" },
     { "path": "packages/router" },
     { "path": "packages/cli" },
-    { "path": "packages/combine" }
+    { "path": "packages/combine" },
+    { "path": "packages/league" }
   ]
 }

@@ -12,6 +12,7 @@ export default defineConfig({
       "@rosterhq/playbook": pkg("playbook"),
       "@rosterhq/router": pkg("router"),
       "@rosterhq/combine": pkg("combine"),
+      "@rosterhq/league": pkg("league"),
     },
   },
   test: {

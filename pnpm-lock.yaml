@@ -88,6 +88,16 @@ importers:
         specifier: ^22.20.0
         version: 22.20.0
 
+  packages/league:
+    dependencies:
+      '@rosterhq/combine':
+        specifier: workspace:*
+        version: link:../combine
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.0
+        version: 22.20.0
+
   packages/playbook:
     dependencies:
       '@rosterhq/shared':
