@@ -1,0 +1,248 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { sha256Hex } from "@rosterhq/coach";
+import { discoverClients } from "./clients.js";
+import { parseJsonc } from "./jsonc.js";
+import { buildReceipt } from "./receipt.js";
+import { defaultConfig, mergeServers } from "./rosterfile.js";
+import { ejectClient } from "./eject.js";
+import { syncClient } from "./sync.js";
+
+let home: string;
+
+function write(rel: string, content: string): string {
+  const abs = path.join(home, rel);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, content);
+  return abs;
+}
+
+beforeEach(() => {
+  home = fs.mkdtempSync(path.join(os.tmpdir(), "roster-cli-home-"));
+  process.env.ROSTER_TEST_HOME = home;
+  process.env.ROSTER_HOME = path.join(home, ".roster");
+});
+
+afterEach(() => {
+  delete process.env.ROSTER_TEST_HOME;
+  delete process.env.ROSTER_HOME;
+  fs.rmSync(home, { recursive: true, force: true });
+});
+
+const FIXTURES: Record<string, string> = {
+  ".claude/settings.json": JSON.stringify({
+    theme: "dark",
+    mcpServers: { github: { command: "npx", args: ["-y", "@modelcontextprotocol/server-github"] } },
+  }),
+  "Library/Application Support/Claude/claude_desktop_config.json": JSON.stringify({
+    mcpServers: { fs: { command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"] } },
+  }),
+  ".cursor/mcp.json": `{
+    // cursor allows comments
+    "mcpServers": {
+      "browser": { "command": "npx", "args": ["-y", "browser-mcp"], },
+    },
+  }`,
+  ".codex/config.toml": `model = "gpt-5"
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.context7.env]
+API_STYLE = "camel"
+`,
+  ".gemini/settings.json": JSON.stringify({
+    mcpServers: { notion: { httpUrl: "https://mcp.notion.example/sse" } },
+  }),
+  ".hermes/config.yaml": `mcp_servers:
+  slack:
+    command: npx
+    args: ["-y", "slack-mcp"]
+    env:
+      SLACK_TOKEN: "test-token"
+`,
+  ".openclaw/openclaw.json": JSON.stringify({
+    agents: { list: [] },
+    mcpServers: { memory: { command: "npx", args: ["-y", "@modelcontextprotocol/server-memory"] } },
+  }),
+  "Library/Application Support/Code/User/mcp.json": `{
+    /* vscode block comment */
+    "servers": { "sentry": { "url": "https://mcp.sentry.example" } }
+  }`,
+  ".codeium/windsurf/mcp_config.json": JSON.stringify({
+    mcpServers: { search: { serverUrl: "https://mcp.search.example" } },
+  }),
+  ".config/zed/settings.json": `{
+    "context_servers": { "db": { "command": "pg-mcp" } }, // zed
+  }`,
+};
+
+describe("read-import across all client formats", () => {
+  beforeEach(() => {
+    for (const [rel, content] of Object.entries(FIXTURES)) write(rel, content);
+  });
+
+  it("discovers and parses every configured client", () => {
+    const discoveries = discoverClients();
+    const byClient = Object.fromEntries(
+      discoveries.map((d) => [d.client.id, d.servers.map((s) => s.name)]),
+    );
+    expect(byClient["claude-code"]).toEqual(["github"]);
+    expect(byClient["claude-desktop"]).toEqual(["fs"]);
+    expect(byClient.cursor).toEqual(["browser"]);
+    expect(byClient.codex).toEqual(["context7"]);
+    expect(byClient["gemini-cli"]).toEqual(["notion"]);
+    expect(byClient.hermes).toEqual(["slack"]);
+    expect(byClient.openclaw).toEqual(["memory"]);
+    expect(byClient.vscode).toEqual(["sentry"]);
+    expect(byClient.windsurf).toEqual(["search"]);
+    expect(byClient.zed).toEqual(["db"]);
+    expect(discoveries.every((d) => d.parseError === undefined)).toBe(true);
+  });
+
+  it("captures env, args, and url variants correctly", () => {
+    const all = discoverClients().flatMap((d) => d.servers);
+    expect(all.find((s) => s.name === "slack")?.env).toEqual({ SLACK_TOKEN: "test-token" });
+    expect(all.find((s) => s.name === "context7")?.env).toEqual({ API_STYLE: "camel" });
+    expect(all.find((s) => s.name === "notion")?.url).toBe("https://mcp.notion.example/sse");
+    expect(all.find((s) => s.name === "search")?.url).toBe("https://mcp.search.example");
+  });
+
+  it("merges into the roster with dedupe by definition", () => {
+    const imported = discoverClients().flatMap((d) => d.servers);
+    const duplicated = [...imported, { ...imported[0]!, name: "github-again", client: "cursor" as const }];
+    const { config, added, merged } = mergeServers(defaultConfig(), duplicated);
+    expect(added).toHaveLength(10);
+    expect(merged).toEqual(["github"]);
+    expect(config.servers.github?.importedFrom.sort()).toEqual(["claude-code", "cursor"]);
+  });
+
+  it("a broken config reports a parseError without killing discovery", () => {
+    write(".cursor/mcp.json", "{ not json at all");
+    const discoveries = discoverClients();
+    const cursor = discoveries.find((d) => d.client.id === "cursor");
+    expect(cursor?.parseError).toBeDefined();
+    expect(discoveries.find((d) => d.client.id === "codex")?.servers).toHaveLength(1);
+  });
+});
+
+describe("jsonc", () => {
+  it("preserves comment-like content inside strings", () => {
+    const parsed = parseJsonc(`{"a": "http://x // not-a-comment", "b": "/*neither*/", }`) as Record<string, string>;
+    expect(parsed.a).toBe("http://x // not-a-comment");
+    expect(parsed.b).toBe("/*neither*/");
+  });
+});
+
+describe("receipt truthfulness", () => {
+  it("Claude Code line says deferred-not-loaded; OpenClaw skills chars are exact", () => {
+    for (const [rel, content] of Object.entries(FIXTURES)) write(rel, content);
+    // one skill in the default claude skills dir
+    write(
+      ".claude/skills/demo/SKILL.md",
+      "---\nname: demo\ndescription: a demo skill\n---\nBody here",
+    );
+    const discoveries = discoverClients();
+    const receipt = buildReceipt(
+      discoveries,
+      [
+        {
+          slug: "demo",
+          name: "demo",
+          description: "a demo skill",
+          body: "Body here",
+          dir: path.join(home, ".claude/skills/demo"),
+          resources: [],
+          scripts: [],
+          frontmatter: {},
+        },
+      ],
+      0,
+    );
+    const cc = receipt.clients.find((c) => c.id === "claude-code");
+    expect(cc?.note).toContain("natively deferred, not loaded");
+    expect(cc?.note).not.toContain("85%");
+    const skillPath = `${path.join(home, ".claude/skills/demo")}/SKILL.md`;
+    expect(receipt.skills.openclaw?.chars).toBe(195 + 97 + 4 + 12 + skillPath.length);
+    expect(receipt.methodology).toContain("estimate");
+  });
+});
+
+describe("sync + eject (the trust path)", () => {
+  const gnarlyToml = `# my precious comments
+model = "gpt-5" # inline comment
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+`;
+
+  beforeEach(() => {
+    write(".codex/config.toml", gnarlyToml);
+    write(
+      ".claude/settings.json",
+      `{\n  "theme": "dark",\n  "mcpServers": { "github": { "command": "npx" } }\n}\n`,
+    );
+  });
+
+  it("sync backs up, rewrites only mcp servers, and is idempotent", () => {
+    const result = syncClient("codex", new Date("2026-07-05T01:00:00Z"));
+    expect(result.action).toBe("synced");
+
+    const rewritten = fs.readFileSync(path.join(home, ".codex/config.toml"), "utf8");
+    expect(rewritten).toContain('model = "gpt-5"');
+    expect(rewritten).toContain("[mcp_servers.roster]");
+    expect(rewritten).not.toContain("context7");
+
+    const again = syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    expect(again.action).toBe("already-synced");
+  });
+
+  it("eject restores byte-for-byte, comments and all", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    const originalBytes = fs.readFileSync(configPath);
+    syncClient("codex", new Date("2026-07-05T01:00:00Z"));
+    expect(fs.readFileSync(configPath)).not.toEqual(originalBytes);
+
+    const result = ejectClient("codex");
+    expect(result.action).toBe("restored");
+    expect(result.detail).toBeUndefined();
+    const restored = fs.readFileSync(configPath);
+    expect(Buffer.compare(restored, originalBytes)).toBe(0);
+    expect(sha256Hex(restored.toString("utf8"))).toBe(sha256Hex(originalBytes.toString("utf8")));
+  });
+
+  it("refuses to clobber post-sync manual edits without --force", () => {
+    const configPath = path.join(home, ".claude/settings.json");
+    const original = fs.readFileSync(configPath);
+    syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    fs.appendFileSync(configPath, "\n// user edited after sync\n");
+
+    const refused = ejectClient("claude-code");
+    expect(refused.action).toBe("refused-modified");
+    expect(fs.readFileSync(configPath, "utf8")).toContain("user edited after sync");
+
+    const forced = ejectClient("claude-code", { force: true });
+    expect(forced.action).toBe("restored");
+    expect(Buffer.compare(fs.readFileSync(configPath), original)).toBe(0);
+  });
+
+  it("handles deleted config with --force by recreating from backup", () => {
+    const configPath = path.join(home, ".claude/settings.json");
+    const original = fs.readFileSync(configPath);
+    syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    fs.rmSync(configPath);
+
+    expect(ejectClient("claude-code").action).toBe("missing-file");
+    const forced = ejectClient("claude-code", { force: true });
+    expect(forced.action).toBe("restored");
+    expect(Buffer.compare(fs.readFileSync(configPath), original)).toBe(0);
+  });
+
+  it("eject with no backup is a clean no-op", () => {
+    expect(ejectClient("cursor").action).toBe("no-backup");
+  });
+});
