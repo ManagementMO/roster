@@ -15,7 +15,7 @@
   ],
   "references": [
     {
-      "path": "../combine"
+      "path": "../../packages/combine"
     }
   ]
 }

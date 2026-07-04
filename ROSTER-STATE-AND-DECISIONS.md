@@ -157,7 +157,7 @@ named bottom tiers at launch · ε default-on · `tool_reference` deep integrati
 | **P2** | Strategy docs at public flip | ✅ **RESOLVED: publish everything** — gated on a personal/work-info sweep of all docs before the flip (owner: "all public… as long as no personal work stuff") |
 | **P3** | Flip date | ⏳ **DEFERRED** — owner decides later, with agent; repo stays private until then |
 | **P4** | Combine signing | 🔶 **PARTIAL** — owner signs later; agent runs all pre-signing verification + guided checklist (`docs/signing/session-1-checklist.md`). ⚠️ Owner's "you do signing" is **not executable as written**: the human-signed-only law (§4.4) means an agent flipping `signed: true` would falsify the provenance the League sells. Interpreted as "do the verification legwork" (done). If the owner ever truly wants agent-signing, this law must be consciously amended here first — recommendation: never |
-| **P5** | Next build | ✅ **RESOLVED: League site** — build started 2026-07-04 (`packages/league`, static, artifact-driven, honesty rules enforced in code) |
+| **P5** | Next build | ✅ **RESOLVED: League site** — built 2026-07-04 (`apps/league` — the frontend extension's own top-level home, per owner; static, artifact-driven, honesty rules enforced in code) |
 | **P6** | Rollout shape | ⏳ **OPEN** (one drop vs staged over 2–3 days) — needed before Jul 28 content planning |
 
 ---

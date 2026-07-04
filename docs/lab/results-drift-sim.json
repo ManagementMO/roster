@@ -1,0 +1,574 @@
+{
+  "meta": {
+    "experiment": "drift-sim",
+    "date": "2026-07-04T19:54:59.708Z",
+    "node": "v22.22.3",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "db": "/Users/mo/Downloads/roster/docs/lab/tmp-drift-sim/home/.roster/coach.db",
+    "virtualT0": "2026-06-01T00:00:00.000Z",
+    "corpusSize": 133,
+    "dwellMsInCode": 86400000
+  },
+  "events": [
+    {
+      "day": 0,
+      "label": "initial connect: 133-tool corpus, real MiniLM warmup, outcome seeding"
+    },
+    {
+      "day": 1,
+      "label": "benign description tweak on t1 (github__create_issue)"
+    },
+    {
+      "day": 3,
+      "label": "inputSchema field added on t2 (github__search_repositories)"
+    },
+    {
+      "day": 6,
+      "label": "full signature change on t3 (github__get_file_contents becomes a deploy-dispatch tool)"
+    },
+    {
+      "day": 8,
+      "label": "flap on t4 (github__push_files): A→B at +0h, B→A at +6h"
+    },
+    {
+      "day": 10,
+      "label": "t5 (github__create_repository) removed from the server"
+    },
+    {
+      "day": 13,
+      "label": "t6 (github__fork_repository) drifts at +0h, removed at +2h (mid-dwell)"
+    },
+    {
+      "day": 14,
+      "label": "t5 re-added with a CHANGED definition; t6 re-added mid-dwell with its drifted definition"
+    },
+    {
+      "day": 16,
+      "label": "t7/t8/t9 all change in one connect; manual unquarantine via store call AND real CLI"
+    },
+    {
+      "day": 18,
+      "label": "rated-fallback probe: no-token-overlap need, then quarantine the top-rated tool"
+    },
+    {
+      "day": 21,
+      "label": "output-schema-only change on t2; then a schema_drift_suspect outcome through the real classifier"
+    },
+    {
+      "day": 30,
+      "label": "final ledger"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "A01",
+      "desc": "first connect adds all 133 corpus tools, zero drift events",
+      "pass": true,
+      "detail": "added=133 drift=0"
+    },
+    {
+      "id": "A02",
+      "desc": "real MiniLM embedded all 133 tools into vec table (384-d)",
+      "pass": true,
+      "detail": "400ms incl. model load"
+    },
+    {
+      "id": "A03",
+      "desc": "OATS adjusted t3 from 4 real success need-vectors (adj vector exists)",
+      "pass": true,
+      "detail": "{\"adjusted\":1,\"skipped\":132}"
+    },
+    {
+      "id": "A04",
+      "desc": "seed ratings landed (t1 6/6 wilson highest of seeded set)",
+      "pass": true,
+      "detail": "{\"github__create_issue\":{\"n\":6,\"successes\":6,\"wilsonLb\":0.6096569663469354,\"p50Ms\":42,\"p95Ms\":45},\"github__get_file_contents\":{\"n\":4,\"successes\":4,\"wilsonLb\":0.5100999795960008,\"p50Ms\":71,\"p95Ms\":73},\"github__create_repository\":{\"n\":5,\"successes\":4,\"wilsonLb\":0.37552826411853885,\"p50Ms\":51,\"p95Ms\":53},\"github__search_code\":{\"n\":4,\"successes\":2,\"wilsonLb\":0.15003570882017145,\"p50Ms\":60,\"p95Ms\":61}}"
+    },
+    {
+      "id": "A05",
+      "desc": "pre-drift baseline: t1 drafted for its need (lexical, real FTS5)",
+      "pass": true,
+      "detail": "github__create_issue,github__create_repository,github__create_branch"
+    },
+    {
+      "id": "B01",
+      "desc": "description-only change raises exactly one drift event and quarantines t1",
+      "pass": true,
+      "detail": "changed=github__create_issue flag=1"
+    },
+    {
+      "id": "B02",
+      "desc": "drift_event row carries old/new hash; old matches pre-drift stored hash, new matches defHash(new def)",
+      "pass": true,
+      "detail": "ts=1780358400000"
+    },
+    {
+      "id": "B03",
+      "desc": "quarantined t1 excluded from draftCandidates for the need it won pre-drift",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "B04",
+      "desc": "quarantined t1 hidden from listCapabilities() but visible with includeQuarantined",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "B05",
+      "desc": "rating continuity across benign drift: t1 rating row untouched",
+      "pass": true,
+      "detail": "{\"n\":6,\"successes\":6,\"wilsonLb\":0.6096569663469354,\"p50Ms\":42,\"p95Ms\":45}"
+    },
+    {
+      "id": "B06",
+      "desc": "24h dwell honored: stable re-sights at +1h/+6h/+23h leave t1 quarantined",
+      "pass": true,
+      "detail": "[{\"at\":\"+1h\",\"quarantined\":1},{\"at\":\"+6h\",\"quarantined\":1},{\"at\":\"+23h\",\"quarantined\":1}]"
+    },
+    {
+      "id": "B07",
+      "desc": "stable-re-sight auto-clear fires at +25h (first re-sight past dwell)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "C01",
+      "desc": "schema-field add raises drift event and quarantines t2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "C02",
+      "desc": "dwell measured from the drift EVENT: first re-sight 48h later clears immediately",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "D01",
+      "desc": "full signature change raises drift event and quarantines t3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "D02",
+      "desc": "rating continuity across signature drift: old-semantics 4/4 rating survives unchanged",
+      "pass": true,
+      "detail": "{\"n\":4,\"successes\":4,\"wilsonLb\":0.5100999795960008,\"p50Ms\":71,\"p95Ms\":73}"
+    },
+    {
+      "id": "D03",
+      "desc": "before next warmup, draft-facing vector still encodes the OLD signature",
+      "pass": true,
+      "detail": "{\"stage\":\"after-drift-before-warmup\",\"servedIsAdj\":true,\"cos_served_oldDesc\":0.9019,\"cos_served_newDesc\":0.4706,\"cos_base_oldDesc\":0.9988,\"cos_base_newDesc\":0.4477}"
+    },
+    {
+      "id": "D04",
+      "desc": "warmup re-embeds base to NEW signature, but served vector (adj) still the old-semantics OATS blend",
+      "pass": true,
+      "detail": "{\"stage\":\"after-warmup-reembed\",\"servedIsAdj\":true,\"cos_served_oldDesc\":0.9019,\"cos_served_newDesc\":0.4706,\"cos_base_oldDesc\":0.4443,\"cos_base_newDesc\":1}"
+    },
+    {
+      "id": "D05",
+      "desc": "t3 auto-clears after dwell despite the signature being semantically different",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "E01",
+      "desc": "A→B: drift event #1, quarantined",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "E02",
+      "desc": "B→A flap-back is itself a drift event (#2), still quarantined",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "E03",
+      "desc": "hash chain: e1 A→B, e2 B→A (new_hash of e2 = original hash)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "E04",
+      "desc": "flap restarts the dwell: still quarantined 23h after flap-back, clears at 25h",
+      "pass": true,
+      "detail": "{\"+6h_after_flapback\":1,\"+23h_after_flapback\":1,\"+25h_after_flapback\":0}"
+    },
+    {
+      "id": "F01",
+      "desc": "prune removes capability+vec rows for t5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "F02",
+      "desc": "prune keeps outcome history and rating row (per design comment)",
+      "pass": true,
+      "detail": "{\"n\":5,\"successes\":4,\"wilsonLb\":0.37552826411853885,\"p50Ms\":51,\"p95Ms\":53}"
+    },
+    {
+      "id": "G01",
+      "desc": "t6 quarantined on drift",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "G02",
+      "desc": "t6 pruned while quarantined (row gone, drift history kept)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "H01",
+      "desc": "QUARANTINE ESCAPE (remove/re-add): t5 returns with a different definition as a fresh add — NO drift event, NOT quarantined",
+      "pass": true,
+      "detail": "added=github__create_repository,github__fork_repository"
+    },
+    {
+      "id": "H02",
+      "desc": "QUARANTINE ESCAPE (mid-dwell): t6 re-added 22h into its dwell comes back active immediately",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "H03",
+      "desc": "old rating rides the new t5 definition (5-call history attached to changed tool)",
+      "pass": true,
+      "detail": "{\"n\":5,\"successes\":4,\"wilsonLb\":0.37552826411853885,\"p50Ms\":51,\"p95Ms\":53}"
+    },
+    {
+      "id": "I01",
+      "desc": "one connect, three drift events, all three quarantined",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "I02",
+      "desc": "quarantine is per-TOOL: the server's other tools stay active (spec text says 'tool/server')",
+      "pass": true,
+      "detail": "active=19 total=22"
+    },
+    {
+      "id": "I03",
+      "desc": "all three excluded from drafts",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "I04",
+      "desc": "store.clearQuarantine(t7) clears mid-dwell and t7 drafts again",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "I05",
+      "desc": "REAL CLI `roster unquarantine` (subprocess, ROSTER_TEST_HOME) exits 0 and clears t8 in the shared DB",
+      "pass": true,
+      "detail": "{\"status\":0,\"stdout\":\"cleared quarantine for github__list_commits (it can be drafted again)\",\"stderr\":\"\"}"
+    },
+    {
+      "id": "I06",
+      "desc": "re-sight 23h post-drift: manual clears survive (t7,t8 stay 0), untouched t9 still quarantined",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "I07",
+      "desc": "t9 auto-clears at 25h",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "J01",
+      "desc": "empty lexical result falls back to rated order: t1 (wilson .61) first, then t3 (.51), then t5 (.38)",
+      "pass": true,
+      "detail": "github__create_issue,github__get_file_contents,github__create_repository,github__search_code,fs__read_file"
+    },
+    {
+      "id": "J02",
+      "desc": "after t1 drifts again, rated fallback skips the quarantined leader; t3 promoted to head",
+      "pass": true,
+      "detail": "github__get_file_contents,github__create_repository,github__search_code,fs__read_file,fs__read_text_file"
+    },
+    {
+      "id": "J03",
+      "desc": "t1 second lifecycle auto-clear at +25h",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "K01",
+      "desc": "outputSchema change is INVISIBLE to connect-time drift: no event, no quarantine (defHash omits outputSchema)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "K02",
+      "desc": "and the new outputSchema is NOT persisted either (stable-hash branch never updates the row)",
+      "pass": true,
+      "detail": "stored=null"
+    },
+    {
+      "id": "K03",
+      "desc": "classifier yields 'schema_drift_suspect' but NO drift event and NO quarantine follow (handoff §6.2 rule 3 divergence)",
+      "pass": true,
+      "detail": "drift_events still 10"
+    },
+    {
+      "id": "L01",
+      "desc": "exactly 10 drift events over 30 days, distributed as scripted",
+      "pass": true,
+      "detail": "{\"github__create_issue\":2,\"github__list_issues\":1,\"github__list_commits\":1,\"github__create_branch\":1,\"github__fork_repository\":1,\"github__push_files\":2,\"github__get_file_contents\":1,\"github__search_repositories\":1}"
+    },
+    {
+      "id": "L02",
+      "desc": "driftEvents() returns newest-first (public drift history ordering)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "L03",
+      "desc": "day 30: zero tools quarantined; roster back to 133 active",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "L04",
+      "desc": "hash chains contiguous for every capability (old_hash of event N+1 = new_hash of event N)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "L05",
+      "desc": "ratings survived the whole month (outcome history never dropped)",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "warmupMs": 400,
+    "seedRatings": {
+      "github__create_issue": {
+        "n": 6,
+        "successes": 6,
+        "wilsonLb": 0.6096569663469354,
+        "p50Ms": 42,
+        "p95Ms": 45
+      },
+      "github__get_file_contents": {
+        "n": 4,
+        "successes": 4,
+        "wilsonLb": 0.5100999795960008,
+        "p50Ms": 71,
+        "p95Ms": 73
+      },
+      "github__create_repository": {
+        "n": 5,
+        "successes": 4,
+        "wilsonLb": 0.37552826411853885,
+        "p50Ms": 51,
+        "p95Ms": 53
+      },
+      "github__search_code": {
+        "n": 4,
+        "successes": 2,
+        "wilsonLb": 0.15003570882017145,
+        "p50Ms": 60,
+        "p95Ms": 61
+      }
+    },
+    "dwellProbesT1": [
+      {
+        "at": "+1h",
+        "quarantined": 1
+      },
+      {
+        "at": "+6h",
+        "quarantined": 1
+      },
+      {
+        "at": "+23h",
+        "quarantined": 1
+      }
+    ],
+    "t3VecLifecycle": [
+      {
+        "stage": "after-drift-before-warmup",
+        "servedIsAdj": true,
+        "cos_served_oldDesc": 0.9019,
+        "cos_served_newDesc": 0.4706,
+        "cos_base_oldDesc": 0.9988,
+        "cos_base_newDesc": 0.4477
+      },
+      {
+        "stage": "after-warmup-reembed",
+        "servedIsAdj": true,
+        "cos_served_oldDesc": 0.9019,
+        "cos_served_newDesc": 0.4706,
+        "cos_base_oldDesc": 0.4443,
+        "cos_base_newDesc": 1
+      },
+      {
+        "stage": "after-next-nightly-oats",
+        "servedIsAdj": true,
+        "cos_served_oldDesc": 0.722,
+        "cos_served_newDesc": 0.7913,
+        "cos_base_oldDesc": 0.4443,
+        "cos_base_newDesc": 1
+      }
+    ],
+    "oatsAfterSignatureChange": {
+      "adjusted": 1,
+      "skipped": 132,
+      "stage": {
+        "stage": "after-next-nightly-oats",
+        "servedIsAdj": true,
+        "cos_served_oldDesc": 0.722,
+        "cos_served_newDesc": 0.7913,
+        "cos_base_oldDesc": 0.4443,
+        "cos_base_newDesc": 1
+      }
+    },
+    "t3DraftRanks": {
+      "oldNeed": {
+        "rank": 1,
+        "span": 0.41305003504611093,
+        "ids": [
+          "github__get_file_contents",
+          "github__create_or_update_file",
+          "fs__read_file",
+          "fs__read_text_file",
+          "gdrive__gdrive_read_file",
+          "github__get_issue",
+          "github__list_commits",
+          "github__create_repository",
+          "github__push_files",
+          "github__create_pull_request"
+        ]
+      },
+      "newNeed": {
+        "rank": 1,
+        "span": 0.31519379503316186,
+        "ids": [
+          "github__get_file_contents",
+          "github__create_pull_request",
+          "github__push_files",
+          "github__fork_repository",
+          "github__create_or_update_file",
+          "github__create_repository",
+          "github__list_pull_requests",
+          "github__update_issue",
+          "git__git_commit",
+          "git__git_init"
+        ]
+      }
+    },
+    "flapDwell": {
+      "+6h_after_flapback": 1,
+      "+23h_after_flapback": 1,
+      "+25h_after_flapback": 0
+    },
+    "cliUnquarantine": {
+      "status": 0,
+      "stdout": "cleared quarantine for github__list_commits (it can be drafted again)",
+      "stderr": ""
+    },
+    "ratedFallback": {
+      "before": [
+        "github__create_issue",
+        "github__get_file_contents",
+        "github__create_repository",
+        "github__search_code",
+        "fs__read_file"
+      ],
+      "after": [
+        "github__get_file_contents",
+        "github__create_repository",
+        "github__search_code",
+        "fs__read_file",
+        "fs__read_text_file"
+      ]
+    }
+  },
+  "driftLedger": [
+    {
+      "ts": 1781827200000,
+      "capability": "github__create_issue",
+      "oldHash": "178be9e46ca924f3533c2b669267d4fa424269fc31b1668d47c74dc7a450d34e",
+      "newHash": "13c98a32c53c3454c78a3017da99acb1018faaf72be3f95fd30b5cd21f0e551d"
+    },
+    {
+      "ts": 1781654400000,
+      "capability": "github__list_issues",
+      "oldHash": "d59ea4a7476e3ad30072ee64de3f3380916db9c8562b278f3544800cb61f1dd7",
+      "newHash": "994dcc63d12d764415ad60e88cc3328ce998c0785bb74c033899c0a4b6f6905f"
+    },
+    {
+      "ts": 1781654400000,
+      "capability": "github__list_commits",
+      "oldHash": "1d911814106ef7d73ca45df211b7addce4de49aef0e538f0bd094f23af0ac069",
+      "newHash": "cbc49735f826850820457db18568dd6687fa7c6fcf63ff6680574125a1137a67"
+    },
+    {
+      "ts": 1781654400000,
+      "capability": "github__create_branch",
+      "oldHash": "87ab23d8c02e8cbbeda0386ed2204ebbb3617433785dda275cf97010f1db41c6",
+      "newHash": "593511efc7571c75a0529eebee09a1de05e4e023944ffc797cb930cbb67cdc89"
+    },
+    {
+      "ts": 1781395200000,
+      "capability": "github__fork_repository",
+      "oldHash": "8d906b6aa080dd8bfd87644436b8f0f8c533443519cddd171d577cce6f1fdf4d",
+      "newHash": "df548b7d37f8a05d74a866672b645ec4e1ec7dc1f4cecbd3bed3b74092cd2378"
+    },
+    {
+      "ts": 1780984800000,
+      "capability": "github__push_files",
+      "oldHash": "7c78c1d08680101049fc7bfc4e9cc989c48e8b5bd7d6d43253435126c6729ff6",
+      "newHash": "05725c04952ead9919ddd1209048b9e15d717526f1d068f8321c158e64891f73"
+    },
+    {
+      "ts": 1780963200000,
+      "capability": "github__push_files",
+      "oldHash": "05725c04952ead9919ddd1209048b9e15d717526f1d068f8321c158e64891f73",
+      "newHash": "7c78c1d08680101049fc7bfc4e9cc989c48e8b5bd7d6d43253435126c6729ff6"
+    },
+    {
+      "ts": 1780790400000,
+      "capability": "github__get_file_contents",
+      "oldHash": "8e5744d2396ec24f626da3738a71a67b42066e592febcb651efc03862b6fb406",
+      "newHash": "2e4b711562732272c3066d1e1e48929745b1e395cc8c9e671d270532b0c5da8f"
+    },
+    {
+      "ts": 1780531200000,
+      "capability": "github__search_repositories",
+      "oldHash": "f5f090b65d2bfc1b7f6cdca6d338a9a807d902ad4a35532c9630a8bd20a23adb",
+      "newHash": "b320f4ec12c00d39c152d313b36bd2c75e1dc8593c2349e61ea2c1247344f6bb"
+    },
+    {
+      "ts": 1780358400000,
+      "capability": "github__create_issue",
+      "oldHash": "b0d0a9d90d1f5765e51fa5380be821d1c6ee4868613e3e95632f5ac2d6534f28",
+      "newHash": "178be9e46ca924f3533c2b669267d4fa424269fc31b1668d47c74dc7a450d34e"
+    }
+  ],
+  "finals": {
+    "quarantinedNow": 0,
+    "activeCapabilities": 133,
+    "perCapDriftCounts": {
+      "github__create_issue": 2,
+      "github__list_issues": 1,
+      "github__list_commits": 1,
+      "github__create_branch": 1,
+      "github__fork_repository": 1,
+      "github__push_files": 2,
+      "github__get_file_contents": 1,
+      "github__search_repositories": 1
+    }
+  },
+  "failures": 0
+}

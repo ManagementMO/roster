@@ -1,0 +1,400 @@
+{
+  "charter": "embed-torture",
+  "model": "Xenova/all-MiniLM-L6-v2 (real ONNX q8 via @huggingface/transformers 4.2.0)",
+  "node": "v22.22.3",
+  "platform": "darwin arm64",
+  "generatedAt": "2026-07-04T19:53:54.777Z",
+  "a_queue": {
+    "part": "a-queue",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "startedAt": "2026-07-04T19:51:08.256Z",
+    "warmMs": 196,
+    "serial10Ms": 20,
+    "dims": 384,
+    "determinismSerial": {
+      "bitwiseIdenticalAll": true,
+      "maxAbsDiffVsFirst": 0
+    },
+    "concurrent50": {
+      "wallMs": 81.4,
+      "allResolved": true,
+      "bitwiseMatchSerialRef": true,
+      "maxAbsDiffVsRef": 0
+    },
+    "serial50WallMs": 77.1,
+    "interleaved": {
+      "calls": 6,
+      "rowsChecked": 28,
+      "rowsCorrectIdentity": 28,
+      "worstSelfCosineVsSingleRef": 0.998534,
+      "rowsNotBitwiseVsSingleRef": 26
+    },
+    "batchDeterminism": {
+      "bitwiseIdentical": true,
+      "maxAbsDiff": 0
+    },
+    "unhandledRejections": [],
+    "vecAudit": {
+      "vectors": 164,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "b_dispose": {
+    "part": "b-dispose",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "startedAt": "2026-07-04T19:51:43.794Z",
+    "warm": {
+      "launched": 20,
+      "disposeFiredAfterNSettled": 5,
+      "fulfilled": 20,
+      "rejected": 0,
+      "rejectionReasons": [],
+      "text0CosVsPreDisposeRef": 1
+    },
+    "postDispose": {
+      "rejected": true,
+      "message": "Error: embeddings provider disposed"
+    },
+    "doubleDispose": {
+      "ok": true
+    },
+    "cold": {
+      "launched": 5,
+      "fulfilled": 0,
+      "rejected": 5,
+      "reasons": [
+        "Error: embeddings provider disposed"
+      ]
+    },
+    "unhandledRejections": [],
+    "uncaughtExceptions": [],
+    "vecAudit": {
+      "vectors": 21,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "c_rewarm5": {
+    "part": "c-rewarm",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "startedAt": "2026-07-04T19:51:52.911Z",
+    "exposeGc": true,
+    "baselineRssMb": 51.8,
+    "cycles": [
+      {
+        "cycle": 1,
+        "loadMs": 130,
+        "rssAfterLoadMb": 176.3,
+        "corpusVectors": 133,
+        "embedCorpusMs": 154,
+        "rssAfterEmbedMb": 187.6,
+        "rssAfterDisposeGcMb": 187.8,
+        "reclaimedMb": -0.2
+      },
+      {
+        "cycle": 2,
+        "loadMs": 38,
+        "rssAfterLoadMb": 191.6,
+        "corpusVectors": 133,
+        "embedCorpusMs": 146,
+        "rssAfterEmbedMb": 191.7,
+        "rssAfterDisposeGcMb": 189.6,
+        "reclaimedMb": 2.1
+      },
+      {
+        "cycle": 3,
+        "loadMs": 38,
+        "rssAfterLoadMb": 193.6,
+        "corpusVectors": 133,
+        "embedCorpusMs": 153,
+        "rssAfterEmbedMb": 194.7,
+        "rssAfterDisposeGcMb": 193.4,
+        "reclaimedMb": 1.3
+      },
+      {
+        "cycle": 4,
+        "loadMs": 41,
+        "rssAfterLoadMb": 196.4,
+        "corpusVectors": 133,
+        "embedCorpusMs": 150,
+        "rssAfterEmbedMb": 211.7,
+        "rssAfterDisposeGcMb": 208.9,
+        "reclaimedMb": 2.8
+      },
+      {
+        "cycle": 5,
+        "loadMs": 38,
+        "rssAfterLoadMb": 216,
+        "corpusVectors": 133,
+        "embedCorpusMs": 147,
+        "rssAfterEmbedMb": 213.3,
+        "rssAfterDisposeGcMb": 210.1,
+        "reclaimedMb": 3.2
+      }
+    ],
+    "trend": {
+      "rssAfterDisposePerCycleMb": [
+        187.8,
+        189.6,
+        193.4,
+        208.9,
+        210.1
+      ],
+      "cycle1ToCycle5DriftMb": 22.3,
+      "meanReclaimedPerCycleMb": 1.8
+    },
+    "vecAudit": {
+      "vectors": 670,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "c2_cycle12": {
+    "part": "c2-cycle",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "mode": "cycle",
+    "rounds": 12,
+    "startedAt": "2026-07-04T19:52:32.341Z",
+    "exposeGc": true,
+    "baselineRssMb": 51.6,
+    "series": [
+      190.4,
+      198.8,
+      209.3,
+      213.3,
+      190.8,
+      214.7,
+      214.8,
+      215,
+      215.3,
+      215.4,
+      215.4,
+      211.4
+    ],
+    "backHalfSlopeMbPerRound": -0.45,
+    "firstToLastMb": 21,
+    "vecAudit": {
+      "vectors": 1596,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "c2_hold12": {
+    "part": "c2-hold",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "mode": "hold",
+    "rounds": 12,
+    "startedAt": "2026-07-04T19:52:46.011Z",
+    "exposeGc": true,
+    "baselineRssMb": 51.8,
+    "series": [
+      206.2,
+      215.6,
+      215.7,
+      215.7,
+      215.8,
+      215.9,
+      215.9,
+      216,
+      216,
+      216,
+      216,
+      216
+    ],
+    "backHalfSlopeMbPerRound": 0.01,
+    "firstToLastMb": 9.8,
+    "vecAudit": {
+      "vectors": 1597,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "d_inputs": {
+    "part": "d-inputs",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "startedAt": "2026-07-04T19:51:18.827Z",
+    "cases": [
+      {
+        "name": "empty-string",
+        "inputCount": 1,
+        "ok": true,
+        "ms": 1.6,
+        "outVectors": 1,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      },
+      {
+        "name": "one-char",
+        "inputCount": 1,
+        "ok": true,
+        "ms": 1.4,
+        "outVectors": 1,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      },
+      {
+        "name": "emoji-only",
+        "inputCount": 1,
+        "ok": true,
+        "ms": 1.1,
+        "outVectors": 1,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      },
+      {
+        "name": "rtl-arabic-hebrew",
+        "inputCount": 1,
+        "ok": true,
+        "ms": 3.4,
+        "outVectors": 1,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      },
+      {
+        "name": "nul-byte-inside",
+        "inputCount": 1,
+        "ok": true,
+        "ms": 1.9,
+        "outVectors": 1,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      },
+      {
+        "name": "empty-batch",
+        "inputCount": 0,
+        "ok": false,
+        "ms": 0.2,
+        "error": "Error: text array must be non-empty"
+      },
+      {
+        "name": "identical-500-one-call",
+        "inputCount": 500,
+        "ok": true,
+        "ms": 160.7,
+        "outVectors": 500,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      },
+      {
+        "name": "100KB-text",
+        "inputCount": 1,
+        "ok": true,
+        "ms": 50.8,
+        "outVectors": 1,
+        "dims": 384,
+        "nanComponents": 0,
+        "infComponents": 0,
+        "normMin": 1,
+        "normMax": 1
+      }
+    ],
+    "identical500RowsBitwiseSame": true,
+    "bigLen": 100000,
+    "unhandledRejections": [],
+    "vecAudit": {
+      "vectors": 1007,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "e_batchequiv": {
+    "part": "e-batchequiv",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "startedAt": "2026-07-04T19:51:30.894Z",
+    "corpusSize": 133,
+    "equivalence": {
+      "bitwiseIdentical": 0,
+      "of": 133,
+      "cosineSingleVsBatch": {
+        "min": 0.99780983,
+        "mean": 0.99864117
+      },
+      "maxAbsComponentDiff": {
+        "max": 0.01212678,
+        "p50": 0.00840848
+      }
+    },
+    "timing": {
+      "singlePerTextMsMean": 1.34,
+      "singlePerTextMsP50": 1.3,
+      "singlePerTextMsP95": 2.02,
+      "singleTotalMs": 179,
+      "batchOf16CallMsMean": 15.95,
+      "batchTotalMs": 144,
+      "batchPerTextMsEffective": 1.08,
+      "speedupFactor": 1.25
+    },
+    "rankingImpact": {
+      "needsProbed": 20,
+      "top1Flips": 0,
+      "top5OrderDiffs": 3,
+      "flips": []
+    },
+    "vecAudit": {
+      "vectors": 287,
+      "nan": 0,
+      "inf": 0,
+      "zeroNorm": 0
+    }
+  },
+  "f_crossProcess": {
+    "run1": {
+      "single": [
+        "d2bcf156b051088f",
+        "edccf60f7947d42f",
+        "18d8e33df6bfe000",
+        "3f4d0e2fb3d713ea",
+        "6655afa926b10264"
+      ],
+      "batch5": [
+        "11bd40a44d212c08",
+        "0612152208a9c4fa",
+        "14ddcc8ff259c2b4",
+        "6ecbd71931b7c467",
+        "7ace49de31d2d5d0"
+      ]
+    },
+    "run2": {
+      "single": [
+        "d2bcf156b051088f",
+        "edccf60f7947d42f",
+        "18d8e33df6bfe000",
+        "3f4d0e2fb3d713ea",
+        "6655afa926b10264"
+      ],
+      "batch5": [
+        "11bd40a44d212c08",
+        "0612152208a9c4fa",
+        "14ddcc8ff259c2b4",
+        "6ecbd71931b7c467",
+        "7ace49de31d2d5d0"
+      ]
+    },
+    "identical": true
+  }
+}

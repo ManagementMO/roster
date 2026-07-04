@@ -1,0 +1,4956 @@
+{
+ "meta": {
+  "date": "2026-07-04T19:38:02.125Z",
+  "model": "onnx-community/embeddinggemma-300m-ONNX",
+  "dtype": "q8",
+  "nativeDims": 768,
+  "corpus": 133,
+  "needs": 66,
+  "k": 10,
+  "productionThreshold": 0.15,
+  "node": "v22.22.3"
+ },
+ "timing": {
+  "pipelineLoadMs": 555,
+  "docEmbedMs": 2648,
+  "docMsPerText": 19.9,
+  "queryEmbedMs": 1889,
+  "queryMsPerText": 13.3
+ },
+ "equivalence": {
+  "providerDims": 256,
+  "maxAbsComponentDiff": 0,
+  "minPairCosine": 1,
+  "pass": true
+ },
+ "perDim": {
+  "128": {
+   "fusionMismatches": 0,
+   "lexical": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.439,
+     "hit5": 0.621,
+     "mrr": 0.467
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.452,
+      "hit5": 0.645,
+      "mrr": 0.489
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0,
+      "hit5": 0.125,
+      "mrr": 0.057
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.615,
+      "hit5": 0.923,
+      "mrr": 0.725
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.6,
+      "hit5": 0.8,
+      "mrr": 0.45
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 0.5,
+      "hit5": 0.5,
+      "mrr": 0.25
+     }
+    }
+   },
+   "hybrid": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.561,
+     "hit5": 0.742,
+     "mrr": 0.607
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.548,
+      "hit5": 0.806,
+      "mrr": 0.643
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.125,
+      "hit5": 0.125,
+      "mrr": 0.157
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0.5,
+      "mrr": 0.125
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.769,
+      "hit5": 1,
+      "mrr": 0.808
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 0.8,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.125
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 0.75
+     }
+    }
+   },
+   "engagedForced": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.561,
+     "hit5": 0.742,
+     "mrr": 0.607
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.548,
+      "hit5": 0.806,
+      "mrr": 0.643
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.125,
+      "hit5": 0.125,
+      "mrr": 0.157
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0.5,
+      "mrr": 0.125
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.769,
+      "hit5": 1,
+      "mrr": 0.808
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 0.8,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.125
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 0.75
+     }
+    }
+   },
+   "engageRateAt015": 1,
+   "realSpans": [
+    0.2417,
+    0.3115,
+    0.2562,
+    0.336,
+    0.3323,
+    0.3993,
+    0.3505,
+    0.3406,
+    0.3748,
+    0.3556,
+    0.3619,
+    0.3854,
+    0.3606,
+    0.4906,
+    0.36,
+    0.357,
+    0.3937,
+    0.5238,
+    0.2761,
+    0.4194,
+    0.4282,
+    0.5073,
+    0.4199,
+    0.3583,
+    0.4209,
+    0.3863,
+    0.368,
+    0.3141,
+    0.3321,
+    0.3913,
+    0.4546,
+    0.5104,
+    0.3052,
+    0.3809,
+    0.4022,
+    0.363,
+    0.3797,
+    0.5301,
+    0.4624,
+    0.4358,
+    0.2874,
+    0.4361,
+    0.4373,
+    0.2708,
+    0.2953,
+    0.3945,
+    0.3966,
+    0.3714,
+    0.376,
+    0.3431,
+    0.5048,
+    0.3973,
+    0.4341,
+    0.5462,
+    0.3796,
+    0.3677,
+    0.4129,
+    0.4289,
+    0.3571,
+    0.3774,
+    0.2923,
+    0.4921,
+    0.5461,
+    0.4845,
+    0.4217,
+    0.3898
+   ],
+   "shuffledSpans": [
+    0.2921,
+    0.3543,
+    0.2085,
+    0.3784,
+    0.3093,
+    0.3114,
+    0.3295,
+    0.279,
+    0.3386,
+    0.3389,
+    0.339,
+    0.3738,
+    0.3695,
+    0.4157,
+    0.2666,
+    0.3866,
+    0.4052,
+    0.4921,
+    0.3788,
+    0.4214,
+    0.4056,
+    0.4969,
+    0.4189,
+    0.3012,
+    0.4433,
+    0.3837,
+    0.347,
+    0.2883,
+    0.3584,
+    0.33,
+    0.4212,
+    0.494,
+    0.3929,
+    0.3796,
+    0.4163,
+    0.3404,
+    0.3324,
+    0.5074,
+    0.3665,
+    0.4595,
+    0.336,
+    0.4297,
+    0.4183,
+    0.2767,
+    0.3163,
+    0.3844,
+    0.3054,
+    0.3557,
+    0.332,
+    0.3797,
+    0.4789,
+    0.4111,
+    0.4458,
+    0.5538,
+    0.3348,
+    0.3521,
+    0.4,
+    0.3762,
+    0.3912,
+    0.365,
+    0.2857,
+    0.4873,
+    0.5056,
+    0.4858,
+    0.4185,
+    0.3898
+   ],
+   "gibberishSpans": [
+    0.2796,
+    0.2929,
+    0.2606,
+    0.239,
+    0.3073,
+    0.3335,
+    0.2661,
+    0.3172,
+    0.2717,
+    0.3363
+   ]
+  },
+  "256": {
+   "fusionMismatches": 0,
+   "lexical": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.439,
+     "hit5": 0.621,
+     "mrr": 0.467
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.452,
+      "hit5": 0.645,
+      "mrr": 0.489
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0,
+      "hit5": 0.125,
+      "mrr": 0.057
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.615,
+      "hit5": 0.923,
+      "mrr": 0.725
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.6,
+      "hit5": 0.8,
+      "mrr": 0.45
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 0.5,
+      "hit5": 0.5,
+      "mrr": 0.25
+     }
+    }
+   },
+   "hybrid": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.682,
+     "hit5": 0.788,
+     "mrr": 0.687
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.677,
+      "hit5": 0.806,
+      "mrr": 0.712
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.25,
+      "hit5": 0.5,
+      "mrr": 0.337
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0.5,
+      "hit5": 0.5,
+      "mrr": 0.125
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.923,
+      "hit5": 1,
+      "mrr": 0.897
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 0.8,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.143
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 1
+     }
+    }
+   },
+   "engagedForced": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.682,
+     "hit5": 0.788,
+     "mrr": 0.687
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.677,
+      "hit5": 0.806,
+      "mrr": 0.712
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.25,
+      "hit5": 0.5,
+      "mrr": 0.337
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0.5,
+      "hit5": 0.5,
+      "mrr": 0.125
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.923,
+      "hit5": 1,
+      "mrr": 0.897
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 0.8,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.143
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 1
+     }
+    }
+   },
+   "engageRateAt015": 1,
+   "realSpans": [
+    0.2275,
+    0.3756,
+    0.3836,
+    0.3278,
+    0.2704,
+    0.3642,
+    0.2787,
+    0.3091,
+    0.4107,
+    0.4121,
+    0.3254,
+    0.3992,
+    0.4863,
+    0.4926,
+    0.4067,
+    0.3217,
+    0.3915,
+    0.6047,
+    0.2992,
+    0.4669,
+    0.4831,
+    0.5463,
+    0.574,
+    0.4184,
+    0.4032,
+    0.4809,
+    0.4465,
+    0.3641,
+    0.4545,
+    0.3777,
+    0.5363,
+    0.5644,
+    0.2774,
+    0.3641,
+    0.3873,
+    0.3356,
+    0.3928,
+    0.541,
+    0.4328,
+    0.4285,
+    0.3165,
+    0.4442,
+    0.5136,
+    0.2718,
+    0.2843,
+    0.4238,
+    0.3666,
+    0.449,
+    0.3339,
+    0.3411,
+    0.5216,
+    0.455,
+    0.4955,
+    0.5422,
+    0.3456,
+    0.4077,
+    0.3325,
+    0.3981,
+    0.3778,
+    0.2681,
+    0.3481,
+    0.5981,
+    0.5259,
+    0.4352,
+    0.4736,
+    0.3663
+   ],
+   "shuffledSpans": [
+    0.2348,
+    0.3023,
+    0.2965,
+    0.3735,
+    0.2515,
+    0.3065,
+    0.3153,
+    0.2684,
+    0.3949,
+    0.4062,
+    0.3398,
+    0.3854,
+    0.4815,
+    0.3539,
+    0.3618,
+    0.3386,
+    0.4082,
+    0.5222,
+    0.4207,
+    0.4526,
+    0.4439,
+    0.5347,
+    0.5616,
+    0.3536,
+    0.403,
+    0.4574,
+    0.3395,
+    0.3117,
+    0.4265,
+    0.3325,
+    0.4778,
+    0.547,
+    0.3493,
+    0.3765,
+    0.38,
+    0.3061,
+    0.372,
+    0.5279,
+    0.4236,
+    0.4655,
+    0.3244,
+    0.4322,
+    0.4789,
+    0.2952,
+    0.285,
+    0.4313,
+    0.2886,
+    0.3958,
+    0.2511,
+    0.3809,
+    0.5216,
+    0.4636,
+    0.4847,
+    0.5211,
+    0.3081,
+    0.3992,
+    0.3428,
+    0.3816,
+    0.3913,
+    0.2537,
+    0.3517,
+    0.5783,
+    0.492,
+    0.4456,
+    0.4833,
+    0.3663
+   ],
+   "gibberishSpans": [
+    0.237,
+    0.3028,
+    0.2103,
+    0.2174,
+    0.2589,
+    0.31,
+    0.2128,
+    0.2322,
+    0.2054,
+    0.2786
+   ],
+   "gibberishDetail": [
+    {
+     "text": "xqzv plorf wnkt jrb",
+     "span": 0.237,
+     "top3": [
+      "memory__read_graph:0.456",
+      "playwright__browser_press_key:0.436",
+      "everything__echo:0.434"
+     ]
+    },
+    {
+     "text": "asdf jkl qwerty uiop zxcv",
+     "span": 0.3028,
+     "top3": [
+      "playwright__browser_press_key:0.459",
+      "memory__read_graph:0.361",
+      "postgres__query:0.360"
+     ]
+    },
+    {
+     "text": "blorptang vexilquor mizzenfrap",
+     "span": 0.2103,
+     "top3": [
+      "everything__add:0.407",
+      "everything__longRunningOperation:0.394",
+      "playwright__browser_tabs:0.390"
+     ]
+    },
+    {
+     "text": "q8x!!7 zz@@ vv##9 rr$$",
+     "span": 0.2174,
+     "top3": [
+      "playwright__browser_press_key:0.468",
+      "fs__write_file:0.445",
+      "playwright__browser_navigate_back:0.443"
+     ]
+    },
+    {
+     "text": "lorem zipsum dolor blat amet consectetur frobnitz",
+     "span": 0.2589,
+     "top3": [
+      "everything__add:0.538",
+      "playwright__browser_fill_form:0.514",
+      "fs__read_multiple_files:0.509"
+     ]
+    },
+    {
+     "text": "aaaaaa bbbbbb cccccc dddddd",
+     "span": 0.31,
+     "top3": [
+      "everything__add:0.466",
+      "everything__echo:0.438",
+      "fs__read_text_file:0.423"
+     ]
+    },
+    {
+     "text": "kjhdskjfh sdkjfhsdkf jhsdkfjhs dkfjhsdkjf",
+     "span": 0.2128,
+     "top3": [
+      "fs__read_text_file:0.447",
+      "seq__sequentialthinking:0.439",
+      "fs__get_file_info:0.435"
+     ]
+    },
+    {
+     "text": "zzz yyy xxx www vvv uuu ttt",
+     "span": 0.2322,
+     "top3": [
+      "playwright__browser_navigate_back:0.450",
+      "everything__longRunningOperation:0.448",
+      "fs__write_file:0.446"
+     ]
+    },
+    {
+     "text": "9481 2750 6613 0092 8837",
+     "span": 0.2054,
+     "top3": [
+      "puppeteer__puppeteer_fill:0.314",
+      "fs__write_file:0.313",
+      "everything__add:0.311"
+     ]
+    },
+    {
+     "text": "ﬂ‡†¶• ∆˚¬… æœ∑´®†",
+     "span": 0.2786,
+     "top3": [
+      "fs__write_file:0.491",
+      "fs__read_multiple_files:0.479",
+      "time__convert_time:0.474"
+     ]
+    }
+   ],
+   "perNeed": [
+    {
+     "need": "remember that the user prefers dark mode",
+     "style": "paraphrase",
+     "span": 0.2275,
+     "cosMax": 0.3332,
+     "cosMin": 0.1058,
+     "lex": [
+      "slack__slack_get_user_profile",
+      "git__git_diff_staged",
+      "git__git_diff_unstaged",
+      "fs__list_allowed_directories",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "git__git_log",
+      "playwright__browser_close",
+      "playwright__browser_resize"
+     ],
+     "hybrid": [
+      "slack__slack_get_user_profile",
+      "sqlite__append_insight",
+      "git__git_diff_staged",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_tabs",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_hover",
+      "playwright__browser_click",
+      "playwright__browser_press_key",
+      "playwright__browser_snapshot"
+     ],
+     "engaged": [
+      "slack__slack_get_user_profile",
+      "sqlite__append_insight",
+      "git__git_diff_staged",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_tabs",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_hover",
+      "playwright__browser_click",
+      "playwright__browser_press_key",
+      "playwright__browser_snapshot"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "what do we already know about this person",
+     "style": "zero-overlap",
+     "span": 0.3756,
+     "cosMax": 0.4836,
+     "cosMin": 0.108,
+     "lex": [
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory"
+     ],
+     "hybrid": [
+      "linear__linear_get_issue",
+      "fs__get_file_info",
+      "slack__slack_get_user_profile",
+      "slack__slack_get_users",
+      "git__git_show",
+      "github__search_users",
+      "everything__add",
+      "everything__echo",
+      "memory__read_graph",
+      "puppeteer__puppeteer_fill"
+     ],
+     "engaged": [
+      "linear__linear_get_issue",
+      "fs__get_file_info",
+      "slack__slack_get_user_profile",
+      "slack__slack_get_users",
+      "git__git_show",
+      "github__search_users",
+      "everything__add",
+      "everything__echo",
+      "memory__read_graph",
+      "puppeteer__puppeteer_fill"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "save a fact about the user so future sessions can recall it",
+     "style": "paraphrase",
+     "span": 0.3836,
+     "cosMax": 0.5854,
+     "cosMin": 0.2018,
+     "lex": [
+      "slack__slack_get_user_profile",
+      "playwright__browser_handle_dialog",
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "git__git_log",
+      "playwright__browser_close",
+      "playwright__browser_resize"
+     ],
+     "hybrid": [
+      "slack__slack_get_user_profile",
+      "slack__slack_get_users",
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "sqlite__append_insight",
+      "github__add_issue_comment",
+      "everything__longRunningOperation",
+      "github__search_users",
+      "everything__echo",
+      "fs__write_file"
+     ],
+     "engaged": [
+      "slack__slack_get_user_profile",
+      "slack__slack_get_users",
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "sqlite__append_insight",
+      "github__add_issue_comment",
+      "everything__longRunningOperation",
+      "github__search_users",
+      "everything__echo",
+      "fs__write_file"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "link these two concepts together in the knowledge base",
+     "style": "paraphrase",
+     "span": 0.3278,
+     "cosMax": 0.5779,
+     "cosMin": 0.25,
+     "lex": [
+      "everything__add",
+      "git__git_create_branch",
+      "playwright__browser_drag",
+      "memory__create_entities",
+      "memory__delete_observations",
+      "memory__create_relations",
+      "memory__add_observations",
+      "memory__open_nodes",
+      "memory__search_nodes",
+      "memory__read_graph"
+     ],
+     "hybrid": [
+      "memory__read_graph",
+      "memory__search_nodes",
+      "memory__create_relations",
+      "memory__create_entities",
+      "everything__add",
+      "memory__open_nodes",
+      "memory__add_observations",
+      "notion__notion_search",
+      "memory__delete_relations",
+      "sqlite__append_insight"
+     ],
+     "engaged": [
+      "memory__read_graph",
+      "memory__search_nodes",
+      "memory__create_relations",
+      "memory__create_entities",
+      "everything__add",
+      "memory__open_nodes",
+      "memory__add_observations",
+      "notion__notion_search",
+      "memory__delete_relations",
+      "sqlite__append_insight"
+     ],
+     "lexRank": 6,
+     "hybRank": 3
+    },
+    {
+     "need": "forget everything we stored about acme corp",
+     "style": "paraphrase",
+     "span": 0.2704,
+     "cosMax": 0.414,
+     "cosMin": 0.1436,
+     "lex": [
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "everything__add",
+      "everything__printEnv",
+      "everything__echo",
+      "everything__getTinyImage",
+      "everything__longRunningOperation",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file"
+     ],
+     "hybrid": [
+      "fs__get_file_info",
+      "git__git_reset",
+      "everything__echo",
+      "everything__printEnv",
+      "everything__longRunningOperation",
+      "everything__add",
+      "linear__linear_get_issue",
+      "fs__write_file",
+      "git__git_commit",
+      "slack__slack_get_channel_history"
+     ],
+     "engaged": [
+      "fs__get_file_info",
+      "git__git_reset",
+      "everything__echo",
+      "everything__printEnv",
+      "everything__longRunningOperation",
+      "everything__add",
+      "linear__linear_get_issue",
+      "fs__write_file",
+      "git__git_commit",
+      "slack__slack_get_channel_history"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "Persist the following durable preference so that any future conversation can retrieve it without the user restating it: the user's timezone is America/Toronto",
+     "style": "verbose",
+     "span": 0.3642,
+     "cosMax": 0.4801,
+     "cosMin": 0.116,
+     "lex": [
+      "fs__list_allowed_directories",
+      "slack__slack_get_user_profile",
+      "time__get_current_time",
+      "playwright__browser_handle_dialog",
+      "fs__get_file_info",
+      "git__git_diff_staged",
+      "git__git_diff_unstaged",
+      "sentry__get_sentry_issue",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight"
+     ],
+     "hybrid": [
+      "time__get_current_time",
+      "slack__slack_get_user_profile",
+      "time__convert_time",
+      "slack__slack_get_channel_history",
+      "fs__list_allowed_directories",
+      "slack__slack_post_message",
+      "slack__slack_get_users",
+      "sentry__get_sentry_issue",
+      "slack__slack_list_channels",
+      "slack__slack_get_thread_replies"
+     ],
+     "engaged": [
+      "time__get_current_time",
+      "slack__slack_get_user_profile",
+      "time__convert_time",
+      "slack__slack_get_channel_history",
+      "fs__list_allowed_directories",
+      "slack__slack_post_message",
+      "slack__slack_get_users",
+      "sentry__get_sentry_issue",
+      "slack__slack_list_channels",
+      "slack__slack_get_thread_replies"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "show me what's inside config.yaml",
+     "style": "paraphrase",
+     "span": 0.2787,
+     "cosMax": 0.4403,
+     "cosMin": 0.1616,
+     "lex": [
+      "git__git_show",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory",
+      "fs__list_directory_with_sizes"
+     ],
+     "hybrid": [
+      "git__git_show",
+      "memory__read_graph",
+      "github__get_file_contents",
+      "fs__read_media_file",
+      "fs__directory_tree",
+      "git__git_init",
+      "fs__write_file",
+      "git__git_diff_staged",
+      "git__git_status",
+      "git__git_diff_unstaged"
+     ],
+     "engaged": [
+      "git__git_show",
+      "memory__read_graph",
+      "github__get_file_contents",
+      "fs__read_media_file",
+      "fs__directory_tree",
+      "git__git_init",
+      "fs__write_file",
+      "git__git_diff_staged",
+      "git__git_status",
+      "git__git_diff_unstaged"
+     ],
+     "lexRank": 3,
+     "hybRank": null
+    },
+    {
+     "need": "make a folder for the build artifacts",
+     "style": "paraphrase",
+     "span": 0.3091,
+     "cosMax": 0.5397,
+     "cosMin": 0.2306,
+     "lex": [
+      "fs__edit_file",
+      "playwright__browser_wait_for",
+      "github__search_repositories",
+      "github__search_users",
+      "github__search_code",
+      "gdrive__gdrive_search",
+      "sqlite__describe_table",
+      "notion__notion_search",
+      "git__git_diff_staged",
+      "sqlite__append_insight"
+     ],
+     "hybrid": [
+      "fs__create_directory",
+      "fs__directory_tree",
+      "git__git_add",
+      "github__create_repository",
+      "git__git_init",
+      "github__search_repositories",
+      "fs__edit_file",
+      "github__get_file_contents",
+      "fs__search_files",
+      "github__fork_repository"
+     ],
+     "engaged": [
+      "fs__create_directory",
+      "fs__directory_tree",
+      "git__git_add",
+      "github__create_repository",
+      "git__git_init",
+      "github__search_repositories",
+      "fs__edit_file",
+      "github__get_file_contents",
+      "fs__search_files",
+      "github__fork_repository"
+     ],
+     "lexRank": null,
+     "hybRank": 1
+    },
+    {
+     "need": "find every markdown file in the project",
+     "style": "paraphrase",
+     "span": 0.4107,
+     "cosMax": 0.6335,
+     "cosMin": 0.2229,
+     "lex": [
+      "fs__read_file",
+      "fetch__fetch",
+      "firecrawl__firecrawl_scrape",
+      "github__create_or_update_file",
+      "fs__read_text_file",
+      "fs__write_file",
+      "gdrive__gdrive_read_file",
+      "fs__get_file_info",
+      "playwright__browser_file_upload",
+      "github__get_file_contents"
+     ],
+     "hybrid": [
+      "fetch__fetch",
+      "firecrawl__firecrawl_scrape",
+      "github__get_file_contents",
+      "fs__get_file_info",
+      "fs__read_text_file",
+      "fs__read_file",
+      "fs__search_files",
+      "gdrive__gdrive_read_file",
+      "fs__list_directory",
+      "fs__write_file"
+     ],
+     "engaged": [
+      "fetch__fetch",
+      "firecrawl__firecrawl_scrape",
+      "github__get_file_contents",
+      "fs__get_file_info",
+      "fs__read_text_file",
+      "fs__read_file",
+      "fs__search_files",
+      "gdrive__gdrive_read_file",
+      "fs__list_directory",
+      "fs__write_file"
+     ],
+     "lexRank": null,
+     "hybRank": 7
+    },
+    {
+     "need": "rename report.txt to final-report.txt",
+     "style": "paraphrase",
+     "span": 0.4121,
+     "cosMax": 0.5277,
+     "cosMin": 0.1156,
+     "lex": [
+      "sqlite__append_insight",
+      "fs__move_file",
+      "slack__slack_reply_to_thread",
+      "playwright__browser_wait_for",
+      "git__git_commit",
+      "playwright__browser_navigate",
+      "git__git_add",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_navigate_back",
+      "github__add_issue_comment"
+     ],
+     "hybrid": [
+      "fs__move_file",
+      "sqlite__append_insight",
+      "fs__write_file",
+      "fs__read_text_file",
+      "fs__edit_file",
+      "fs__read_file",
+      "github__create_or_update_file",
+      "everything__echo",
+      "linear__linear_update_issue",
+      "fs__read_multiple_files"
+     ],
+     "engaged": [
+      "fs__move_file",
+      "sqlite__append_insight",
+      "fs__write_file",
+      "fs__read_text_file",
+      "fs__edit_file",
+      "fs__read_file",
+      "github__create_or_update_file",
+      "everything__echo",
+      "linear__linear_update_issue",
+      "fs__read_multiple_files"
+     ],
+     "lexRank": 2,
+     "hybRank": 1
+    },
+    {
+     "need": "how big is that log file",
+     "style": "zero-overlap",
+     "span": 0.3254,
+     "cosMax": 0.5578,
+     "cosMin": 0.2324,
+     "lex": [
+      "fs__list_allowed_directories",
+      "git__git_log",
+      "git__git_diff_staged",
+      "fs__read_file",
+      "fs__write_file",
+      "fs__read_text_file",
+      "git__git_diff_unstaged",
+      "fs__get_file_info",
+      "playwright__browser_file_upload",
+      "gdrive__gdrive_read_file"
+     ],
+     "hybrid": [
+      "git__git_log",
+      "fs__write_file",
+      "fs__list_directory_with_sizes",
+      "fs__get_file_info",
+      "fs__read_text_file",
+      "fs__read_file",
+      "everything__longRunningOperation",
+      "gdrive__gdrive_read_file",
+      "fs__read_multiple_files",
+      "playwright__browser_network_requests"
+     ],
+     "engaged": [
+      "git__git_log",
+      "fs__write_file",
+      "fs__list_directory_with_sizes",
+      "fs__get_file_info",
+      "fs__read_text_file",
+      "fs__read_file",
+      "everything__longRunningOperation",
+      "gdrive__gdrive_read_file",
+      "fs__read_multiple_files",
+      "playwright__browser_network_requests"
+     ],
+     "lexRank": 8,
+     "hybRank": 4
+    },
+    {
+     "need": "append a line to my notes file",
+     "style": "paraphrase",
+     "span": 0.3992,
+     "cosMax": 0.5859,
+     "cosMin": 0.1867,
+     "lex": [
+      "fs__edit_file",
+      "sqlite__append_insight",
+      "git__git_add",
+      "fs__read_file",
+      "fs__write_file",
+      "fs__read_text_file",
+      "fs__get_file_info",
+      "playwright__browser_file_upload",
+      "gdrive__gdrive_read_file",
+      "github__create_or_update_file"
+     ],
+     "hybrid": [
+      "fs__edit_file",
+      "git__git_add",
+      "fs__write_file",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "github__create_or_update_file",
+      "everything__add",
+      "fs__read_file",
+      "memory__add_observations",
+      "linear__linear_create_comment"
+     ],
+     "engaged": [
+      "fs__edit_file",
+      "git__git_add",
+      "fs__write_file",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "github__create_or_update_file",
+      "everything__add",
+      "fs__read_file",
+      "memory__add_observations",
+      "linear__linear_create_comment"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "which directories am i allowed to touch",
+     "style": "paraphrase",
+     "span": 0.4863,
+     "cosMax": 0.6944,
+     "cosMin": 0.2081,
+     "lex": [
+      "fs__list_allowed_directories",
+      "fs__move_file",
+      "fs__search_files",
+      "fs__list_directory",
+      "fs__directory_tree",
+      "fs__list_directory_with_sizes",
+      "slack__slack_reply_to_thread",
+      "playwright__browser_wait_for",
+      "git__git_commit",
+      "playwright__browser_navigate"
+     ],
+     "hybrid": [
+      "fs__list_allowed_directories",
+      "fs__list_directory",
+      "fs__directory_tree",
+      "fs__search_files",
+      "fs__create_directory",
+      "fs__list_directory_with_sizes",
+      "fs__move_file",
+      "fs__get_file_info",
+      "github__get_file_contents",
+      "github__search_repositories"
+     ],
+     "engaged": [
+      "fs__list_allowed_directories",
+      "fs__list_directory",
+      "fs__directory_tree",
+      "fs__search_files",
+      "fs__create_directory",
+      "fs__list_directory_with_sizes",
+      "fs__move_file",
+      "fs__get_file_info",
+      "github__get_file_contents",
+      "github__search_repositories"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "open a pull request with my changes",
+     "style": "terse",
+     "span": 0.4926,
+     "cosMax": 0.673,
+     "cosMin": 0.1804,
+     "lex": [
+      "github__merge_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "github__get_pull_request_files",
+      "memory__open_nodes",
+      "github__list_pull_requests",
+      "git__git_reset",
+      "git__git_commit",
+      "git__git_diff_staged"
+     ],
+     "hybrid": [
+      "github__create_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__merge_pull_request",
+      "github__get_pull_request_files",
+      "github__list_pull_requests",
+      "git__git_commit",
+      "github__update_issue",
+      "git__git_diff_staged",
+      "git__git_reset"
+     ],
+     "engaged": [
+      "github__create_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__merge_pull_request",
+      "github__get_pull_request_files",
+      "github__list_pull_requests",
+      "git__git_commit",
+      "github__update_issue",
+      "git__git_diff_staged",
+      "git__git_reset"
+     ],
+     "lexRank": 4,
+     "hybRank": 1
+    },
+    {
+     "need": "file a bug report on the upstream repo",
+     "style": "paraphrase",
+     "span": 0.4067,
+     "cosMax": 0.6131,
+     "cosMin": 0.2065,
+     "lex": [
+      "sqlite__append_insight",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__write_file",
+      "gdrive__gdrive_read_file",
+      "fs__get_file_info",
+      "playwright__browser_file_upload",
+      "github__get_file_contents",
+      "github__create_or_update_file",
+      "fs__edit_file"
+     ],
+     "hybrid": [
+      "github__create_or_update_file",
+      "github__create_issue",
+      "github__update_issue",
+      "git__git_add",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "sqlite__append_insight",
+      "github__search_issues",
+      "github__create_repository",
+      "playwright__browser_file_upload"
+     ],
+     "engaged": [
+      "github__create_or_update_file",
+      "github__create_issue",
+      "github__update_issue",
+      "git__git_add",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "sqlite__append_insight",
+      "github__search_issues",
+      "github__create_repository",
+      "playwright__browser_file_upload"
+     ],
+     "lexRank": null,
+     "hybRank": 2
+    },
+    {
+     "need": "who changed this file recently",
+     "style": "cross-server",
+     "span": 0.3217,
+     "cosMax": 0.6214,
+     "cosMin": 0.2997,
+     "lex": [
+      "github__get_pull_request_files",
+      "fs__list_allowed_directories",
+      "fs__read_file",
+      "fs__write_file",
+      "fs__read_text_file",
+      "fs__get_file_info",
+      "playwright__browser_file_upload",
+      "gdrive__gdrive_read_file",
+      "github__create_or_update_file",
+      "fs__edit_file"
+     ],
+     "hybrid": [
+      "fs__write_file",
+      "github__get_pull_request_files",
+      "fs__edit_file",
+      "github__create_or_update_file",
+      "fs__read_file",
+      "fs__read_text_file",
+      "gdrive__gdrive_read_file",
+      "fs__get_file_info",
+      "github__get_file_contents",
+      "git__git_commit"
+     ],
+     "engaged": [
+      "fs__write_file",
+      "github__get_pull_request_files",
+      "fs__edit_file",
+      "github__create_or_update_file",
+      "fs__read_file",
+      "fs__read_text_file",
+      "gdrive__gdrive_read_file",
+      "fs__get_file_info",
+      "github__get_file_contents",
+      "git__git_commit"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "find repositories about vector databases",
+     "style": "terse",
+     "span": 0.3915,
+     "cosMax": 0.6473,
+     "cosMin": 0.2558,
+     "lex": [
+      "github__search_repositories",
+      "notion__notion_search",
+      "github__search_code",
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file"
+     ],
+     "hybrid": [
+      "github__search_repositories",
+      "github__create_repository",
+      "notion__notion_search",
+      "github__search_code",
+      "github__search_issues",
+      "notion__notion_create_database",
+      "github__list_pull_requests",
+      "sqlite__list_tables",
+      "git__git_init",
+      "memory__search_nodes"
+     ],
+     "engaged": [
+      "github__search_repositories",
+      "github__create_repository",
+      "notion__notion_search",
+      "github__search_code",
+      "github__search_issues",
+      "notion__notion_create_database",
+      "github__list_pull_requests",
+      "sqlite__list_tables",
+      "git__git_init",
+      "memory__search_nodes"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "merge that approved pull request",
+     "style": "terse",
+     "span": 0.6047,
+     "cosMax": 0.7866,
+     "cosMin": 0.1819,
+     "lex": [
+      "github__merge_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "github__get_pull_request_files",
+      "github__list_pull_requests",
+      "git__git_diff_staged",
+      "git__git_diff_unstaged",
+      "fs__list_allowed_directories",
+      "fs__read_file"
+     ],
+     "hybrid": [
+      "github__merge_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "github__get_pull_request_files",
+      "github__list_pull_requests",
+      "git__git_diff_staged",
+      "git__git_commit",
+      "github__update_issue",
+      "git__git_log"
+     ],
+     "engaged": [
+      "github__merge_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "github__get_pull_request_files",
+      "github__list_pull_requests",
+      "git__git_diff_staged",
+      "git__git_commit",
+      "github__update_issue",
+      "git__git_log"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "leave a comment on issue 42",
+     "style": "terse",
+     "span": 0.2992,
+     "cosMax": 0.5172,
+     "cosMin": 0.218,
+     "lex": [
+      "github__add_issue_comment",
+      "linear__linear_create_comment",
+      "github__create_issue",
+      "github__update_issue",
+      "linear__linear_update_issue",
+      "linear__linear_get_issue",
+      "linear__linear_create_issue",
+      "github__get_issue",
+      "sentry__get_sentry_issue",
+      "github__search_users"
+     ],
+     "hybrid": [
+      "github__add_issue_comment",
+      "linear__linear_create_comment",
+      "github__create_issue",
+      "github__update_issue",
+      "puppeteer__puppeteer_evaluate",
+      "github__create_pull_request_review",
+      "github__create_repository",
+      "github__get_issue",
+      "github__create_pull_request",
+      "playwright__browser_evaluate"
+     ],
+     "engaged": [
+      "github__add_issue_comment",
+      "linear__linear_create_comment",
+      "github__create_issue",
+      "github__update_issue",
+      "puppeteer__puppeteer_evaluate",
+      "github__create_pull_request_review",
+      "github__create_repository",
+      "github__get_issue",
+      "github__create_pull_request",
+      "playwright__browser_evaluate"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "grab the raw contents of the README from the remote repo",
+     "style": "trap",
+     "span": 0.4669,
+     "cosMax": 0.6493,
+     "cosMin": 0.1825,
+     "lex": [
+      "github__get_file_contents",
+      "gdrive__gdrive_read_file",
+      "fs__read_file",
+      "fs__read_text_file",
+      "git__git_show",
+      "fetch__fetch",
+      "fs__read_multiple_files",
+      "git__git_add",
+      "memory__delete_relations",
+      "playwright__browser_console_messages"
+     ],
+     "hybrid": [
+      "github__get_file_contents",
+      "fetch__fetch",
+      "gdrive__gdrive_read_file",
+      "fs__read_text_file",
+      "git__git_show",
+      "fs__read_file",
+      "fs__read_multiple_files",
+      "git__git_add",
+      "github__get_pull_request",
+      "github__get_issue"
+     ],
+     "engaged": [
+      "github__get_file_contents",
+      "fetch__fetch",
+      "gdrive__gdrive_read_file",
+      "fs__read_text_file",
+      "git__git_show",
+      "fs__read_file",
+      "fs__read_multiple_files",
+      "git__git_add",
+      "github__get_pull_request",
+      "github__get_issue"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "which files did that pull request touch",
+     "style": "paraphrase",
+     "span": 0.4831,
+     "cosMax": 0.7574,
+     "cosMin": 0.2743,
+     "lex": [
+      "github__get_pull_request_files",
+      "github__merge_pull_request",
+      "github__get_pull_request",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "github__list_pull_requests",
+      "git__git_diff_staged",
+      "fs__read_multiple_files",
+      "fs__search_files",
+      "git__git_diff_unstaged"
+     ],
+     "hybrid": [
+      "github__get_pull_request_files",
+      "github__get_pull_request",
+      "github__create_pull_request",
+      "github__merge_pull_request",
+      "github__create_pull_request_review",
+      "github__list_pull_requests",
+      "github__push_files",
+      "git__git_add",
+      "github__get_file_contents",
+      "fs__read_multiple_files"
+     ],
+     "engaged": [
+      "github__get_pull_request_files",
+      "github__get_pull_request",
+      "github__create_pull_request",
+      "github__merge_pull_request",
+      "github__create_pull_request_review",
+      "github__list_pull_requests",
+      "github__push_files",
+      "git__git_add",
+      "github__get_file_contents",
+      "fs__read_multiple_files"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "commit my staged changes with a message",
+     "style": "terse",
+     "span": 0.5463,
+     "cosMax": 0.6521,
+     "cosMin": 0.1058,
+     "lex": [
+      "git__git_diff_staged",
+      "git__git_reset",
+      "git__git_commit",
+      "git__git_diff_unstaged",
+      "slack__slack_post_message",
+      "git__git_log",
+      "everything__echo",
+      "git__git_show",
+      "slack__slack_add_reaction",
+      "slack__slack_get_thread_replies"
+     ],
+     "hybrid": [
+      "git__git_diff_staged",
+      "git__git_reset",
+      "git__git_commit",
+      "git__git_diff_unstaged",
+      "git__git_log",
+      "git__git_show",
+      "slack__slack_post_message",
+      "everything__echo",
+      "git__git_checkout",
+      "git__git_diff"
+     ],
+     "engaged": [
+      "git__git_diff_staged",
+      "git__git_reset",
+      "git__git_commit",
+      "git__git_diff_unstaged",
+      "git__git_log",
+      "git__git_show",
+      "slack__slack_post_message",
+      "everything__echo",
+      "git__git_checkout",
+      "git__git_diff"
+     ],
+     "lexRank": 3,
+     "hybRank": 3
+    },
+    {
+     "need": "what's changed since my last commit",
+     "style": "paraphrase",
+     "span": 0.574,
+     "cosMax": 0.7225,
+     "cosMin": 0.1485,
+     "lex": [
+      "playwright__browser_network_requests",
+      "github__get_pull_request_files",
+      "git__git_log",
+      "git__git_commit",
+      "git__git_show",
+      "git__git_diff_staged",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files"
+     ],
+     "hybrid": [
+      "git__git_commit",
+      "git__git_log",
+      "git__git_show",
+      "git__git_diff_staged",
+      "github__get_pull_request_files",
+      "playwright__browser_network_requests",
+      "git__git_diff",
+      "git__git_status",
+      "git__git_diff_unstaged",
+      "github__list_commits"
+     ],
+     "engaged": [
+      "git__git_commit",
+      "git__git_log",
+      "git__git_show",
+      "git__git_diff_staged",
+      "github__get_pull_request_files",
+      "playwright__browser_network_requests",
+      "git__git_diff",
+      "git__git_status",
+      "git__git_diff_unstaged",
+      "github__list_commits"
+     ],
+     "lexRank": null,
+     "hybRank": 9
+    },
+    {
+     "need": "start a new branch for the hotfix",
+     "style": "cross-server",
+     "span": 0.4184,
+     "cosMax": 0.6386,
+     "cosMin": 0.2201,
+     "lex": [
+      "git__git_create_branch",
+      "github__create_branch",
+      "github__list_commits",
+      "fs__write_file",
+      "playwright__browser_wait_for",
+      "github__search_repositories",
+      "github__search_users",
+      "git__git_init",
+      "github__search_code",
+      "gdrive__gdrive_search"
+     ],
+     "hybrid": [
+      "github__create_branch",
+      "git__git_create_branch",
+      "git__git_checkout",
+      "github__create_issue",
+      "github__list_commits",
+      "github__create_repository",
+      "git__git_init",
+      "github__create_pull_request",
+      "slack__slack_post_message",
+      "github__update_issue"
+     ],
+     "engaged": [
+      "github__create_branch",
+      "git__git_create_branch",
+      "git__git_checkout",
+      "github__create_issue",
+      "github__list_commits",
+      "github__create_repository",
+      "git__git_init",
+      "github__create_pull_request",
+      "slack__slack_post_message",
+      "github__update_issue"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "show me this repo's history",
+     "style": "paraphrase",
+     "span": 0.4032,
+     "cosMax": 0.6678,
+     "cosMin": 0.2646,
+     "lex": [
+      "git__git_show",
+      "slack__slack_get_channel_history",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory"
+     ],
+     "hybrid": [
+      "git__git_show",
+      "git__git_log",
+      "slack__slack_get_channel_history",
+      "git__git_commit",
+      "github__search_repositories",
+      "github__list_commits",
+      "github__list_pull_requests",
+      "github__get_pull_request",
+      "git__git_diff_staged",
+      "git__git_status"
+     ],
+     "engaged": [
+      "git__git_show",
+      "git__git_log",
+      "slack__slack_get_channel_history",
+      "git__git_commit",
+      "github__search_repositories",
+      "github__list_commits",
+      "github__list_pull_requests",
+      "github__get_pull_request",
+      "git__git_diff_staged",
+      "git__git_status"
+     ],
+     "lexRank": null,
+     "hybRank": 2
+    },
+    {
+     "need": "unstage everything i added",
+     "style": "paraphrase",
+     "span": 0.4809,
+     "cosMax": 0.6946,
+     "cosMin": 0.2137,
+     "lex": [
+      "everything__add",
+      "everything__printEnv",
+      "everything__echo",
+      "everything__getTinyImage",
+      "everything__longRunningOperation",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file"
+     ],
+     "hybrid": [
+      "git__git_reset",
+      "everything__add",
+      "git__git_add",
+      "everything__echo",
+      "everything__printEnv",
+      "git__git_diff_unstaged",
+      "everything__getTinyImage",
+      "git__git_diff_staged",
+      "everything__longRunningOperation",
+      "playwright__browser_fill_form"
+     ],
+     "engaged": [
+      "git__git_reset",
+      "everything__add",
+      "git__git_add",
+      "everything__echo",
+      "everything__printEnv",
+      "git__git_diff_unstaged",
+      "everything__getTinyImage",
+      "git__git_diff_staged",
+      "everything__longRunningOperation",
+      "playwright__browser_fill_form"
+     ],
+     "lexRank": null,
+     "hybRank": 1
+    },
+    {
+     "need": "post an update to the team channel",
+     "style": "paraphrase",
+     "span": 0.4465,
+     "cosMax": 0.6009,
+     "cosMin": 0.1544,
+     "lex": [
+      "slack__slack_post_message",
+      "github__update_issue",
+      "linear__linear_update_issue",
+      "notion__notion_update_page",
+      "slack__slack_get_channel_history",
+      "sqlite__write_query",
+      "linear__linear_create_issue",
+      "github__create_or_update_file",
+      "github__add_issue_comment",
+      "slack__slack_reply_to_thread"
+     ],
+     "hybrid": [
+      "slack__slack_post_message",
+      "github__update_issue",
+      "linear__linear_update_issue",
+      "slack__slack_get_channel_history",
+      "linear__linear_create_issue",
+      "notion__notion_update_page",
+      "github__create_or_update_file",
+      "github__add_issue_comment",
+      "slack__slack_reply_to_thread",
+      "slack__slack_add_reaction"
+     ],
+     "engaged": [
+      "slack__slack_post_message",
+      "github__update_issue",
+      "linear__linear_update_issue",
+      "slack__slack_get_channel_history",
+      "linear__linear_create_issue",
+      "notion__notion_update_page",
+      "github__create_or_update_file",
+      "github__add_issue_comment",
+      "slack__slack_reply_to_thread",
+      "slack__slack_add_reaction"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "read the room before replying",
+     "style": "trap",
+     "span": 0.3641,
+     "cosMax": 0.5215,
+     "cosMin": 0.1574,
+     "lex": [
+      "memory__read_graph",
+      "fs__read_multiple_files",
+      "fs__read_file",
+      "gdrive__gdrive_read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "sqlite__read_query",
+      "postgres__query",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight"
+     ],
+     "hybrid": [
+      "memory__read_graph",
+      "sqlite__read_query",
+      "fs__read_file",
+      "fs__read_multiple_files",
+      "postgres__query",
+      "gdrive__gdrive_read_file",
+      "fs__read_text_file",
+      "slack__slack_get_thread_replies",
+      "fs__read_media_file",
+      "slack__slack_reply_to_thread"
+     ],
+     "engaged": [
+      "memory__read_graph",
+      "sqlite__read_query",
+      "fs__read_file",
+      "fs__read_multiple_files",
+      "postgres__query",
+      "gdrive__gdrive_read_file",
+      "fs__read_text_file",
+      "slack__slack_get_thread_replies",
+      "fs__read_media_file",
+      "slack__slack_reply_to_thread"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "react with a thumbs up to that message",
+     "style": "paraphrase",
+     "span": 0.4545,
+     "cosMax": 0.5842,
+     "cosMin": 0.1297,
+     "lex": [
+      "slack__slack_post_message",
+      "slack__slack_reply_to_thread",
+      "slack__slack_add_reaction",
+      "fs__list_allowed_directories",
+      "everything__echo",
+      "git__git_diff_staged",
+      "git__git_diff_unstaged",
+      "slack__slack_get_thread_replies",
+      "everything__longRunningOperation",
+      "github__list_issues"
+     ],
+     "hybrid": [
+      "slack__slack_add_reaction",
+      "slack__slack_reply_to_thread",
+      "slack__slack_post_message",
+      "everything__echo",
+      "slack__slack_get_thread_replies",
+      "playwright__browser_press_key",
+      "everything__add",
+      "playwright__browser_evaluate",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_wait_for"
+     ],
+     "engaged": [
+      "slack__slack_add_reaction",
+      "slack__slack_reply_to_thread",
+      "slack__slack_post_message",
+      "everything__echo",
+      "slack__slack_get_thread_replies",
+      "playwright__browser_press_key",
+      "everything__add",
+      "playwright__browser_evaluate",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_wait_for"
+     ],
+     "lexRank": 3,
+     "hybRank": 1
+    },
+    {
+     "need": "who is in this workspace",
+     "style": "terse",
+     "span": 0.3777,
+     "cosMax": 0.5489,
+     "cosMin": 0.1712,
+     "lex": [
+      "fs__list_allowed_directories",
+      "linear__linear_list_projects",
+      "slack__slack_list_channels",
+      "notion__notion_move_pages",
+      "linear__linear_list_issues",
+      "notion__notion_create_pages",
+      "slack__slack_get_users",
+      "notion__notion_search",
+      "puppeteer__puppeteer_evaluate",
+      "gdrive__gdrive_search"
+     ],
+     "hybrid": [
+      "slack__slack_get_users",
+      "linear__linear_list_projects",
+      "notion__notion_create_pages",
+      "notion__notion_search",
+      "linear__linear_list_issues",
+      "notion__notion_move_pages",
+      "github__search_users",
+      "slack__slack_get_user_profile",
+      "fs__list_allowed_directories",
+      "slack__slack_list_channels"
+     ],
+     "engaged": [
+      "slack__slack_get_users",
+      "linear__linear_list_projects",
+      "notion__notion_create_pages",
+      "notion__notion_search",
+      "linear__linear_list_issues",
+      "notion__notion_move_pages",
+      "github__search_users",
+      "slack__slack_get_user_profile",
+      "fs__list_allowed_directories",
+      "slack__slack_list_channels"
+     ],
+     "lexRank": 7,
+     "hybRank": 1
+    },
+    {
+     "need": "reply inside the thread, not the main channel",
+     "style": "paraphrase",
+     "span": 0.5363,
+     "cosMax": 0.7137,
+     "cosMin": 0.1774,
+     "lex": [
+      "slack__slack_reply_to_thread",
+      "slack__slack_get_channel_history",
+      "slack__slack_get_thread_replies",
+      "git__git_diff_unstaged",
+      "slack__slack_post_message",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "git__git_log",
+      "playwright__browser_close"
+     ],
+     "hybrid": [
+      "slack__slack_reply_to_thread",
+      "slack__slack_get_thread_replies",
+      "slack__slack_post_message",
+      "slack__slack_get_channel_history",
+      "everything__echo",
+      "slack__slack_list_channels",
+      "github__add_issue_comment",
+      "slack__slack_add_reaction",
+      "slack__slack_get_user_profile",
+      "github__merge_pull_request"
+     ],
+     "engaged": [
+      "slack__slack_reply_to_thread",
+      "slack__slack_get_thread_replies",
+      "slack__slack_post_message",
+      "slack__slack_get_channel_history",
+      "everything__echo",
+      "slack__slack_list_channels",
+      "github__add_issue_comment",
+      "slack__slack_add_reaction",
+      "slack__slack_get_user_profile",
+      "github__merge_pull_request"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "take a screenshot of the current page",
+     "style": "cross-server",
+     "span": 0.5644,
+     "cosMax": 0.7533,
+     "cosMin": 0.1889,
+     "lex": [
+      "playwright__browser_take_screenshot",
+      "puppeteer__puppeteer_screenshot",
+      "playwright__browser_snapshot",
+      "playwright__browser_close",
+      "time__get_current_time",
+      "notion__notion_update_page",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_navigate_back",
+      "playwright__browser_hover"
+     ],
+     "hybrid": [
+      "playwright__browser_take_screenshot",
+      "puppeteer__puppeteer_screenshot",
+      "playwright__browser_snapshot",
+      "playwright__browser_close",
+      "playwright__browser_click",
+      "playwright__browser_navigate_back",
+      "notion__notion_update_page",
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_network_requests"
+     ],
+     "engaged": [
+      "playwright__browser_take_screenshot",
+      "puppeteer__puppeteer_screenshot",
+      "playwright__browser_snapshot",
+      "playwright__browser_close",
+      "playwright__browser_click",
+      "playwright__browser_navigate_back",
+      "notion__notion_update_page",
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_network_requests"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "go to the pricing page",
+     "style": "zero-overlap",
+     "span": 0.2774,
+     "cosMax": 0.4106,
+     "cosMin": 0.1332,
+     "lex": [
+      "playwright__browser_navigate_back",
+      "notion__notion_update_page",
+      "playwright__browser_close",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "slack__slack_reply_to_thread",
+      "playwright__browser_hover",
+      "playwright__browser_evaluate",
+      "playwright__browser_console_messages",
+      "git__git_commit"
+     ],
+     "hybrid": [
+      "playwright__browser_navigate_back",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_evaluate",
+      "playwright__browser_close",
+      "playwright__browser_navigate",
+      "playwright__browser_click",
+      "playwright__browser_hover",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_take_screenshot"
+     ],
+     "engaged": [
+      "playwright__browser_navigate_back",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_evaluate",
+      "playwright__browser_close",
+      "playwright__browser_navigate",
+      "playwright__browser_click",
+      "playwright__browser_hover",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_take_screenshot"
+     ],
+     "lexRank": null,
+     "hybRank": 3
+    },
+    {
+     "need": "click the submit button",
+     "style": "terse",
+     "span": 0.3641,
+     "cosMax": 0.5641,
+     "cosMin": 0.2,
+     "lex": [
+      "puppeteer__puppeteer_click",
+      "playwright__browser_click",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "git__git_log",
+      "playwright__browser_close",
+      "playwright__browser_resize",
+      "everything__echo",
+      "memory__read_graph"
+     ],
+     "hybrid": [
+      "puppeteer__puppeteer_click",
+      "playwright__browser_click",
+      "puppeteer__puppeteer_fill",
+      "playwright__browser_press_key",
+      "playwright__browser_type",
+      "everything__add",
+      "playwright__browser_fill_form",
+      "slack__slack_post_message",
+      "puppeteer__puppeteer_select",
+      "github__create_pull_request"
+     ],
+     "engaged": [
+      "puppeteer__puppeteer_click",
+      "playwright__browser_click",
+      "puppeteer__puppeteer_fill",
+      "playwright__browser_press_key",
+      "playwright__browser_type",
+      "everything__add",
+      "playwright__browser_fill_form",
+      "slack__slack_post_message",
+      "puppeteer__puppeteer_select",
+      "github__create_pull_request"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "type my email into the signup form",
+     "style": "cross-server",
+     "span": 0.3873,
+     "cosMax": 0.5151,
+     "cosMin": 0.1278,
+     "lex": [
+      "playwright__browser_type",
+      "playwright__browser_fill_form",
+      "fs__read_media_file",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "git__git_log",
+      "playwright__browser_close",
+      "playwright__browser_resize",
+      "everything__echo"
+     ],
+     "hybrid": [
+      "playwright__browser_type",
+      "playwright__browser_fill_form",
+      "puppeteer__puppeteer_fill",
+      "everything__add",
+      "playwright__browser_select_option",
+      "linear__linear_create_issue",
+      "github__create_pull_request",
+      "git__git_add",
+      "github__create_issue",
+      "puppeteer__puppeteer_select"
+     ],
+     "engaged": [
+      "playwright__browser_type",
+      "playwright__browser_fill_form",
+      "puppeteer__puppeteer_fill",
+      "everything__add",
+      "playwright__browser_select_option",
+      "linear__linear_create_issue",
+      "github__create_pull_request",
+      "git__git_add",
+      "github__create_issue",
+      "puppeteer__puppeteer_select"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "what does this page look like to a screen reader",
+     "style": "paraphrase",
+     "span": 0.3356,
+     "cosMax": 0.4742,
+     "cosMin": 0.1386,
+     "lex": [
+      "fs__list_allowed_directories",
+      "playwright__browser_navigate_back",
+      "notion__notion_update_page",
+      "playwright__browser_close",
+      "slack__slack_reply_to_thread",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_click",
+      "playwright__browser_hover",
+      "playwright__browser_evaluate"
+     ],
+     "hybrid": [
+      "playwright__browser_navigate_back",
+      "playwright__browser_snapshot",
+      "playwright__browser_hover",
+      "playwright__browser_click",
+      "puppeteer__puppeteer_hover",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_wait_for",
+      "playwright__browser_press_key",
+      "playwright__browser_resize",
+      "playwright__browser_evaluate"
+     ],
+     "engaged": [
+      "playwright__browser_navigate_back",
+      "playwright__browser_snapshot",
+      "playwright__browser_hover",
+      "playwright__browser_click",
+      "puppeteer__puppeteer_hover",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_wait_for",
+      "playwright__browser_press_key",
+      "playwright__browser_resize",
+      "playwright__browser_evaluate"
+     ],
+     "lexRank": null,
+     "hybRank": 2
+    },
+    {
+     "need": "run some javascript on the page and give me the result",
+     "style": "paraphrase",
+     "span": 0.3928,
+     "cosMax": 0.6166,
+     "cosMin": 0.2238,
+     "lex": [
+      "playwright__browser_evaluate",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_hover",
+      "postgres__query",
+      "puppeteer__puppeteer_evaluate",
+      "playwright__browser_click",
+      "puppeteer__puppeteer_select",
+      "notion__notion_update_page",
+      "playwright__browser_close"
+     ],
+     "hybrid": [
+      "playwright__browser_evaluate",
+      "puppeteer__puppeteer_evaluate",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_click",
+      "playwright__browser_network_requests",
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_press_key",
+      "playwright__browser_hover",
+      "puppeteer__puppeteer_select"
+     ],
+     "engaged": [
+      "playwright__browser_evaluate",
+      "puppeteer__puppeteer_evaluate",
+      "puppeteer__puppeteer_click",
+      "playwright__browser_click",
+      "playwright__browser_network_requests",
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_press_key",
+      "playwright__browser_hover",
+      "puppeteer__puppeteer_select"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "close the extra browser tabs",
+     "style": "terse",
+     "span": 0.541,
+     "cosMax": 0.6854,
+     "cosMin": 0.1444,
+     "lex": [
+      "playwright__browser_tabs",
+      "playwright__browser_close",
+      "playwright__browser_resize",
+      "playwright__browser_navigate",
+      "playwright__browser_handle_dialog",
+      "puppeteer__puppeteer_evaluate",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_navigate_back",
+      "playwright__browser_press_key",
+      "playwright__browser_hover"
+     ],
+     "hybrid": [
+      "playwright__browser_tabs",
+      "playwright__browser_close",
+      "playwright__browser_navigate_back",
+      "playwright__browser_resize",
+      "playwright__browser_press_key",
+      "playwright__browser_click",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_navigate",
+      "playwright__browser_hover",
+      "playwright__browser_take_screenshot"
+     ],
+     "engaged": [
+      "playwright__browser_tabs",
+      "playwright__browser_close",
+      "playwright__browser_navigate_back",
+      "playwright__browser_resize",
+      "playwright__browser_press_key",
+      "playwright__browser_click",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_navigate",
+      "playwright__browser_hover",
+      "playwright__browser_take_screenshot"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "upload my resume through the file picker on the page",
+     "style": "paraphrase",
+     "span": 0.4328,
+     "cosMax": 0.6435,
+     "cosMin": 0.2107,
+     "lex": [
+      "playwright__browser_file_upload",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_hover",
+      "playwright__browser_evaluate",
+      "playwright__browser_click",
+      "puppeteer__puppeteer_select",
+      "fs__read_file",
+      "fs__read_text_file",
+      "seq__sequentialthinking"
+     ],
+     "hybrid": [
+      "playwright__browser_file_upload",
+      "git__git_add",
+      "github__create_or_update_file",
+      "fs__read_file",
+      "fs__read_text_file",
+      "playwright__browser_click",
+      "playwright__browser_fill_form",
+      "playwright__browser_evaluate",
+      "gdrive__gdrive_read_file",
+      "puppeteer__puppeteer_click"
+     ],
+     "engaged": [
+      "playwright__browser_file_upload",
+      "git__git_add",
+      "github__create_or_update_file",
+      "fs__read_file",
+      "fs__read_text_file",
+      "playwright__browser_click",
+      "playwright__browser_fill_form",
+      "playwright__browser_evaluate",
+      "gdrive__gdrive_read_file",
+      "puppeteer__puppeteer_click"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "what errors showed up in the browser console",
+     "style": "paraphrase",
+     "span": 0.4285,
+     "cosMax": 0.6726,
+     "cosMin": 0.2441,
+     "lex": [
+      "puppeteer__puppeteer_evaluate",
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_select_option",
+      "playwright__browser_resize",
+      "playwright__browser_navigate",
+      "playwright__browser_tabs",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_close",
+      "playwright__browser_navigate_back"
+     ],
+     "hybrid": [
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_evaluate",
+      "playwright__browser_evaluate",
+      "playwright__browser_resize",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_network_requests",
+      "playwright__browser_press_key",
+      "playwright__browser_close",
+      "sentry__get_sentry_issue",
+      "playwright__browser_fill_form"
+     ],
+     "engaged": [
+      "playwright__browser_console_messages",
+      "puppeteer__puppeteer_evaluate",
+      "playwright__browser_evaluate",
+      "playwright__browser_resize",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_network_requests",
+      "playwright__browser_press_key",
+      "playwright__browser_close",
+      "sentry__get_sentry_issue",
+      "playwright__browser_fill_form"
+     ],
+     "lexRank": 2,
+     "hybRank": 1
+    },
+    {
+     "need": "search the web for the latest node lts version",
+     "style": "terse",
+     "span": 0.3165,
+     "cosMax": 0.539,
+     "cosMin": 0.2225,
+     "lex": [
+      "brave__brave_web_search",
+      "exa__web_search_exa",
+      "firecrawl__firecrawl_search",
+      "github__search_repositories",
+      "github__search_users",
+      "github__search_code",
+      "gdrive__gdrive_search",
+      "notion__notion_search",
+      "fs__search_files",
+      "github__search_issues"
+     ],
+     "hybrid": [
+      "exa__web_search_exa",
+      "github__search_repositories",
+      "memory__search_nodes",
+      "firecrawl__firecrawl_search",
+      "brave__brave_web_search",
+      "notion__notion_search",
+      "github__search_issues",
+      "github__search_code",
+      "github__search_users",
+      "gdrive__gdrive_search"
+     ],
+     "engaged": [
+      "exa__web_search_exa",
+      "github__search_repositories",
+      "memory__search_nodes",
+      "firecrawl__firecrawl_search",
+      "brave__brave_web_search",
+      "notion__notion_search",
+      "github__search_issues",
+      "github__search_code",
+      "github__search_users",
+      "gdrive__gdrive_search"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "pull the text content of that url",
+     "style": "paraphrase",
+     "span": 0.4442,
+     "cosMax": 0.6987,
+     "cosMin": 0.2545,
+     "lex": [
+      "exa__crawling_exa",
+      "github__get_pull_request",
+      "fs__read_text_file",
+      "github__get_pull_request_files",
+      "fs__list_allowed_directories",
+      "notion__notion_update_page",
+      "fs__read_file",
+      "github__merge_pull_request",
+      "github__list_pull_requests",
+      "github__create_pull_request_review"
+     ],
+     "hybrid": [
+      "exa__crawling_exa",
+      "fetch__fetch",
+      "fs__read_text_file",
+      "firecrawl__firecrawl_scrape",
+      "firecrawl__firecrawl_crawl",
+      "notion__notion_fetch",
+      "github__get_pull_request",
+      "github__get_file_contents",
+      "fs__read_file",
+      "github__get_pull_request_files"
+     ],
+     "engaged": [
+      "exa__crawling_exa",
+      "fetch__fetch",
+      "fs__read_text_file",
+      "firecrawl__firecrawl_scrape",
+      "firecrawl__firecrawl_crawl",
+      "notion__notion_fetch",
+      "github__get_pull_request",
+      "github__get_file_contents",
+      "fs__read_file",
+      "github__get_pull_request_files"
+     ],
+     "lexRank": null,
+     "hybRank": 2
+    },
+    {
+     "need": "crawl the whole documentation site",
+     "style": "terse",
+     "span": 0.5136,
+     "cosMax": 0.7152,
+     "cosMin": 0.2015,
+     "lex": [
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_map",
+      "firecrawl__firecrawl_search",
+      "sqlite__append_insight",
+      "fs__read_text_file",
+      "git__git_log",
+      "playwright__browser_close",
+      "playwright__browser_resize",
+      "everything__echo",
+      "memory__read_graph"
+     ],
+     "hybrid": [
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_map",
+      "exa__crawling_exa",
+      "firecrawl__firecrawl_scrape",
+      "firecrawl__firecrawl_extract",
+      "firecrawl__firecrawl_search",
+      "fetch__fetch",
+      "memory__read_graph",
+      "notion__notion_fetch",
+      "fs__get_file_info"
+     ],
+     "engaged": [
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_map",
+      "exa__crawling_exa",
+      "firecrawl__firecrawl_scrape",
+      "firecrawl__firecrawl_extract",
+      "firecrawl__firecrawl_search",
+      "fetch__fetch",
+      "memory__read_graph",
+      "notion__notion_fetch",
+      "fs__get_file_info"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "good coffee shops near me",
+     "style": "zero-overlap",
+     "span": 0.2718,
+     "cosMax": 0.312,
+     "cosMin": 0.0401,
+     "lex": [
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory",
+      "fs__list_directory_with_sizes",
+      "fs__directory_tree"
+     ],
+     "hybrid": [
+      "brave__brave_local_search",
+      "everything__sampleLLM",
+      "playwright__browser_close",
+      "firecrawl__firecrawl_map",
+      "github__search_repositories",
+      "time__get_current_time",
+      "exa__web_search_exa",
+      "fs__list_allowed_directories",
+      "puppeteer__puppeteer_hover",
+      "puppeteer__puppeteer_click"
+     ],
+     "engaged": [
+      "brave__brave_local_search",
+      "everything__sampleLLM",
+      "playwright__browser_close",
+      "firecrawl__firecrawl_map",
+      "github__search_repositories",
+      "time__get_current_time",
+      "exa__web_search_exa",
+      "fs__list_allowed_directories",
+      "puppeteer__puppeteer_hover",
+      "puppeteer__puppeteer_click"
+     ],
+     "lexRank": null,
+     "hybRank": 1
+    },
+    {
+     "need": "serach for recent security advisores about openssl",
+     "style": "typo",
+     "span": 0.2843,
+     "cosMax": 0.4735,
+     "cosMin": 0.1893,
+     "lex": [
+      "slack__slack_get_channel_history",
+      "fs__get_file_info",
+      "linear__linear_get_issue",
+      "playwright__browser_wait_for",
+      "github__search_repositories",
+      "github__search_users",
+      "github__search_code",
+      "gdrive__gdrive_search",
+      "git__git_diff_staged",
+      "sqlite__describe_table"
+     ],
+     "hybrid": [
+      "slack__slack_get_channel_history",
+      "linear__linear_get_issue",
+      "memory__search_nodes",
+      "github__search_repositories",
+      "memory__open_nodes",
+      "fs__get_file_info",
+      "exa__web_search_exa",
+      "github__search_issues",
+      "firecrawl__firecrawl_search",
+      "firecrawl__firecrawl_map"
+     ],
+     "engaged": [
+      "slack__slack_get_channel_history",
+      "linear__linear_get_issue",
+      "memory__search_nodes",
+      "github__search_repositories",
+      "memory__open_nodes",
+      "fs__get_file_info",
+      "exa__web_search_exa",
+      "github__search_issues",
+      "firecrawl__firecrawl_search",
+      "firecrawl__firecrawl_map"
+     ],
+     "lexRank": null,
+     "hybRank": 7
+    },
+    {
+     "need": "which urls exist on that website",
+     "style": "paraphrase",
+     "span": 0.4238,
+     "cosMax": 0.5915,
+     "cosMin": 0.1677,
+     "lex": [
+      "firecrawl__firecrawl_map",
+      "firecrawl__firecrawl_crawl",
+      "git__git_diff_staged",
+      "git__git_diff_unstaged",
+      "fs__list_allowed_directories",
+      "github__search_users",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_click",
+      "playwright__browser_press_key"
+     ],
+     "hybrid": [
+      "firecrawl__firecrawl_map",
+      "exa__crawling_exa",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_navigate",
+      "firecrawl__firecrawl_crawl",
+      "playwright__browser_network_requests",
+      "fs__list_allowed_directories",
+      "playwright__browser_tabs",
+      "firecrawl__firecrawl_search",
+      "puppeteer__puppeteer_click"
+     ],
+     "engaged": [
+      "firecrawl__firecrawl_map",
+      "exa__crawling_exa",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_navigate",
+      "firecrawl__firecrawl_crawl",
+      "playwright__browser_network_requests",
+      "fs__list_allowed_directories",
+      "playwright__browser_tabs",
+      "firecrawl__firecrawl_search",
+      "puppeteer__puppeteer_click"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "extract product names and prices from these pages as json",
+     "style": "paraphrase",
+     "span": 0.3666,
+     "cosMax": 0.4989,
+     "cosMin": 0.1323,
+     "lex": [
+      "fetch__fetch",
+      "fs__directory_tree",
+      "firecrawl__firecrawl_extract",
+      "firecrawl__firecrawl_crawl",
+      "notion__notion_search",
+      "firecrawl__firecrawl_scrape",
+      "fs__read_text_file",
+      "notion__notion_move_pages",
+      "notion__notion_create_pages",
+      "memory__open_nodes"
+     ],
+     "hybrid": [
+      "firecrawl__firecrawl_extract",
+      "fs__directory_tree",
+      "fetch__fetch",
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_scrape",
+      "exa__crawling_exa",
+      "firecrawl__firecrawl_search",
+      "memory__open_nodes",
+      "firecrawl__firecrawl_map",
+      "notion__notion_search"
+     ],
+     "engaged": [
+      "firecrawl__firecrawl_extract",
+      "fs__directory_tree",
+      "fetch__fetch",
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_scrape",
+      "exa__crawling_exa",
+      "firecrawl__firecrawl_search",
+      "memory__open_nodes",
+      "firecrawl__firecrawl_map",
+      "notion__notion_search"
+     ],
+     "lexRank": 3,
+     "hybRank": 1
+    },
+    {
+     "need": "I'm orchestrating a research task and need the raw contents of several web pages for offline parsing, ideally with minimal fuss",
+     "style": "verbose",
+     "span": 0.449,
+     "cosMax": 0.6053,
+     "cosMin": 0.1563,
+     "lex": [
+      "exa__web_search_exa",
+      "notion__notion_search",
+      "brave__brave_web_search",
+      "firecrawl__firecrawl_search",
+      "git__git_show",
+      "github__get_file_contents",
+      "firecrawl__firecrawl_crawl",
+      "notion__notion_move_pages",
+      "fs__read_multiple_files",
+      "fs__list_directory_with_sizes"
+     ],
+     "hybrid": [
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_search",
+      "exa__web_search_exa",
+      "fetch__fetch",
+      "firecrawl__firecrawl_scrape",
+      "notion__notion_search",
+      "firecrawl__firecrawl_extract",
+      "exa__crawling_exa",
+      "brave__brave_web_search",
+      "fs__read_multiple_files"
+     ],
+     "engaged": [
+      "firecrawl__firecrawl_crawl",
+      "firecrawl__firecrawl_search",
+      "exa__web_search_exa",
+      "fetch__fetch",
+      "firecrawl__firecrawl_scrape",
+      "notion__notion_search",
+      "firecrawl__firecrawl_extract",
+      "exa__crawling_exa",
+      "brave__brave_web_search",
+      "fs__read_multiple_files"
+     ],
+     "lexRank": null,
+     "hybRank": 4
+    },
+    {
+     "need": "how many users signed up last week",
+     "style": "zero-overlap",
+     "span": 0.3339,
+     "cosMax": 0.4787,
+     "cosMin": 0.1448,
+     "lex": [
+      "github__search_users",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory",
+      "fs__list_directory_with_sizes"
+     ],
+     "hybrid": [
+      "github__search_users",
+      "slack__slack_get_users",
+      "slack__slack_get_user_profile",
+      "github__create_repository",
+      "git__git_status",
+      "everything__longRunningOperation",
+      "everything__add",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "playwright__browser_network_requests"
+     ],
+     "engaged": [
+      "github__search_users",
+      "slack__slack_get_users",
+      "slack__slack_get_user_profile",
+      "github__create_repository",
+      "git__git_status",
+      "everything__longRunningOperation",
+      "everything__add",
+      "github__create_pull_request_review",
+      "github__create_pull_request",
+      "playwright__browser_network_requests"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "add a table for invoices",
+     "style": "terse",
+     "span": 0.3411,
+     "cosMax": 0.4961,
+     "cosMin": 0.155,
+     "lex": [
+      "sqlite__describe_table",
+      "sqlite__create_table",
+      "sqlite__append_insight",
+      "github__add_issue_comment",
+      "slack__slack_add_reaction",
+      "memory__add_observations",
+      "everything__add",
+      "git__git_add",
+      "linear__linear_create_comment",
+      "playwright__browser_wait_for"
+     ],
+     "hybrid": [
+      "sqlite__create_table",
+      "sqlite__describe_table",
+      "everything__add",
+      "sqlite__append_insight",
+      "memory__add_observations",
+      "git__git_add",
+      "github__add_issue_comment",
+      "sqlite__list_tables",
+      "notion__notion_update_page",
+      "sqlite__write_query"
+     ],
+     "engaged": [
+      "sqlite__create_table",
+      "sqlite__describe_table",
+      "everything__add",
+      "sqlite__append_insight",
+      "memory__add_observations",
+      "git__git_add",
+      "github__add_issue_comment",
+      "sqlite__list_tables",
+      "notion__notion_update_page",
+      "sqlite__write_query"
+     ],
+     "lexRank": 2,
+     "hybRank": 1
+    },
+    {
+     "need": "what tables exist in this database",
+     "style": "paraphrase",
+     "span": 0.5216,
+     "cosMax": 0.7008,
+     "cosMin": 0.1792,
+     "lex": [
+      "sqlite__list_tables",
+      "fs__list_allowed_directories",
+      "sqlite__create_table",
+      "notion__notion_create_database",
+      "sqlite__read_query",
+      "postgres__query",
+      "notion__notion_fetch",
+      "sqlite__write_query",
+      "puppeteer__puppeteer_evaluate",
+      "gdrive__gdrive_search"
+     ],
+     "hybrid": [
+      "sqlite__list_tables",
+      "sqlite__create_table",
+      "sqlite__read_query",
+      "notion__notion_create_database",
+      "postgres__query",
+      "sqlite__write_query",
+      "sqlite__describe_table",
+      "notion__notion_fetch",
+      "notion__notion_search",
+      "playwright__browser_tabs"
+     ],
+     "engaged": [
+      "sqlite__list_tables",
+      "sqlite__create_table",
+      "sqlite__read_query",
+      "notion__notion_create_database",
+      "postgres__query",
+      "sqlite__write_query",
+      "sqlite__describe_table",
+      "notion__notion_fetch",
+      "notion__notion_search",
+      "playwright__browser_tabs"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "note this analytics insight down for the final report",
+     "style": "trap",
+     "span": 0.455,
+     "cosMax": 0.5793,
+     "cosMin": 0.1242,
+     "lex": [
+      "sqlite__append_insight",
+      "fs__list_allowed_directories",
+      "playwright__browser_wait_for",
+      "github__search_repositories",
+      "github__search_users",
+      "github__search_code",
+      "gdrive__gdrive_search",
+      "sqlite__describe_table",
+      "notion__notion_search",
+      "git__git_diff_staged"
+     ],
+     "hybrid": [
+      "sqlite__append_insight",
+      "sqlite__describe_table",
+      "memory__read_graph",
+      "memory__search_nodes",
+      "memory__add_observations",
+      "everything__longRunningOperation",
+      "git__git_commit",
+      "postgres__query",
+      "everything__sampleLLM",
+      "slack__slack_get_user_profile"
+     ],
+     "engaged": [
+      "sqlite__append_insight",
+      "sqlite__describe_table",
+      "memory__read_graph",
+      "memory__search_nodes",
+      "memory__add_observations",
+      "everything__longRunningOperation",
+      "git__git_commit",
+      "postgres__query",
+      "everything__sampleLLM",
+      "slack__slack_get_user_profile"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "what time is it in tokyo right now",
+     "style": "paraphrase",
+     "span": 0.4955,
+     "cosMax": 0.601,
+     "cosMin": 0.1055,
+     "lex": [
+      "time__get_current_time",
+      "time__convert_time",
+      "playwright__browser_handle_dialog",
+      "fs__list_allowed_directories",
+      "playwright__browser_wait_for",
+      "puppeteer__puppeteer_evaluate",
+      "gdrive__gdrive_search",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_select_option",
+      "sqlite__list_tables"
+     ],
+     "hybrid": [
+      "time__get_current_time",
+      "time__convert_time",
+      "everything__longRunningOperation",
+      "playwright__browser_handle_dialog",
+      "everything__add",
+      "playwright__browser_wait_for",
+      "everything__echo",
+      "memory__read_graph",
+      "git__git_status",
+      "slack__slack_post_message"
+     ],
+     "engaged": [
+      "time__get_current_time",
+      "time__convert_time",
+      "everything__longRunningOperation",
+      "playwright__browser_handle_dialog",
+      "everything__add",
+      "playwright__browser_wait_for",
+      "everything__echo",
+      "memory__read_graph",
+      "git__git_status",
+      "slack__slack_post_message"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "convert 3pm eastern to london time",
+     "style": "paraphrase",
+     "span": 0.5422,
+     "cosMax": 0.5986,
+     "cosMin": 0.0564,
+     "lex": [
+      "time__convert_time",
+      "time__get_current_time",
+      "playwright__browser_wait_for",
+      "slack__slack_reply_to_thread",
+      "git__git_commit",
+      "playwright__browser_navigate",
+      "git__git_add",
+      "puppeteer__puppeteer_navigate",
+      "playwright__browser_navigate_back",
+      "github__add_issue_comment"
+     ],
+     "hybrid": [
+      "time__convert_time",
+      "time__get_current_time",
+      "exa__crawling_exa",
+      "everything__sampleLLM",
+      "puppeteer__puppeteer_screenshot",
+      "fs__directory_tree",
+      "gdrive__gdrive_read_file",
+      "firecrawl__firecrawl_extract",
+      "firecrawl__firecrawl_crawl",
+      "everything__longRunningOperation"
+     ],
+     "engaged": [
+      "time__convert_time",
+      "time__get_current_time",
+      "exa__crawling_exa",
+      "everything__sampleLLM",
+      "puppeteer__puppeteer_screenshot",
+      "fs__directory_tree",
+      "gdrive__gdrive_read_file",
+      "firecrawl__firecrawl_extract",
+      "firecrawl__firecrawl_crawl",
+      "everything__longRunningOperation"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "find the quarterly planning doc in drive",
+     "style": "paraphrase",
+     "span": 0.3456,
+     "cosMax": 0.5351,
+     "cosMin": 0.1895,
+     "lex": [
+      "gdrive__gdrive_search",
+      "gdrive__gdrive_read_file",
+      "puppeteer__puppeteer_evaluate",
+      "puppeteer__puppeteer_navigate",
+      "sqlite__list_tables",
+      "linear__linear_list_projects",
+      "memory__create_entities",
+      "sqlite__create_table",
+      "memory__delete_observations",
+      "slack__slack_list_channels"
+     ],
+     "hybrid": [
+      "gdrive__gdrive_search",
+      "gdrive__gdrive_read_file",
+      "notion__notion_fetch",
+      "notion__notion_create_pages",
+      "fetch__fetch",
+      "notion__notion_move_pages",
+      "fs__read_file",
+      "fs__write_file",
+      "fs__read_text_file",
+      "notion__notion_search"
+     ],
+     "engaged": [
+      "gdrive__gdrive_search",
+      "gdrive__gdrive_read_file",
+      "notion__notion_fetch",
+      "notion__notion_create_pages",
+      "fetch__fetch",
+      "notion__notion_move_pages",
+      "fs__read_file",
+      "fs__write_file",
+      "fs__read_text_file",
+      "notion__notion_search"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "show me the stack trace for that production error",
+     "style": "zero-overlap",
+     "span": 0.4077,
+     "cosMax": 0.5928,
+     "cosMin": 0.1852,
+     "lex": [
+      "git__git_diff_staged",
+      "git__git_show",
+      "sentry__get_sentry_issue",
+      "git__git_diff_unstaged",
+      "fs__list_allowed_directories",
+      "playwright__browser_wait_for",
+      "github__search_repositories",
+      "github__search_users",
+      "github__search_code",
+      "gdrive__gdrive_search"
+     ],
+     "hybrid": [
+      "sentry__get_sentry_issue",
+      "git__git_diff_staged",
+      "git__git_show",
+      "git__git_diff_unstaged",
+      "playwright__browser_console_messages",
+      "git__git_log",
+      "linear__linear_get_issue",
+      "github__create_issue",
+      "playwright__browser_snapshot",
+      "github__get_issue"
+     ],
+     "engaged": [
+      "sentry__get_sentry_issue",
+      "git__git_diff_staged",
+      "git__git_show",
+      "git__git_diff_unstaged",
+      "playwright__browser_console_messages",
+      "git__git_log",
+      "linear__linear_get_issue",
+      "github__create_issue",
+      "playwright__browser_snapshot",
+      "github__get_issue"
+     ],
+     "lexRank": 3,
+     "hybRank": 1
+    },
+    {
+     "need": "add the meeting notes to our workspace wiki",
+     "style": "zero-overlap",
+     "span": 0.3325,
+     "cosMax": 0.5282,
+     "cosMin": 0.1957,
+     "lex": [
+      "github__add_issue_comment",
+      "slack__slack_add_reaction",
+      "memory__add_observations",
+      "git__git_add",
+      "linear__linear_create_comment",
+      "notion__notion_move_pages",
+      "sqlite__append_insight",
+      "everything__add",
+      "linear__linear_list_projects",
+      "slack__slack_list_channels"
+     ],
+     "hybrid": [
+      "github__add_issue_comment",
+      "memory__add_observations",
+      "slack__slack_add_reaction",
+      "git__git_add",
+      "sqlite__append_insight",
+      "linear__linear_create_comment",
+      "linear__linear_list_issues",
+      "everything__add",
+      "notion__notion_create_pages",
+      "notion__notion_search"
+     ],
+     "engaged": [
+      "github__add_issue_comment",
+      "memory__add_observations",
+      "slack__slack_add_reaction",
+      "git__git_add",
+      "sqlite__append_insight",
+      "linear__linear_create_comment",
+      "linear__linear_list_issues",
+      "everything__add",
+      "notion__notion_create_pages",
+      "notion__notion_search"
+     ],
+     "lexRank": null,
+     "hybRank": 9
+    },
+    {
+     "need": "find the product roadmap page in notion",
+     "style": "terse",
+     "span": 0.3981,
+     "cosMax": 0.5581,
+     "cosMin": 0.16,
+     "lex": [
+      "notion__notion_update_page",
+      "notion__notion_fetch",
+      "notion__notion_create_pages",
+      "notion__notion_move_pages",
+      "notion__notion_search",
+      "notion__notion_create_database",
+      "playwright__browser_close",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_navigate_back"
+     ],
+     "hybrid": [
+      "notion__notion_fetch",
+      "notion__notion_update_page",
+      "notion__notion_search",
+      "notion__notion_create_pages",
+      "notion__notion_move_pages",
+      "notion__notion_create_database",
+      "memory__search_nodes",
+      "slack__slack_list_channels",
+      "playwright__browser_navigate_back",
+      "github__search_users"
+     ],
+     "engaged": [
+      "notion__notion_fetch",
+      "notion__notion_update_page",
+      "notion__notion_search",
+      "notion__notion_create_pages",
+      "notion__notion_move_pages",
+      "notion__notion_create_database",
+      "memory__search_nodes",
+      "slack__slack_list_channels",
+      "playwright__browser_navigate_back",
+      "github__search_users"
+     ],
+     "lexRank": 5,
+     "hybRank": 3
+    },
+    {
+     "need": "create a ticket for the login bug",
+     "style": "paraphrase",
+     "span": 0.3778,
+     "cosMax": 0.527,
+     "cosMin": 0.1492,
+     "lex": [
+      "memory__create_entities",
+      "sqlite__create_table",
+      "memory__create_relations",
+      "github__create_repository",
+      "github__create_issue",
+      "github__create_branch",
+      "notion__notion_create_pages",
+      "fs__create_directory",
+      "github__create_pull_request_review",
+      "notion__notion_create_database"
+     ],
+     "hybrid": [
+      "github__create_issue",
+      "linear__linear_create_issue",
+      "linear__linear_create_comment",
+      "github__create_pull_request",
+      "github__create_repository",
+      "github__create_or_update_file",
+      "github__create_pull_request_review",
+      "github__create_branch",
+      "sqlite__create_table",
+      "github__add_issue_comment"
+     ],
+     "engaged": [
+      "github__create_issue",
+      "linear__linear_create_issue",
+      "linear__linear_create_comment",
+      "github__create_pull_request",
+      "github__create_repository",
+      "github__create_or_update_file",
+      "github__create_pull_request_review",
+      "github__create_branch",
+      "sqlite__create_table",
+      "github__add_issue_comment"
+     ],
+     "lexRank": null,
+     "hybRank": 2
+    },
+    {
+     "need": "what's on my plate this sprint",
+     "style": "zero-overlap",
+     "span": 0.2681,
+     "cosMax": 0.4504,
+     "cosMin": 0.1823,
+     "lex": [
+      "fs__list_allowed_directories",
+      "github__search_users",
+      "puppeteer__puppeteer_click",
+      "puppeteer__puppeteer_hover",
+      "playwright__browser_click",
+      "playwright__browser_press_key",
+      "playwright__browser_hover",
+      "playwright__browser_evaluate",
+      "sqlite__read_query",
+      "github__create_pull_request_review"
+     ],
+     "hybrid": [
+      "everything__longRunningOperation",
+      "fs__write_file",
+      "fs__read_multiple_files",
+      "gdrive__gdrive_read_file",
+      "git__git_init",
+      "everything__getTinyImage",
+      "fs__move_file",
+      "notion__notion_update_page",
+      "fs__list_directory_with_sizes",
+      "git__git_status"
+     ],
+     "engaged": [
+      "everything__longRunningOperation",
+      "fs__write_file",
+      "fs__read_multiple_files",
+      "gdrive__gdrive_read_file",
+      "git__git_init",
+      "everything__getTinyImage",
+      "fs__move_file",
+      "notion__notion_update_page",
+      "fs__list_directory_with_sizes",
+      "git__git_status"
+     ],
+     "lexRank": null,
+     "hybRank": null
+    },
+    {
+     "need": "think through this problem step by step before acting",
+     "style": "paraphrase",
+     "span": 0.3481,
+     "cosMax": 0.4857,
+     "cosMin": 0.1377,
+     "lex": [
+      "seq__sequentialthinking",
+      "fs__list_allowed_directories",
+      "playwright__browser_file_upload",
+      "memory__open_nodes",
+      "playwright__browser_handle_dialog",
+      "notion__notion_fetch",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files"
+     ],
+     "hybrid": [
+      "seq__sequentialthinking",
+      "linear__linear_get_issue",
+      "playwright__browser_evaluate",
+      "everything__add",
+      "everything__longRunningOperation",
+      "puppeteer__puppeteer_fill",
+      "puppeteer__puppeteer_evaluate",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_type",
+      "sentry__get_sentry_issue"
+     ],
+     "engaged": [
+      "seq__sequentialthinking",
+      "linear__linear_get_issue",
+      "playwright__browser_evaluate",
+      "everything__add",
+      "everything__longRunningOperation",
+      "puppeteer__puppeteer_fill",
+      "puppeteer__puppeteer_evaluate",
+      "playwright__browser_handle_dialog",
+      "playwright__browser_type",
+      "sentry__get_sentry_issue"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "echo back exactly what i send you",
+     "style": "terse",
+     "span": 0.5981,
+     "cosMax": 0.738,
+     "cosMin": 0.14,
+     "lex": [
+      "everything__echo",
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory",
+      "fs__list_directory_with_sizes"
+     ],
+     "hybrid": [
+      "everything__echo",
+      "slack__slack_reply_to_thread",
+      "fs__read_media_file",
+      "slack__slack_post_message",
+      "fs__edit_file",
+      "playwright__browser_navigate_back",
+      "fs__write_file",
+      "slack__slack_get_thread_replies",
+      "slack__slack_get_channel_history",
+      "time__convert_time"
+     ],
+     "engaged": [
+      "everything__echo",
+      "slack__slack_reply_to_thread",
+      "fs__read_media_file",
+      "slack__slack_post_message",
+      "fs__edit_file",
+      "playwright__browser_navigate_back",
+      "fs__write_file",
+      "slack__slack_get_thread_replies",
+      "slack__slack_get_channel_history",
+      "time__convert_time"
+     ],
+     "lexRank": 1,
+     "hybRank": 1
+    },
+    {
+     "need": "add 3 and 4",
+     "style": "trap",
+     "span": 0.5259,
+     "cosMax": 0.6622,
+     "cosMin": 0.1364,
+     "lex": [
+      "github__add_issue_comment",
+      "slack__slack_add_reaction",
+      "memory__add_observations",
+      "everything__add",
+      "git__git_add",
+      "linear__linear_create_comment",
+      "sqlite__append_insight",
+      "sentry__get_sentry_issue",
+      "fs__move_file",
+      "github__list_pull_requests"
+     ],
+     "hybrid": [
+      "everything__add",
+      "github__add_issue_comment",
+      "memory__add_observations",
+      "git__git_add",
+      "slack__slack_add_reaction",
+      "sqlite__append_insight",
+      "linear__linear_create_comment",
+      "everything__echo",
+      "fs__write_file",
+      "sqlite__describe_table"
+     ],
+     "engaged": [
+      "everything__add",
+      "github__add_issue_comment",
+      "memory__add_observations",
+      "git__git_add",
+      "slack__slack_add_reaction",
+      "sqlite__append_insight",
+      "linear__linear_create_comment",
+      "everything__echo",
+      "fs__write_file",
+      "sqlite__describe_table"
+     ],
+     "lexRank": 4,
+     "hybRank": 1
+    },
+    {
+     "need": "wait a while and then finish",
+     "style": "trap",
+     "span": 0.4352,
+     "cosMax": 0.5176,
+     "cosMin": 0.0824,
+     "lex": [
+      "playwright__browser_wait_for",
+      "sentry__get_sentry_issue",
+      "fs__move_file",
+      "github__list_pull_requests",
+      "playwright__browser_drag",
+      "fs__search_files",
+      "github__search_issues",
+      "notion__notion_search",
+      "firecrawl__firecrawl_search",
+      "firecrawl__firecrawl_scrape"
+     ],
+     "hybrid": [
+      "playwright__browser_wait_for",
+      "everything__longRunningOperation",
+      "fs__write_file",
+      "everything__echo",
+      "fs__read_multiple_files",
+      "everything__add",
+      "fetch__fetch",
+      "seq__sequentialthinking",
+      "git__git_init",
+      "git__git_status"
+     ],
+     "engaged": [
+      "playwright__browser_wait_for",
+      "everything__longRunningOperation",
+      "fs__write_file",
+      "everything__echo",
+      "fs__read_multiple_files",
+      "everything__add",
+      "fetch__fetch",
+      "seq__sequentialthinking",
+      "git__git_init",
+      "git__git_status"
+     ],
+     "lexRank": null,
+     "hybRank": 2
+    },
+    {
+     "need": "lis le contenu du fichier readme",
+     "style": "non-english",
+     "span": 0.4736,
+     "cosMax": 0.6681,
+     "cosMin": 0.1945,
+     "lex": [
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory",
+      "fs__list_directory_with_sizes",
+      "fs__directory_tree"
+     ],
+     "hybrid": [
+      "fs__read_text_file",
+      "fs__read_file",
+      "fs__read_multiple_files",
+      "gdrive__gdrive_read_file",
+      "memory__read_graph",
+      "github__get_file_contents",
+      "sqlite__read_query",
+      "fs__write_file",
+      "fs__read_media_file",
+      "fs__edit_file"
+     ],
+     "engaged": [
+      "fs__read_text_file",
+      "fs__read_file",
+      "fs__read_multiple_files",
+      "gdrive__gdrive_read_file",
+      "memory__read_graph",
+      "github__get_file_contents",
+      "sqlite__read_query",
+      "fs__write_file",
+      "fs__read_media_file",
+      "fs__edit_file"
+     ],
+     "lexRank": 2,
+     "hybRank": 1
+    },
+    {
+     "need": "在网上搜索最新的AI新闻",
+     "style": "non-english",
+     "span": 0.3663,
+     "cosMax": 0.5418,
+     "cosMin": 0.1756,
+     "lex": [
+      "fs__read_file",
+      "fs__read_text_file",
+      "fs__read_media_file",
+      "fs__read_multiple_files",
+      "fs__write_file",
+      "fs__edit_file",
+      "fs__create_directory",
+      "fs__list_directory",
+      "fs__list_directory_with_sizes",
+      "fs__directory_tree"
+     ],
+     "hybrid": [
+      "exa__web_search_exa",
+      "brave__brave_web_search",
+      "notion__notion_search",
+      "memory__search_nodes",
+      "github__search_repositories",
+      "playwright__browser_network_requests",
+      "playwright__browser_snapshot",
+      "firecrawl__firecrawl_search",
+      "gdrive__gdrive_search",
+      "firecrawl__firecrawl_extract"
+     ],
+     "engaged": [
+      "exa__web_search_exa",
+      "brave__brave_web_search",
+      "notion__notion_search",
+      "memory__search_nodes",
+      "github__search_repositories",
+      "playwright__browser_network_requests",
+      "playwright__browser_snapshot",
+      "firecrawl__firecrawl_search",
+      "gdrive__gdrive_search",
+      "firecrawl__firecrawl_extract"
+     ],
+     "lexRank": null,
+     "hybRank": 1
+    }
+   ]
+  },
+  "512": {
+   "fusionMismatches": 0,
+   "lexical": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.439,
+     "hit5": 0.621,
+     "mrr": 0.467
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.452,
+      "hit5": 0.645,
+      "mrr": 0.489
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0,
+      "hit5": 0.125,
+      "mrr": 0.057
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.615,
+      "hit5": 0.923,
+      "mrr": 0.725
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.6,
+      "hit5": 0.8,
+      "mrr": 0.45
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 0.5,
+      "hit5": 0.5,
+      "mrr": 0.25
+     }
+    }
+   },
+   "hybrid": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.667,
+     "hit5": 0.803,
+     "mrr": 0.68
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.71,
+      "hit5": 0.806,
+      "mrr": 0.714
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.25,
+      "hit5": 0.5,
+      "mrr": 0.354
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0.5,
+      "mrr": 0.1
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.846,
+      "hit5": 1,
+      "mrr": 0.891
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 1,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.111
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 0.75
+     }
+    }
+   },
+   "engagedForced": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.667,
+     "hit5": 0.803,
+     "mrr": 0.68
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.71,
+      "hit5": 0.806,
+      "mrr": 0.714
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.25,
+      "hit5": 0.5,
+      "mrr": 0.354
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0.5,
+      "mrr": 0.1
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.846,
+      "hit5": 1,
+      "mrr": 0.891
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 1,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.111
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 0.75
+     }
+    }
+   },
+   "engageRateAt015": 0.985,
+   "realSpans": [
+    0.1631,
+    0.1906,
+    0.2041,
+    0.2092,
+    0.1307,
+    0.2221,
+    0.2267,
+    0.2701,
+    0.2836,
+    0.2508,
+    0.2441,
+    0.2796,
+    0.361,
+    0.3632,
+    0.298,
+    0.2132,
+    0.2852,
+    0.4274,
+    0.2247,
+    0.3203,
+    0.3122,
+    0.3623,
+    0.3316,
+    0.3194,
+    0.2889,
+    0.3176,
+    0.2934,
+    0.2368,
+    0.2585,
+    0.2507,
+    0.3961,
+    0.4049,
+    0.1666,
+    0.2151,
+    0.2798,
+    0.2375,
+    0.3147,
+    0.3868,
+    0.3991,
+    0.343,
+    0.1859,
+    0.3275,
+    0.3292,
+    0.1767,
+    0.1792,
+    0.2632,
+    0.1874,
+    0.3048,
+    0.2154,
+    0.2624,
+    0.3291,
+    0.2797,
+    0.3503,
+    0.3712,
+    0.209,
+    0.2392,
+    0.2291,
+    0.2805,
+    0.2854,
+    0.1527,
+    0.2196,
+    0.3684,
+    0.3848,
+    0.3021,
+    0.3167,
+    0.2655
+   ],
+   "shuffledSpans": [
+    0.1208,
+    0.1344,
+    0.1537,
+    0.259,
+    0.1332,
+    0.1982,
+    0.2427,
+    0.2118,
+    0.286,
+    0.2426,
+    0.2243,
+    0.2652,
+    0.3296,
+    0.2586,
+    0.2728,
+    0.2224,
+    0.2797,
+    0.352,
+    0.2671,
+    0.2864,
+    0.2767,
+    0.3512,
+    0.3329,
+    0.2644,
+    0.2238,
+    0.3095,
+    0.2283,
+    0.2199,
+    0.2717,
+    0.2109,
+    0.3516,
+    0.3653,
+    0.1659,
+    0.2329,
+    0.2728,
+    0.2134,
+    0.2784,
+    0.3791,
+    0.3755,
+    0.3452,
+    0.1968,
+    0.2966,
+    0.3234,
+    0.1898,
+    0.1918,
+    0.2717,
+    0.1658,
+    0.2246,
+    0.1791,
+    0.2513,
+    0.3607,
+    0.2864,
+    0.3545,
+    0.3633,
+    0.1527,
+    0.2268,
+    0.2112,
+    0.2668,
+    0.2777,
+    0.1493,
+    0.2275,
+    0.3501,
+    0.3439,
+    0.2854,
+    0.3041,
+    0.2655
+   ],
+   "gibberishSpans": [
+    0.1117,
+    0.1903,
+    0.1189,
+    0.1118,
+    0.134,
+    0.1459,
+    0.1225,
+    0.1692,
+    0.0901,
+    0.099
+   ]
+  },
+  "768": {
+   "fusionMismatches": 0,
+   "lexical": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.439,
+     "hit5": 0.621,
+     "mrr": 0.467
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.452,
+      "hit5": 0.645,
+      "mrr": 0.489
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0,
+      "hit5": 0.125,
+      "mrr": 0.057
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.615,
+      "hit5": 0.923,
+      "mrr": 0.725
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.6,
+      "hit5": 0.8,
+      "mrr": 0.45
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 0.5,
+      "hit5": 0.5,
+      "mrr": 0.25
+     }
+    }
+   },
+   "hybrid": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.667,
+     "hit5": 0.818,
+     "mrr": 0.689
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.71,
+      "hit5": 0.806,
+      "mrr": 0.747
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.25,
+      "hit5": 0.625,
+      "mrr": 0.358
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0.5,
+      "mrr": 0.1
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.846,
+      "hit5": 1,
+      "mrr": 0.853
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 1,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.167
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 0.75
+     }
+    }
+   },
+   "engagedForced": {
+    "overall": {
+     "n": 66,
+     "hit1": 0.667,
+     "hit5": 0.833,
+     "mrr": 0.692
+    },
+    "byStyle": {
+     "paraphrase": {
+      "n": 31,
+      "hit1": 0.71,
+      "hit5": 0.806,
+      "mrr": 0.747
+     },
+     "zero-overlap": {
+      "n": 8,
+      "hit1": 0.25,
+      "hit5": 0.75,
+      "mrr": 0.383
+     },
+     "verbose": {
+      "n": 2,
+      "hit1": 0,
+      "hit5": 0.5,
+      "mrr": 0.1
+     },
+     "terse": {
+      "n": 13,
+      "hit1": 0.846,
+      "hit5": 1,
+      "mrr": 0.853
+     },
+     "cross-server": {
+      "n": 4,
+      "hit1": 0.75,
+      "hit5": 0.75,
+      "mrr": 0.75
+     },
+     "trap": {
+      "n": 5,
+      "hit1": 0.8,
+      "hit5": 1,
+      "mrr": 0.7
+     },
+     "typo": {
+      "n": 1,
+      "hit1": 0,
+      "hit5": 0,
+      "mrr": 0.167
+     },
+     "non-english": {
+      "n": 2,
+      "hit1": 1,
+      "hit5": 1,
+      "mrr": 0.75
+     }
+    }
+   },
+   "engageRateAt015": 0.985,
+   "realSpans": [
+    0.195,
+    0.2219,
+    0.2241,
+    0.2281,
+    0.1526,
+    0.2361,
+    0.2003,
+    0.2953,
+    0.3108,
+    0.2509,
+    0.2612,
+    0.2961,
+    0.3818,
+    0.3696,
+    0.2895,
+    0.2366,
+    0.2898,
+    0.4964,
+    0.2286,
+    0.3451,
+    0.3466,
+    0.3699,
+    0.3583,
+    0.3737,
+    0.2705,
+    0.3653,
+    0.3237,
+    0.2503,
+    0.309,
+    0.2865,
+    0.4361,
+    0.4561,
+    0.1806,
+    0.2353,
+    0.3122,
+    0.2437,
+    0.328,
+    0.4212,
+    0.4297,
+    0.3794,
+    0.2168,
+    0.3532,
+    0.3754,
+    0.1953,
+    0.1875,
+    0.2635,
+    0.2192,
+    0.3168,
+    0.222,
+    0.2914,
+    0.3641,
+    0.3052,
+    0.3697,
+    0.3691,
+    0.2326,
+    0.302,
+    0.233,
+    0.304,
+    0.2749,
+    0.1321,
+    0.2272,
+    0.4116,
+    0.415,
+    0.3154,
+    0.3348,
+    0.3186
+   ],
+   "shuffledSpans": [
+    0.1471,
+    0.1326,
+    0.1411,
+    0.2607,
+    0.1066,
+    0.2049,
+    0.2246,
+    0.2285,
+    0.3146,
+    0.2479,
+    0.2461,
+    0.2757,
+    0.3755,
+    0.2645,
+    0.2702,
+    0.2252,
+    0.3015,
+    0.4157,
+    0.288,
+    0.3251,
+    0.2972,
+    0.3709,
+    0.3571,
+    0.3183,
+    0.2336,
+    0.3577,
+    0.2498,
+    0.2172,
+    0.3107,
+    0.2277,
+    0.3937,
+    0.4066,
+    0.1838,
+    0.2469,
+    0.2947,
+    0.2183,
+    0.2973,
+    0.4041,
+    0.4062,
+    0.3885,
+    0.2449,
+    0.321,
+    0.3571,
+    0.2031,
+    0.2143,
+    0.2861,
+    0.1956,
+    0.2366,
+    0.1623,
+    0.2785,
+    0.3858,
+    0.3275,
+    0.3779,
+    0.3703,
+    0.1864,
+    0.2944,
+    0.2236,
+    0.2906,
+    0.2688,
+    0.1507,
+    0.2345,
+    0.4053,
+    0.3842,
+    0.2867,
+    0.3225,
+    0.3186
+   ],
+   "gibberishSpans": [
+    0.0964,
+    0.1914,
+    0.1247,
+    0.1081,
+    0.1129,
+    0.1327,
+    0.099,
+    0.1505,
+    0.0898,
+    0.1079
+   ]
+  }
+ },
+ "shuffledRetrieval256": {
+  "lexical": {
+   "n": 66,
+   "hit1": 0.439,
+   "hit5": 0.621,
+   "mrr": 0.467
+  },
+  "hybrid": {
+   "n": 66,
+   "hit1": 0.636,
+   "hit5": 0.758,
+   "mrr": 0.66
+  }
+ },
+ "spans256": {
+  "real": {
+   "n": 66,
+   "min": 0.2275,
+   "p10": 0.2918,
+   "p25": 0.3422,
+   "p50": 0.4012,
+   "p75": 0.4719,
+   "p90": 0.5387,
+   "max": 0.6047
+  },
+  "shuffled": {
+   "n": 66,
+   "min": 0.2348,
+   "p10": 0.2919,
+   "p25": 0.334,
+   "p50": 0.3835,
+   "p75": 0.4562,
+   "p90": 0.5213,
+   "max": 0.5783
+  },
+  "gibberish": {
+   "n": 10,
+   "min": 0.2054,
+   "p10": 0.2098,
+   "p25": 0.214,
+   "p50": 0.2346,
+   "p75": 0.2737,
+   "p90": 0.3035,
+   "max": 0.31
+  },
+  "fractionBelow015": {
+   "real": 0,
+   "shuffled": 0,
+   "gibberish": 0
+  },
+  "separation": {
+   "minRealSpan": 0.2275,
+   "maxShuffledSpan": 0.5783,
+   "maxGibberishSpan": 0.31,
+   "noiseAboveMinReal": 0.947,
+   "realBelowMaxGibberish": 0.136
+  }
+ },
+ "thresholdSweep256": [
+  {
+   "threshold": 0,
+   "abstainRateReal": 0,
+   "engageRateShuffled": 1,
+   "engageRateGibberish": 1,
+   "hit1": 0.682,
+   "hit5": 0.788,
+   "mrr": 0.687
+  },
+  {
+   "threshold": 0.05,
+   "abstainRateReal": 0,
+   "engageRateShuffled": 1,
+   "engageRateGibberish": 1,
+   "hit1": 0.682,
+   "hit5": 0.788,
+   "mrr": 0.687
+  },
+  {
+   "threshold": 0.1,
+   "abstainRateReal": 0,
+   "engageRateShuffled": 1,
+   "engageRateGibberish": 1,
+   "hit1": 0.682,
+   "hit5": 0.788,
+   "mrr": 0.687
+  },
+  {
+   "threshold": 0.15,
+   "abstainRateReal": 0,
+   "engageRateShuffled": 1,
+   "engageRateGibberish": 1,
+   "hit1": 0.682,
+   "hit5": 0.788,
+   "mrr": 0.687
+  },
+  {
+   "threshold": 0.2,
+   "abstainRateReal": 0,
+   "engageRateShuffled": 1,
+   "engageRateGibberish": 1,
+   "hit1": 0.682,
+   "hit5": 0.788,
+   "mrr": 0.687
+  },
+  {
+   "threshold": 0.25,
+   "abstainRateReal": 0.015,
+   "engageRateShuffled": 0.985,
+   "engageRateGibberish": 0.4,
+   "hit1": 0.682,
+   "hit5": 0.788,
+   "mrr": 0.687
+  },
+  {
+   "threshold": 0.3,
+   "abstainRateReal": 0.121,
+   "engageRateShuffled": 0.864,
+   "engageRateGibberish": 0.2,
+   "hit1": 0.667,
+   "hit5": 0.773,
+   "mrr": 0.67
+  },
+  {
+   "threshold": 0.35,
+   "abstainRateReal": 0.288,
+   "engageRateShuffled": 0.667,
+   "engageRateGibberish": 0,
+   "hit1": 0.636,
+   "hit5": 0.712,
+   "mrr": 0.633
+  },
+  {
+   "threshold": 0.4,
+   "abstainRateReal": 0.5,
+   "engageRateShuffled": 0.424,
+   "engageRateGibberish": 0,
+   "hit1": 0.561,
+   "hit5": 0.682,
+   "mrr": 0.585
+  }
+ ],
+ "regressions256": [
+  {
+   "need": "show me what's inside config.yaml",
+   "style": "paraphrase",
+   "span": 0.2787,
+   "lexRank": 3,
+   "hybRank": null,
+   "lexTop5": [
+    "git__git_show",
+    "fs__read_file",
+    "fs__read_text_file",
+    "fs__read_media_file",
+    "fs__read_multiple_files"
+   ],
+   "hybTop5": [
+    "git__git_show",
+    "memory__read_graph",
+    "github__get_file_contents",
+    "fs__read_media_file",
+    "fs__directory_tree"
+   ],
+   "primary": [
+    "fs__read_text_file"
+   ],
+   "hit5": "1→0"
+  }
+ ],
+ "winsCount256": 29,
+ "wins256": [
+  {
+   "need": "link these two concepts together in the knowledge base",
+   "style": "paraphrase",
+   "lexRank": 6,
+   "hybRank": 3,
+   "hit5": "0→1"
+  },
+  {
+   "need": "make a folder for the build artifacts",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 1,
+   "hit5": "0→1"
+  },
+  {
+   "need": "find every markdown file in the project",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 7,
+   "hit5": "0→0"
+  },
+  {
+   "need": "rename report.txt to final-report.txt",
+   "style": "paraphrase",
+   "lexRank": 2,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "how big is that log file",
+   "style": "zero-overlap",
+   "lexRank": 8,
+   "hybRank": 4,
+   "hit5": "0→1"
+  },
+  {
+   "need": "open a pull request with my changes",
+   "style": "terse",
+   "lexRank": 4,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "file a bug report on the upstream repo",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 2,
+   "hit5": "0→1"
+  },
+  {
+   "need": "what's changed since my last commit",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 9,
+   "hit5": "0→0"
+  },
+  {
+   "need": "show me this repo's history",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 2,
+   "hit5": "0→1"
+  },
+  {
+   "need": "unstage everything i added",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 1,
+   "hit5": "0→1"
+  },
+  {
+   "need": "react with a thumbs up to that message",
+   "style": "paraphrase",
+   "lexRank": 3,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "who is in this workspace",
+   "style": "terse",
+   "lexRank": 7,
+   "hybRank": 1,
+   "hit5": "0→1"
+  },
+  {
+   "need": "go to the pricing page",
+   "style": "zero-overlap",
+   "lexRank": null,
+   "hybRank": 3,
+   "hit5": "0→1"
+  },
+  {
+   "need": "what does this page look like to a screen reader",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 2,
+   "hit5": "0→1"
+  },
+  {
+   "need": "what errors showed up in the browser console",
+   "style": "paraphrase",
+   "lexRank": 2,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "pull the text content of that url",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 2,
+   "hit5": "1→1"
+  },
+  {
+   "need": "good coffee shops near me",
+   "style": "zero-overlap",
+   "lexRank": null,
+   "hybRank": 1,
+   "hit5": "0→1"
+  },
+  {
+   "need": "serach for recent security advisores about openssl",
+   "style": "typo",
+   "lexRank": null,
+   "hybRank": 7,
+   "hit5": "0→0"
+  },
+  {
+   "need": "extract product names and prices from these pages as json",
+   "style": "paraphrase",
+   "lexRank": 3,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "I'm orchestrating a research task and need the raw contents of several web pages for offline parsing, ideally with minimal fuss",
+   "style": "verbose",
+   "lexRank": null,
+   "hybRank": 4,
+   "hit5": "0→1"
+  },
+  {
+   "need": "add a table for invoices",
+   "style": "terse",
+   "lexRank": 2,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "show me the stack trace for that production error",
+   "style": "zero-overlap",
+   "lexRank": 3,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "add the meeting notes to our workspace wiki",
+   "style": "zero-overlap",
+   "lexRank": null,
+   "hybRank": 9,
+   "hit5": "0→0"
+  },
+  {
+   "need": "find the product roadmap page in notion",
+   "style": "terse",
+   "lexRank": 5,
+   "hybRank": 3,
+   "hit5": "1→1"
+  },
+  {
+   "need": "create a ticket for the login bug",
+   "style": "paraphrase",
+   "lexRank": null,
+   "hybRank": 2,
+   "hit5": "1→1"
+  },
+  {
+   "need": "add 3 and 4",
+   "style": "trap",
+   "lexRank": 4,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "wait a while and then finish",
+   "style": "trap",
+   "lexRank": null,
+   "hybRank": 2,
+   "hit5": "1→1"
+  },
+  {
+   "need": "lis le contenu du fichier readme",
+   "style": "non-english",
+   "lexRank": 2,
+   "hybRank": 1,
+   "hit5": "1→1"
+  },
+  {
+   "need": "在网上搜索最新的AI新闻",
+   "style": "non-english",
+   "lexRank": null,
+   "hybRank": 1,
+   "hit5": "0→1"
+  }
+ ],
+ "followup": {
+  "maxCosGate": [
+   {
+    "threshold": 0.3,
+    "abstainRateReal": 0,
+    "engageRateGibberish": 1
+   },
+   {
+    "threshold": 0.35,
+    "abstainRateReal": 0.03,
+    "engageRateGibberish": 0.9
+   },
+   {
+    "threshold": 0.4,
+    "abstainRateReal": 0.03,
+    "engageRateGibberish": 0.9
+   },
+   {
+    "threshold": 0.45,
+    "abstainRateReal": 0.076,
+    "engageRateGibberish": 0.7
+   },
+   {
+    "threshold": 0.5,
+    "abstainRateReal": 0.212,
+    "engageRateGibberish": 0.1
+   },
+   {
+    "threshold": 0.55,
+    "abstainRateReal": 0.394,
+    "engageRateGibberish": 0
+   },
+   {
+    "threshold": 0.6,
+    "abstainRateReal": 0.561,
+    "engageRateGibberish": 0
+   }
+  ],
+  "realMaxCos": {
+   "min": 0.312,
+   "max": 0.7866
+  },
+  "gibberishMaxCos": {
+   "min": 0.314,
+   "max": 0.538,
+   "all": [
+    0.456,
+    0.459,
+    0.407,
+    0.468,
+    0.538,
+    0.466,
+    0.447,
+    0.45,
+    0.314,
+    0.491
+   ]
+  },
+  "regressionByDim": {
+   "128": {
+    "hybridPrimaryRank": 6,
+    "hybridAcceptableRank": 5,
+    "pureCosPrimaryRank": 6,
+    "top5": [
+     "git__git_show",
+     "github__get_file_contents",
+     "git__git_init",
+     "git__git_status",
+     "fs__read_file"
+    ]
+   },
+   "256": {
+    "hybridPrimaryRank": null,
+    "hybridAcceptableRank": null,
+    "pureCosPrimaryRank": 23,
+    "top5": [
+     "git__git_show",
+     "memory__read_graph",
+     "github__get_file_contents",
+     "fs__read_media_file",
+     "fs__directory_tree"
+    ]
+   },
+   "512": {
+    "hybridPrimaryRank": null,
+    "hybridAcceptableRank": 14,
+    "pureCosPrimaryRank": 29,
+    "top5": [
+     "git__git_show",
+     "github__get_file_contents",
+     "git__git_diff_staged",
+     "git__git_diff_unstaged",
+     "github__get_issue"
+    ]
+   },
+   "768": {
+    "hybridPrimaryRank": 15,
+    "hybridAcceptableRank": 11,
+    "pureCosPrimaryRank": 15,
+    "top5": [
+     "git__git_show",
+     "github__get_file_contents",
+     "sentry__get_sentry_issue",
+     "github__get_issue",
+     "github__get_pull_request"
+    ]
+   }
+  },
+  "gibberishLexical": [
+   {
+    "text": "xqzv plorf wnkt jrb",
+    "top5": [
+     {
+      "id": "fs__read_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_text_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_media_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_multiple_files",
+      "score": 0
+     },
+     {
+      "id": "fs__write_file",
+      "score": 0
+     }
+    ]
+   },
+   {
+    "text": "9481 2750 6613 0092 8837",
+    "top5": [
+     {
+      "id": "fs__read_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_text_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_media_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_multiple_files",
+      "score": 0
+     },
+     {
+      "id": "fs__write_file",
+      "score": 0
+     }
+    ]
+   },
+   {
+    "text": "ﬂ‡†¶• ∆˚¬… æœ∑´®†",
+    "top5": [
+     {
+      "id": "fs__read_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_text_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_media_file",
+      "score": 0
+     },
+     {
+      "id": "fs__read_multiple_files",
+      "score": 0
+     },
+     {
+      "id": "fs__write_file",
+      "score": 0
+     }
+    ]
+   }
+  ]
+ }
+}

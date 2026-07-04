@@ -1,0 +1,1444 @@
+{
+  "meta": {
+    "startedAt": "2026-07-04T19:41:01.684Z",
+    "node": "v22.22.3",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "tokenDefinition": "estTokens = estimateTokensFromChars(chars) = ceil(chars/4) on the serialized payload. Lists are serialized as compact JSON.stringify of the tools array (conservative — favors the direct baseline). Draft responses are measured as the ACTUAL text served on the wire (roster pretty-prints them).",
+    "finishedAt": "2026-07-04T19:41:05.032Z"
+  },
+  "A_live": {
+    "servers": [
+      {
+        "name": "fs",
+        "args": "-y @modelcontextprotocol/server-filesystem"
+      },
+      {
+        "name": "memory",
+        "args": "-y @modelcontextprotocol/server-memory"
+      }
+    ],
+    "toolCounts": {
+      "fs": 14,
+      "memory": 9,
+      "total": 23
+    },
+    "directList": {
+      "chars": 22034,
+      "estTokens": 5509
+    },
+    "transparentList": {
+      "chars": 19952,
+      "estTokens": 4988,
+      "overheadVsDirectPct": -9.45,
+      "fieldsDroppedFromDirect": {
+        "title": {
+          "toolsWithField": 23,
+          "chars": 575
+        },
+        "annotations": {
+          "toolsWithField": 14,
+          "chars": 678
+        },
+        "execution": {
+          "toolsWithField": 23,
+          "chars": 897
+        }
+      }
+    },
+    "fiveStaticSurface": {
+      "toolCount": 2,
+      "chars": 809,
+      "estTokens": 203
+    },
+    "draftResponses": {
+      "n": 14,
+      "wireTokens": {
+        "mean": 662.9,
+        "p50": 620,
+        "p95": 803,
+        "min": 522,
+        "max": 803
+      },
+      "compactTokens": {
+        "mean": 453.6,
+        "p50": 426
+      },
+      "prettyPrintOverheadPct": 46.1,
+      "hit5Mean": 0.714,
+      "perNeed": [
+        {
+          "need": "remember that the user prefers dark mode",
+          "style": "paraphrase",
+          "starters": [
+            "fs__list_allowed_directories",
+            "fs__write_file",
+            "memory__open_nodes",
+            "memory__read_graph",
+            "fs__read_text_file"
+          ],
+          "hit5": 0,
+          "wireChars": 2419,
+          "wireTokens": 605,
+          "compactChars": 1704,
+          "compactTokens": 426
+        },
+        {
+          "need": "what do we already know about this person",
+          "style": "zero-overlap",
+          "starters": [
+            "fs__get_file_info",
+            "memory__add_observations",
+            "memory__create_relations",
+            "memory__create_entities",
+            "fs__list_directory"
+          ],
+          "hit5": 0,
+          "wireChars": 2395,
+          "wireTokens": 599,
+          "compactChars": 1650,
+          "compactTokens": 413
+        },
+        {
+          "need": "save a fact about the user so future sessions can recall it",
+          "style": "paraphrase",
+          "starters": [
+            "fs__get_file_info",
+            "memory__delete_observations",
+            "fs__write_file",
+            "memory__read_graph",
+            "memory__add_observations"
+          ],
+          "hit5": 1,
+          "wireChars": 2293,
+          "wireTokens": 574,
+          "compactChars": 1576,
+          "compactTokens": 394
+        },
+        {
+          "need": "link these two concepts together in the knowledge base",
+          "style": "paraphrase",
+          "starters": [
+            "memory__delete_entities",
+            "memory__create_entities",
+            "memory__search_nodes",
+            "memory__create_relations",
+            "memory__delete_observations"
+          ],
+          "hit5": 1,
+          "wireChars": 2085,
+          "wireTokens": 522,
+          "compactChars": 1340,
+          "compactTokens": 335
+        },
+        {
+          "need": "forget everything we stored about acme corp",
+          "style": "paraphrase",
+          "starters": [
+            "memory__delete_entities",
+            "fs__get_file_info",
+            "memory__delete_relations",
+            "memory__delete_observations",
+            "memory__create_entities"
+          ],
+          "hit5": 1,
+          "wireChars": 2197,
+          "wireTokens": 550,
+          "compactChars": 1452,
+          "compactTokens": 363
+        },
+        {
+          "need": "Persist the following durable preference so that any future conversation can retrieve it without the user restating it: the user's timezone is America/Toronto",
+          "style": "verbose",
+          "starters": [
+            "memory__delete_observations",
+            "fs__get_file_info",
+            "fs__write_file",
+            "memory__delete_relations",
+            "memory__read_graph"
+          ],
+          "hit5": 0,
+          "wireChars": 2372,
+          "wireTokens": 593,
+          "compactChars": 1655,
+          "compactTokens": 414
+        },
+        {
+          "need": "show me what's inside config.yaml",
+          "style": "paraphrase",
+          "starters": [
+            "fs__edit_file",
+            "fs__list_allowed_directories",
+            "fs__get_file_info",
+            "memory__read_graph",
+            "fs__read_file"
+          ],
+          "hit5": 1,
+          "wireChars": 2449,
+          "wireTokens": 613,
+          "compactChars": 1697,
+          "compactTokens": 425
+        },
+        {
+          "need": "make a folder for the build artifacts",
+          "style": "paraphrase",
+          "starters": [
+            "fs__create_directory",
+            "fs__edit_file",
+            "fs__search_files",
+            "fs__directory_tree",
+            "fs__list_directory"
+          ],
+          "hit5": 1,
+          "wireChars": 3159,
+          "wireTokens": 790,
+          "compactChars": 2207,
+          "compactTokens": 552
+        },
+        {
+          "need": "find every markdown file in the project",
+          "style": "paraphrase",
+          "starters": [
+            "fs__get_file_info",
+            "fs__list_directory",
+            "fs__edit_file",
+            "fs__list_directory_with_sizes",
+            "fs__read_text_file"
+          ],
+          "hit5": 0,
+          "wireChars": 3209,
+          "wireTokens": 803,
+          "compactChars": 2211,
+          "compactTokens": 553
+        },
+        {
+          "need": "rename report.txt to final-report.txt",
+          "style": "paraphrase",
+          "starters": [
+            "fs__move_file",
+            "fs__read_text_file",
+            "fs__write_file",
+            "fs__read_file",
+            "fs__edit_file"
+          ],
+          "hit5": 1,
+          "wireChars": 3181,
+          "wireTokens": 796,
+          "compactChars": 2107,
+          "compactTokens": 527
+        },
+        {
+          "need": "how big is that log file",
+          "style": "zero-overlap",
+          "starters": [
+            "fs__get_file_info",
+            "fs__list_directory_with_sizes",
+            "fs__read_file",
+            "fs__read_text_file",
+            "fs__list_allowed_directories"
+          ],
+          "hit5": 1,
+          "wireChars": 2963,
+          "wireTokens": 741,
+          "compactChars": 2052,
+          "compactTokens": 513
+        },
+        {
+          "need": "append a line to my notes file",
+          "style": "paraphrase",
+          "starters": [
+            "fs__edit_file",
+            "fs__read_text_file",
+            "fs__write_file",
+            "fs__read_file",
+            "memory__add_observations"
+          ],
+          "hit5": 1,
+          "wireChars": 2926,
+          "wireTokens": 732,
+          "compactChars": 1900,
+          "compactTokens": 475
+        },
+        {
+          "need": "which directories am i allowed to touch",
+          "style": "paraphrase",
+          "starters": [
+            "fs__list_allowed_directories",
+            "fs__directory_tree",
+            "fs__search_files",
+            "fs__create_directory",
+            "fs__list_directory"
+          ],
+          "hit5": 1,
+          "wireChars": 2966,
+          "wireTokens": 742,
+          "compactChars": 2175,
+          "compactTokens": 544
+        },
+        {
+          "need": "lis le contenu du fichier readme",
+          "style": "non-english",
+          "starters": [
+            "fs__read_file",
+            "fs__read_text_file",
+            "fs__read_multiple_files",
+            "memory__read_graph",
+            "fs__read_media_file"
+          ],
+          "hit5": 1,
+          "wireChars": 2479,
+          "wireTokens": 620,
+          "compactChars": 1662,
+          "compactTokens": 416
+        }
+      ]
+    },
+    "headline": {
+      "nTools": 23,
+      "directTokens": 5509,
+      "fiveModeOneDraftTokens": 866,
+      "savedPct": 84.3,
+      "breakEvenDrafts": 8
+    }
+  },
+  "B_corpus": {
+    "caveat": "corpus.mjs ships stub inputSchemas ({type:'object'}), so corpusList is a LOWER BOUND on a real 133-tool surface. Measured real-schema weight (part A): 958 chars/tool vs 133 chars/tool for the stub corpus. hybridList replaces the 23 fs/memory stubs with the real schemas captured in this run; the other 110 remain stubs.",
+    "corpusList": {
+      "nTools": 133,
+      "chars": 17630,
+      "estTokens": 4408
+    },
+    "hybridList": {
+      "nTools": 133,
+      "realSchemas": 23,
+      "chars": 23372,
+      "estTokens": 5843
+    },
+    "measuredCharsPerTool": {
+      "realServers": 958,
+      "corpusStub": 132.6
+    },
+    "draftResponses": {
+      "n": 66,
+      "wireTokens": {
+        "mean": 297.5,
+        "p50": 300,
+        "p95": 327,
+        "min": 261,
+        "max": 341
+      },
+      "compactTokens": {
+        "mean": 218.8,
+        "p50": 222
+      },
+      "prettyPrintOverheadPct": 36,
+      "hit5Mean": 0.773
+    },
+    "perNeed": [
+      {
+        "need": "remember that the user prefers dark mode",
+        "style": "paraphrase",
+        "hit5": 0,
+        "wireChars": 1306,
+        "wireTokens": 327,
+        "compactTokens": 248
+      },
+      {
+        "need": "what do we already know about this person",
+        "style": "zero-overlap",
+        "hit5": 0,
+        "wireChars": 1242,
+        "wireTokens": 311,
+        "compactTokens": 232
+      },
+      {
+        "need": "save a fact about the user so future sessions can recall it",
+        "style": "paraphrase",
+        "hit5": 0,
+        "wireChars": 1219,
+        "wireTokens": 305,
+        "compactTokens": 226
+      },
+      {
+        "need": "link these two concepts together in the knowledge base",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1278,
+        "wireTokens": 320,
+        "compactTokens": 241
+      },
+      {
+        "need": "forget everything we stored about acme corp",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1247,
+        "wireTokens": 312,
+        "compactTokens": 233
+      },
+      {
+        "need": "Persist the following durable preference so that any future conversation can retrieve it without the user restating it: the user's timezone is America/Toronto",
+        "style": "verbose",
+        "hit5": 0,
+        "wireChars": 1317,
+        "wireTokens": 330,
+        "compactTokens": 251
+      },
+      {
+        "need": "show me what's inside config.yaml",
+        "style": "paraphrase",
+        "hit5": 0,
+        "wireChars": 1041,
+        "wireTokens": 261,
+        "compactTokens": 182
+      },
+      {
+        "need": "make a folder for the build artifacts",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1168,
+        "wireTokens": 292,
+        "compactTokens": 214
+      },
+      {
+        "need": "find every markdown file in the project",
+        "style": "paraphrase",
+        "hit5": 0,
+        "wireChars": 1244,
+        "wireTokens": 311,
+        "compactTokens": 233
+      },
+      {
+        "need": "rename report.txt to final-report.txt",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1202,
+        "wireTokens": 301,
+        "compactTokens": 222
+      },
+      {
+        "need": "how big is that log file",
+        "style": "zero-overlap",
+        "hit5": 1,
+        "wireChars": 1218,
+        "wireTokens": 305,
+        "compactTokens": 226
+      },
+      {
+        "need": "append a line to my notes file",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1205,
+        "wireTokens": 302,
+        "compactTokens": 223
+      },
+      {
+        "need": "which directories am i allowed to touch",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1220,
+        "wireTokens": 305,
+        "compactTokens": 227
+      },
+      {
+        "need": "open a pull request with my changes",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1149,
+        "wireTokens": 288,
+        "compactTokens": 209
+      },
+      {
+        "need": "file a bug report on the upstream repo",
+        "style": "paraphrase",
+        "hit5": 0,
+        "wireChars": 1230,
+        "wireTokens": 308,
+        "compactTokens": 229
+      },
+      {
+        "need": "who changed this file recently",
+        "style": "cross-server",
+        "hit5": 0,
+        "wireChars": 1239,
+        "wireTokens": 310,
+        "compactTokens": 231
+      },
+      {
+        "need": "find repositories about vector databases",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1153,
+        "wireTokens": 289,
+        "compactTokens": 210
+      },
+      {
+        "need": "merge that approved pull request",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1146,
+        "wireTokens": 287,
+        "compactTokens": 208
+      },
+      {
+        "need": "leave a comment on issue 42",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1132,
+        "wireTokens": 283,
+        "compactTokens": 205
+      },
+      {
+        "need": "grab the raw contents of the README from the remote repo",
+        "style": "trap",
+        "hit5": 1,
+        "wireChars": 1272,
+        "wireTokens": 318,
+        "compactTokens": 240
+      },
+      {
+        "need": "which files did that pull request touch",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1153,
+        "wireTokens": 289,
+        "compactTokens": 210
+      },
+      {
+        "need": "commit my staged changes with a message",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1121,
+        "wireTokens": 281,
+        "compactTokens": 202
+      },
+      {
+        "need": "what's changed since my last commit",
+        "style": "paraphrase",
+        "hit5": 0,
+        "wireChars": 1083,
+        "wireTokens": 271,
+        "compactTokens": 192
+      },
+      {
+        "need": "start a new branch for the hotfix",
+        "style": "cross-server",
+        "hit5": 1,
+        "wireChars": 1134,
+        "wireTokens": 284,
+        "compactTokens": 205
+      },
+      {
+        "need": "show me this repo's history",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1102,
+        "wireTokens": 276,
+        "compactTokens": 197
+      },
+      {
+        "need": "unstage everything i added",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1075,
+        "wireTokens": 269,
+        "compactTokens": 190
+      },
+      {
+        "need": "post an update to the team channel",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1146,
+        "wireTokens": 287,
+        "compactTokens": 208
+      },
+      {
+        "need": "read the room before replying",
+        "style": "trap",
+        "hit5": 0,
+        "wireChars": 1200,
+        "wireTokens": 300,
+        "compactTokens": 222
+      },
+      {
+        "need": "react with a thumbs up to that message",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1136,
+        "wireTokens": 284,
+        "compactTokens": 206
+      },
+      {
+        "need": "who is in this workspace",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1205,
+        "wireTokens": 302,
+        "compactTokens": 223
+      },
+      {
+        "need": "reply inside the thread, not the main channel",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1157,
+        "wireTokens": 290,
+        "compactTokens": 211
+      },
+      {
+        "need": "take a screenshot of the current page",
+        "style": "cross-server",
+        "hit5": 1,
+        "wireChars": 1249,
+        "wireTokens": 313,
+        "compactTokens": 234
+      },
+      {
+        "need": "go to the pricing page",
+        "style": "zero-overlap",
+        "hit5": 0,
+        "wireChars": 1104,
+        "wireTokens": 276,
+        "compactTokens": 198
+      },
+      {
+        "need": "click the submit button",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1090,
+        "wireTokens": 273,
+        "compactTokens": 194
+      },
+      {
+        "need": "type my email into the signup form",
+        "style": "cross-server",
+        "hit5": 1,
+        "wireChars": 1116,
+        "wireTokens": 279,
+        "compactTokens": 201
+      },
+      {
+        "need": "what does this page look like to a screen reader",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1310,
+        "wireTokens": 328,
+        "compactTokens": 249
+      },
+      {
+        "need": "run some javascript on the page and give me the result",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1175,
+        "wireTokens": 294,
+        "compactTokens": 215
+      },
+      {
+        "need": "close the extra browser tabs",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1128,
+        "wireTokens": 282,
+        "compactTokens": 204
+      },
+      {
+        "need": "upload my resume through the file picker on the page",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1251,
+        "wireTokens": 313,
+        "compactTokens": 234
+      },
+      {
+        "need": "what errors showed up in the browser console",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1153,
+        "wireTokens": 289,
+        "compactTokens": 210
+      },
+      {
+        "need": "search the web for the latest node lts version",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1237,
+        "wireTokens": 310,
+        "compactTokens": 231
+      },
+      {
+        "need": "pull the text content of that url",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1197,
+        "wireTokens": 300,
+        "compactTokens": 221
+      },
+      {
+        "need": "crawl the whole documentation site",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1213,
+        "wireTokens": 304,
+        "compactTokens": 225
+      },
+      {
+        "need": "good coffee shops near me",
+        "style": "zero-overlap",
+        "hit5": 1,
+        "wireChars": 1176,
+        "wireTokens": 294,
+        "compactTokens": 216
+      },
+      {
+        "need": "serach for recent security advisores about openssl",
+        "style": "typo",
+        "hit5": 0,
+        "wireChars": 1201,
+        "wireTokens": 301,
+        "compactTokens": 222
+      },
+      {
+        "need": "which urls exist on that website",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1197,
+        "wireTokens": 300,
+        "compactTokens": 221
+      },
+      {
+        "need": "extract product names and prices from these pages as json",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1263,
+        "wireTokens": 316,
+        "compactTokens": 237
+      },
+      {
+        "need": "I'm orchestrating a research task and need the raw contents of several web pages for offline parsing, ideally with minimal fuss",
+        "style": "verbose",
+        "hit5": 1,
+        "wireChars": 1364,
+        "wireTokens": 341,
+        "compactTokens": 263
+      },
+      {
+        "need": "how many users signed up last week",
+        "style": "zero-overlap",
+        "hit5": 0,
+        "wireChars": 1199,
+        "wireTokens": 300,
+        "compactTokens": 221
+      },
+      {
+        "need": "add a table for invoices",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1118,
+        "wireTokens": 280,
+        "compactTokens": 201
+      },
+      {
+        "need": "what tables exist in this database",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1178,
+        "wireTokens": 295,
+        "compactTokens": 216
+      },
+      {
+        "need": "note this analytics insight down for the final report",
+        "style": "trap",
+        "hit5": 1,
+        "wireChars": 1256,
+        "wireTokens": 314,
+        "compactTokens": 236
+      },
+      {
+        "need": "what time is it in tokyo right now",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1132,
+        "wireTokens": 283,
+        "compactTokens": 205
+      },
+      {
+        "need": "convert 3pm eastern to london time",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1203,
+        "wireTokens": 301,
+        "compactTokens": 222
+      },
+      {
+        "need": "find the quarterly planning doc in drive",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1220,
+        "wireTokens": 305,
+        "compactTokens": 227
+      },
+      {
+        "need": "show me the stack trace for that production error",
+        "style": "zero-overlap",
+        "hit5": 1,
+        "wireChars": 1232,
+        "wireTokens": 308,
+        "compactTokens": 230
+      },
+      {
+        "need": "add the meeting notes to our workspace wiki",
+        "style": "zero-overlap",
+        "hit5": 1,
+        "wireChars": 1244,
+        "wireTokens": 311,
+        "compactTokens": 233
+      },
+      {
+        "need": "find the product roadmap page in notion",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1201,
+        "wireTokens": 301,
+        "compactTokens": 222
+      },
+      {
+        "need": "create a ticket for the login bug",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1136,
+        "wireTokens": 284,
+        "compactTokens": 206
+      },
+      {
+        "need": "what's on my plate this sprint",
+        "style": "zero-overlap",
+        "hit5": 0,
+        "wireChars": 1132,
+        "wireTokens": 283,
+        "compactTokens": 205
+      },
+      {
+        "need": "think through this problem step by step before acting",
+        "style": "paraphrase",
+        "hit5": 1,
+        "wireChars": 1221,
+        "wireTokens": 306,
+        "compactTokens": 227
+      },
+      {
+        "need": "echo back exactly what i send you",
+        "style": "terse",
+        "hit5": 1,
+        "wireChars": 1100,
+        "wireTokens": 275,
+        "compactTokens": 197
+      },
+      {
+        "need": "add 3 and 4",
+        "style": "trap",
+        "hit5": 1,
+        "wireChars": 1103,
+        "wireTokens": 276,
+        "compactTokens": 197
+      },
+      {
+        "need": "wait a while and then finish",
+        "style": "trap",
+        "hit5": 1,
+        "wireChars": 1250,
+        "wireTokens": 313,
+        "compactTokens": 234
+      },
+      {
+        "need": "lis le contenu du fichier readme",
+        "style": "non-english",
+        "hit5": 1,
+        "wireChars": 1206,
+        "wireTokens": 302,
+        "compactTokens": 223
+      },
+      {
+        "need": "在网上搜索最新的AI新闻",
+        "style": "non-english",
+        "hit5": 0,
+        "wireChars": 1133,
+        "wireTokens": 284,
+        "compactTokens": 205
+      }
+    ],
+    "headline": {
+      "nTools": 133,
+      "directTokensLowerBound": 4408,
+      "fiveModeOneDraftTokens": 501,
+      "savedPctVsStubList": 88.6,
+      "savedPctVsHybridList": 91.4,
+      "breakEvenDraftsVsStub": 14.1,
+      "breakEvenDraftsVsHybrid": 19
+    }
+  },
+  "C_tokenizer": {
+    "payloads": [
+      {
+        "name": "fs direct tools/list",
+        "chars": 12227,
+        "heuristicTokens": 3057,
+        "minilmTokens": 4587,
+        "heuristicVsMinilmPct": -33.4,
+        "claudeLegacyTokens": 2725,
+        "heuristicVsClaudeLegacyPct": 12.2
+      },
+      {
+        "name": "memory direct tools/list",
+        "chars": 9808,
+        "heuristicTokens": 2452,
+        "minilmTokens": 3914,
+        "heuristicVsMinilmPct": -37.4,
+        "claudeLegacyTokens": 2146,
+        "heuristicVsClaudeLegacyPct": 14.3
+      },
+      {
+        "name": "fs+memory direct list",
+        "chars": 22034,
+        "heuristicTokens": 5509,
+        "minilmTokens": 8503,
+        "heuristicVsMinilmPct": -35.2,
+        "claudeLegacyTokens": 4868,
+        "heuristicVsClaudeLegacyPct": 13.2
+      },
+      {
+        "name": "five static surface (draft+call defs)",
+        "chars": 809,
+        "heuristicTokens": 203,
+        "minilmTokens": 302,
+        "heuristicVsMinilmPct": -32.8,
+        "claudeLegacyTokens": 189,
+        "heuristicVsClaudeLegacyPct": 7.4
+      },
+      {
+        "name": "largest live draft response (actual wire text)",
+        "chars": 3209,
+        "heuristicTokens": 803,
+        "minilmTokens": 775,
+        "heuristicVsMinilmPct": 3.6,
+        "claudeLegacyTokens": 743,
+        "heuristicVsClaudeLegacyPct": 8.1
+      },
+      {
+        "name": "corpus 133 list (stub schemas)",
+        "chars": 17630,
+        "heuristicTokens": 4408,
+        "minilmTokens": 6627,
+        "heuristicVsMinilmPct": -33.5,
+        "claudeLegacyTokens": 3911,
+        "heuristicVsClaudeLegacyPct": 12.7
+      },
+      {
+        "name": "corpus 133 hybrid list (23 real schemas)",
+        "chars": 23372,
+        "heuristicTokens": 5843,
+        "minilmTokens": 9135,
+        "heuristicVsMinilmPct": -36,
+        "claudeLegacyTokens": 5309,
+        "heuristicVsClaudeLegacyPct": 10.1
+      },
+      {
+        "name": "plain English prose control",
+        "chars": 246,
+        "heuristicTokens": 62,
+        "minilmTokens": 51,
+        "heuristicVsMinilmPct": 21.6,
+        "claudeLegacyTokens": 49,
+        "heuristicVsClaudeLegacyPct": 26.5
+      }
+    ],
+    "chunkBiasPct": 0,
+    "claudeNote": "Xenova/claude-tokenizer = the LEGACY public Anthropic BPE (Claude 1.x era). NOT the current Claude tokenizer — indicative of BPE-family behavior only.",
+    "draftWireAggregates": {
+      "live13": {
+        "minilm": {
+          "n": 14,
+          "mean": 654.8,
+          "p50": 639,
+          "max": 787
+        },
+        "claudeLegacy": {
+          "n": 14,
+          "mean": 623.5,
+          "p50": 609,
+          "max": 750
+        }
+      },
+      "corpus66": {
+        "minilm": {
+          "n": 66,
+          "mean": 355.4,
+          "p50": 355,
+          "max": 397
+        },
+        "claudeLegacy": {
+          "n": 66,
+          "mean": 329.8,
+          "p50": 330,
+          "max": 369
+        }
+      }
+    },
+    "headlineByTokenizer": {
+      "heuristicChars4": {
+        "nTools": 23,
+        "directTokens": 5509,
+        "fiveModeOneDraftTokens": 866,
+        "savedPct": 84.3,
+        "breakEvenDrafts": 8
+      },
+      "minilm": {
+        "directTokens": 8503,
+        "fiveStaticTokens": 302,
+        "draftMeanTokens": 654.8,
+        "oneDraftSessionTokens": 957,
+        "savedPct": 88.7,
+        "breakEvenDrafts": 12.5
+      },
+      "claudeLegacy": {
+        "directTokens": 4868,
+        "fiveStaticTokens": 189,
+        "draftMeanTokens": 623.5,
+        "oneDraftSessionTokens": 813,
+        "savedPct": 83.3,
+        "breakEvenDrafts": 7.5
+      }
+    },
+    "verdict": {
+      "receiptClaim": "±15% (receipt methodology string)",
+      "minilmBiasRangePct": [
+        -37.4,
+        21.6
+      ],
+      "claudeLegacyBiasRangePct": [
+        7.4,
+        26.5
+      ],
+      "caveat": "MiniLM is WordPiece and claude-legacy is 2023-era BPE; neither is Claude's or GPT's current tokenizer. JSON-heavy payloads tokenize denser than prose on modern BPEs, so treat these as brackets, not truth for any specific model."
+    },
+    "prettyPrintRealCost": {
+      "n": 14,
+      "meanWire": {
+        "est": 662.9,
+        "minilm": 654.8,
+        "claudeLegacy": 623.5
+      },
+      "meanCompact": {
+        "est": 453.6,
+        "minilm": 654.8,
+        "claudeLegacy": 406.8
+      },
+      "prettyOverheadPct": {
+        "est": 46.1,
+        "minilm": 0,
+        "claudeLegacy": 53.3
+      },
+      "note": "overhead of JSON.stringify(payload,null,2) vs compact on the 13 real live draft wires, per tokenizer"
+    }
+  },
+  "D_trimDepth": {
+    "d1ReproducesShipped": "23/23",
+    "lossyToolsRestoreCost": {
+      "n": 11,
+      "meanD1": 49.3,
+      "meanD2": 55.7,
+      "meanDFull": 115.5,
+      "d2OverD1Pct": 13.1
+    },
+    "droppedKeyCensusRealSchemas": {
+      "required": {
+        "total": 27,
+        "keptAtD1": 21
+      },
+      "enum": {
+        "total": 1,
+        "keptAtD1": 1
+      },
+      "default": {
+        "total": 4,
+        "keptAtD1": 0
+      },
+      "items": {
+        "total": 14,
+        "keptAtD1": 0
+      },
+      "properties": {
+        "total": 29,
+        "keptAtD1": 23
+      },
+      "anyOf": {
+        "total": 0,
+        "keptAtD1": 0
+      },
+      "oneOf": {
+        "total": 0,
+        "keptAtD1": 0
+      },
+      "allOf": {
+        "total": 0,
+        "keptAtD1": 0
+      },
+      "description": {
+        "total": 26,
+        "keptAtD1": 0
+      },
+      "format": {
+        "total": 0,
+        "keptAtD1": 0
+      },
+      "additionalProperties": {
+        "total": 0,
+        "keptAtD1": 0
+      }
+    },
+    "lossyToolsAtD1": [
+      {
+        "id": "fs__read_multiple_files",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "fs__edit_file",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "fs__directory_tree",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "fs__search_files",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__create_entities",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__create_relations",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__add_observations",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__delete_entities",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__delete_observations",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__delete_relations",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      },
+      {
+        "id": "memory__open_nodes",
+        "arrayPropsLosingItems": 1,
+        "nestedObjectPropsFlattened": 0
+      }
+    ],
+    "depthTokens": {
+      "aggregateReal": {
+        "d0": {
+          "realMeanTokens": 28.8,
+          "realMaxTokens": 34
+        },
+        "d1": {
+          "realMeanTokens": 47.9,
+          "realMaxTokens": 61
+        },
+        "d2": {
+          "realMeanTokens": 51,
+          "realMaxTokens": 67
+        },
+        "d3": {
+          "realMeanTokens": 59.3,
+          "realMaxTokens": 91
+        },
+        "d6": {
+          "realMeanTokens": 60.1,
+          "realMaxTokens": 97
+        },
+        "dFull": {
+          "realMeanTokens": 91.2,
+          "realMaxTokens": 155
+        }
+      },
+      "perSchema": [
+        {
+          "id": "fs__read_file",
+          "fullSchemaTokens": 81,
+          "d0": 26,
+          "d1": 53,
+          "d2": 53,
+          "d3": 53,
+          "d6": 53,
+          "dFull": 102
+        },
+        {
+          "id": "fs__read_text_file",
+          "fullSchemaTokens": 81,
+          "d0": 28,
+          "d1": 56,
+          "d2": 56,
+          "d3": 56,
+          "d6": 56,
+          "dFull": 104
+        },
+        {
+          "id": "fs__read_media_file",
+          "fullSchemaTokens": 33,
+          "d0": 29,
+          "d1": 44,
+          "d2": 44,
+          "d3": 44,
+          "d6": 44,
+          "dFull": 57
+        },
+        {
+          "id": "fs__read_multiple_files",
+          "fullSchemaTokens": 74,
+          "d0": 31,
+          "d1": 46,
+          "d2": 52,
+          "d3": 52,
+          "d6": 52,
+          "dFull": 100
+        },
+        {
+          "id": "fs__write_file",
+          "fullSchemaTokens": 42,
+          "d0": 26,
+          "d1": 51,
+          "d2": 51,
+          "d3": 51,
+          "d6": 51,
+          "dFull": 64
+        },
+        {
+          "id": "fs__edit_file",
+          "fullSchemaTokens": 123,
+          "d0": 26,
+          "d1": 56,
+          "d2": 62,
+          "d3": 88,
+          "d6": 88,
+          "dFull": 144
+        },
+        {
+          "id": "fs__create_directory",
+          "fullSchemaTokens": 33,
+          "d0": 29,
+          "d1": 44,
+          "d2": 44,
+          "d3": 44,
+          "d6": 44,
+          "dFull": 57
+        },
+        {
+          "id": "fs__list_directory",
+          "fullSchemaTokens": 33,
+          "d0": 28,
+          "d1": 43,
+          "d2": 43,
+          "d3": 43,
+          "d6": 43,
+          "dFull": 56
+        },
+        {
+          "id": "fs__list_directory_with_sizes",
+          "fullSchemaTokens": 61,
+          "d0": 34,
+          "d1": 61,
+          "d2": 61,
+          "d3": 61,
+          "d6": 61,
+          "dFull": 90
+        },
+        {
+          "id": "fs__directory_tree",
+          "fullSchemaTokens": 51,
+          "d0": 28,
+          "d1": 52,
+          "d2": 58,
+          "d3": 58,
+          "d6": 58,
+          "dFull": 75
+        },
+        {
+          "id": "fs__move_file",
+          "fullSchemaTokens": 45,
+          "d0": 26,
+          "d1": 53,
+          "d2": 53,
+          "d3": 53,
+          "d6": 53,
+          "dFull": 66
+        },
+        {
+          "id": "fs__search_files",
+          "fullSchemaTokens": 61,
+          "d0": 27,
+          "d1": 60,
+          "d2": 67,
+          "d3": 67,
+          "d6": 67,
+          "dFull": 83
+        },
+        {
+          "id": "fs__get_file_info",
+          "fullSchemaTokens": 33,
+          "d0": 28,
+          "d1": 43,
+          "d2": 43,
+          "d3": 43,
+          "d6": 43,
+          "dFull": 56
+        },
+        {
+          "id": "fs__list_allowed_directories",
+          "fullSchemaTokens": 22,
+          "d0": 33,
+          "d1": 37,
+          "d2": 37,
+          "d3": 37,
+          "d6": 37,
+          "dFull": 50
+        },
+        {
+          "id": "memory__create_entities",
+          "fullSchemaTokens": 124,
+          "d0": 30,
+          "d1": 46,
+          "d2": 53,
+          "d3": 91,
+          "d6": 97,
+          "dFull": 149
+        },
+        {
+          "id": "memory__create_relations",
+          "fullSchemaTokens": 118,
+          "d0": 30,
+          "d1": 47,
+          "d2": 54,
+          "d3": 88,
+          "d6": 88,
+          "dFull": 143
+        },
+        {
+          "id": "memory__add_observations",
+          "fullSchemaTokens": 108,
+          "d0": 30,
+          "d1": 49,
+          "d2": 55,
+          "d3": 83,
+          "d6": 90,
+          "dFull": 133
+        },
+        {
+          "id": "memory__delete_entities",
+          "fullSchemaTokens": 55,
+          "d0": 30,
+          "d1": 48,
+          "d2": 54,
+          "d3": 54,
+          "d6": 54,
+          "dFull": 80
+        },
+        {
+          "id": "memory__delete_observations",
+          "fullSchemaTokens": 107,
+          "d0": 32,
+          "d1": 49,
+          "d2": 55,
+          "d3": 85,
+          "d6": 92,
+          "dFull": 134
+        },
+        {
+          "id": "memory__delete_relations",
+          "fullSchemaTokens": 130,
+          "d0": 30,
+          "d1": 47,
+          "d2": 54,
+          "d3": 88,
+          "d6": 88,
+          "dFull": 155
+        },
+        {
+          "id": "memory__read_graph",
+          "fullSchemaTokens": 22,
+          "d0": 27,
+          "d1": 31,
+          "d2": 31,
+          "d3": 31,
+          "d6": 31,
+          "dFull": 44
+        },
+        {
+          "id": "memory__search_nodes",
+          "fullSchemaTokens": 57,
+          "d0": 28,
+          "d1": 44,
+          "d2": 44,
+          "d3": 44,
+          "d6": 44,
+          "dFull": 80
+        },
+        {
+          "id": "memory__open_nodes",
+          "fullSchemaTokens": 53,
+          "d0": 27,
+          "d1": 42,
+          "d2": 49,
+          "d3": 49,
+          "d6": 49,
+          "dFull": 75
+        },
+        {
+          "id": "synthetic__deep6",
+          "fullSchemaTokens": 208,
+          "d0": 25,
+          "d1": 48,
+          "d2": 70,
+          "d3": 93,
+          "d6": 165,
+          "dFull": 229
+        },
+        {
+          "id": "synthetic__wide200",
+          "fullSchemaTokens": 4685,
+          "d0": 26,
+          "d1": 1800,
+          "d2": 1800,
+          "d3": 1800,
+          "d6": 1800,
+          "dFull": 4707
+        },
+        {
+          "id": "synthetic__anyof_forest",
+          "fullSchemaTokens": 2634,
+          "d0": 34,
+          "d1": 56,
+          "d2": 71,
+          "d3": 128,
+          "d6": 2100,
+          "dFull": 2664
+        }
+      ]
+    },
+    "syntheticNote": "synthetics are pathological inputs to trimming, not retrieval claims"
+  }
+}

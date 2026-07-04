@@ -1,0 +1,490 @@
+{
+  "slug": "proxy-tax",
+  "title": "Latency + storage: the honest cost of the roster middleman",
+  "ts": "2026-07-04T19:42:21.646Z",
+  "machine": {
+    "node": "v22.22.3",
+    "platform": "darwin/arm64",
+    "cpu": "Apple M5",
+    "cores": 10,
+    "totalMemGiB": 24
+  },
+  "methodNotes": [
+    "All timings via process.hrtime.bigint on real machinery; warmups excluded; p50/p95 over >=100 iterations unless a smaller n is stated on the row.",
+    "(a)(d) real MiniLM (Xenova/all-MiniLM-L6-v2) vectors via TransformersEmbeddings, embedded once before timing; in-memory/file SQLite via openCoachDb.",
+    "(b) real `roster serve` (packages/cli/dist/bin.js) spawned over stdio fronting real npx @modelcontextprotocol/server-filesystem; direct baseline = same server, no middleman; A/B/A design (direct re-measured last).",
+    "(c) real `roster serve` fronting a real 133-tool MCP stdio backend (exp-proxy-tax-corpus-server.mjs, official SDK, corpus.mjs cards). Embedding models pre-cached (download EXCLUDED); this 24GiB machine auto-selects GEMMA for serve (selectModelId >=8GiB rule).",
+    "(d) 10k recordOutcome rows: 85% success/10% tool_fail:internal/5% hard_fail:transport, 500 sessions, 66 real need-vecs cycled, ts spread over ~58 days; sizes taken after wal_checkpoint(TRUNCATE)."
+  ],
+  "a": {
+    "experiment": "proxy-tax-a-draft-latency",
+    "ts": "2026-07-04T19:36:06.156Z",
+    "machine": {
+      "node": "v22.22.3",
+      "platform": "darwin/arm64",
+      "cpu": "Apple M5",
+      "cores": 10,
+      "totalMemGiB": 24
+    },
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "k": 5,
+    "needs": 66,
+    "rounds": 3,
+    "sizes": {
+      "10": {
+        "upsertMs": 0.6,
+        "storeVecsMs": 0.3,
+        "lexical": {
+          "n": 198,
+          "p50_ms": 0.036,
+          "p95_ms": 0.045,
+          "mean_ms": 0.036,
+          "min_ms": 0.026,
+          "max_ms": 0.057,
+          "avgReturned": 5
+        },
+        "hybrid": {
+          "n": 198,
+          "p50_ms": 0.047,
+          "p95_ms": 0.066,
+          "mean_ms": 0.054,
+          "min_ms": 0.036,
+          "max_ms": 0.824,
+          "avgReturned": 5
+        },
+        "hybridOverLexicalP50": 1.31
+      },
+      "50": {
+        "upsertMs": 0.4,
+        "storeVecsMs": 0.9,
+        "lexical": {
+          "n": 198,
+          "p50_ms": 0.047,
+          "p95_ms": 0.074,
+          "mean_ms": 0.049,
+          "min_ms": 0.026,
+          "max_ms": 0.105,
+          "avgReturned": 5
+        },
+        "hybrid": {
+          "n": 198,
+          "p50_ms": 0.131,
+          "p95_ms": 0.16,
+          "mean_ms": 0.136,
+          "min_ms": 0.104,
+          "max_ms": 0.447,
+          "avgReturned": 5
+        },
+        "hybridOverLexicalP50": 2.79
+      },
+      "133": {
+        "upsertMs": 0.8,
+        "storeVecsMs": 1.3,
+        "lexical": {
+          "n": 198,
+          "p50_ms": 0.075,
+          "p95_ms": 0.098,
+          "mean_ms": 0.07,
+          "min_ms": 0.023,
+          "max_ms": 0.262,
+          "avgReturned": 5
+        },
+        "hybrid": {
+          "n": 198,
+          "p50_ms": 0.303,
+          "p95_ms": 0.354,
+          "mean_ms": 0.308,
+          "min_ms": 0.256,
+          "max_ms": 0.6,
+          "avgReturned": 5
+        },
+        "hybridOverLexicalP50": 4.04
+      },
+      "500": {
+        "upsertMs": 2.6,
+        "storeVecsMs": 4,
+        "lexical": {
+          "n": 198,
+          "p50_ms": 0.117,
+          "p95_ms": 0.18,
+          "mean_ms": 0.123,
+          "min_ms": 0.023,
+          "max_ms": 1.069,
+          "avgReturned": 5
+        },
+        "hybrid": {
+          "n": 198,
+          "p50_ms": 1.104,
+          "p95_ms": 1.311,
+          "mean_ms": 1.124,
+          "min_ms": 0.986,
+          "max_ms": 1.484,
+          "avgReturned": 5
+        },
+        "hybridOverLexicalP50": 9.44
+      }
+    },
+    "embedOnce": {
+      "toolCount": 500,
+      "toolEmbedMs": 676,
+      "needCount": 66,
+      "needEmbedBatchMs": 69,
+      "dims": 384
+    },
+    "needEmbedSingle": {
+      "n": 120,
+      "p50_ms": 0.883,
+      "p95_ms": 1.468,
+      "mean_ms": 0.968,
+      "min_ms": 0.609,
+      "max_ms": 2.403
+    }
+  },
+  "b": {
+    "experiment": "proxy-tax-b-call-overhead",
+    "ts": "2026-07-04T19:38:58.371Z",
+    "machine": {
+      "node": "v22.22.3",
+      "platform": "darwin/arm64",
+      "cpu": "Apple M5",
+      "cores": 10,
+      "totalMemGiB": 24
+    },
+    "conditions": {
+      "direct1": {
+        "tools": 14,
+        "small": {
+          "n": 120,
+          "p50_ms": 0.165,
+          "p95_ms": 0.274,
+          "mean_ms": 0.192,
+          "min_ms": 0.143,
+          "max_ms": 1.508
+        },
+        "big": {
+          "n": 40,
+          "p50_ms": 0.612,
+          "p95_ms": 0.789,
+          "mean_ms": 0.648,
+          "min_ms": 0.533,
+          "max_ms": 1.751
+        }
+      },
+      "transparent": {
+        "tools": 14,
+        "small": {
+          "n": 120,
+          "p50_ms": 0.38,
+          "p95_ms": 0.695,
+          "mean_ms": 0.429,
+          "min_ms": 0.342,
+          "max_ms": 2.122
+        },
+        "big": {
+          "n": 40,
+          "p50_ms": 1.256,
+          "p95_ms": 3.093,
+          "mean_ms": 1.496,
+          "min_ms": 1.115,
+          "max_ms": 3.308
+        }
+      },
+      "five": {
+        "tools": "call,draft",
+        "draftWire": {
+          "n": 120,
+          "p50_ms": 0.192,
+          "p95_ms": 0.277,
+          "mean_ms": 0.206,
+          "min_ms": 0.153,
+          "max_ms": 0.934
+        },
+        "small": {
+          "n": 120,
+          "p50_ms": 0.355,
+          "p95_ms": 0.474,
+          "mean_ms": 0.372,
+          "min_ms": 0.315,
+          "max_ms": 1.046
+        },
+        "big": {
+          "n": 40,
+          "p50_ms": 1.206,
+          "p95_ms": 3.069,
+          "mean_ms": 1.377,
+          "min_ms": 1.084,
+          "max_ms": 3.68
+        }
+      },
+      "direct2": {
+        "small": {
+          "n": 120,
+          "p50_ms": 0.171,
+          "p95_ms": 0.247,
+          "mean_ms": 0.18,
+          "min_ms": 0.14,
+          "max_ms": 0.482
+        },
+        "big": {
+          "n": 40,
+          "p50_ms": 0.562,
+          "p95_ms": 1.453,
+          "mean_ms": 0.703,
+          "min_ms": 0.512,
+          "max_ms": 4.977
+        }
+      }
+    },
+    "addedMs": {
+      "note": "added = condition minus best-of-two direct baselines",
+      "transparent_small": {
+        "p50": 0.215,
+        "p95": 0.448
+      },
+      "five_small": {
+        "p50": 0.19,
+        "p95": 0.227
+      },
+      "transparent_big": {
+        "p50": 0.694
+      },
+      "five_big": {
+        "p50": 0.644
+      }
+    },
+    "serveRssNote": "serveRssKb values in this section are INVALID: pgrep matched a stale/sibling roster serve process (pid 62703), not the child under test. Superseded by exp (c) transport.pid RSS numbers."
+  },
+  "c": {
+    "experiment": "proxy-tax-c-cold-boot",
+    "ts": "2026-07-04T19:40:53.926Z",
+    "machine": {
+      "node": "v22.22.3",
+      "platform": "darwin/arm64",
+      "cpu": "Apple M5",
+      "cores": 10,
+      "totalMemGiB": 24
+    },
+    "boots": [
+      {
+        "name": "off-1",
+        "embeddings": "off",
+        "reusedHome": false,
+        "tools": "call,draft",
+        "connectMs": 181.5,
+        "listMs": 182.8,
+        "firstDraftMs": 184.3,
+        "firstDraftStarters": [
+          "corpus__fs_read_text_file",
+          "corpus__fs_read_file",
+          "corpus__gdrive_gdrive_read_file"
+        ],
+        "serveRssKbAfterDraft": 83680
+      },
+      {
+        "name": "auto-1",
+        "embeddings": "auto",
+        "reusedHome": false,
+        "tools": "call,draft",
+        "connectMs": 166.8,
+        "listMs": 167.5,
+        "firstDraftMs": 187.6,
+        "firstDraftStarters": [
+          "corpus__fs_read_text_file",
+          "corpus__fs_read_file",
+          "corpus__gdrive_gdrive_read_file"
+        ],
+        "serveRssKbAfterDraft": 90640
+      },
+      {
+        "name": "auto-2-densewait",
+        "embeddings": "auto",
+        "reusedHome": false,
+        "tools": "call,draft",
+        "connectMs": 268.2,
+        "listMs": 269.3,
+        "firstDraftMs": 290.9,
+        "firstDraftStarters": [
+          "corpus__fs_read_text_file",
+          "corpus__fs_read_file",
+          "corpus__gdrive_gdrive_read_file"
+        ],
+        "serveRssKbAfterDraft": 100752,
+        "denseReadySec": 3.3,
+        "vecsBackfilled": 133,
+        "serveRssKbAfterDense": 1768592,
+        "hybridDraftWireP50Ms": 57.7,
+        "hybridDraftWireMaxMs": 62.5
+      },
+      {
+        "name": "auto-3",
+        "embeddings": "auto",
+        "reusedHome": false,
+        "tools": "call,draft",
+        "connectMs": 242.3,
+        "listMs": 243.4,
+        "firstDraftMs": 261.6,
+        "firstDraftStarters": [
+          "corpus__fs_read_text_file",
+          "corpus__fs_read_file",
+          "corpus__gdrive_gdrive_read_file"
+        ],
+        "serveRssKbAfterDraft": 91312
+      },
+      {
+        "name": "auto-4",
+        "embeddings": "auto",
+        "reusedHome": false,
+        "tools": "call,draft",
+        "connectMs": 175.2,
+        "listMs": 176,
+        "firstDraftMs": 190.8,
+        "firstDraftStarters": [
+          "corpus__fs_read_text_file",
+          "corpus__fs_read_file",
+          "corpus__gdrive_gdrive_read_file"
+        ],
+        "serveRssKbAfterDraft": 89600
+      },
+      {
+        "name": "auto-5-warmdb",
+        "embeddings": "auto",
+        "reusedHome": true,
+        "tools": "call,draft",
+        "connectMs": 181.6,
+        "listMs": 182.4,
+        "firstDraftMs": 197.9,
+        "firstDraftStarters": [
+          "corpus__fs_read_text_file",
+          "corpus__fs_read_file",
+          "corpus__gdrive_gdrive_read_file"
+        ],
+        "serveRssKbAfterDraft": 89760,
+        "denseReadySec": 3.2,
+        "vecsBackfilled": 133,
+        "serveRssKbAfterDense": 1929472,
+        "hybridDraftWireP50Ms": 50.9,
+        "hybridDraftWireMaxMs": 56.6
+      }
+    ]
+  },
+  "d": {
+    "experiment": "proxy-tax-d-db-growth",
+    "ts": "2026-07-04T19:37:49.627Z",
+    "machine": {
+      "node": "v22.22.3",
+      "platform": "darwin/arm64",
+      "cpu": "Apple M5",
+      "cores": 10,
+      "totalMemGiB": 24
+    },
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "stages": {
+      "schema-only": {
+        "dbBytes": 90112,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 88
+      },
+      "caps-133": {
+        "dbBytes": 155648,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 152
+      },
+      "vecs-133": {
+        "dbBytes": 430080,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 420
+      },
+      "needvecs-66": {
+        "dbBytes": 573440,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 560
+      },
+      "outcomes-1k": {
+        "dbBytes": 839680,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 820
+      },
+      "outcomes-10k": {
+        "dbBytes": 3231744,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 3156
+      },
+      "after-ratings": {
+        "dbBytes": 3248128,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 3172
+      },
+      "after-oats": {
+        "dbBytes": 3518464,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 3436
+      },
+      "before-1k-unique-needvecs": {
+        "dbBytes": 3518464,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 3436
+      },
+      "after-1k-unique-needvecs": {
+        "dbBytes": 5656576,
+        "walBytesAfterCheckpoint": 0,
+        "dbKiB": 5524
+      }
+    },
+    "recordOutcome": {
+      "n": 10000,
+      "p50_ms": 0.034,
+      "p95_ms": 0.049,
+      "mean_ms": 0.05,
+      "min_ms": 0.029,
+      "max_ms": 9.576,
+      "perOutcomeMarginalBytes": 265.8
+    },
+    "draftAt10k": {
+      "lexical": {
+        "n": 198,
+        "p50_ms": 0.098,
+        "p95_ms": 0.131,
+        "mean_ms": 0.107,
+        "min_ms": 0.028,
+        "max_ms": 3.969
+      },
+      "hybrid": {
+        "n": 198,
+        "p50_ms": 0.391,
+        "p95_ms": 0.475,
+        "mean_ms": 0.397,
+        "min_ms": 0.343,
+        "max_ms": 0.627
+      }
+    },
+    "recomputeRatings": [
+      3.8,
+      5.5,
+      3.9
+    ],
+    "runOats": [
+      36.7,
+      32.1
+    ],
+    "oatsOutcome": {
+      "adjusted": 133,
+      "skipped": 0
+    },
+    "draftAt10kPostOats": {
+      "hybrid": {
+        "n": 198,
+        "p50_ms": 0.416,
+        "p95_ms": 0.466,
+        "mean_ms": 0.42,
+        "min_ms": 0.365,
+        "max_ms": 0.704
+      }
+    },
+    "needVecGrowth": {
+      "uniqueEmbedMs": 1520,
+      "rows": 1000,
+      "totalBytes": 2138112,
+      "perRowBytes": 2138.1
+    }
+  }
+}

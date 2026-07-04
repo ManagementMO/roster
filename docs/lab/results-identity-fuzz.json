@@ -1,0 +1,2013 @@
+{
+  "slug": "identity-fuzz",
+  "charter": "namespacing collisions, backend registry, schema-trim torture, ajv args_compatible",
+  "when": "2026-07-04T20:11:06.791Z",
+  "environment": {
+    "node": "v22.22.3",
+    "ajv": "8.20.0 (packages/router/node_modules)",
+    "realComponents": [
+      "built dist of @rosterhq/shared, @rosterhq/router, @rosterhq/coach",
+      "real @modelcontextprotocol/sdk Server+Client over InMemoryTransport (router's own TransportBackendConfig hook)",
+      "real npx @modelcontextprotocol/server-filesystem OS process over stdio (experiment E)",
+      "real SQLite via openCoachDb(':memory:')"
+    ],
+    "noEmbeddings": "charter is identity/schema — no retrieval claims made, so no model was loaded (RAM left to siblings)"
+  },
+  "headline": {
+    "roundtrip": "922/1000 fuzz pairs round-trip; all 78 failures are the underscore-boundary mechanism",
+    "collisions": "300 ids in the 159,201-pair systematic hunt carry >=2 DISTINCT sanitized identities",
+    "liveMisroute": "duplicate id a___b across two live backends; call for backend 'a' tool '_b' answered by backend 'a_' tool 'b'",
+    "bootSwap": "id my-server__run answered by PHYS-A in boot1 and PHYS-B in boot2 (first backend down)",
+    "pruneMismatch": "serve.ts protection set uses config-name sanitization; renamed/suffixed sources unprotected -> 14/14 real filesystem-server capabilities pruned despite 'learned state is preserved' promise",
+    "ajvIdPoisoning": "live wire args_compatible sequence for identical args: [true,false,false] when alternate schema carries $id",
+    "ajvLeak": "prod destructure pattern recompiles per suggestion: 42.9ms + ~0.3MB per validate (500-prop schema), 0.19ms + 23.6KB (small); ajv._cache 2008 entries after 2000 calls; same-object baseline 0.031ms",
+    "trim": "all 16 torture cases terminate <0.2ms; 1000-entry enum passes through card at keptFraction=1.0 (33,958 bytes)",
+    "serverAlive": "no crash in any live run: five-mode rig alive after 3 failing calls + suggestions; transparent rig alive with cyclic schema onboard"
+  },
+  "a_roundtrip_collisions": {
+    "experiment": "identity-fuzz-a-roundtrip",
+    "when": "2026-07-04T20:01:18.263Z",
+    "roundtrip": {
+      "total": 1000,
+      "ok": 922,
+      "parseNullCount": 0,
+      "mismatchCount": 78,
+      "invalidCharCount": 0,
+      "byCategory": {
+        "unicode": {
+          "ok": 100,
+          "of": 100
+        },
+        "spaces": {
+          "ok": 100,
+          "of": 100
+        },
+        "dots": {
+          "ok": 100,
+          "of": 100
+        },
+        "dashes": {
+          "ok": 100,
+          "of": 100
+        },
+        "leadingDigits": {
+          "ok": 100,
+          "of": 100
+        },
+        "longs": {
+          "ok": 99,
+          "of": 100
+        },
+        "dunderInName": {
+          "ok": 100,
+          "of": 100
+        },
+        "underscoreEdges": {
+          "ok": 23,
+          "of": 100
+        },
+        "mixedCase": {
+          "ok": 100,
+          "of": 100
+        },
+        "punct": {
+          "ok": 100,
+          "of": 100
+        }
+      },
+      "parseNullExamples": [],
+      "mismatchExamples": [
+        {
+          "cat": "longs",
+          "source": "HIur6jrw6tq7WCFVJcT2UuC_6xdgxdy3L3b6QeIN",
+          "name": "ust.OwUkLxX.y",
+          "sanSource": "HIur6jrw6tq7WCFVJcT2UuC_6xdgxdy3L3b6QeIN",
+          "sanName": "ust-OwUkLxX-y",
+          "id": "HIur6jrw6tq7WCFVJcT2UuC_6xdgxdy3L3b6QeINYyDEXZX-rZ66TZlSTq-fiPSEcA-QQ1vyM7enllUU",
+          "parsedSource": "HIur6jrw6tq7WCFVJcT2UuC_6xdgxdy3L3b6QeIN",
+          "parsedName": "_ust-OwUkLxX-y"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "_NQrhMGDU__",
+          "name": "0633XEdruf",
+          "sanSource": "_NQrhMGDU_",
+          "sanName": "0633XEdruf",
+          "id": "_NQrhMGDU___0633XEdruf",
+          "parsedSource": "_NQrhMGDU",
+          "parsedName": "_0633XEdruf"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "__GNN__",
+          "name": "ü𝕏𝕏​éa中🚀f𝕏中d",
+          "sanSource": "_GNN_",
+          "sanName": "a-f-d",
+          "id": "_GNN___a-f-d",
+          "parsedSource": "_GNN",
+          "parsedName": "_a-f-d"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "__G1UFUhL___",
+          "name": "YU2SGcR1aOS",
+          "sanSource": "_G1UFUhL_",
+          "sanName": "YU2SGcR1aOS",
+          "id": "_G1UFUhL___YU2SGcR1aOS",
+          "parsedSource": "_G1UFUhL",
+          "parsedName": "_YU2SGcR1aOS"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "_28nP___",
+          "name": "ZTXlBp8M__dnu1K7q1",
+          "sanSource": "_28nP_",
+          "sanName": "ZTXlBp8M__dnu1K7q1",
+          "id": "_28nP___ZTXlBp8M__dnu1K7q1",
+          "parsedSource": "_28nP",
+          "parsedName": "_ZTXlBp8M__dnu1K7q1"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "5V___",
+          "name": "\n@i<?g)#?#\"e<&b",
+          "sanSource": "5V_",
+          "sanName": "i-g-e-b",
+          "id": "5V___i-g-e-b",
+          "parsedSource": "5V",
+          "parsedName": "_i-g-e-b"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "__5Xt2rH_",
+          "name": "__k",
+          "sanSource": "_5Xt2rH_",
+          "sanName": "__k",
+          "id": "_5Xt2rH_____k",
+          "parsedSource": "_5Xt2rH",
+          "parsedName": "___k"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "_XOPr9__",
+          "name": "DFa--fCL--",
+          "sanSource": "_XOPr9_",
+          "sanName": "DFa-fCL",
+          "id": "_XOPr9___DFa-fCL",
+          "parsedSource": "_XOPr9",
+          "parsedName": "_DFa-fCL"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "__OsKJbh__",
+          "name": "AGHQa__",
+          "sanSource": "_OsKJbh_",
+          "sanName": "AGHQa__",
+          "id": "_OsKJbh___AGHQa__",
+          "parsedSource": "_OsKJbh",
+          "parsedName": "_AGHQa__"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "__mjL_",
+          "name": "04445EPXbA",
+          "sanSource": "_mjL_",
+          "sanName": "04445EPXbA",
+          "id": "_mjL___04445EPXbA",
+          "parsedSource": "_mjL",
+          "parsedName": "_04445EPXbA"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "xPaGJYl___",
+          "name": "78158XUN7M",
+          "sanSource": "xPaGJYl_",
+          "sanName": "78158XUN7M",
+          "id": "xPaGJYl___78158XUN7M",
+          "parsedSource": "xPaGJYl",
+          "parsedName": "_78158XUN7M"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "_c6fvN___",
+          "name": "jdlLfJ___haqkT",
+          "sanSource": "_c6fvN_",
+          "sanName": "jdlLfJ___haqkT",
+          "id": "_c6fvN___jdlLfJ___haqkT",
+          "parsedSource": "_c6fvN",
+          "parsedName": "_jdlLfJ___haqkT"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "_oFZ5o58L___",
+          "name": "9POKhWC___sKblhkc",
+          "sanSource": "_oFZ5o58L_",
+          "sanName": "9POKhWC___sKblhkc",
+          "id": "_oFZ5o58L___9POKhWC___sKblhkc",
+          "parsedSource": "_oFZ5o58L",
+          "parsedName": "_9POKhWC___sKblhkc"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "nVAzh9___",
+          "name": "183XC3jO",
+          "sanSource": "nVAzh9_",
+          "sanName": "183XC3jO",
+          "id": "nVAzh9___183XC3jO",
+          "parsedSource": "nVAzh9",
+          "parsedName": "_183XC3jO"
+        },
+        {
+          "cat": "underscoreEdges",
+          "source": "rhr4_",
+          "name": "_y__",
+          "sanSource": "rhr4_",
+          "sanName": "_y__",
+          "id": "rhr4____y__",
+          "parsedSource": "rhr4",
+          "parsedName": "__y__"
+        }
+      ]
+    },
+    "systematic": {
+      "alphabet": [
+        "a",
+        "b",
+        "_",
+        "-",
+        ".",
+        " ",
+        "A"
+      ],
+      "uniqueStrings": 399,
+      "pairsTested": 159201,
+      "distinctIds": 9093,
+      "crossBoundaryCollisionIds": 300,
+      "crossBoundaryExamples": [
+        {
+          "id": "a___a",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_a",
+              "raw": [
+                "a",
+                "_a"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "a",
+              "raw": [
+                "a_",
+                "a"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___aa",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_aa",
+              "raw": [
+                "a",
+                "_aa"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "aa",
+              "raw": [
+                "a_",
+                "aa"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___ab",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_ab",
+              "raw": [
+                "a",
+                "_ab"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "ab",
+              "raw": [
+                "a_",
+                "ab"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___a_",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_a_",
+              "raw": [
+                "a",
+                "_a_"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "a_",
+              "raw": [
+                "a_",
+                "a_"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___aA",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_aA",
+              "raw": [
+                "a",
+                "_aA"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "aA",
+              "raw": [
+                "a_",
+                "aA"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___b",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_b",
+              "raw": [
+                "a",
+                "_b"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "b",
+              "raw": [
+                "a_",
+                "b"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___ba",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_ba",
+              "raw": [
+                "a",
+                "_ba"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "ba",
+              "raw": [
+                "a_",
+                "ba"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___bb",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_bb",
+              "raw": [
+                "a",
+                "_bb"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "bb",
+              "raw": [
+                "a_",
+                "bb"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___b_",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_b_",
+              "raw": [
+                "a",
+                "_b_"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "b_",
+              "raw": [
+                "a_",
+                "b_"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___bA",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_bA",
+              "raw": [
+                "a",
+                "_bA"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "bA",
+              "raw": [
+                "a_",
+                "bA"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a____",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "__",
+              "raw": [
+                "a",
+                "__"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "_",
+              "raw": [
+                "a_",
+                "_"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a____a",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "__a",
+              "raw": [
+                "a",
+                "__a"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "_a",
+              "raw": [
+                "a_",
+                "_a"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a____b",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "__b",
+              "raw": [
+                "a",
+                "__b"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "_b",
+              "raw": [
+                "a_",
+                "_b"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a_____",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "___",
+              "raw": [
+                "a",
+                "___"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "__",
+              "raw": [
+                "a_",
+                "__"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a____A",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "__A",
+              "raw": [
+                "a",
+                "__A"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "_A",
+              "raw": [
+                "a_",
+                "_A"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___A",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_A",
+              "raw": [
+                "a",
+                "_A"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "A",
+              "raw": [
+                "a_",
+                "--A"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___Aa",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_Aa",
+              "raw": [
+                "a",
+                "_Aa"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "Aa",
+              "raw": [
+                "a_",
+                "-Aa"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___Ab",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_Ab",
+              "raw": [
+                "a",
+                "_Ab"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "Ab",
+              "raw": [
+                "a_",
+                "-Ab"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___A_",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_A_",
+              "raw": [
+                "a",
+                "_A_"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "A_",
+              "raw": [
+                "a_",
+                "-A_"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a___AA",
+          "identities": [
+            {
+              "sanSource": "a",
+              "sanName": "_AA",
+              "raw": [
+                "a",
+                "_AA"
+              ]
+            },
+            {
+              "sanSource": "a_",
+              "sanName": "AA",
+              "raw": [
+                "a_",
+                "-AA"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "aa___a",
+          "identities": [
+            {
+              "sanSource": "aa",
+              "sanName": "_a",
+              "raw": [
+                "aa",
+                "_a"
+              ]
+            },
+            {
+              "sanSource": "aa_",
+              "sanName": "a",
+              "raw": [
+                "aa_",
+                "a"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "aa___aa",
+          "identities": [
+            {
+              "sanSource": "aa",
+              "sanName": "_aa",
+              "raw": [
+                "aa",
+                "_aa"
+              ]
+            },
+            {
+              "sanSource": "aa_",
+              "sanName": "aa",
+              "raw": [
+                "aa_",
+                "aa"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "aa___ab",
+          "identities": [
+            {
+              "sanSource": "aa",
+              "sanName": "_ab",
+              "raw": [
+                "aa",
+                "_ab"
+              ]
+            },
+            {
+              "sanSource": "aa_",
+              "sanName": "ab",
+              "raw": [
+                "aa_",
+                "ab"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "aa___a_",
+          "identities": [
+            {
+              "sanSource": "aa",
+              "sanName": "_a_",
+              "raw": [
+                "aa",
+                "_a_"
+              ]
+            },
+            {
+              "sanSource": "aa_",
+              "sanName": "a_",
+              "raw": [
+                "aa_",
+                "a_"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "aa___aA",
+          "identities": [
+            {
+              "sanSource": "aa",
+              "sanName": "_aA",
+              "raw": [
+                "aa",
+                "_aA"
+              ]
+            },
+            {
+              "sanSource": "aa_",
+              "sanName": "aA",
+              "raw": [
+                "aa_",
+                "aA"
+              ]
+            }
+          ]
+        }
+      ],
+      "rawLossyIds": 5445
+    },
+    "families": [
+      {
+        "label": "underscore boundary",
+        "pairs": [
+          [
+            "a_",
+            "b"
+          ],
+          [
+            "a",
+            "_b"
+          ]
+        ],
+        "ids": [
+          "a___b",
+          "a___b"
+        ],
+        "collide": true,
+        "note": "server 'a_' tool 'b' vs server 'a' tool '_b'"
+      },
+      {
+        "label": "dot vs space vs dash (same server)",
+        "pairs": [
+          [
+            "srv",
+            "b.c"
+          ],
+          [
+            "srv",
+            "b c"
+          ],
+          [
+            "srv",
+            "b-c"
+          ],
+          [
+            "srv",
+            "b--c"
+          ]
+        ],
+        "ids": [
+          "srv__b-c",
+          "srv__b-c",
+          "srv__b-c",
+          "srv__b-c"
+        ],
+        "collide": true,
+        "note": "distinct tools on ONE server unify"
+      },
+      {
+        "label": "unicode-only names",
+        "pairs": [
+          [
+            "srv",
+            "工具一"
+          ],
+          [
+            "srv",
+            "工具二"
+          ],
+          [
+            "srv",
+            "🚀"
+          ]
+        ],
+        "ids": [
+          "srv__x",
+          "srv__x",
+          "srv__x"
+        ],
+        "collide": true,
+        "note": "all-invalid names all become 'x'"
+      },
+      {
+        "label": "dunder in name vs source underscore",
+        "pairs": [
+          [
+            "a",
+            "b__c"
+          ],
+          [
+            "a_b",
+            "c"
+          ],
+          [
+            "a_",
+            "b_c"
+          ]
+        ],
+        "ids": [
+          "a__b__c",
+          "a_b__c",
+          "a___b_c"
+        ],
+        "collide": false,
+        "note": "charter's a_b/c vs a/b_c pattern"
+      },
+      {
+        "label": "trailing punctuation on server",
+        "pairs": [
+          [
+            "github",
+            "create_issue"
+          ],
+          [
+            "github.",
+            "create_issue"
+          ],
+          [
+            "github ",
+            "create_issue"
+          ]
+        ],
+        "ids": [
+          "github__create_issue",
+          "github__create_issue",
+          "github__create_issue"
+        ],
+        "collide": true,
+        "note": "server aliases unify (raw-lossy, same-side)"
+      },
+      {
+        "label": "leading digit",
+        "pairs": [
+          [
+            "1srv",
+            "tool"
+          ],
+          [
+            "srv",
+            "tool"
+          ]
+        ],
+        "ids": [
+          "1srv__tool",
+          "srv__tool"
+        ],
+        "collide": false,
+        "note": "no collision expected"
+      },
+      {
+        "label": "case",
+        "pairs": [
+          [
+            "SRV",
+            "tool"
+          ],
+          [
+            "srv",
+            "tool"
+          ]
+        ],
+        "ids": [
+          "SRV__tool",
+          "srv__tool"
+        ],
+        "collide": false,
+        "note": "case preserved — no collision expected"
+      },
+      {
+        "label": "multi-underscore name collapse asymmetry",
+        "pairs": [
+          [
+            "s",
+            "a__b"
+          ],
+          [
+            "s",
+            "a_b"
+          ]
+        ],
+        "ids": [
+          "s__a__b",
+          "s__a_b"
+        ],
+        "collide": false,
+        "note": "name keeps __ — distinct ids expected"
+      }
+    ],
+    "boundaryParse": [
+      {
+        "id": "a___b",
+        "parsed": {
+          "source": "a",
+          "name": "_b"
+        }
+      },
+      {
+        "id": "a__b__c",
+        "parsed": {
+          "source": "a",
+          "name": "b__c"
+        }
+      },
+      {
+        "id": "s__a__b",
+        "parsed": {
+          "source": "s",
+          "name": "a__b"
+        }
+      }
+    ],
+    "parseEdges": [
+      {
+        "id": "",
+        "parsed": null
+      },
+      {
+        "id": "__",
+        "parsed": null
+      },
+      {
+        "id": "a__",
+        "parsed": null
+      },
+      {
+        "id": "__b",
+        "parsed": null
+      },
+      {
+        "id": "____",
+        "parsed": null
+      },
+      {
+        "id": "a____b",
+        "parsed": {
+          "source": "a",
+          "name": "__b"
+        }
+      },
+      {
+        "id": "_",
+        "parsed": null
+      },
+      {
+        "id": "a",
+        "parsed": null
+      },
+      {
+        "id": "a_b",
+        "parsed": null
+      },
+      {
+        "id": "x__y",
+        "parsed": {
+          "source": "x",
+          "name": "y"
+        }
+      },
+      {
+        "id": "_a__b",
+        "parsed": {
+          "source": "_a",
+          "name": "b"
+        }
+      },
+      {
+        "id": "a__b__c__d",
+        "parsed": {
+          "source": "a",
+          "name": "b__c__d"
+        }
+      },
+      {
+        "id": "___",
+        "parsed": null
+      }
+    ],
+    "unparseableOutputs": [
+      {
+        "rawSource": "_",
+        "sanSource": "_",
+        "id": "___tool",
+        "parsed": null
+      },
+      {
+        "rawSource": "__",
+        "sanSource": "_",
+        "id": "___tool",
+        "parsed": null
+      },
+      {
+        "rawSource": "___",
+        "sanSource": "_",
+        "id": "___tool",
+        "parsed": null
+      },
+      {
+        "rawSource": "_-_",
+        "sanSource": "_-_",
+        "id": "_-___tool",
+        "parsed": {
+          "source": "_-",
+          "name": "_tool"
+        }
+      },
+      {
+        "rawSource": "-_-",
+        "sanSource": "_",
+        "id": "___tool",
+        "parsed": null
+      }
+    ]
+  },
+  "b_registry": {
+    "experiment": "identity-fuzz-b-registry",
+    "when": "2026-07-04T20:02:42.271Z",
+    "phase1": {
+      "plan": [
+        {
+          "config": "my-server",
+          "physical": "P1"
+        },
+        {
+          "config": "my_server",
+          "physical": "P2"
+        },
+        {
+          "config": "MY SERVER",
+          "physical": "P3"
+        },
+        {
+          "config": "my server",
+          "physical": "P4"
+        },
+        {
+          "config": "skill",
+          "physical": "P5"
+        },
+        {
+          "config": "skill-server",
+          "physical": "P6"
+        },
+        {
+          "config": "a_",
+          "physical": "P7"
+        },
+        {
+          "config": "a",
+          "physical": "P8"
+        }
+      ],
+      "registryKeys": [
+        "my-server",
+        "my_server",
+        "MY-SERVER",
+        "my-server-2",
+        "skill-server",
+        "skill-server-2",
+        "a_",
+        "a"
+      ],
+      "perConfigIds": [
+        {
+          "config": "my-server",
+          "ids": [
+            "my-server__run"
+          ]
+        },
+        {
+          "config": "my_server",
+          "ids": [
+            "my_server__run"
+          ]
+        },
+        {
+          "config": "MY SERVER",
+          "ids": [
+            "MY-SERVER__run"
+          ]
+        },
+        {
+          "config": "my server",
+          "ids": [
+            "my-server-2__run"
+          ]
+        },
+        {
+          "config": "skill",
+          "ids": [
+            "skill-server__lookup_docs"
+          ]
+        },
+        {
+          "config": "skill-server",
+          "ids": [
+            "skill-server-2__lookup_docs"
+          ]
+        },
+        {
+          "config": "a_",
+          "ids": [
+            "a___b"
+          ]
+        },
+        {
+          "config": "a",
+          "ids": [
+            "a___b"
+          ]
+        }
+      ],
+      "totalTools": 8,
+      "distinctIds": 7,
+      "duplicateIds": [
+        {
+          "id": "a___b",
+          "count": 2
+        }
+      ],
+      "routing": [
+        {
+          "config": "my-server",
+          "physical": "P1",
+          "id": "my-server__run",
+          "lookupBackend": "my-server",
+          "answered": "P1::run",
+          "expected": "P1::run",
+          "misrouted": false
+        },
+        {
+          "config": "my_server",
+          "physical": "P2",
+          "id": "my_server__run",
+          "lookupBackend": "my_server",
+          "answered": "P2::run",
+          "expected": "P2::run",
+          "misrouted": false
+        },
+        {
+          "config": "MY SERVER",
+          "physical": "P3",
+          "id": "MY-SERVER__run",
+          "lookupBackend": "MY-SERVER",
+          "answered": "P3::run",
+          "expected": "P3::run",
+          "misrouted": false
+        },
+        {
+          "config": "my server",
+          "physical": "P4",
+          "id": "my-server-2__run",
+          "lookupBackend": "my-server-2",
+          "answered": "P4::run",
+          "expected": "P4::run",
+          "misrouted": false
+        },
+        {
+          "config": "skill",
+          "physical": "P5",
+          "id": "skill-server__lookup_docs",
+          "lookupBackend": "skill-server",
+          "answered": "P5::lookup_docs",
+          "expected": "P5::lookup_docs",
+          "misrouted": false
+        },
+        {
+          "config": "skill-server",
+          "physical": "P6",
+          "id": "skill-server-2__lookup_docs",
+          "lookupBackend": "skill-server-2",
+          "answered": "P6::lookup_docs",
+          "expected": "P6::lookup_docs",
+          "misrouted": false
+        },
+        {
+          "config": "a_",
+          "physical": "P7",
+          "id": "a___b",
+          "lookupBackend": "a_",
+          "answered": "P7::b",
+          "expected": "P7::b",
+          "misrouted": false
+        },
+        {
+          "config": "a",
+          "physical": "P8",
+          "id": "a___b",
+          "lookupBackend": "a_",
+          "answered": "P7::b",
+          "expected": "P8::_b",
+          "misrouted": true
+        }
+      ],
+      "misrouteCount": 1
+    },
+    "phase2": {
+      "boot1": [
+        {
+          "id": "my-server__run",
+          "backendKey": "my-server",
+          "answeredBy": "PHYS-A::run"
+        },
+        {
+          "id": "my-server-2__run",
+          "backendKey": "my-server-2",
+          "answeredBy": "PHYS-B::run"
+        }
+      ],
+      "boot2": [
+        {
+          "id": "my-server__run",
+          "backendKey": "my-server",
+          "answeredBy": "PHYS-B::run"
+        }
+      ],
+      "identitySwaps": [
+        {
+          "id": "my-server__run",
+          "boot1": "PHYS-A::run",
+          "boot2": "PHYS-B::run"
+        }
+      ]
+    },
+    "phase3": {
+      "stderrClaim": "serve.ts prints: roster: backend \"<name>\" failed to connect (its learned state is preserved)",
+      "storedBefore": [
+        {
+          "id": "my-server-2__run",
+          "source": "my-server-2"
+        },
+        {
+          "id": "my-server__run",
+          "source": "my-server"
+        },
+        {
+          "id": "skill-server__lookup_docs",
+          "source": "skill-server"
+        }
+      ],
+      "unavailableSetServeBuilds": [
+        "skill",
+        "my-server"
+      ],
+      "prunedDespiteProtection": [
+        "skill-server__lookup_docs",
+        "my-server-2__run"
+      ],
+      "survivingAfter": [
+        {
+          "id": "my-server__run",
+          "source": "my-server"
+        }
+      ],
+      "counterfactualProtectingActualSources": {
+        "pruned": []
+      }
+    }
+  },
+  "c_trimschema": {
+    "experiment": "identity-fuzz-c-trimschema",
+    "when": "2026-07-04T20:03:45.115Z",
+    "trimResults": [
+      {
+        "case": "cyclic $ref (string)",
+        "throws": false,
+        "error": null,
+        "ms": 0.041,
+        "under100ms": true,
+        "inBytes": 88,
+        "outBytes": 76,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object",
+          "properties": {
+            "node": {
+              "type": "any"
+            },
+            "next": {
+              "type": "any"
+            }
+          }
+        }
+      },
+      {
+        "case": "cyclic object graph",
+        "throws": false,
+        "error": null,
+        "ms": 0.003,
+        "under100ms": true,
+        "inBytes": "unstringifiable(cycle)",
+        "outBytes": 57,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object",
+          "properties": {
+            "self": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      {
+        "case": "cyclic enum array",
+        "throws": false,
+        "error": null,
+        "ms": 0.003,
+        "under100ms": true,
+        "inBytes": "unstringifiable(cycle)",
+        "outBytes": null,
+        "stringifyOfCard": "TypeError: Converting circular structure to JSON\n    --> starting at object with constructor 'Array'\n    --- index 2 closes the circle"
+      },
+      {
+        "case": "50-deep nesting",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "under100ms": true,
+        "inBytes": 2057,
+        "outBytes": 58,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object",
+          "properties": {
+            "lvl49": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      {
+        "case": "500 properties",
+        "throws": false,
+        "error": null,
+        "ms": 0.183,
+        "under100ms": true,
+        "inBytes": 99195,
+        "outBytes": 16025,
+        "stringifyOfCard": "ok"
+      },
+      {
+        "case": "1000-entry enum",
+        "throws": false,
+        "error": null,
+        "ms": 0.005,
+        "under100ms": true,
+        "inBytes": 33958,
+        "outBytes": 33958,
+        "stringifyOfCard": "ok"
+      },
+      {
+        "case": "anyOf-of-anyOfs depth 12 (top-level)",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "under100ms": true,
+        "inBytes": 122867,
+        "outBytes": 17,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object"
+        }
+      },
+      {
+        "case": "anyOf under properties",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "under100ms": true,
+        "inBytes": 127,
+        "outBytes": 55,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object",
+          "properties": {
+            "input": {
+              "type": "any"
+            }
+          }
+        }
+      },
+      {
+        "case": "boolean schema true",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "under100ms": true,
+        "inBytes": 4,
+        "outBytes": 17,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object"
+        }
+      },
+      {
+        "case": "boolean schema false",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "under100ms": true,
+        "inBytes": 5,
+        "outBytes": 17,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object"
+        }
+      },
+      {
+        "case": "null schema",
+        "throws": true,
+        "error": "TypeError: Cannot read properties of null (reading 'type')",
+        "ms": 0.021,
+        "under100ms": true,
+        "inBytes": 4,
+        "outBytes": null,
+        "stringifyOfCard": null
+      },
+      {
+        "case": "undefined schema",
+        "throws": true,
+        "error": "TypeError: Cannot read properties of undefined (reading 'type')",
+        "ms": 0.011,
+        "under100ms": true,
+        "inBytes": null,
+        "outBytes": null,
+        "stringifyOfCard": null
+      },
+      {
+        "case": "array-as-schema",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "under100ms": true,
+        "inBytes": 19,
+        "outBytes": 17,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object"
+        }
+      },
+      {
+        "case": "properties-as-array",
+        "throws": false,
+        "error": null,
+        "ms": 0.003,
+        "under100ms": true,
+        "inBytes": 68,
+        "outBytes": 76,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object",
+          "properties": {
+            "0": {
+              "type": "string"
+            },
+            "1": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      {
+        "case": "type-as-object",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "under100ms": true,
+        "inBytes": 60,
+        "outBytes": 60,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": {
+            "weird": true
+          },
+          "properties": {
+            "a": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "case": "realistic fat schema (github-ish)",
+        "throws": false,
+        "error": null,
+        "ms": 0.005,
+        "under100ms": true,
+        "inBytes": 4067,
+        "outBytes": 223,
+        "stringifyOfCard": "ok",
+        "trimmedShape": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "head": {
+              "type": "string"
+            },
+            "base": {
+              "type": "string"
+            },
+            "reviewers": {
+              "type": "array"
+            },
+            "labels": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "title",
+            "head",
+            "base"
+          ]
+        }
+      }
+    ],
+    "cardResults": [
+      {
+        "case": "cyclic $ref (string)",
+        "throws": false,
+        "error": null,
+        "ms": 0.03,
+        "cardBytes": 343
+      },
+      {
+        "case": "cyclic object graph",
+        "throws": false,
+        "error": null,
+        "ms": 0.004,
+        "cardBytes": 286
+      },
+      {
+        "case": "cyclic enum array",
+        "throws": true,
+        "error": "TypeError: Converting circular structure to JSON\n    --> starting at object with constructor 'Array'\n    --- index 2 closes the circle",
+        "ms": 0.008,
+        "cardBytes": null
+      },
+      {
+        "case": "50-deep nesting",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "cardBytes": 283
+      },
+      {
+        "case": "500 properties",
+        "throws": false,
+        "error": null,
+        "ms": 0.171,
+        "cardBytes": 35831
+      },
+      {
+        "case": "1000-entry enum",
+        "throws": false,
+        "error": null,
+        "ms": 0.06,
+        "cardBytes": 49210
+      },
+      {
+        "case": "anyOf-of-anyOfs depth 12 (top-level)",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "cardBytes": 207
+      },
+      {
+        "case": "anyOf under properties",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "cardBytes": 287
+      },
+      {
+        "case": "boolean schema true",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "cardBytes": 190
+      },
+      {
+        "case": "boolean schema false",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "cardBytes": 140
+      },
+      {
+        "case": "null schema",
+        "throws": false,
+        "error": null,
+        "ms": 0.003,
+        "cardBytes": 131
+      },
+      {
+        "case": "undefined schema",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "cardBytes": 136
+      },
+      {
+        "case": "array-as-schema",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "cardBytes": 186
+      },
+      {
+        "case": "properties-as-array",
+        "throws": false,
+        "error": null,
+        "ms": 0.003,
+        "cardBytes": 342
+      },
+      {
+        "case": "type-as-object",
+        "throws": false,
+        "error": null,
+        "ms": 0.001,
+        "cardBytes": 305
+      },
+      {
+        "case": "realistic fat schema (github-ish)",
+        "throws": false,
+        "error": null,
+        "ms": 0.002,
+        "cardBytes": 703
+      }
+    ],
+    "tokenSink": {
+      "1000-entry enum": {
+        "inBytes": 33958,
+        "outBytes": 33958,
+        "keptFraction": 1
+      },
+      "500 properties": {
+        "inBytes": 99195,
+        "outBytes": 16025,
+        "keptFraction": 0.162
+      },
+      "realistic fat schema (github-ish)": {
+        "inBytes": 4067,
+        "outBytes": 223,
+        "keptFraction": 0.055
+      }
+    }
+  },
+  "d_ajv": {
+    "experiment": "identity-fuzz-d-ajv",
+    "when": "2026-07-04T20:06:26.687Z",
+    "idPoisoning": {
+      "first": {
+        "compatible": true,
+        "threw": null,
+        "ms": 0.208
+      },
+      "second": {
+        "compatible": false,
+        "threw": "Error: schema with key or id \"https://example.com/tool-args.json\" already exists",
+        "ms": 0.015
+      },
+      "third": {
+        "compatible": false,
+        "threw": "Error: schema with key or id \"https://example.com/tool-args.json\" already exists",
+        "ms": 0.008
+      }
+    },
+    "crossToolSameId": {
+      "compatible": false,
+      "threw": "Error: schema with key or id \"https://example.com/tool-args.json\" already exists",
+      "ms": 0.01
+    },
+    "unit": [
+      {
+        "case": "draft-07 $schema, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 13.546,
+        "falseVerdict": false
+      },
+      {
+        "case": "2020-12 $schema, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.215,
+        "falseVerdict": false
+      },
+      {
+        "case": "bogus $schema URI, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.876,
+        "falseVerdict": false
+      },
+      {
+        "case": "no $schema, INVALID args (missing required)",
+        "specSaysValid": false,
+        "got": false,
+        "threw": null,
+        "ms": 0.248,
+        "falseVerdict": false
+      },
+      {
+        "case": "draft-07 tuple items (array form), args valid per draft-07",
+        "specSaysValid": true,
+        "got": false,
+        "threw": "Error: schema is invalid: data/properties/pair/items must be object,boolean",
+        "ms": 0.058,
+        "falseVerdict": true
+      },
+      {
+        "case": "draft-04 boolean exclusiveMinimum, args valid per draft-04",
+        "specSaysValid": true,
+        "got": false,
+        "threw": "Error: schema is invalid: data/properties/n/exclusiveMinimum must be number",
+        "ms": 0.031,
+        "falseVerdict": true
+      },
+      {
+        "case": "draft-07 definitions + resolving $ref, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.222,
+        "falseVerdict": false
+      },
+      {
+        "case": "unresolvable $ref, valid-shaped args",
+        "specSaysValid": true,
+        "got": false,
+        "threw": "MissingRefError: can't resolve reference #/definitions/missing from id #",
+        "ms": 0.112,
+        "falseVerdict": true
+      },
+      {
+        "case": "nested $schema inside property subschema, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.115,
+        "falseVerdict": false
+      },
+      {
+        "case": "recursive $ref '#' (self), valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.143,
+        "falseVerdict": false
+      },
+      {
+        "case": "50-deep nesting, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 3.384,
+        "falseVerdict": false
+      },
+      {
+        "case": "500 properties, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 44.054,
+        "falseVerdict": false
+      },
+      {
+        "case": "1000-entry enum, valid args",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.5,
+        "falseVerdict": false
+      },
+      {
+        "case": "anyOf tower depth 12 (~123KB), string arg",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 529.194,
+        "falseVerdict": false
+      },
+      {
+        "case": "cyclic OBJECT graph (JS-level)",
+        "specSaysValid": true,
+        "got": false,
+        "threw": "RangeError: Maximum call stack size exceeded",
+        "ms": 54.244,
+        "falseVerdict": true
+      },
+      {
+        "case": "boolean schema true",
+        "specSaysValid": true,
+        "got": true,
+        "threw": null,
+        "ms": 0.225,
+        "falseVerdict": false
+      },
+      {
+        "case": "boolean schema false",
+        "specSaysValid": false,
+        "got": false,
+        "threw": null,
+        "ms": 0,
+        "falseVerdict": false
+      },
+      {
+        "case": "null schema",
+        "specSaysValid": false,
+        "got": false,
+        "threw": null,
+        "ms": 0,
+        "falseVerdict": false
+      }
+    ],
+    "cacheGrowth": {
+      "N": 2000,
+      "freshObjectPerCall": {
+        "totalMs": 85726,
+        "msPerValidate": 42.863,
+        "heapDeltaMB": 612,
+        "ajvInternalCache": {
+          "key": "_cache",
+          "size": 2008
+        }
+      },
+      "sameObjectReused": {
+        "totalMs": 62,
+        "msPerValidate": 0.031
+      }
+    },
+    "liveFive": {
+      "starterIds": [
+        "beta__resize_image",
+        "alpha__resize_fail"
+      ],
+      "suggestion1": {
+        "tool": "beta__resize_image",
+        "reason": "the bench suggests beta__resize_image for the same need (\"resize an image to a given width and height\")",
+        "args_compatible": false
+      },
+      "suggestion2": {
+        "tool": "beta__resize_image",
+        "reason": "the bench suggests beta__resize_image for the same need (\"resize an image to a given width and height\")",
+        "args_compatible": false
+      },
+      "suggestion3": {
+        "tool": "beta__resize_image",
+        "reason": "the bench suggests beta__resize_image for the same need (\"resize an image to a given width and height\")",
+        "args_compatible": false
+      },
+      "argsCompatibleSequence": [
+        false,
+        false,
+        false
+      ],
+      "serverAliveAfter": true,
+      "syncError": null
+    },
+    "liveTransparentCyclic": {
+      "connectError": null,
+      "syncError": "TypeError: Converting circular structure to JSON\n    --> starting at object with constructor 'Array'\n    --- index 2 closes the circle",
+      "listError": "no error — listed 2 tools",
+      "callFineAfter": "GAMMA::fine"
+    }
+  },
+  "d2_ajv_followup": {
+    "experiment": "identity-fuzz-d2-ajv-followup",
+    "when": "2026-07-04T20:09:04.372Z",
+    "idWithFragment": [
+      {
+        "compatible": false,
+        "threw": "Error: schema is invalid: data/$id must match pattern \"^[^#]*#?$\""
+      },
+      {
+        "compatible": false,
+        "threw": "Error: schema with key or id \"https://example.com/x.json#frag\" already exists"
+      }
+    ],
+    "liveCleanIdSequence": [
+      true,
+      false,
+      false
+    ],
+    "smallSchemaLeak": {
+      "N": 2000,
+      "totalMs": 383,
+      "msPerValidate": 0.192,
+      "heapDeltaMB": 46,
+      "ajvCacheSize": 2008,
+      "kbPerValidate": 23.6
+    }
+  },
+  "e_realserver": {
+    "experiment": "identity-fuzz-e-realserver",
+    "when": "2026-07-04T20:09:57.588Z",
+    "connectMs": 694,
+    "toolCount": 14,
+    "sampleIds": [
+      "skill-server__read_file",
+      "skill-server__read_text_file",
+      "skill-server__read_media_file",
+      "skill-server__read_multiple_files",
+      "skill-server__write_file",
+      "skill-server__edit_file"
+    ],
+    "allSourcesSeen": [
+      "skill-server"
+    ],
+    "registryKeys": [
+      "skill-server"
+    ],
+    "realCall": {
+      "id": "skill-server__list_directory",
+      "lookupBackend": "skill-server",
+      "outcomeEvidence": {
+        "outputSchemaViolation": false
+      },
+      "latencyMs": 2,
+      "answeredWithProbe": true
+    },
+    "pruneMismatch": {
+      "configuredName": "skill",
+      "serveProtects": [
+        "skill"
+      ],
+      "storedUnderSource": [
+        "skill-server"
+      ],
+      "prunedCount": 14,
+      "ofStored": 14,
+      "prunedSample": [
+        "skill-server__read_file",
+        "skill-server__read_text_file",
+        "skill-server__read_media_file",
+        "skill-server__read_multiple_files",
+        "skill-server__write_file"
+      ]
+    }
+  }
+}

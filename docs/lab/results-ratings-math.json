@@ -1,0 +1,851 @@
+{
+  "slug": "ratings-math",
+  "generatedAt": "2026-07-04T20:01:24.655Z",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "dist": "built packages via createRequire(packages/cli/package.json)",
+    "sqlite": "better-sqlite3 (real db, :memory: + file-backed under tmp)"
+  },
+  "a_wilson": {
+    "seed": 1337,
+    "startedAt": "2026-07-04T19:56:53.071Z",
+    "agreement": {
+      "pairsTested": 5017,
+      "maxAbsDiff": 3.3306690738754696e-16,
+      "argmax": {
+        "s": 2119,
+        "n": 2127,
+        "got": 0.9925954183647433,
+        "want": 0.992595418364743
+      },
+      "outputRange": {
+        "min": 0,
+        "max": 0.9996159875222332,
+        "violationsOf01": 0
+      }
+    },
+    "monotonicityInS": {
+      "checks": 47150,
+      "violations": 0,
+      "worst": null
+    },
+    "monotonicityInN": {
+      "checks": 2000,
+      "violations": 0,
+      "nonStrictWithPositivePhat": 0,
+      "worst": null
+    },
+    "edges": {
+      "n0": 0,
+      "n1s0": 0,
+      "n1s1": 0.20654329147389294,
+      "sEqualsNAt10000": 0.9996159875222332,
+      "s0At10000": 0,
+      "negativeSThrowsRangeError": true,
+      "sGreaterThanNThrowsRangeError": true,
+      "negativeNReturns": 0,
+      "docstringHumility_w3of3_lt_w84of100": true,
+      "w3of3": 0.4384939195509822,
+      "w84of100": 0.7557955544110558
+    },
+    "zCollapse": {
+      "samples": 200,
+      "maxAbsDiffFromPhat": 0
+    },
+    "nonFiniteProbes": {
+      "nanS": null,
+      "nanN": null,
+      "fractionalInputsHalfOf1": 0.0546190651458835
+    },
+    "elapsedMs": 4
+  },
+  "b_recompute": {
+    "startedAt": "2026-07-04T19:57:04.714Z",
+    "cases": [
+      {
+        "id": "t__A",
+        "want": {
+          "n": 10,
+          "successes": 10,
+          "wilsonLb": 0.7224598312333834,
+          "p50Ms": 50,
+          "p95Ms": 100
+        },
+        "got": {
+          "n": 10,
+          "successes": 10,
+          "wilsonLb": 0.7224598312333834,
+          "p50Ms": 50,
+          "p95Ms": 100
+        },
+        "wilsonAbsDiff": 0,
+        "pass": true
+      },
+      {
+        "id": "t__B",
+        "want": {
+          "n": 5,
+          "successes": 3,
+          "wilsonLb": 0.23071993220883702,
+          "p50Ms": 200,
+          "p95Ms": 300
+        },
+        "got": {
+          "n": 5,
+          "successes": 3,
+          "wilsonLb": 0.23071993220883702,
+          "p50Ms": 200,
+          "p95Ms": 300
+        },
+        "wilsonAbsDiff": 0,
+        "pass": true
+      },
+      {
+        "id": "t__C",
+        "want": {
+          "n": 4,
+          "successes": 4,
+          "wilsonLb": 0.5100999795960008,
+          "p50Ms": 20,
+          "p95Ms": 40
+        },
+        "got": {
+          "n": 4,
+          "successes": 4,
+          "wilsonLb": 0.5100999795960008,
+          "p50Ms": 20,
+          "p95Ms": 40
+        },
+        "wilsonAbsDiff": 0,
+        "pass": true
+      },
+      {
+        "id": "t__D",
+        "want": {
+          "n": 1,
+          "successes": 1,
+          "wilsonLb": 0.20654329147389294,
+          "p50Ms": 70,
+          "p95Ms": 70
+        },
+        "got": {
+          "n": 1,
+          "successes": 1,
+          "wilsonLb": 0.20654329147389294,
+          "p50Ms": 70,
+          "p95Ms": 70
+        },
+        "wilsonAbsDiff": 0,
+        "pass": true
+      },
+      {
+        "id": "t__E",
+        "want": {
+          "n": 6,
+          "successes": 2,
+          "wilsonLb": 0.09676933255921694,
+          "p50Ms": 0,
+          "p95Ms": 13
+        },
+        "got": {
+          "n": 6,
+          "successes": 2,
+          "wilsonLb": 0.09676933255921684,
+          "p50Ms": 0,
+          "p95Ms": 13
+        },
+        "wilsonAbsDiff": 9.71445146547012e-17,
+        "pass": true
+      }
+    ],
+    "capF_noOutcomes_ratingIsNull": true,
+    "softFailFlagsByConstruction": {
+      "rows": [
+        {
+          "id": 29,
+          "soft_fail": 1
+        },
+        {
+          "id": 30,
+          "soft_fail": 0
+        }
+      ],
+      "o1": 29,
+      "o2": 30,
+      "o1Flipped": true,
+      "o2Clean": true
+    },
+    "latencyStorageE": [
+      {
+        "class": "success",
+        "latency_ms": 13
+      },
+      {
+        "class": "success",
+        "latency_ms": 0
+      },
+      {
+        "class": "hard_fail:transport",
+        "latency_ms": 100
+      },
+      {
+        "class": "hard_fail:protocol",
+        "latency_ms": 100
+      },
+      {
+        "class": "tool_fail:auth",
+        "latency_ms": 100
+      },
+      {
+        "class": "schema_drift_suspect",
+        "latency_ms": 100
+      }
+    ],
+    "garbageClassExcluded": {
+      "ratingA_n": 10,
+      "note": "raw SQL row class='weird_legacy_class' latency 42 targeted t__A; n must stay 10"
+    },
+    "categoryProbe": {
+      "ratingUnderWeb": {
+        "n": 10,
+        "successes": 2,
+        "wilsonLb": 0.05668094798069332,
+        "p50Ms": 10,
+        "p95Ms": 10
+      },
+      "ratingUnderAll": {
+        "n": 10,
+        "successes": 2,
+        "wilsonLb": 0.05668094798069332,
+        "p50Ms": 10,
+        "p95Ms": 10
+      },
+      "ifFilteredWouldBe": {
+        "n": 2,
+        "successes": 2
+      },
+      "globalAggregateIs": {
+        "n": 10,
+        "successes": 2
+      },
+      "categoryParamFilters": false,
+      "capabilitiesWrittenUnderWeb": [
+        "t__A",
+        "t__B",
+        "t__C",
+        "t__D",
+        "t__E",
+        "t__H"
+      ]
+    },
+    "staleRating": {
+      "before": {
+        "n": 1,
+        "successes": 1,
+        "wilsonLb": 0.20654329147389294,
+        "p50Ms": 33,
+        "p95Ms": 33
+      },
+      "outcomeFlagsAfterRetry": [
+        {
+          "id": 48,
+          "soft_fail": 1,
+          "explored": 0
+        },
+        {
+          "id": 49,
+          "soft_fail": 0,
+          "explored": 1
+        }
+      ],
+      "attributableRowsNow": 0,
+      "after": {
+        "n": 1,
+        "successes": 1,
+        "wilsonLb": 0.20654329147389294,
+        "p50Ms": 33,
+        "p95Ms": 33
+      },
+      "stalePersists": true
+    },
+    "allCasesPass": true,
+    "elapsedMs": 5
+  },
+  "c_fallback": {
+    "startedAt": "2026-07-04T19:57:20.523Z",
+    "roster5": {
+      "lexHitsForGibberish": 0,
+      "lexHitsForNoTokenNeed": 0,
+      "draftLen": 5,
+      "draftIds": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "fs__read_media_file",
+        "fs__write_file",
+        "fs__read_multiple_files"
+      ],
+      "expectedHead": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "fs__read_media_file",
+        "fs__write_file",
+        "fs__read_multiple_files"
+      ],
+      "matchesExpected": true,
+      "candidateShape": [
+        {
+          "id": "fs__read_text_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "fs__read_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "fs__read_media_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "fs__write_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "fs__read_multiple_files",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        }
+      ],
+      "wilsonSeeds": {
+        "fs__read_text_file": 0.5958436145024278,
+        "fs__read_file": 0.4384939195509822,
+        "fs__read_media_file": 0.20654329147389294
+      },
+      "tenRepeatsIdentical": true,
+      "tenRepeatsDistinctSeqs": 1,
+      "noTokenNeedTenRepeatsIdentical": true,
+      "noTokenSameOrderAsGibberish": true,
+      "crossRebuildIdentical": true,
+      "kBeyondRosterLen": 5,
+      "largeKLen": 5
+    },
+    "roster133": {
+      "lexHitsForGibberish": 0,
+      "lexHitsForNoTokenNeed": 0,
+      "draftLen": 5,
+      "draftIds": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "fs__read_media_file",
+        "firecrawl__firecrawl_extract",
+        "firecrawl__firecrawl_search"
+      ],
+      "expectedHead": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "fs__read_media_file",
+        "firecrawl__firecrawl_extract",
+        "firecrawl__firecrawl_search"
+      ],
+      "matchesExpected": true,
+      "candidateShape": [
+        {
+          "id": "fs__read_text_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "fs__read_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "fs__read_media_file",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "firecrawl__firecrawl_extract",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        },
+        {
+          "id": "firecrawl__firecrawl_search",
+          "score": 0,
+          "lexScore": null,
+          "cosScore": null
+        }
+      ],
+      "wilsonSeeds": {
+        "fs__read_text_file": 0.5958436145024278,
+        "fs__read_file": 0.4384939195509822,
+        "fs__read_media_file": 0.20654329147389294
+      },
+      "tenRepeatsIdentical": true,
+      "tenRepeatsDistinctSeqs": 1,
+      "noTokenNeedTenRepeatsIdentical": true,
+      "noTokenSameOrderAsGibberish": true,
+      "crossRebuildIdentical": true,
+      "largeKLen": 20
+    },
+    "allTies133": {
+      "tenRepeatsIdentical": true,
+      "observedOrder": "fs__read_file|fs__read_text_file|fs__read_media_file|fs__read_multiple_files|fs__write_file",
+      "equalsInsertionOrderHead": true,
+      "crossRebuildIdentical": true,
+      "crossRebuildOrders": [
+        "fs__read_file|fs__read_text_file|fs__read_media_file|fs__read_multiple_files|fs__write_file"
+      ]
+    },
+    "fileBackedReopen": {
+      "orderAtBuild": "fs__read_text_file|fs__read_file|fs__read_media_file|firecrawl__firecrawl_extract|firecrawl__firecrawl_search",
+      "reopenDraws": 10,
+      "allReopensIdentical": true,
+      "reopenMatchesBuild": true,
+      "observed": [
+        "fs__read_text_file|fs__read_file|fs__read_media_file|firecrawl__firecrawl_extract|firecrawl__firecrawl_search"
+      ]
+    },
+    "elapsedMs": 96
+  },
+  "d_edges": {
+    "startedAt": "2026-07-04T19:57:32.285Z",
+    "percentileEmpty": {
+      "0": null,
+      "1": null,
+      "25": null,
+      "50": null,
+      "75": null,
+      "90": null,
+      "95": null,
+      "99": null,
+      "100": null
+    },
+    "percentileSingle": {
+      "0": 7,
+      "1": 7,
+      "25": 7,
+      "50": 7,
+      "75": 7,
+      "90": 7,
+      "95": 7,
+      "99": 7,
+      "100": 7
+    },
+    "percentileAllTies": {
+      "0": 5,
+      "1": 5,
+      "25": 5,
+      "50": 5,
+      "75": 5,
+      "90": 5,
+      "95": 5,
+      "99": 5,
+      "100": 5
+    },
+    "percentileCrossCheck": {
+      "checks": 108,
+      "mismatches": []
+    },
+    "percentileExactBoundariesN4": {
+      "p25": 10,
+      "p50": 20,
+      "p75": 30,
+      "p100": 40,
+      "expected": {
+        "p25": 10,
+        "p50": 20,
+        "p75": 30,
+        "p100": 40
+      }
+    },
+    "percentileMedianOfTwo": {
+      "input": [
+        1,
+        2
+      ],
+      "p50": 1
+    },
+    "percentileP95N20": {
+      "got": 19,
+      "expected": 19
+    },
+    "percentileOutOfContract": {
+      "pNegative": 1,
+      "pOver100": 3,
+      "pNaN": null,
+      "unsortedInput": 1
+    },
+    "latencyBucket": [
+      {
+        "ms": "-5",
+        "bucket": "<250"
+      },
+      {
+        "ms": "0",
+        "bucket": "<250"
+      },
+      {
+        "ms": "1",
+        "bucket": "<250"
+      },
+      {
+        "ms": "249",
+        "bucket": "<250"
+      },
+      {
+        "ms": "249.999",
+        "bucket": "<250"
+      },
+      {
+        "ms": "250",
+        "bucket": "250-1000"
+      },
+      {
+        "ms": "250.0001",
+        "bucket": "250-1000"
+      },
+      {
+        "ms": "999",
+        "bucket": "250-1000"
+      },
+      {
+        "ms": "999.999",
+        "bucket": "250-1000"
+      },
+      {
+        "ms": "1000",
+        "bucket": "1000-4000"
+      },
+      {
+        "ms": "1000.5",
+        "bucket": "1000-4000"
+      },
+      {
+        "ms": "3999",
+        "bucket": "1000-4000"
+      },
+      {
+        "ms": "3999.999",
+        "bucket": "1000-4000"
+      },
+      {
+        "ms": "4000",
+        "bucket": ">4000"
+      },
+      {
+        "ms": "4000.0001",
+        "bucket": ">4000"
+      },
+      {
+        "ms": "1000000000",
+        "bucket": ">4000"
+      },
+      {
+        "ms": "Infinity",
+        "bucket": ">4000"
+      },
+      {
+        "ms": "-Infinity",
+        "bucket": "<250"
+      },
+      {
+        "ms": "NaN",
+        "bucket": ">4000"
+      }
+    ],
+    "latencyBucketFiniteMismatches": [],
+    "latencyBucketLabelNote": {
+      "exactly4000": ">4000",
+      "labelSaysStrictlyGreater": true,
+      "exactly250": "250-1000",
+      "exactly1000": "1000-4000"
+    },
+    "latencyBucketNaN": ">4000",
+    "elapsedMs": 0
+  },
+  "e_mixed": {
+    "startedAt": "2026-07-04T19:58:30.898Z",
+    "mixed": {
+      "need": "read text file",
+      "lexicalHitCount": 18,
+      "lexicalHitIds": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "gdrive__gdrive_read_file",
+        "fs__read_media_file",
+        "fs__edit_file",
+        "memory__read_graph",
+        "fs__read_multiple_files",
+        "playwright__browser_type",
+        "fs__write_file",
+        "fs__get_file_info",
+        "playwright__browser_file_upload",
+        "github__create_or_update_file",
+        "github__get_file_contents",
+        "sqlite__read_query",
+        "postgres__query",
+        "playwright__browser_wait_for",
+        "fs__move_file",
+        "git__git_add"
+      ],
+      "draftLen": 5,
+      "draftIds": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "gdrive__gdrive_read_file",
+        "fs__read_media_file",
+        "fs__edit_file"
+      ],
+      "scoredSegment": [
+        "fs__read_text_file",
+        "fs__read_file",
+        "gdrive__gdrive_read_file",
+        "fs__read_media_file",
+        "fs__edit_file"
+      ],
+      "backfilledSegment": [],
+      "expectedBackfill": [],
+      "backfillMatchesIndependentOrder": true,
+      "noDuplicates": true,
+      "scoredSortedDesc": true,
+      "tenRepeatsIdentical": true
+    },
+    "k1": {
+      "len": 1,
+      "ids": [
+        "fs__read_text_file"
+      ],
+      "noDup": true
+    },
+    "elapsedMs": 11
+  },
+  "e2_backfillBoundary": {
+    "startedAt": "2026-07-04T19:59:13.314Z",
+    "lexicalHits": [
+      "sentry__get_sentry_issue",
+      "github__list_issues",
+      "github__search_issues",
+      "linear__linear_list_issues"
+    ],
+    "ratingTable": [
+      {
+        "capability": "sentry__get_sentry_issue",
+        "wilson_lb": 0.7638641064874331
+      },
+      {
+        "capability": "github__list_issues",
+        "wilson_lb": 0.6989617935882066
+      },
+      {
+        "capability": "github__search_issues",
+        "wilson_lb": 0.6395767041130426
+      },
+      {
+        "capability": "linear__linear_list_issues",
+        "wilson_lb": 0.5839782779742402
+      },
+      {
+        "capability": "sqlite__read_query",
+        "wilson_lb": 0.2992949144298199
+      }
+    ],
+    "top4AreTheLexicalHits": true,
+    "draft": {
+      "k": 5,
+      "draftLen": 5,
+      "draftIds": [
+        "sentry__get_sentry_issue",
+        "github__list_issues",
+        "github__search_issues",
+        "linear__linear_list_issues",
+        "sqlite__read_query"
+      ],
+      "backfilledSegment": [
+        "linear__linear_list_issues",
+        "sqlite__read_query"
+      ],
+      "expectedBackfill": [
+        "sqlite__read_query"
+      ],
+      "backfillIsFifthRated": false,
+      "noDuplicates": true,
+      "tenRepeatsIdentical": true
+    },
+    "elapsedMs": 11
+  },
+  "f_worstHitDisplacement": {
+    "startedAt": "2026-07-04T20:00:38.546Z",
+    "flagshipWrite": {
+      "need": "write",
+      "lexicalHits": [
+        {
+          "id": "sqlite__write_query",
+          "lexScore": 1
+        },
+        {
+          "id": "fs__write_file",
+          "lexScore": 0
+        }
+      ],
+      "draftIds": [
+        "sqlite__write_query",
+        "firecrawl__firecrawl_extract",
+        "firecrawl__firecrawl_search",
+        "firecrawl__firecrawl_crawl",
+        "firecrawl__firecrawl_map"
+      ],
+      "draftDetail": [
+        {
+          "id": "sqlite__write_query",
+          "score": 1,
+          "lexScore": 1
+        },
+        {
+          "id": "firecrawl__firecrawl_extract",
+          "score": 0,
+          "lexScore": null
+        },
+        {
+          "id": "firecrawl__firecrawl_search",
+          "score": 0,
+          "lexScore": null
+        },
+        {
+          "id": "firecrawl__firecrawl_crawl",
+          "score": 0,
+          "lexScore": null
+        },
+        {
+          "id": "firecrawl__firecrawl_map",
+          "score": 0,
+          "lexScore": null
+        }
+      ],
+      "droppedHit": [
+        "fs__write_file"
+      ],
+      "hitCount": 2,
+      "k": 5,
+      "allHitsFitInK": true
+    },
+    "scan": {
+      "tokenNeedsScanned": 97,
+      "needsWithZeroedWorstHit": 90,
+      "needsWithTieAtWorst": 7,
+      "needsWithGenuineHitMissingFromDraft": 85,
+      "displacementRate": 0.876,
+      "examples": [
+        {
+          "tok": "complete",
+          "hitCount": 2,
+          "missing": [
+            "fs__read_file"
+          ]
+        },
+        {
+          "tok": "system",
+          "hitCount": 2,
+          "missing": [
+            "fs__read_file"
+          ]
+        },
+        {
+          "tok": "text",
+          "hitCount": 5,
+          "missing": [
+            "fs__read_file"
+          ]
+        },
+        {
+          "tok": "image",
+          "hitCount": 2,
+          "missing": [
+            "fs__read_media_file"
+          ]
+        },
+        {
+          "tok": "data",
+          "hitCount": 2,
+          "missing": [
+            "fs__read_media_file"
+          ]
+        },
+        {
+          "tok": "type",
+          "hitCount": 2,
+          "missing": [
+            "fs__read_media_file"
+          ]
+        },
+        {
+          "tok": "write",
+          "hitCount": 2,
+          "missing": [
+            "fs__write_file"
+          ]
+        },
+        {
+          "tok": "based",
+          "hitCount": 2,
+          "missing": [
+            "fs__edit_file"
+          ]
+        },
+        {
+          "tok": "diff",
+          "hitCount": 4,
+          "missing": [
+            "fs__edit_file"
+          ]
+        },
+        {
+          "tok": "listing",
+          "hitCount": 2,
+          "missing": [
+            "fs__list_directory_with_sizes"
+          ]
+        },
+        {
+          "tok": "specified",
+          "hitCount": 4,
+          "missing": [
+            "fs__list_directory_with_sizes"
+          ]
+        },
+        {
+          "tok": "path",
+          "hitCount": 2,
+          "missing": [
+            "fs__list_directory_with_sizes"
+          ]
+        }
+      ]
+    },
+    "mitigationOneSuccess": {
+      "wilsonOfDropped": 0.20654329147389294,
+      "draftIds": [
+        "sqlite__write_query",
+        "fs__write_file",
+        "firecrawl__firecrawl_extract",
+        "firecrawl__firecrawl_search",
+        "firecrawl__firecrawl_crawl"
+      ],
+      "droppedToolNowPresent": true
+    },
+    "elapsedMs": 21
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "generatedAt": "2026-07-04T19:54:40.017Z",
+  "summary": {
+    "skillsMeasured": 10,
+    "realTotalChars": 2697,
+    "independentTotalChars": 2697,
+    "totalMatch": true,
+    "perSkillMismatches": 0,
+    "perSkillMismatchDetail": [],
+    "driftChars": 0,
+    "estTokens": 675,
+    "estTokensFormulaOk": true,
+    "bodyExcludedFromInjection": true,
+    "emptyListZero": true,
+    "constants": {
+      "BASE_OVERHEAD_CHARS": 195,
+      "PER_SKILL_OVERHEAD_CHARS": 97
+    },
+    "unicodeNote": "openclawInjectionChars uses String.length (UTF-16 code units). '🚀' = 2 units, 1 code point, 4 UTF-8 bytes; CJK = 1 unit, 3 bytes. If OpenClaw's real renderer counts bytes or code points, multibyte names/paths drift from this count (within the ±15% token estimate either way).",
+    "exactnessCaveat": {
+      "claim": "openclaw.ts doc-comment + receipt.ts methodology call this the EXACT char count of OpenClaw's <available_skills> block (no estimation caveat on chars).",
+      "verifiable_in_repo": false,
+      "reason": "OpenClaw's real <available_skills> template is not vendored in this repo, so the 195/97 structural constants cannot be checked against the true renderer here — only internal code-vs-documented-formula consistency can.",
+      "representativeBlockStructuralChars": 87,
+      "representativeBlockNote": "A plausible XML per-skill block yields 87 structural chars vs the asserted 97 — the exact number depends entirely on OpenClaw's real template (indentation, tag names, separators)."
+    }
+  },
+  "perSkill": [
+    {
+      "slug": "debug",
+      "name": "systematic-debugging",
+      "nameLen": 20,
+      "descLen": 42,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/debug/SKILL.md",
+      "filepathLen": 78,
+      "realSingle": 432,
+      "expectedSingle": 432
+    },
+    {
+      "slug": "emoji",
+      "name": "🚀 rocket-deploy",
+      "nameLen": 16,
+      "descLen": 43,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/emoji/SKILL.md",
+      "filepathLen": 78,
+      "realSingle": 429,
+      "expectedSingle": 429
+    },
+    {
+      "slug": "empty-desc",
+      "name": "no-desc-skill",
+      "nameLen": 13,
+      "descLen": 0,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/empty-desc/SKILL.md",
+      "filepathLen": 83,
+      "realSingle": 388,
+      "expectedSingle": 388
+    },
+    {
+      "slug": "long-desc",
+      "name": "long-description-skill",
+      "nameLen": 22,
+      "descLen": 300,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/long-desc/SKILL.md",
+      "filepathLen": 82,
+      "realSingle": 696,
+      "expectedSingle": 696
+    },
+    {
+      "slug": "nested",
+      "name": "nested-name",
+      "nameLen": 11,
+      "descLen": 48,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/nested/SKILL.md",
+      "filepathLen": 79,
+      "realSingle": 430,
+      "expectedSingle": 430
+    },
+    {
+      "slug": "pdf",
+      "name": "pdf-tools",
+      "nameLen": 9,
+      "descLen": 45,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/pdf/SKILL.md",
+      "filepathLen": 76,
+      "realSingle": 422,
+      "expectedSingle": 422
+    },
+    {
+      "slug": "review",
+      "name": "code-review",
+      "nameLen": 11,
+      "descLen": 42,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/review/SKILL.md",
+      "filepathLen": 79,
+      "realSingle": 424,
+      "expectedSingle": 424
+    },
+    {
+      "slug": "short",
+      "name": "s",
+      "nameLen": 1,
+      "descLen": 1,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/short/SKILL.md",
+      "filepathLen": 78,
+      "realSingle": 372,
+      "expectedSingle": 372
+    },
+    {
+      "slug": "tdd",
+      "name": "test-driven-development",
+      "nameLen": 23,
+      "descLen": 47,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/tdd/SKILL.md",
+      "filepathLen": 76,
+      "realSingle": 438,
+      "expectedSingle": 438
+    },
+    {
+      "slug": "writing",
+      "name": "technical-writing",
+      "nameLen": 17,
+      "descLen": 32,
+      "filepath": "/Users/mo/Downloads/roster/docs/lab/tmp-playbook-trust/openclaw/writing/SKILL.md",
+      "filepathLen": 80,
+      "realSingle": 421,
+      "expectedSingle": 421
+    }
+  ]
+}

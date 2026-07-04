@@ -34,7 +34,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 | **P2** | Strategy docs & public repo | ✅ **Resolved: everything goes public at flip time** — gated on a personal/work-info sweep first (I'll run the sweep and show you its report before any flip) |
 | **P3** | When the repo flips public | ⏳ **Deferred** — you decide with me later; repo stays private until then |
 | **P4** | Combine signing | 🔶 **Partial** — you sign later, and I've shrunk the session to **~15–20 min**: `docs/signing/session-1-checklist.md` (one pass run, one ready-made fail-probe run, flip, PROVENANCE entry). I cannot flip `signed: true` myself — human-signed-only is a law and agent-signing would falsify the provenance the League sells; the checklist header explains |
-| **P5** | Next build | ✅ **Resolved: League site** — shipped in `packages/league` (static, artifact-driven, methodology rules enforced in code) |
+| **P5** | Next build | ✅ **Resolved: League site** — shipped in `apps/league` (its own top-level home for the frontend extension; static, artifact-driven, methodology rules enforced in code) |
 | **P6** | Launch-day rollout shape | ⏳ **Open**: one big drop · staged over 2–3 days (my rec: staged — repo+receipt day 1, League reveal day 2). Decide any time before Jul 28 |
 
 ---

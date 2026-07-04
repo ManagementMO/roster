@@ -1,0 +1,1467 @@
+{
+  "meta": {
+    "startedAt": "2026-07-04T19:40:58.110Z",
+    "node": "v22.22.3",
+    "platform": "darwin arm64",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "corpusTools": 133,
+    "needs": 66,
+    "embedMs": 501,
+    "embedDims": 384,
+    "finishedAt": "2026-07-04T19:41:06.525Z",
+    "followUpFinishedAt": "2026-07-04T19:45:08.816Z"
+  },
+  "a": {
+    "wallMs": 489,
+    "workers": 8,
+    "opsPerWorker": 200,
+    "aggregate": {
+      "totalOps": 1600,
+      "ok": 1600,
+      "errorCounts": {},
+      "byWorker": [
+        {
+          "workerId": 0,
+          "wallMs": 283,
+          "okCounts": {
+            "upsertCapabilities": 50,
+            "recordOutcome": 80,
+            "draftCandidates": 50,
+            "recomputeRatings": 20
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.44,
+              "p95": 10.81,
+              "max": 40.92
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.11,
+              "p95": 11.47,
+              "max": 22.61
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.56,
+              "p95": 1.73,
+              "max": 5.02
+            },
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.39,
+              "p95": 3.2,
+              "max": 3.2
+            }
+          }
+        },
+        {
+          "workerId": 1,
+          "wallMs": 418,
+          "okCounts": {
+            "recomputeRatings": 20,
+            "draftCandidates": 50,
+            "recordOutcome": 80,
+            "upsertCapabilities": 50
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.86,
+              "p95": 2.65,
+              "max": 2.65
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.71,
+              "p95": 2.42,
+              "max": 7.59
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.11,
+              "p95": 5.63,
+              "max": 220.9
+            },
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.46,
+              "p95": 3.91,
+              "max": 21.95
+            }
+          }
+        },
+        {
+          "workerId": 2,
+          "wallMs": 373,
+          "okCounts": {
+            "upsertCapabilities": 50,
+            "recordOutcome": 80,
+            "draftCandidates": 50,
+            "recomputeRatings": 20
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.41,
+              "p95": 16.44,
+              "max": 62.26
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.09,
+              "p95": 3.94,
+              "max": 94.88
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.7,
+              "p95": 1.81,
+              "max": 8.75
+            },
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.84,
+              "p95": 5.26,
+              "max": 5.26
+            }
+          }
+        },
+        {
+          "workerId": 3,
+          "wallMs": 467,
+          "okCounts": {
+            "draftCandidates": 50,
+            "recordOutcome": 80,
+            "upsertCapabilities": 50,
+            "recomputeRatings": 20
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.57,
+              "p95": 1.69,
+              "max": 24.85
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.12,
+              "p95": 9.75,
+              "max": 176.43
+            },
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.36,
+              "p95": 4.1,
+              "max": 85.75
+            },
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.96,
+              "p95": 1.81,
+              "max": 1.81
+            }
+          }
+        },
+        {
+          "workerId": 4,
+          "wallMs": 374,
+          "okCounts": {
+            "upsertCapabilities": 50,
+            "draftCandidates": 50,
+            "recordOutcome": 80,
+            "recomputeRatings": 20
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.49,
+              "p95": 10.45,
+              "max": 39.05
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.86,
+              "p95": 2.23,
+              "max": 5.44
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.13,
+              "p95": 10.13,
+              "max": 62.71
+            },
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.68,
+              "p95": 10.84,
+              "max": 10.84
+            }
+          }
+        },
+        {
+          "workerId": 5,
+          "wallMs": 443,
+          "okCounts": {
+            "upsertCapabilities": 50,
+            "recordOutcome": 80,
+            "draftCandidates": 50,
+            "recomputeRatings": 20
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.34,
+              "p95": 4.26,
+              "max": 98.7
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.11,
+              "p95": 3.96,
+              "max": 62.45
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.62,
+              "p95": 1.66,
+              "max": 4.71
+            },
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.59,
+              "p95": 90.59,
+              "max": 90.59
+            }
+          }
+        },
+        {
+          "workerId": 6,
+          "wallMs": 296,
+          "okCounts": {
+            "recordOutcome": 80,
+            "upsertCapabilities": 50,
+            "recomputeRatings": 20,
+            "draftCandidates": 50
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.1,
+              "p95": 7.7,
+              "max": 31.56
+            },
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.37,
+              "p95": 9.84,
+              "max": 60
+            },
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.49,
+              "p95": 11.58,
+              "max": 11.58
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.45,
+              "p95": 1.68,
+              "max": 4.6
+            }
+          }
+        },
+        {
+          "workerId": 7,
+          "wallMs": 429,
+          "okCounts": {
+            "recomputeRatings": 20,
+            "recordOutcome": 80,
+            "draftCandidates": 50,
+            "upsertCapabilities": 50
+          },
+          "outcomeInserts": 80,
+          "errorCounts": {},
+          "errors": [],
+          "latMs": {
+            "recomputeRatings": {
+              "n": 20,
+              "p50": 0.81,
+              "p95": 40.51,
+              "max": 40.51
+            },
+            "recordOutcome": {
+              "n": 80,
+              "p50": 0.12,
+              "p95": 36.8,
+              "max": 71.89
+            },
+            "draftCandidates": {
+              "n": 50,
+              "p50": 0.71,
+              "p95": 2.85,
+              "max": 4.74
+            },
+            "upsertCapabilities": {
+              "n": 50,
+              "p50": 0.41,
+              "p95": 2.46,
+              "max": 10.91
+            }
+          }
+        }
+      ],
+      "crashes": 0
+    },
+    "expectedOutcomeRows": 640,
+    "actualOutcomeRows": 640,
+    "lostCommittedOutcomes": 0,
+    "health": {
+      "integrity": [
+        {
+          "integrity_check": "ok"
+        }
+      ],
+      "fk": [],
+      "counts": {
+        "capability": 133,
+        "capability_fts": 133,
+        "outcome": 640,
+        "rating": 133,
+        "vec": 133,
+        "drift_event": 12
+      },
+      "ftsOrphans": 0,
+      "capsMissingFts": 0,
+      "badRatings": 0
+    },
+    "walBytesAfter": 0,
+    "latencyByOp": {
+      "upsertCapabilities": {
+        "p50Median": 0.41,
+        "p95Max": 16.44,
+        "maxMax": 98.7
+      },
+      "recordOutcome": {
+        "p50Median": 0.11,
+        "p95Max": 36.8,
+        "maxMax": 220.9
+      },
+      "draftCandidates": {
+        "p50Median": 0.7,
+        "p95Max": 2.85,
+        "maxMax": 24.85
+      },
+      "recomputeRatings": {
+        "p50Median": 0.81,
+        "p95Max": 90.59,
+        "maxMax": 90.59
+      }
+    }
+  },
+  "b": {
+    "workerA": {
+      "label": "A",
+      "cycles": 30,
+      "lostCapEvents": 10,
+      "lostCapSample": [
+        {
+          "cycle": 1,
+          "n": 10,
+          "ids": [
+            "memory__read_graph",
+            "memory__search_nodes",
+            "memory__open_nodes"
+          ]
+        },
+        {
+          "cycle": 2,
+          "n": 10,
+          "ids": [
+            "memory__read_graph",
+            "memory__search_nodes",
+            "memory__open_nodes"
+          ]
+        },
+        {
+          "cycle": 3,
+          "n": 10,
+          "ids": [
+            "memory__read_graph",
+            "memory__search_nodes",
+            "memory__open_nodes"
+          ]
+        },
+        {
+          "cycle": 16,
+          "n": 10,
+          "ids": [
+            "memory__read_graph",
+            "memory__search_nodes",
+            "memory__open_nodes"
+          ]
+        },
+        {
+          "cycle": 17,
+          "n": 10,
+          "ids": [
+            "memory__read_graph",
+            "memory__search_nodes",
+            "memory__open_nodes"
+          ]
+        }
+      ],
+      "totalCapLossIds": 100,
+      "lostVecEvents": 10,
+      "totalVecLossIds": 100,
+      "errors": [],
+      "finalMinePresent": 30,
+      "myCount": 30
+    },
+    "workerB": {
+      "label": "B",
+      "cycles": 30,
+      "lostCapEvents": 8,
+      "lostCapSample": [
+        {
+          "cycle": 5,
+          "n": 10,
+          "ids": [
+            "github__fork_repository",
+            "github__create_branch",
+            "github__list_commits"
+          ]
+        },
+        {
+          "cycle": 7,
+          "n": 10,
+          "ids": [
+            "github__fork_repository",
+            "github__create_branch",
+            "github__list_commits"
+          ]
+        },
+        {
+          "cycle": 10,
+          "n": 10,
+          "ids": [
+            "github__fork_repository",
+            "github__create_branch",
+            "github__list_commits"
+          ]
+        },
+        {
+          "cycle": 11,
+          "n": 10,
+          "ids": [
+            "github__fork_repository",
+            "github__create_branch",
+            "github__list_commits"
+          ]
+        },
+        {
+          "cycle": 12,
+          "n": 10,
+          "ids": [
+            "github__fork_repository",
+            "github__create_branch",
+            "github__list_commits"
+          ]
+        }
+      ],
+      "totalCapLossIds": 80,
+      "lostVecEvents": 8,
+      "totalVecLossIds": 80,
+      "errors": [],
+      "finalMinePresent": 30,
+      "myCount": 30
+    },
+    "finalState": {
+      "capabilityRows": 30,
+      "missingOnlyAFinal": [
+        "memory__read_graph",
+        "memory__search_nodes",
+        "memory__open_nodes",
+        "github__create_or_update_file",
+        "github__search_repositories",
+        "github__create_repository",
+        "github__get_file_contents",
+        "github__push_files",
+        "github__create_issue",
+        "github__create_pull_request"
+      ],
+      "missingOnlyBFinal": [],
+      "missingVecAFinal": 10,
+      "missingVecBFinal": 0
+    },
+    "health": {
+      "integrity": [
+        {
+          "integrity_check": "ok"
+        }
+      ],
+      "fk": [],
+      "counts": {
+        "capability": 30,
+        "capability_fts": 30,
+        "outcome": 0,
+        "rating": 0,
+        "vec": 30,
+        "drift_event": 0
+      },
+      "ftsOrphans": 0,
+      "capsMissingFts": 0,
+      "badRatings": 0
+    }
+  },
+  "c": {
+    "rounds": [
+      {
+        "r": 0,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 1,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 420272,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 777,
+        "visibleCommitted": 778,
+        "durabilityViolation": false
+      },
+      {
+        "r": 2,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 3,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 403792,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 637,
+        "visibleCommitted": 638,
+        "durabilityViolation": false
+      },
+      {
+        "r": 4,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 5,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 436752,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 347,
+        "visibleCommitted": 347,
+        "durabilityViolation": false
+      },
+      {
+        "r": 6,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 7,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 407912,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 436,
+        "visibleCommitted": 437,
+        "durabilityViolation": false
+      },
+      {
+        "r": 8,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 9,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 535632,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 665,
+        "visibleCommitted": 665,
+        "durabilityViolation": false
+      },
+      {
+        "r": 10,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 11,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 416152,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 277,
+        "visibleCommitted": 277,
+        "durabilityViolation": false
+      },
+      {
+        "r": 12,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 13,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 341992,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 83,
+        "visibleCommitted": 84,
+        "durabilityViolation": false
+      },
+      {
+        "r": 14,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 15,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 432632,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 97,
+        "visibleCommitted": 97,
+        "durabilityViolation": false
+      },
+      {
+        "r": 16,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 17,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 391432,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 221,
+        "visibleCommitted": 222,
+        "durabilityViolation": false
+      },
+      {
+        "r": 18,
+        "mode": "longtx",
+        "killedMidTx": true,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 0,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": 0,
+        "acked": null,
+        "visibleCommitted": null,
+        "durabilityViolation": null
+      },
+      {
+        "r": 19,
+        "mode": "apiloop",
+        "killedMidTx": null,
+        "exitSignal": "SIGKILL",
+        "walBytesAtCrash": 420272,
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "openError": null,
+        "tornTxRowsVisible": null,
+        "acked": 120,
+        "visibleCommitted": 120,
+        "durabilityViolation": false
+      }
+    ],
+    "tornWriteRounds": 0,
+    "durabilityViolationRounds": 0,
+    "badIntegrityRounds": 0,
+    "openErrors": 0,
+    "midTxKillsConfirmed": 10,
+    "finalHealth": {
+      "integrity": [
+        {
+          "integrity_check": "ok"
+        }
+      ],
+      "fk": [],
+      "counts": {
+        "capability": 133,
+        "capability_fts": 133,
+        "outcome": 3665,
+        "rating": 0,
+        "vec": 40,
+        "drift_event": 727
+      },
+      "ftsOrphans": 0,
+      "capsMissingFts": 0,
+      "badRatings": 0
+    }
+  },
+  "d": {
+    "writers": 4,
+    "writesPerWriter": 100,
+    "writerAggregate": {
+      "ok": 170,
+      "failed": 230,
+      "errorCounts": {
+        "ENOENT": 230
+      },
+      "crashes": 0,
+      "samples": [
+        {
+          "i": 0,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 1,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 2,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 0,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 7,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 8,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 0,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 4,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 5,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 2,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 3,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        },
+        {
+          "i": 8,
+          "code": "ENOENT",
+          "message": "ENOENT: no such file or directory, rename '/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/home-d/.roster/roster.json.tmp' -> '/Users/mo/Downloads/ro"
+        }
+      ]
+    },
+    "reader": {
+      "reads": 960,
+      "parseFailures": 13,
+      "emptyReads": 7,
+      "enoent": 0,
+      "tornSamples": [
+        {
+          "len": 12212,
+          "head": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n  ",
+          "tail": "d\": false\n  },\n  \"embeddings\": \"auto\"\n}\n"
+        },
+        {
+          "len": 12212,
+          "head": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n  ",
+          "tail": "d\": false\n  },\n  \"embeddings\": \"auto\"\n}\n"
+        },
+        {
+          "len": 12212,
+          "head": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n  ",
+          "tail": "d\": false\n  },\n  \"embeddings\": \"auto\"\n}\n"
+        },
+        {
+          "len": 12212,
+          "head": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n  ",
+          "tail": "d\": false\n  },\n  \"embeddings\": \"auto\"\n}\n"
+        },
+        {
+          "len": 12212,
+          "head": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n  ",
+          "tail": "d\": false\n  },\n  \"embeddings\": \"auto\"\n}\n"
+        },
+        {
+          "len": 8192,
+          "head": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n  ",
+          "tail": " [\n        \"claude-code\"\n      ]\n    },\n"
+        },
+        {
+          "len": 0,
+          "head": "",
+          "tail": ""
+        },
+        {
+          "len": 0,
+          "head": "",
+          "tail": ""
+        },
+        {
+          "len": 0,
+          "head": "",
+          "tail": ""
+        },
+        {
+          "len": 0,
+          "head": "",
+          "tail": ""
+        }
+      ]
+    },
+    "finalParses": true,
+    "finalError": null,
+    "leftoverTmp": false
+  },
+  "c2": {
+    "rounds": [
+      {
+        "r": 0,
+        "spilledWalBytesAtKill": 1293736,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 1,
+        "spilledWalBytesAtKill": 1421456,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 2,
+        "spilledWalBytesAtKill": 5269512,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 3,
+        "spilledWalBytesAtKill": 4779232,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 4,
+        "spilledWalBytesAtKill": 5665056,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 5,
+        "spilledWalBytesAtKill": 2249576,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 6,
+        "spilledWalBytesAtKill": 3040592,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      },
+      {
+        "r": 7,
+        "spilledWalBytesAtKill": 3180696,
+        "exitSignal": "SIGKILL",
+        "integrity": [
+          {
+            "integrity_check": "ok"
+          }
+        ],
+        "tornRowsVisible": 0,
+        "walBytesAfterRecovery": 0,
+        "openError": null
+      }
+    ],
+    "roundsWithRealSpill": 8,
+    "tornRounds": 0,
+    "badIntegrityRounds": 0,
+    "openErrors": 0
+  },
+  "d2": {
+    "reps": [
+      {
+        "rep": 0,
+        "writerOk": 168,
+        "writerFailed": 232,
+        "errorCounts": {
+          "ENOENT": 232
+        },
+        "reader": {
+          "reads": 840,
+          "parseFailures": 10,
+          "emptyReads": 10
+        },
+        "finalParses": true,
+        "leftoverTmp": false
+      },
+      {
+        "rep": 1,
+        "writerOk": 181,
+        "writerFailed": 219,
+        "errorCounts": {
+          "ENOENT": 219
+        },
+        "reader": {
+          "reads": 880,
+          "parseFailures": 20,
+          "emptyReads": 19
+        },
+        "finalParses": true,
+        "leftoverTmp": false
+      },
+      {
+        "rep": 2,
+        "writerOk": 175,
+        "writerFailed": 225,
+        "errorCounts": {
+          "ENOENT": 225
+        },
+        "reader": {
+          "reads": 1160,
+          "parseFailures": 25,
+          "emptyReads": 13
+        },
+        "finalParses": true,
+        "leftoverTmp": false
+      },
+      {
+        "rep": 3,
+        "writerOk": 175,
+        "writerFailed": 225,
+        "errorCounts": {
+          "ENOENT": 225
+        },
+        "reader": {
+          "reads": 1040,
+          "parseFailures": 15,
+          "emptyReads": 14
+        },
+        "finalParses": true,
+        "leftoverTmp": false
+      },
+      {
+        "rep": 4,
+        "writerOk": 168,
+        "writerFailed": 232,
+        "errorCounts": {
+          "ENOENT": 232
+        },
+        "reader": {
+          "reads": 880,
+          "parseFailures": 26,
+          "emptyReads": 12
+        },
+        "finalParses": true,
+        "leftoverTmp": false
+      }
+    ],
+    "totals": {
+      "writerOk": 867,
+      "writerFailed": 1133,
+      "readerReads": 4800,
+      "readerTorn": 96,
+      "readerEmpty": 68,
+      "finalCorruptReps": 0
+    },
+    "tornCapture": {
+      "rep": 1,
+      "kind": "partial",
+      "len": 12212,
+      "file": "/Users/mo/Downloads/roster/docs/lab/tmp-concurrency-stress/torn-sample-rep1.json.broken",
+      "parseError": "Unexpected non-whitespace character after JSON at position 12132 (line 612 column 1)"
+    },
+    "crashDemo": {
+      "threw": true,
+      "message": "~/.roster/roster.json is malformed JSON: Unexpected non-whitespace character after JSON at position 12132 (line 612 column 1)"
+    }
+  },
+  "d3": {
+    "rounds": [
+      {
+        "r": 0,
+        "aOutcome": "ENOENT",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": false,
+        "lostUpdate": true
+      },
+      {
+        "r": 1,
+        "aOutcome": "ok",
+        "bOutcome": "ENOENT",
+        "parses": true,
+        "hasAlpha": false,
+        "hasBeta": true,
+        "lostUpdate": true
+      },
+      {
+        "r": 2,
+        "aOutcome": "ENOENT",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": false,
+        "lostUpdate": true
+      },
+      {
+        "r": 3,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 4,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": false,
+        "hasBeta": true,
+        "lostUpdate": true
+      },
+      {
+        "r": 5,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 6,
+        "aOutcome": "ok",
+        "bOutcome": "ENOENT",
+        "parses": false,
+        "hasAlpha": false,
+        "hasBeta": false,
+        "lostUpdate": false
+      },
+      {
+        "r": 7,
+        "aOutcome": "ok",
+        "bOutcome": "ENOENT",
+        "parses": true,
+        "hasAlpha": false,
+        "hasBeta": true,
+        "lostUpdate": true
+      },
+      {
+        "r": 8,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": false,
+        "lostUpdate": true
+      },
+      {
+        "r": 9,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 10,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": false,
+        "hasBeta": true,
+        "lostUpdate": true
+      },
+      {
+        "r": 11,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 12,
+        "aOutcome": "ENOENT",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": false,
+        "lostUpdate": true
+      },
+      {
+        "r": 13,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 14,
+        "aOutcome": "ok",
+        "bOutcome": "ENOENT",
+        "parses": false,
+        "hasAlpha": false,
+        "hasBeta": false,
+        "lostUpdate": false
+      },
+      {
+        "r": 15,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 16,
+        "aOutcome": "ENOENT",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": false,
+        "lostUpdate": true
+      },
+      {
+        "r": 17,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      },
+      {
+        "r": 18,
+        "aOutcome": "ok",
+        "bOutcome": "ENOENT",
+        "parses": true,
+        "hasAlpha": false,
+        "hasBeta": true,
+        "lostUpdate": true
+      },
+      {
+        "r": 19,
+        "aOutcome": "ok",
+        "bOutcome": "ok",
+        "parses": true,
+        "hasAlpha": true,
+        "hasBeta": true,
+        "lostUpdate": false
+      }
+    ],
+    "lostUpdateRounds": 10,
+    "writerErrorRounds": 9,
+    "corruptFinalRounds": 2,
+    "total": 20,
+    "forensics": {
+      "silentLossRounds": 10,
+      "pureLostUpdateRounds": 3,
+      "crashedWriterDataSurvivedRounds": 7,
+      "permanentCorruptionDemo": {
+        "threw": true,
+        "message": "~/.roster/roster.json is malformed JSON: Unexpected non-whitespace character after JSON at position 476 (line 32 column 1)"
+      },
+      "corruptFileTails": [
+        {
+          "round": "home-d3-6",
+          "len": 478,
+          "tail": "to\"\n}\n}\n"
+        },
+        {
+          "round": "home-d3-14",
+          "len": 478,
+          "tail": "to\"\n}\n}\n"
+        }
+      ]
+    }
+  },
+  "evidencePreserved": {
+    "d3CorruptRosterJsonFull_homeD3_6": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n    \"base\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@example/base\"\n      ],\n      \"importedFrom\": [\n        \"claude-code\"\n      ]\n    },\n    \"beta\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@example/beta\"\n      ],\n      \"importedFrom\": [\n        \"claude-code\"\n      ]\n    }\n  },\n  \"skillSources\": [],\n  \"telemetry\": {\n    \"enabled\": false\n  },\n  \"embeddings\": \"auto\"\n}\n}\n",
+    "d2TornSampleHead400": "{\n  \"version\": 1,\n  \"mode\": \"transparent\",\n  \"servers\": {\n    \"srv-0\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@example/server-0\",\n        \"--writer=2\",\n        \"--seq=8\"\n      ],\n      \"env\": {\n        \"TOKEN\": \"t-2-8-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n      },\n      \"importedFrom\": [\n        \"claude-code\"\n      ]\n    },\n    \"srv-1\": {\n      \"command\": \"npx\",\n     ",
+    "d2TornSampleLen": 12212,
+    "d2TornSampleTail120": "d\": false\n  },\n  \"embeddings\": \"auto\"\n}\nurces\": [],\n  \"telemetry\": {\n    \"enabled\": false\n  },\n  \"embeddings\": \"auto\"\n}\n"
+  }
+}

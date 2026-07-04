@@ -1,0 +1,2453 @@
+{
+ "slug": "sync-eject-fuzz",
+ "date": "2026-07-04",
+ "node": "v22.22.3",
+ "sections": {
+  "a": {
+   "cases": [
+    {
+     "client": "claude-code",
+     "variant": "minimal-empty-object",
+     "bytes": 2,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "empty-mcpServers",
+     "bytes": 19,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "null-mcpServers",
+     "bytes": 21,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "array-mcpServers",
+     "bytes": 99,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "unicode-heavy",
+     "bytes": 337,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "deep-env-objects",
+     "bytes": 125,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "one-megabyte",
+     "bytes": 859171,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "extra-top-keys",
+     "bytes": 6498,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "mixed-indentation",
+     "bytes": 228,
+     "sync": "synced",
+     "imported": 2,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "no-trailing-newline",
+     "bytes": 116,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "crlf-endings",
+     "bytes": 142,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "cr-only-endings",
+     "bytes": 117,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "jsonc-comments",
+     "bytes": 163,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "jsonc-trailing-commas",
+     "bytes": 119,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "utf8-bom",
+     "bytes": 120,
+     "sync": "THREW",
+     "syncError": "Unexpected token '\ufeff', \"\ufeff{\n  \"mcpS\"... is not valid JSON",
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "duplicate-keys",
+     "bytes": 206,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "lone-surrogate-escape",
+     "bytes": 80,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "huge-numbers",
+     "bytes": 168,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "nul-and-controls",
+     "bytes": 78,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "single-line-dense",
+     "bytes": 309,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "windows-paths",
+     "bytes": 133,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "already-roster-only",
+     "bytes": 99,
+     "sync": "already-synced",
+     "imported": 0,
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "roster-plus-extra",
+     "bytes": 152,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "scalar-top-level",
+     "bytes": 3,
+     "sync": "THREW",
+     "syncError": "Cannot create property 'mcpServers' on number '42'",
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "array-top-level",
+     "bytes": 2,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": false,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "claude-code",
+     "variant": "url-and-odd-servers",
+     "bytes": 227,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "minimal-empty-object",
+     "bytes": 2,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "empty-mcpServers",
+     "bytes": 19,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "null-mcpServers",
+     "bytes": 21,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "array-mcpServers",
+     "bytes": 99,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "unicode-heavy",
+     "bytes": 337,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "deep-env-objects",
+     "bytes": 125,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "one-megabyte",
+     "bytes": 859171,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "extra-top-keys",
+     "bytes": 6498,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "mixed-indentation",
+     "bytes": 228,
+     "sync": "synced",
+     "imported": 2,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "no-trailing-newline",
+     "bytes": 116,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "crlf-endings",
+     "bytes": 142,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "cr-only-endings",
+     "bytes": 117,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "jsonc-comments",
+     "bytes": 163,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "jsonc-trailing-commas",
+     "bytes": 119,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "utf8-bom",
+     "bytes": 120,
+     "sync": "THREW",
+     "syncError": "Unexpected token '\ufeff', \"\ufeff{\n  \"mcpS\"... is not valid JSON",
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "duplicate-keys",
+     "bytes": 206,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "lone-surrogate-escape",
+     "bytes": 80,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "huge-numbers",
+     "bytes": 168,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "nul-and-controls",
+     "bytes": 78,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "single-line-dense",
+     "bytes": 309,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "windows-paths",
+     "bytes": 133,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "already-roster-only",
+     "bytes": 99,
+     "sync": "already-synced",
+     "imported": 0,
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "roster-plus-extra",
+     "bytes": 152,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "scalar-top-level",
+     "bytes": 3,
+     "sync": "THREW",
+     "syncError": "Cannot create property 'mcpServers' on number '42'",
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "array-top-level",
+     "bytes": 2,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": false,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "cursor",
+     "variant": "url-and-odd-servers",
+     "bytes": 227,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "minimal-empty-object",
+     "bytes": 2,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "empty-mcpServers",
+     "bytes": 19,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "null-mcpServers",
+     "bytes": 21,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "array-mcpServers",
+     "bytes": 99,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "unicode-heavy",
+     "bytes": 337,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "deep-env-objects",
+     "bytes": 125,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "one-megabyte",
+     "bytes": 859171,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "extra-top-keys",
+     "bytes": 6498,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "mixed-indentation",
+     "bytes": 228,
+     "sync": "synced",
+     "imported": 2,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "no-trailing-newline",
+     "bytes": 116,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "crlf-endings",
+     "bytes": 142,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "cr-only-endings",
+     "bytes": 117,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "jsonc-comments",
+     "bytes": 163,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "jsonc-trailing-commas",
+     "bytes": 119,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "utf8-bom",
+     "bytes": 120,
+     "sync": "THREW",
+     "syncError": "Unexpected token '\ufeff', \"\ufeff{\n  \"mcpS\"... is not valid JSON",
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "duplicate-keys",
+     "bytes": 206,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "lone-surrogate-escape",
+     "bytes": 80,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "huge-numbers",
+     "bytes": 168,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "nul-and-controls",
+     "bytes": 78,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "single-line-dense",
+     "bytes": 309,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "windows-paths",
+     "bytes": 133,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "already-roster-only",
+     "bytes": 99,
+     "sync": "already-synced",
+     "imported": 0,
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "roster-plus-extra",
+     "bytes": 152,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "scalar-top-level",
+     "bytes": 3,
+     "sync": "THREW",
+     "syncError": "Cannot create property 'mcpServers' on number '42'",
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "array-top-level",
+     "bytes": 2,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": false,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "openclaw",
+     "variant": "url-and-odd-servers",
+     "bytes": 227,
+     "sync": "synced",
+     "imported": 3,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-empty-file",
+     "bytes": 0,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-empty-mcp-table",
+     "bytes": 14,
+     "sync": "synced",
+     "imported": 0,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-comments",
+     "bytes": 125,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-datetimes",
+     "bytes": 115,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-multiline-basic",
+     "bytes": 80,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-literal-strings",
+     "bytes": 76,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-inline-tables",
+     "bytes": 90,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-dotted-keys",
+     "bytes": 97,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-array-of-tables",
+     "bytes": 87,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-unicode",
+     "bytes": 132,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-crlf",
+     "bytes": 73,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-no-trailing-newline",
+     "bytes": 32,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-mixed-indent",
+     "bytes": 67,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-one-megabyte",
+     "bytes": 976293,
+     "sync": "synced",
+     "imported": 900,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-exotic-numbers",
+     "bytes": 157,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-already-roster-only",
+     "bytes": 57,
+     "sync": "already-synced",
+     "imported": 0,
+     "configChangedBySync": false,
+     "backupDirs": 0,
+     "eject": "no-backup",
+     "byteIdentical": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-roster-plus-extra",
+     "bytes": 93,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-env-tables",
+     "bytes": 109,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-deep-tables",
+     "bytes": 62,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-trailing-comment-no-newline",
+     "bytes": 42,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-crlf-in-multiline",
+     "bytes": 66,
+     "sync": "synced",
+     "imported": 1,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    },
+    {
+     "client": "codex",
+     "variant": "toml-aligned-equals",
+     "bytes": 102,
+     "sync": "synced",
+     "imported": 2,
+     "configChangedBySync": true,
+     "backupDirs": 1,
+     "writtenParses": true,
+     "writtenPointsAtRoster": true,
+     "eject": "restored",
+     "byteIdentical": true,
+     "eraArchived": true,
+     "tmpLitter": false
+    }
+   ],
+   "nonWriteProbes": [
+    {
+     "client": "claude-desktop",
+     "variant": "nonwrite-probe",
+     "bytes": 117,
+     "sync": "synced",
+     "configChangedBySync": true,
+     "afterSyncPreview": "{\n  \"mcpServers\": {\n    \"roster\": {\n      \"command\": \"roster\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  }\n}\n",
+     "eject": "restored",
+     "byteIdentical": true
+    },
+    {
+     "client": "gemini-cli",
+     "variant": "nonwrite-probe",
+     "bytes": 130,
+     "sync": "synced",
+     "configChangedBySync": true,
+     "afterSyncPreview": "{\n  \"mcpServers\": {\n    \"roster\": {\n      \"command\": \"roster\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  },\n  \"theme\": \"dark\"\n}\n",
+     "eject": "restored",
+     "byteIdentical": true
+    },
+    {
+     "client": "hermes",
+     "variant": "nonwrite-probe",
+     "bytes": 60,
+     "sync": "THREW",
+     "syncError": "Unexpected token 'm', \"mcp_server\"... is not valid JSON",
+     "configChangedBySync": false,
+     "eject": "no-backup",
+     "byteIdentical": true
+    },
+    {
+     "client": "vscode",
+     "variant": "nonwrite-probe",
+     "bytes": 108,
+     "sync": "synced",
+     "configChangedBySync": true,
+     "afterSyncPreview": "{\n  \"servers\": {\n    \"fs\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-filesystem\",\n        \"/tmp\"\n      ]\n    }\n  },\n  \"mcpServers\": {\n    \"roster\": {\n      \"command\": \"roster\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  }\n}\n",
+     "eject": "restored",
+     "byteIdentical": true
+    },
+    {
+     "client": "windsurf",
+     "variant": "nonwrite-probe",
+     "bytes": 111,
+     "sync": "synced",
+     "configChangedBySync": true,
+     "afterSyncPreview": "{\n  \"mcpServers\": {\n    \"roster\": {\n      \"command\": \"roster\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  }\n}\n",
+     "eject": "restored",
+     "byteIdentical": true
+    },
+    {
+     "client": "zed",
+     "variant": "nonwrite-probe",
+     "bytes": 139,
+     "sync": "synced",
+     "configChangedBySync": true,
+     "afterSyncPreview": "{\n  \"context_servers\": {\n    \"fs\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-filesystem\",\n        \"/tmp\"\n      ]\n    }\n  },\n  \"theme\": \"One Dark\",\n  \"mcpServers\": {\n    \"roster\": {\n      \"command\": \"roster\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  }\n}\n",
+     "eject": "restored",
+     "byteIdentical": true
+    }
+   ]
+  },
+  "bin": {
+   "bomFirst": {
+    "exit": 1,
+    "out": "roster: Unexpected token '\ufeff', \"\ufeff{\n  \"mcpS\"... is not valid JSON\n",
+    "state": {
+     "claude-code": {
+      "changed": false,
+      "backupExists": false
+     },
+     "cursor": {
+      "changed": false,
+      "backupExists": false
+     },
+     "codex": {
+      "changed": false,
+      "backupExists": false
+     },
+     "openclaw": {
+      "changed": false,
+      "backupExists": false
+     }
+    }
+   },
+   "bomThird": {
+    "exit": 1,
+    "out": "synced   claude-code  (/Users/mo/Downloads/roster/docs/lab/tmp-sync-eject-fuzz/bin-bom-abort-2/.claude.json; backup: /Users/mo/Downloads/roster/docs/lab/tmp-sync-eject-fuzz/bin-bom-abort-2/.roster/backups/claude-code/2026-07-04T19-38-53-995Z)\nsynced   cursor  (/Users/mo/Downloads/roster/docs/lab/tmp-sync-eject-fuzz/bin-bom-abort-2/.cursor/mcp.json; backup: /Users/mo/Downloads/roster/docs/lab/tmp-sync-eject-fuzz/bin-bom-abort-2/.roster/backups/cursor/2026-07-04T19-38-53-999Z)\nroster: Invalid TOML document: only letter, numbers, dashes and underscores are allowed in keys\n\n1:  \ufeff[mcp_servers.fs]\n    ^\n2:  command = \"npx\"\n\n",
+    "state": {
+     "claude-code": {
+      "changed": true,
+      "backupExists": true
+     },
+     "cursor": {
+      "changed": true,
+      "backupExists": true
+     },
+     "codex": {
+      "changed": false,
+      "backupExists": false
+     },
+     "openclaw": {
+      "changed": false,
+      "backupExists": false
+     }
+    }
+   }
+  },
+  "b": {
+   "opCount": 420,
+   "violations": [],
+   "observations": [
+    {
+     "stepTag": "seq1#3",
+     "note": "user deleted own config containing never-imported server search (user action, excused)"
+    },
+    {
+     "stepTag": "seq1#3",
+     "note": "user deleted own config containing never-imported server user-srv-1 (user action, excused)"
+    },
+    {
+     "stepTag": "seq2#4",
+     "note": "user deleted own config containing never-imported server memory (user action, excused)"
+    },
+    {
+     "stepTag": "seq2#4",
+     "note": "user deleted own config containing never-imported server user-srv-4 (user action, excused)"
+    },
+    {
+     "stepTag": "seq3#11",
+     "note": "user deleted own config containing never-imported server user-srv-2 (user action, excused)"
+    },
+    {
+     "stepTag": "seq4#10",
+     "note": "EJECT(codex)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq4#11",
+     "note": "EJECT(codex)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq4#12",
+     "note": "forced eject clobbered un-synced user server user-srv-3 (documented --force semantics)"
+    },
+    {
+     "stepTag": "seq7#0",
+     "note": "user deleted own config containing never-imported server memory (user action, excused)"
+    },
+    {
+     "stepTag": "seq8#1",
+     "note": "user deleted own config containing never-imported server fs (user action, excused)"
+    },
+    {
+     "stepTag": "seq9#11",
+     "note": "EJECT(cursor)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq10#1",
+     "note": "user deleted own config containing never-imported server fs (user action, excused)"
+    },
+    {
+     "stepTag": "seq10#13",
+     "note": "EJECT(codex)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq11#9",
+     "note": "user deleted own config containing never-imported server user-srv-1 (user action, excused)"
+    },
+    {
+     "stepTag": "seq11#13",
+     "note": "EJECT(codex)->missing-file (config file no longer exists; use --force to recreate it fro)"
+    },
+    {
+     "stepTag": "seq12#9",
+     "note": "EJECT(claude-code)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq16#7",
+     "note": "EJECT(cursor)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq18#9",
+     "note": "user deleted own config containing never-imported server fs (user action, excused)"
+    },
+    {
+     "stepTag": "seq20#11",
+     "note": "EJECT(openclaw)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq22#8",
+     "note": "EJECT(cursor)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq23#13",
+     "note": "user deleted own config containing never-imported server search (user action, excused)"
+    },
+    {
+     "stepTag": "seq23#13",
+     "note": "user deleted own config containing never-imported server user-srv-2 (user action, excused)"
+    },
+    {
+     "stepTag": "seq24#8",
+     "note": "user deleted own config containing never-imported server search (user action, excused)"
+    },
+    {
+     "stepTag": "seq25#4",
+     "note": "user deleted own config containing never-imported server memory (user action, excused)"
+    },
+    {
+     "stepTag": "seq27#11",
+     "note": "EJECT(openclaw)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq28#11",
+     "note": "EJECT(claude-code)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq28#13",
+     "note": "EJECT(claude-code)->refused-modified (config was modified after sync \u2014 refusing to overwrite those)"
+    },
+    {
+     "stepTag": "seq29#2",
+     "note": "user deleted own config containing never-imported server web (user action, excused)"
+    },
+    {
+     "stepTag": "seq29#4",
+     "note": "user deleted own config containing never-imported server search (user action, excused)"
+    }
+   ],
+   "sameMsCollision": {
+    "sync1": "synced",
+    "sync2": "synced",
+    "backupDirCount": 1,
+    "pristineDestroyed": true,
+    "backupOriginalNow": "C1 (post-edit state, NOT pristine)",
+    "eject": "restored",
+    "finalEqualsC0": false,
+    "finalEqualsC1": true,
+    "diffVsC0": {
+     "offset": 46,
+     "lenA": 162,
+     "lenB": 314,
+     "hexA": "207b0a20202020226d656d6f7279223a",
+     "hexB": "207b0a2020202022726f73746572223a"
+    }
+   }
+  },
+  "c": {
+   "results": [
+    {
+     "case": "c1 flip 1 byte of original",
+     "eject": "no-backup",
+     "detail": "BACKUP INTEGRITY FAILURE: stored bytes do not match their recorded hash \u2014 not restoring; inspect the backup dir",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": false
+    },
+    {
+     "case": "c2 truncate original to 0B",
+     "eject": "no-backup",
+     "detail": "BACKUP INTEGRITY FAILURE: stored bytes do not match their recorded hash \u2014 not restoring; inspect the backup dir",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": false
+    },
+    {
+     "case": "c3 delete original",
+     "eject": "no-backup",
+     "detail": "backup bytes missing",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": false
+    },
+    {
+     "case": "c4 corrupt manifest, 1-backup era",
+     "eject": "no-backup",
+     "detail": "",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": false,
+     "pristineBytesStillOnDisk": true
+    },
+    {
+     "case": "c5 corrupt PRISTINE manifest, 2-backup era",
+     "eject": "restored",
+     "detail": "",
+     "configTouched": true,
+     "finalEqualsPristineC0": false,
+     "eraArchived": true,
+     "finalEqualsC1_userEditedNonPristine": true,
+     "silentWrongRestore": true,
+     "diffVsPristine": {
+      "offset": 25,
+      "lenA": 133,
+      "lenB": 228,
+      "hexA": "207b0a20202020226d656d6f7279223a",
+      "hexB": "207b0a2020202022726f73746572223a"
+     }
+    },
+    {
+     "case": "c5-baseline 2-backup era, no tamper",
+     "eject": "restored",
+     "detail": "",
+     "configTouched": true,
+     "finalEqualsPristineC0": true,
+     "eraArchived": true
+    },
+    {
+     "case": "c6 flip hex digit in recorded sha",
+     "eject": "no-backup",
+     "detail": "BACKUP INTEGRITY FAILURE: stored bytes do not match their recorded hash \u2014 not restoring; inspect the backup dir",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": false
+    },
+    {
+     "case": "c7 sourcePath tampered, no force",
+     "eject": "missing-file",
+     "detail": "config file no longer exists; use --force to recreate it from backup",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": false,
+     "wrongPathCreated": false
+    },
+    {
+     "case": "c7b sourcePath tampered + --force",
+     "eject": "restored",
+     "detail": "",
+     "configTouched": false,
+     "finalEqualsPristineC0": false,
+     "eraArchived": true,
+     "wrongPathCreated": true,
+     "realConfigStillRosterState": true
+    },
+    {
+     "case": "c8 consistent tamper (bytes+hash)",
+     "eject": "restored",
+     "detail": "",
+     "configTouched": true,
+     "finalEqualsPristineC0": false,
+     "eraArchived": true,
+     "restoredAttackerBytes": true
+    }
+   ]
+  },
+  "d": {
+   "cleanOps": [
+    "mkdirSync(.roster)",
+    "writeFileSync(roster.json.tmp)",
+    "renameSync(roster.json.tmp -> roster.json)",
+    "mkdirSync(2026-07-04T12-00-00-000Z)",
+    "writeFileSync(original)",
+    "writeFileSync(manifest.json)",
+    "writeFileSync(latest)",
+    "writeFileSync(.claude.json.roster-tmp)",
+    "renameSync(.claude.json.roster-tmp -> .claude.json)"
+   ],
+   "syncWindows": [
+    {
+     "k": 1,
+     "killedInsteadOf": "mkdirSync(.roster)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "absent",
+      "backups": []
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 2,
+     "killedInsteadOf": "writeFileSync(roster.json.tmp)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "absent",
+      "backups": []
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 3,
+     "killedInsteadOf": "renameSync(roster.json.tmp -> roster.json)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": true,
+      "rosterJson": "absent",
+      "backups": []
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 4,
+     "killedInsteadOf": "mkdirSync(2026-07-04T12-00-00-000Z)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": []
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 5,
+     "killedInsteadOf": "writeFileSync(original)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "absent",
+        "original": "absent"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 6,
+     "killedInsteadOf": "writeFileSync(manifest.json)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "absent",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 7,
+     "killedInsteadOf": "writeFileSync(latest)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "refused-modified",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 8,
+     "killedInsteadOf": "writeFileSync(.claude.json.roster-tmp)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "refused-modified",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 9,
+     "killedInsteadOf": "renameSync(.claude.json.roster-tmp -> .claude.json)",
+     "exit": 9,
+     "state": {
+      "config": "C0",
+      "tmpLitter": true,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "refused-modified",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    }
+   ],
+   "tornWindows": [
+    {
+     "k": 2,
+     "tornOp": "writeFileSync(roster.json.tmp)",
+     "state": {
+      "config": "C0",
+      "tmpLitter": true,
+      "rosterJson": "absent",
+      "backups": []
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 5,
+     "tornOp": "writeFileSync(original)",
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "absent",
+        "original": "other"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 6,
+     "tornOp": "writeFileSync(manifest.json)",
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "CORRUPT",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "no-backup",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 7,
+     "tornOp": "writeFileSync(latest)",
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "refused-modified",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    },
+    {
+     "k": 8,
+     "tornOp": "writeFileSync(.claude.json.roster-tmp)",
+     "state": {
+      "config": "C0",
+      "tmpLitter": true,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     },
+     "recovery": {
+      "E": {
+       "eject": "refused-modified",
+       "endsAtC0": true
+      },
+      "S": {
+       "resync": "synced",
+       "eject": "restored",
+       "endsAtC0": true
+      },
+      "recoverable": true
+     }
+    }
+   ],
+   "throwWindows": [
+    {
+     "k": 1,
+     "failingOp": "mkdirSync(.roster)",
+     "syncOutcome": "completed:synced imported=0",
+     "swallowed": true,
+     "state": {
+      "config": "rewritten",
+      "tmpLitter": false,
+      "rosterJson": "absent",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     }
+    },
+    {
+     "k": 2,
+     "failingOp": "writeFileSync(roster.json.tmp)",
+     "syncOutcome": "completed:synced imported=0",
+     "swallowed": true,
+     "state": {
+      "config": "rewritten",
+      "tmpLitter": false,
+      "rosterJson": "absent",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     }
+    },
+    {
+     "k": 3,
+     "failingOp": "renameSync(roster.json.tmp -> roster.json)",
+     "syncOutcome": "completed:synced imported=0",
+     "swallowed": true,
+     "state": {
+      "config": "rewritten",
+      "tmpLitter": true,
+      "rosterJson": "absent",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     }
+    },
+    {
+     "k": 4,
+     "failingOp": "mkdirSync(2026-07-04T12-00-00-000Z)",
+     "syncOutcome": "errored:injected fs failure at op 4: mkdirSync(2026-07-04T12-00-00-0",
+     "swallowed": false,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": []
+     }
+    },
+    {
+     "k": 5,
+     "failingOp": "writeFileSync(original)",
+     "syncOutcome": "errored:injected fs failure at op 5: writeFileSync(original)",
+     "swallowed": false,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "absent",
+        "original": "absent"
+       }
+      ]
+     }
+    },
+    {
+     "k": 6,
+     "failingOp": "writeFileSync(manifest.json)",
+     "syncOutcome": "errored:injected fs failure at op 6: writeFileSync(manifest.json)",
+     "swallowed": false,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "absent",
+        "original": "C0"
+       }
+      ]
+     }
+    },
+    {
+     "k": 7,
+     "failingOp": "writeFileSync(latest)",
+     "syncOutcome": "errored:injected fs failure at op 7: writeFileSync(latest)",
+     "swallowed": false,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     }
+    },
+    {
+     "k": 8,
+     "failingOp": "writeFileSync(.claude.json.roster-tmp)",
+     "syncOutcome": "errored:injected fs failure at op 8: writeFileSync(.claude.json.rost",
+     "swallowed": false,
+     "state": {
+      "config": "C0",
+      "tmpLitter": false,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     }
+    },
+    {
+     "k": 9,
+     "failingOp": "renameSync(.claude.json.roster-tmp -> .claude.json)",
+     "syncOutcome": "errored:injected fs failure at op 9: renameSync(.claude.json.roster-",
+     "swallowed": false,
+     "state": {
+      "config": "C0",
+      "tmpLitter": true,
+      "rosterJson": "has-imported-server",
+      "backups": [
+       {
+        "dir": "2026-07-04T12-00-00-000Z",
+        "manifest": "valid",
+        "original": "C0"
+       }
+      ]
+     }
+    }
+   ],
+   "ejectOps": [
+    "mkdirSync(d2-ej-count-24)",
+    "writeFileSync(.claude.json.roster-tmp)",
+    "renameSync(.claude.json.roster-tmp -> .claude.json)",
+    "renameSync(claude-code -> claude-code-ejected-2026-07-04T19-49-53-757Z)"
+   ],
+   "ejectWindows": [
+    {
+     "k": 1,
+     "killedInsteadOf": "mkdirSync(d2-ej-count-24)",
+     "afterCrash": "roster-state",
+     "eraArchived": false,
+     "reEject": "restored",
+     "endsAtC0": true
+    },
+    {
+     "k": 2,
+     "killedInsteadOf": "writeFileSync(.claude.json.roster-tmp)",
+     "afterCrash": "roster-state",
+     "eraArchived": false,
+     "reEject": "restored",
+     "endsAtC0": true
+    },
+    {
+     "k": 3,
+     "killedInsteadOf": "renameSync(.claude.json.roster-tmp -> .claude.json)",
+     "afterCrash": "roster-state",
+     "eraArchived": false,
+     "reEject": "restored",
+     "endsAtC0": true
+    },
+    {
+     "k": 4,
+     "killedInsteadOf": "renameSync(claude-code -> claude-code-ejected-2026-07-04T19-49-53-757Z)",
+     "afterCrash": "C0(restored)",
+     "eraArchived": false,
+     "reEject": "refused-modified",
+     "endsAtC0": true
+    }
+   ]
+  },
+  "e": {
+   "e1": {
+    "actions": [
+     "synced",
+     "synced",
+     "synced",
+     "synced"
+    ],
+    "backupDirCount": 4,
+    "finalConfig": "[]\n",
+    "everBecomesAlreadySynced": false
+   },
+   "e2": {
+    "syncedStateContainsComments": false,
+    "syncedState": "{\n  \"mcpServers\": {\n    \"roster\": {\n      \"command\": \"roster\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  }\n}\n",
+    "eject": "restored",
+    "restoredBytesIdentical": true
+   }
+  }
+ },
+ "summary": {
+  "expA_cases": 100,
+  "expA_byteIdentical": 100,
+  "expA_syncActions": {
+   "synced": 90,
+   "THREW": 6,
+   "already-synced": 4
+  },
+  "expA_ejectActions": {
+   "restored": 90,
+   "no-backup": 10
+  },
+  "expB_ops": 420,
+  "expB_violations": 0,
+  "expD_killWindows": 18,
+  "expD_unrecoverable": 0,
+  "expD_fsErrorsSwallowed": [
+   1,
+   2,
+   3
+  ]
+ }
+}

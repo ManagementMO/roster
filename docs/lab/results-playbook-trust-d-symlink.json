@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-04T19:54:40.060Z",
+  "summary": {
+    "setup": [
+      "created: symlinked-dir → external skill dir",
+      "created: real dir with symlinked SKILL.md",
+      "created: self-referential loop in resources/",
+      "created: dangling symlink child"
+    ],
+    "threw": false,
+    "error": null,
+    "scanMs": 3.1,
+    "hang": false,
+    "indexedSlugs": [
+      "loop-skill",
+      "real-dir-symlinked-md",
+      "real-skill"
+    ],
+    "indexedCount": 3,
+    "symlinkedDirSkipped": true,
+    "danglingSkipped": true,
+    "realDirWithSymlinkedMdIndexed": true,
+    "loopSkillResources": [
+      "refs/keep.md",
+      "refs/self"
+    ],
+    "loopSkillDidNotRecurseIntoSymlink": true,
+    "verdict": "silent-and-safe (no throw, no hang)"
+  }
+}

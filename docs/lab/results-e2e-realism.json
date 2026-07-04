@@ -1,0 +1,2257 @@
+{
+  "meta": {
+    "startedAt": "2026-07-04T20:02:36.751Z",
+    "node": "v22.22.3",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "design": "40-call session, five mode, real npx fs+memory backends, real MiniLM need vectors, file SQLite. Mix: 25 well-phrased (needs.mjs phrasings) / 7 vague / 2 wrong-args-then-corrected pairs (4 calls) / 4 genuine failures (3 bad-args + 1 blocking-IO timeout that doubles as the Sixth Man probe). Deviation from serve.ts: embedder pre-warmed deterministically (serve warms it lazily in background); same warmup code path otherwise (ensureEmbeddingModel + document-kind backfill).",
+    "finishedAt": "2026-07-04T20:04:10.792Z"
+  },
+  "boot": {
+    "bootMs": 2570,
+    "tools": 23,
+    "skills": 0,
+    "surface": [
+      "draft",
+      "call"
+    ],
+    "maintenanceAtBoot": {
+      "ran": true,
+      "oats": {
+        "adjusted": 0,
+        "skipped": 0
+      }
+    },
+    "serverVersions": {
+      "fsDirect": {
+        "name": "secure-filesystem-server",
+        "version": "0.2.0"
+      },
+      "memDirect": {
+        "name": "memory-server",
+        "version": "0.6.3"
+      }
+    },
+    "fsPid": 9437
+  },
+  "perCall": [
+    {
+      "i": 1,
+      "kind": "W",
+      "need": "show me what's inside config.yaml",
+      "newDraft": true,
+      "draftId": "d1",
+      "draftMs": 5,
+      "cosSpan": 0.2851,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__list_allowed_directories",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "fs__read_file"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 3,
+      "threw": null,
+      "db": {
+        "id": 1,
+        "class": "success",
+        "latencyMs": 3,
+        "needHash": "5b7459f138cac845a5fcbf3002948b33c214407653ba61b33374d456a2507927",
+        "argsHash": "a3de00ee78b8",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 2,
+      "kind": "W",
+      "need": "remember that the user prefers dark mode",
+      "newDraft": true,
+      "draftId": "d2",
+      "draftMs": 1,
+      "cosSpan": 0.1857,
+      "denseGoverned": true,
+      "top5": [
+        "fs__list_allowed_directories",
+        "fs__write_file",
+        "memory__open_nodes",
+        "memory__read_graph",
+        "fs__read_text_file"
+      ],
+      "tool": "memory__create_entities",
+      "rankInDraft": null,
+      "clientMs": 4,
+      "threw": null,
+      "db": {
+        "id": 2,
+        "class": "success",
+        "latencyMs": 3,
+        "needHash": "c4a27571d95f8eb205dcde62b8d0a2a68fee2a920f1aa6bcd534b648e6c9f7f3",
+        "argsHash": "1e1720e5a823",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 3,
+      "kind": "W",
+      "need": "make a folder for the build artifacts",
+      "newDraft": true,
+      "draftId": "d3",
+      "draftMs": 2,
+      "cosSpan": 0.5365,
+      "denseGoverned": true,
+      "top5": [
+        "fs__create_directory",
+        "fs__edit_file",
+        "fs__search_files",
+        "fs__directory_tree",
+        "fs__list_directory"
+      ],
+      "tool": "fs__create_directory",
+      "rankInDraft": 1,
+      "clientMs": 3,
+      "threw": null,
+      "db": {
+        "id": 3,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "3b7459b187312e0febdfc0bb96bc7fbf0d0545fa333c30bcf8f9a8bd21e6ea78",
+        "argsHash": "297f0e971152",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 4,
+      "kind": "V",
+      "need": "save this for later",
+      "newDraft": true,
+      "draftId": "d4",
+      "draftMs": 1,
+      "cosSpan": 0.1718,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__write_file",
+        "fs__list_directory",
+        "memory__add_observations",
+        "fs__list_directory_with_sizes"
+      ],
+      "tool": "fs__get_file_info",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 4,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "90e5326099b3cbff406cffa4f0a0dde90dfe80bf145bf3b8c7a64122f544aaff",
+        "argsHash": "a3de00ee78b8",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 5,
+      "kind": "W",
+      "need": "find every markdown file in the project",
+      "newDraft": true,
+      "draftId": "d5",
+      "draftMs": 1,
+      "cosSpan": 0.4299,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory",
+        "fs__edit_file",
+        "fs__list_directory_with_sizes",
+        "fs__read_text_file"
+      ],
+      "tool": "fs__search_files",
+      "rankInDraft": null,
+      "clientMs": 5,
+      "threw": null,
+      "db": {
+        "id": 5,
+        "class": "success",
+        "latencyMs": 4,
+        "needHash": "4f55ad8a3e77bc67215e1216353169d73b927da7621a448e652575298ff45c12",
+        "argsHash": "f9a99a18444b",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 6,
+      "kind": "W",
+      "need": "what do we already know about this person",
+      "newDraft": true,
+      "draftId": "d6",
+      "draftMs": 2,
+      "cosSpan": 0.2554,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "memory__add_observations",
+        "memory__create_relations",
+        "memory__create_entities",
+        "fs__list_directory"
+      ],
+      "tool": "memory__search_nodes",
+      "rankInDraft": null,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 6,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "d7582ffd80d484ad1f9677dc5ec9f808ccc144b321d57870ecd025e7e1d51a86",
+        "argsHash": "ff87059ebecf",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 7,
+      "kind": "R",
+      "need": "show me what's inside config.yaml",
+      "newDraft": true,
+      "draftId": "d7",
+      "draftMs": 1,
+      "cosSpan": 0.2851,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__list_allowed_directories",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "fs__read_file"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 7,
+        "class": "tool_fail:other",
+        "latencyMs": 1,
+        "needHash": "5b7459f138cac845a5fcbf3002948b33c214407653ba61b33374d456a2507927",
+        "argsHash": "025b17a9201c",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "typo'd filename → isError"
+    },
+    {
+      "i": 8,
+      "kind": "R",
+      "need": "show me what's inside config.yaml",
+      "newDraft": false,
+      "draftId": "d7",
+      "draftMs": null,
+      "cosSpan": 0.2851,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__list_allowed_directories",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "fs__read_file"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 8,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "5b7459f138cac845a5fcbf3002948b33c214407653ba61b33374d456a2507927",
+        "argsHash": "a3de00ee78b8",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "corrected retry, same draft → prior row must go soft_fail"
+    },
+    {
+      "i": 9,
+      "kind": "W",
+      "need": "save a fact about the user so future sessions can recall it",
+      "newDraft": true,
+      "draftId": "d8",
+      "draftMs": 3,
+      "cosSpan": 0.263,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "memory__delete_observations",
+        "fs__write_file",
+        "memory__read_graph",
+        "memory__add_observations"
+      ],
+      "tool": "memory__create_entities",
+      "rankInDraft": null,
+      "clientMs": 3,
+      "threw": null,
+      "db": {
+        "id": 9,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "82484976cb992497696b2d858dc0f067eba354b08057f275e8bf3c460f39da7f",
+        "argsHash": "239fc443a5be",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 10,
+      "kind": "W",
+      "need": "rename report.txt to final-report.txt",
+      "newDraft": true,
+      "draftId": "d9",
+      "draftMs": 1,
+      "cosSpan": 0.3516,
+      "denseGoverned": true,
+      "top5": [
+        "fs__move_file",
+        "fs__read_text_file",
+        "fs__write_file",
+        "fs__read_file",
+        "fs__edit_file"
+      ],
+      "tool": "fs__move_file",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 10,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "b8960da33096e7a39ad554fbd62470726c6bb732aa329c566b19c0401d6e355f",
+        "argsHash": "faccfeed9534",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 11,
+      "kind": "F",
+      "need": "show me what's inside config.yaml",
+      "newDraft": true,
+      "draftId": "d10",
+      "draftMs": 1,
+      "cosSpan": 0.2851,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__list_allowed_directories",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "fs__read_file"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 11,
+        "class": "tool_fail:other",
+        "latencyMs": 1,
+        "needHash": "5b7459f138cac845a5fcbf3002948b33c214407653ba61b33374d456a2507927",
+        "argsHash": "f1e315a56076",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "outside sandbox → isError, stays failed"
+    },
+    {
+      "i": 12,
+      "kind": "W",
+      "need": "link these two concepts together in the knowledge base",
+      "newDraft": true,
+      "draftId": "d11",
+      "draftMs": 1,
+      "cosSpan": 0.4844,
+      "denseGoverned": true,
+      "top5": [
+        "memory__delete_entities",
+        "memory__create_entities",
+        "memory__create_relations",
+        "memory__search_nodes",
+        "memory__delete_observations"
+      ],
+      "tool": "memory__create_relations",
+      "rankInDraft": 3,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 12,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "0ad15657c8af5e3857c61f2ccd2b87046aef7301f9d28d3c36fe43f195fe3f7d",
+        "argsHash": "98067246ecb5",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 13,
+      "kind": "W",
+      "need": "how big is that log file",
+      "newDraft": true,
+      "draftId": "d12",
+      "draftMs": 1,
+      "cosSpan": 0.4292,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory_with_sizes",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__list_allowed_directories"
+      ],
+      "tool": "fs__get_file_info",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 13,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "4a8062396d0cf1270025f87d8d8ac22d852976bb1da6686840e4e687fcf4cd28",
+        "argsHash": "144ef38fc77e",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 14,
+      "kind": "V",
+      "need": "note this down",
+      "newDraft": true,
+      "draftId": "d13",
+      "draftMs": 2,
+      "cosSpan": 0.2067,
+      "denseGoverned": true,
+      "top5": [
+        "memory__read_graph",
+        "memory__delete_observations",
+        "memory__add_observations",
+        "fs__get_file_info",
+        "fs__list_allowed_directories"
+      ],
+      "tool": "memory__read_graph",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 14,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "bc4c2bcd9869183dc9fc37040aad72cd21b4dbf0a35cd8c2eb15f746a4567704",
+        "argsHash": "44136fa355b3",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 15,
+      "kind": "W",
+      "need": "append a line to my notes file",
+      "newDraft": true,
+      "draftId": "d14",
+      "draftMs": 1,
+      "cosSpan": 0.4283,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__read_text_file",
+        "fs__write_file",
+        "fs__read_file",
+        "memory__add_observations"
+      ],
+      "tool": "fs__edit_file",
+      "rankInDraft": 1,
+      "clientMs": 3,
+      "threw": null,
+      "db": {
+        "id": 15,
+        "class": "success",
+        "latencyMs": 3,
+        "needHash": "aef0b3f80ce0bca327c769a7d80fcdffb6b7cab400c81b6c40b5132360fb3316",
+        "argsHash": "d6438714690f",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 16,
+      "kind": "W",
+      "need": "Persist the following durable preference so that any future conversation can retrieve it without the user restating it: the user's timezone is America/Toronto",
+      "newDraft": true,
+      "draftId": "d15",
+      "draftMs": 4,
+      "cosSpan": 0.2676,
+      "denseGoverned": true,
+      "top5": [
+        "memory__delete_observations",
+        "fs__write_file",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "memory__delete_relations"
+      ],
+      "tool": "memory__add_observations",
+      "rankInDraft": null,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 16,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "95aafb7f6465e66b569381d6ff0ff7a7fed8a29c9d0a88dcf744bf9a6eedf555",
+        "argsHash": "fb3c8d974d08",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 17,
+      "kind": "W",
+      "need": "which directories am i allowed to touch",
+      "newDraft": true,
+      "draftId": "d16",
+      "draftMs": 2,
+      "cosSpan": 0.574,
+      "denseGoverned": true,
+      "top5": [
+        "fs__list_allowed_directories",
+        "fs__directory_tree",
+        "fs__search_files",
+        "fs__create_directory",
+        "fs__list_directory"
+      ],
+      "tool": "fs__list_allowed_directories",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 17,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "c85b94850c121b0e844b41156e5b7e8588c75770087ac5789b250585bf40f4d3",
+        "argsHash": "44136fa355b3",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 18,
+      "kind": "V",
+      "need": "check what's going on",
+      "newDraft": true,
+      "draftId": "d17",
+      "draftMs": 1,
+      "cosSpan": 0.169,
+      "denseGoverned": true,
+      "top5": [
+        "memory__search_nodes",
+        "memory__read_graph",
+        "memory__add_observations",
+        "memory__delete_observations",
+        "fs__get_file_info"
+      ],
+      "tool": "memory__search_nodes",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 18,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "4e7958436ed779bf6771528f54cd3ee9e105652894dd4f019d4df0e47ce6367c",
+        "argsHash": "ff87059ebecf",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 19,
+      "kind": "W",
+      "need": "forget everything we stored about acme corp",
+      "newDraft": true,
+      "draftId": "d18",
+      "draftMs": 2,
+      "cosSpan": 0.2704,
+      "denseGoverned": true,
+      "top5": [
+        "memory__delete_entities",
+        "fs__get_file_info",
+        "memory__delete_relations",
+        "memory__delete_observations",
+        "memory__create_entities"
+      ],
+      "tool": "memory__delete_entities",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 19,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "2f858bca0804d6d2bbd0e4ba262e2984726c822531b7fba6413e786428a80acd",
+        "argsHash": "05bf9dfbbac8",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 20,
+      "kind": "W",
+      "need": "show me what's inside config.yaml",
+      "newDraft": true,
+      "draftId": "d19",
+      "draftMs": 2,
+      "cosSpan": 0.2851,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__list_allowed_directories",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "fs__read_file"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 20,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "5b7459f138cac845a5fcbf3002948b33c214407653ba61b33374d456a2507927",
+        "argsHash": "a3de00ee78b8",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 21,
+      "kind": "W",
+      "need": "what do we already know about this person",
+      "newDraft": true,
+      "draftId": "d20",
+      "draftMs": 2,
+      "cosSpan": 0.2554,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "memory__add_observations",
+        "memory__create_relations",
+        "memory__create_entities",
+        "fs__list_directory"
+      ],
+      "tool": "memory__search_nodes",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 21,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "d7582ffd80d484ad1f9677dc5ec9f808ccc144b321d57870ecd025e7e1d51a86",
+        "argsHash": "ff87059ebecf",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 22,
+      "kind": "W",
+      "need": "find every markdown file in the project",
+      "newDraft": true,
+      "draftId": "d21",
+      "draftMs": 2,
+      "cosSpan": 0.4299,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory",
+        "fs__edit_file",
+        "fs__list_directory_with_sizes",
+        "fs__read_text_file"
+      ],
+      "tool": "fs__search_files",
+      "rankInDraft": null,
+      "clientMs": 3,
+      "threw": null,
+      "db": {
+        "id": 22,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "4f55ad8a3e77bc67215e1216353169d73b927da7621a448e652575298ff45c12",
+        "argsHash": "f9a99a18444b",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 23,
+      "kind": "F",
+      "need": "forget everything we stored about acme corp",
+      "newDraft": true,
+      "draftId": "d22",
+      "draftMs": 1,
+      "cosSpan": 0.2704,
+      "denseGoverned": true,
+      "top5": [
+        "memory__delete_entities",
+        "fs__get_file_info",
+        "memory__delete_relations",
+        "memory__delete_observations",
+        "memory__create_entities"
+      ],
+      "tool": "memory__delete_entities",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 23,
+        "class": "tool_fail:schema",
+        "latencyMs": 1,
+        "needHash": "2f858bca0804d6d2bbd0e4ba262e2984726c822531b7fba6413e786428a80acd",
+        "argsHash": "515dd63958b0",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "bad args → backend protocol error (fidelity capture)"
+    },
+    {
+      "i": 24,
+      "kind": "V",
+      "need": "look at the user stuff",
+      "newDraft": true,
+      "draftId": "d23",
+      "draftMs": 2,
+      "cosSpan": 0.355,
+      "denseGoverned": true,
+      "top5": [
+        "memory__read_graph",
+        "fs__get_file_info",
+        "fs__read_text_file",
+        "fs__list_allowed_directories",
+        "fs__list_directory"
+      ],
+      "tool": "memory__read_graph",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 24,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "fbfba2a61f0b11af599e3c6aee180783e750319ac3f52dfe0b7bbc9be0cad8db",
+        "argsHash": "44136fa355b3",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 25,
+      "kind": "W",
+      "need": "how big is that log file",
+      "newDraft": true,
+      "draftId": "d24",
+      "draftMs": 3,
+      "cosSpan": 0.4292,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory_with_sizes",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__list_allowed_directories"
+      ],
+      "tool": "fs__get_file_info",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 25,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "4a8062396d0cf1270025f87d8d8ac22d852976bb1da6686840e4e687fcf4cd28",
+        "argsHash": "144ef38fc77e",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 26,
+      "kind": "V",
+      "need": "dig up the earlier stuff",
+      "newDraft": true,
+      "draftId": "d25",
+      "draftMs": 1,
+      "cosSpan": 0.3889,
+      "denseGoverned": true,
+      "top5": [
+        "memory__add_observations",
+        "fs__get_file_info",
+        "memory__delete_observations",
+        "memory__read_graph",
+        "memory__delete_entities"
+      ],
+      "tool": "memory__add_observations",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 26,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "bb5073e61daa0e385d882a56f3375ccb461bdf5970e7d59413b0bb37d44dfb2a",
+        "argsHash": "b145bb55f4d5",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 27,
+      "kind": "R",
+      "need": "append a line to my notes file",
+      "newDraft": true,
+      "draftId": "d26",
+      "draftMs": 1,
+      "cosSpan": 0.4283,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__read_text_file",
+        "fs__write_file",
+        "fs__read_file",
+        "memory__add_observations"
+      ],
+      "tool": "fs__edit_file",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 27,
+        "class": "tool_fail:other",
+        "latencyMs": 1,
+        "needHash": "aef0b3f80ce0bca327c769a7d80fcdffb6b7cab400c81b6c40b5132360fb3316",
+        "argsHash": "029d79514814",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "oldText not present → isError"
+    },
+    {
+      "i": 28,
+      "kind": "R",
+      "need": "append a line to my notes file",
+      "newDraft": false,
+      "draftId": "d26",
+      "draftMs": null,
+      "cosSpan": 0.4283,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__read_text_file",
+        "fs__write_file",
+        "fs__read_file",
+        "memory__add_observations"
+      ],
+      "tool": "fs__edit_file",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 28,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "aef0b3f80ce0bca327c769a7d80fcdffb6b7cab400c81b6c40b5132360fb3316",
+        "argsHash": "5748138f28c1",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 29,
+      "kind": "F",
+      "need": "append a line to my notes file",
+      "newDraft": true,
+      "draftId": "d27",
+      "draftMs": 2,
+      "cosSpan": 0.4283,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__read_text_file",
+        "fs__write_file",
+        "fs__read_file",
+        "memory__add_observations"
+      ],
+      "tool": "fs__write_file",
+      "rankInDraft": 3,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 29,
+        "class": "tool_fail:other",
+        "latencyMs": 2,
+        "needHash": "aef0b3f80ce0bca327c769a7d80fcdffb6b7cab400c81b6c40b5132360fb3316",
+        "argsHash": "b9e2a698c66e",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "target is a directory → isError"
+    },
+    {
+      "i": 30,
+      "kind": "V",
+      "need": "tidy up",
+      "newDraft": true,
+      "draftId": "d28",
+      "draftMs": 1,
+      "cosSpan": 0.2861,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "memory__delete_relations",
+        "memory__delete_entities",
+        "memory__delete_observations",
+        "fs__create_directory"
+      ],
+      "tool": "fs__create_directory",
+      "rankInDraft": 5,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 30,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "ac589c1e9b7a9797c1b8aba855aafc38bed8d9226707cf404c49c71b2a2a9ec3",
+        "argsHash": "414ba576835b",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 31,
+      "kind": "W",
+      "need": "remember that the user prefers dark mode",
+      "newDraft": true,
+      "draftId": "d29",
+      "draftMs": 1,
+      "cosSpan": 0.1857,
+      "denseGoverned": true,
+      "top5": [
+        "fs__list_allowed_directories",
+        "fs__write_file",
+        "memory__open_nodes",
+        "memory__read_graph",
+        "fs__read_text_file"
+      ],
+      "tool": "memory__add_observations",
+      "rankInDraft": null,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 31,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "c4a27571d95f8eb205dcde62b8d0a2a68fee2a920f1aa6bcd534b648e6c9f7f3",
+        "argsHash": "f03683ec27f0",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 32,
+      "kind": "W",
+      "need": "show me what's inside config.yaml",
+      "newDraft": true,
+      "draftId": "d30",
+      "draftMs": 1,
+      "cosSpan": 0.2851,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__list_allowed_directories",
+        "fs__get_file_info",
+        "memory__read_graph",
+        "fs__read_file"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 32,
+        "class": "success",
+        "latencyMs": 0,
+        "needHash": "5b7459f138cac845a5fcbf3002948b33c214407653ba61b33374d456a2507927",
+        "argsHash": "a3de00ee78b8",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 33,
+      "kind": "W",
+      "need": "what do we already know about this person",
+      "newDraft": true,
+      "draftId": "d31",
+      "draftMs": 2,
+      "cosSpan": 0.2554,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "memory__add_observations",
+        "memory__create_relations",
+        "memory__create_entities",
+        "fs__list_directory"
+      ],
+      "tool": "memory__search_nodes",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 33,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "d7582ffd80d484ad1f9677dc5ec9f808ccc144b321d57870ecd025e7e1d51a86",
+        "argsHash": "ff87059ebecf",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 34,
+      "kind": "W",
+      "need": "find every markdown file in the project",
+      "newDraft": true,
+      "draftId": "d32",
+      "draftMs": 2,
+      "cosSpan": 0.4299,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory",
+        "fs__edit_file",
+        "fs__list_directory_with_sizes",
+        "fs__read_text_file"
+      ],
+      "tool": "fs__search_files",
+      "rankInDraft": null,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 34,
+        "class": "success",
+        "latencyMs": 2,
+        "needHash": "4f55ad8a3e77bc67215e1216353169d73b927da7621a448e652575298ff45c12",
+        "argsHash": "f9a99a18444b",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 35,
+      "kind": "V",
+      "need": "what's in there",
+      "newDraft": true,
+      "draftId": "d33",
+      "draftMs": 1,
+      "cosSpan": 0.2812,
+      "denseGoverned": true,
+      "top5": [
+        "memory__add_observations",
+        "fs__list_allowed_directories",
+        "memory__create_relations",
+        "memory__open_nodes",
+        "memory__delete_observations"
+      ],
+      "tool": "memory__add_observations",
+      "rankInDraft": 1,
+      "clientMs": 2,
+      "threw": null,
+      "db": {
+        "id": 35,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "d5a30fe67d440c071bf3c3da8ccc691b50e4a64ee717de8351dda1692b101929",
+        "argsHash": "f40003034843",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 36,
+      "kind": "W",
+      "need": "how big is that log file",
+      "newDraft": true,
+      "draftId": "d34",
+      "draftMs": 1,
+      "cosSpan": 0.4292,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory_with_sizes",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__list_allowed_directories"
+      ],
+      "tool": "fs__get_file_info",
+      "rankInDraft": 1,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 36,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "4a8062396d0cf1270025f87d8d8ac22d852976bb1da6686840e4e687fcf4cd28",
+        "argsHash": "144ef38fc77e",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 37,
+      "kind": "SM",
+      "need": "read back everything we know about this project from the notes file and the knowledge graph",
+      "newDraft": true,
+      "draftId": "d35",
+      "draftMs": 2,
+      "cosSpan": 0.4729,
+      "denseGoverned": true,
+      "top5": [
+        "memory__read_graph",
+        "memory__delete_entities",
+        "memory__delete_observations",
+        "memory__delete_relations",
+        "memory__create_relations"
+      ],
+      "tool": "fs__read_text_file",
+      "rankInDraft": null,
+      "clientMs": 30053,
+      "threw": null,
+      "db": {
+        "id": 37,
+        "class": "tool_fail:timeout",
+        "latencyMs": 30034,
+        "needHash": "16c86a1e8c8fb6042943b7faca13678accd9228664e2109cb57d8ac9e7ee2ed6",
+        "argsHash": "c636cccddebc",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": true,
+      "note": "FIFO read blocks → real 30s backend timeout → Sixth Man window"
+    },
+    {
+      "i": 38,
+      "kind": "SM",
+      "need": "read back everything we know about this project from the notes file and the knowledge graph",
+      "newDraft": false,
+      "draftId": "d35",
+      "draftMs": null,
+      "cosSpan": 0.4729,
+      "denseGoverned": true,
+      "top5": [
+        "memory__read_graph",
+        "memory__delete_entities",
+        "memory__delete_observations",
+        "memory__delete_relations",
+        "memory__create_relations"
+      ],
+      "tool": "memory__read_graph",
+      "rankInDraft": 1,
+      "clientMs": 3,
+      "threw": null,
+      "db": {
+        "id": 38,
+        "class": "success",
+        "latencyMs": 3,
+        "needHash": "16c86a1e8c8fb6042943b7faca13678accd9228664e2109cb57d8ac9e7ee2ed6",
+        "argsHash": "44136fa355b3",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": "agent follows the suggested alternate (same draft)"
+    },
+    {
+      "i": 39,
+      "kind": "W",
+      "need": "link these two concepts together in the knowledge base",
+      "newDraft": true,
+      "draftId": "d36",
+      "draftMs": 7,
+      "cosSpan": 0.4844,
+      "denseGoverned": true,
+      "top5": [
+        "memory__delete_entities",
+        "memory__create_entities",
+        "memory__create_relations",
+        "memory__search_nodes",
+        "memory__delete_observations"
+      ],
+      "tool": "memory__create_relations",
+      "rankInDraft": 3,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 39,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "0ad15657c8af5e3857c61f2ccd2b87046aef7301f9d28d3c36fe43f195fe3f7d",
+        "argsHash": "a22bcf2f0edd",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    },
+    {
+      "i": 40,
+      "kind": "W",
+      "need": "what do we already know about this person",
+      "newDraft": true,
+      "draftId": "d37",
+      "draftMs": 2,
+      "cosSpan": 0.2554,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "memory__add_observations",
+        "memory__create_relations",
+        "memory__create_entities",
+        "fs__list_directory"
+      ],
+      "tool": "memory__search_nodes",
+      "rankInDraft": null,
+      "clientMs": 1,
+      "threw": null,
+      "db": {
+        "id": 40,
+        "class": "success",
+        "latencyMs": 1,
+        "needHash": "d7582ffd80d484ad1f9677dc5ec9f808ccc144b321d57870ecd025e7e1d51a86",
+        "argsHash": "ff87059ebecf",
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      },
+      "needHashMatchesDraft": true,
+      "suggestionFired": false,
+      "note": null
+    }
+  ],
+  "fidelity": {
+    "captures": {
+      "fiveSuccess": {
+        "content": [
+          {
+            "type": "text",
+            "text": "app:\n  theme: dark\n  version: 3\n"
+          }
+        ],
+        "structuredContent": {
+          "content": "app:\n  theme: dark\n  version: 3\n"
+        }
+      },
+      "fiveIsError": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Access denied - path outside allowed directories: /etc/hosts not in /Users/mo/Downloads/roster/docs/lab/tmp-e2e-realism/fs-sandbox-Oux2Uc"
+          }
+        ],
+        "isError": true
+      },
+      "fiveProtocolError": {
+        "res": {
+          "content": [
+            {
+              "type": "text",
+              "text": "MCP error -32602: Input validation error: Invalid arguments for tool delete_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entityNames\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+            }
+          ],
+          "isError": true
+        },
+        "threw": null
+      }
+    },
+    "success": {
+      "direct": {
+        "content": [
+          {
+            "type": "text",
+            "text": "app:\n  theme: dark\n  version: 3\n"
+          }
+        ],
+        "structuredContent": {
+          "content": "app:\n  theme: dark\n  version: 3\n"
+        }
+      },
+      "transparent": {
+        "content": [
+          {
+            "type": "text",
+            "text": "app:\n  theme: dark\n  version: 3\n"
+          }
+        ],
+        "structuredContent": {
+          "content": "app:\n  theme: dark\n  version: 3\n"
+        }
+      },
+      "five": {
+        "content": [
+          {
+            "type": "text",
+            "text": "app:\n  theme: dark\n  version: 3\n"
+          }
+        ],
+        "structuredContent": {
+          "content": "app:\n  theme: dark\n  version: 3\n"
+        }
+      },
+      "directBytes": 144,
+      "transparentEqualsDirect": true,
+      "fiveEqualsDirect": true
+    },
+    "isError": {
+      "direct": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Access denied - path outside allowed directories: /etc/hosts not in /Users/mo/Downloads/roster/docs/lab/tmp-e2e-realism/fs-sandbox-Oux2Uc"
+          }
+        ],
+        "isError": true
+      },
+      "transparent": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Access denied - path outside allowed directories: /etc/hosts not in /Users/mo/Downloads/roster/docs/lab/tmp-e2e-realism/fs-sandbox-Oux2Uc"
+          }
+        ],
+        "isError": true
+      },
+      "five": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Access denied - path outside allowed directories: /etc/hosts not in /Users/mo/Downloads/roster/docs/lab/tmp-e2e-realism/fs-sandbox-Oux2Uc"
+          }
+        ],
+        "isError": true
+      },
+      "transparentEqualsDirect": true,
+      "fiveEqualsDirect": true
+    },
+    "protocolError": {
+      "direct": null,
+      "transparent": null,
+      "five": {
+        "res": {
+          "content": [
+            {
+              "type": "text",
+              "text": "MCP error -32602: Input validation error: Invalid arguments for tool delete_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entityNames\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+            }
+          ],
+          "isError": true
+        },
+        "threw": null
+      },
+      "codePreserved": true,
+      "messageComparison": {}
+    }
+  },
+  "sixthMan": {
+    "fired": 1,
+    "detail": {
+      "atCall": 37,
+      "failedTool": "fs__read_text_file",
+      "outcomeClass": "tool_fail:timeout",
+      "suggestion": {
+        "tool": "memory__read_graph",
+        "reason": "the bench suggests memory__read_graph for the same need (\"read back everything we know about this project from the notes file and the knowledge graph\")",
+        "args_compatible": true
+      },
+      "wellFormedId": true,
+      "existsInRoster": true,
+      "crossSource": true,
+      "sideEffects": {
+        "before": {
+          "memoryJson": "24d8ef33a114dd55",
+          "sandbox": "1b9c29c496361294"
+        },
+        "after": {
+          "memoryJson": "24d8ef33a114dd55",
+          "sandbox": "1b9c29c496361294"
+        },
+        "unchanged": true
+      },
+      "outcomeRowsDuringFailingCall": 1,
+      "suggestionRow": {
+        "id": 1,
+        "ts": 1783195389511,
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90",
+        "failed_capability": "fs__read_text_file",
+        "suggested_capability": "memory__read_graph",
+        "taken": 0
+      },
+      "baseContentPreserved": 2,
+      "fullResponse": {
+        "content": [
+          {
+            "type": "text",
+            "text": "call timed out"
+          },
+          {
+            "type": "text",
+            "text": "{\"_roster\":{\"suggested_alternate\":{\"tool\":\"memory__read_graph\",\"reason\":\"the bench suggests memory__read_graph for the same need (\\\"read back everything we know about this project from the notes file and the knowledge graph\\\")\",\"args_compatible\":true}}}"
+          }
+        ],
+        "isError": true
+      },
+      "takenAfterFollow": {
+        "id": 1,
+        "failed_capability": "fs__read_text_file",
+        "suggested_capability": "memory__read_graph",
+        "taken": 1,
+        "session": "197a9e65-28a2-436c-bb0e-e48146f86d90"
+      }
+    }
+  },
+  "maintenanceMidSession": {
+    "afterCall": 20,
+    "oats": {
+      "adjusted": 0,
+      "skipped": 23
+    },
+    "ms": 2,
+    "ratings": [
+      {
+        "capability": "memory__create_entities",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193
+      },
+      {
+        "capability": "fs__get_file_info",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193
+      },
+      {
+        "capability": "memory__search_nodes",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193
+      },
+      {
+        "capability": "fs__read_text_file",
+        "n": 3,
+        "successes": 2,
+        "wilson_lb": 0.20765495512648788
+      },
+      {
+        "capability": "fs__create_directory",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "fs__search_files",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "fs__move_file",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "memory__create_relations",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "memory__read_graph",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "fs__edit_file",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "memory__add_observations",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "fs__list_allowed_directories",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      },
+      {
+        "capability": "memory__delete_entities",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294
+      }
+    ],
+    "note": "production never runs this mid-session (runMaintenanceIfDue is debounced ~20h and only called at serve boot); forced here per charter"
+  },
+  "suggestionRows": [
+    {
+      "id": 1,
+      "ts": 1783195389511,
+      "session": "197a9e65-28a2-436c-bb0e-e48146f86d90",
+      "failed_capability": "fs__read_text_file",
+      "suggested_capability": "memory__read_graph",
+      "taken": 1
+    }
+  ],
+  "probes": {
+    "unknownDraftId": {
+      "tool": "memory__search_nodes",
+      "draftId": "d999",
+      "rowAdded": 1,
+      "needHash": null,
+      "class": "success",
+      "strictNullAttribution": true
+    },
+    "hallucinatedTool": {
+      "threw": {
+        "code": -32602,
+        "message": "MCP error -32602: MCP error -32602: Unknown capability: gh__create_issue"
+      },
+      "outcomeRowsAdded": 0
+    },
+    "falseSoftFail": {
+      "call43": {
+        "class": "success",
+        "softFailBefore": 0
+      },
+      "call44": {
+        "class": "success",
+        "needHash": "950be0e075077167b6db540b2f11ba32ed654eaa6ea9c0c9502a4ef81b6952b7",
+        "fallbackAttributedToLastDraft": true
+      },
+      "call43SoftFailAfter44": 1,
+      "verdict": "legitimate success RETRO-MARKED soft_fail by benign different-args reuse"
+    }
+  },
+  "maintenanceNightly": {
+    "oats": {
+      "adjusted": 4,
+      "skipped": 19
+    },
+    "adjustedTools": [
+      "fs__get_file_info",
+      "fs__read_text_file",
+      "memory__add_observations",
+      "memory__search_nodes"
+    ],
+    "ratings": [
+      {
+        "capability": "fs__read_text_file",
+        "n": 6,
+        "successes": 4,
+        "wilson_lb": 0.2999883213415286,
+        "p50_ms": 1
+      },
+      {
+        "capability": "memory__search_nodes",
+        "n": 6,
+        "successes": 6,
+        "wilson_lb": 0.6096569663469354,
+        "p50_ms": 1
+      },
+      {
+        "capability": "fs__get_file_info",
+        "n": 4,
+        "successes": 4,
+        "wilson_lb": 0.5100999795960008,
+        "p50_ms": 1
+      },
+      {
+        "capability": "memory__add_observations",
+        "n": 4,
+        "successes": 4,
+        "wilson_lb": 0.5100999795960008,
+        "p50_ms": 1
+      },
+      {
+        "capability": "fs__search_files",
+        "n": 3,
+        "successes": 3,
+        "wilson_lb": 0.4384939195509822,
+        "p50_ms": 2
+      },
+      {
+        "capability": "memory__read_graph",
+        "n": 3,
+        "successes": 3,
+        "wilson_lb": 0.4384939195509822,
+        "p50_ms": 2
+      },
+      {
+        "capability": "memory__create_entities",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193,
+        "p50_ms": 1
+      },
+      {
+        "capability": "fs__create_directory",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193,
+        "p50_ms": 1
+      },
+      {
+        "capability": "memory__create_relations",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193,
+        "p50_ms": 1
+      },
+      {
+        "capability": "fs__edit_file",
+        "n": 2,
+        "successes": 2,
+        "wilson_lb": 0.3423719528896193,
+        "p50_ms": 1
+      },
+      {
+        "capability": "memory__delete_entities",
+        "n": 2,
+        "successes": 1,
+        "wilson_lb": 0.09452865480086611,
+        "p50_ms": 2
+      },
+      {
+        "capability": "fs__move_file",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294,
+        "p50_ms": 1
+      },
+      {
+        "capability": "fs__list_allowed_directories",
+        "n": 1,
+        "successes": 1,
+        "wilson_lb": 0.20654329147389294,
+        "p50_ms": 1
+      },
+      {
+        "capability": "fs__write_file",
+        "n": 1,
+        "successes": 0,
+        "wilson_lb": 0,
+        "p50_ms": null
+      }
+    ]
+  },
+  "day2": [
+    {
+      "need": "show me what's inside config.yaml",
+      "tool": "fs__read_text_file",
+      "generalization": false,
+      "day1Rank": null,
+      "day2Rank": 1,
+      "cosSpan": 0.7838,
+      "denseGoverned": true,
+      "top5": [
+        "fs__read_text_file",
+        "fs__edit_file",
+        "memory__add_observations",
+        "fs__list_allowed_directories",
+        "fs__get_file_info"
+      ]
+    },
+    {
+      "need": "remember that the user prefers dark mode",
+      "tool": "memory__add_observations",
+      "generalization": false,
+      "day1Rank": null,
+      "day2Rank": 1,
+      "cosSpan": 0.441,
+      "denseGoverned": true,
+      "top5": [
+        "memory__add_observations",
+        "fs__list_allowed_directories",
+        "fs__read_text_file",
+        "fs__write_file",
+        "memory__open_nodes"
+      ]
+    },
+    {
+      "need": "find every markdown file in the project",
+      "tool": "fs__search_files",
+      "generalization": false,
+      "day1Rank": null,
+      "day2Rank": null,
+      "cosSpan": 0.4428,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_directory",
+        "fs__edit_file",
+        "fs__read_text_file",
+        "fs__list_directory_with_sizes"
+      ]
+    },
+    {
+      "need": "what do we already know about this person",
+      "tool": "memory__search_nodes",
+      "generalization": false,
+      "day1Rank": null,
+      "day2Rank": 1,
+      "cosSpan": 0.8322,
+      "denseGoverned": true,
+      "top5": [
+        "memory__search_nodes",
+        "fs__get_file_info",
+        "fs__create_directory",
+        "memory__add_observations",
+        "fs__search_files"
+      ]
+    },
+    {
+      "need": "how big is that log file",
+      "tool": "fs__get_file_info",
+      "generalization": false,
+      "day1Rank": 1,
+      "day2Rank": 1,
+      "cosSpan": 0.9183,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "fs__list_allowed_directories",
+        "fs__list_directory_with_sizes",
+        "fs__read_multiple_files",
+        "fs__directory_tree"
+      ]
+    },
+    {
+      "need": "append a line to my notes file",
+      "tool": "fs__edit_file",
+      "generalization": false,
+      "day1Rank": 1,
+      "day2Rank": 1,
+      "cosSpan": 0.415,
+      "denseGoverned": true,
+      "top5": [
+        "fs__edit_file",
+        "fs__write_file",
+        "fs__read_file",
+        "fs__read_text_file",
+        "memory__add_observations"
+      ]
+    },
+    {
+      "need": "which directories am i allowed to touch",
+      "tool": "fs__list_allowed_directories",
+      "generalization": false,
+      "day1Rank": 1,
+      "day2Rank": 1,
+      "cosSpan": 0.5583,
+      "denseGoverned": true,
+      "top5": [
+        "fs__list_allowed_directories",
+        "fs__directory_tree",
+        "fs__search_files",
+        "fs__create_directory",
+        "fs__list_directory"
+      ]
+    },
+    {
+      "need": "link these two concepts together in the knowledge base",
+      "tool": "memory__create_relations",
+      "generalization": false,
+      "day1Rank": 3,
+      "day2Rank": 3,
+      "cosSpan": 0.5597,
+      "denseGoverned": true,
+      "top5": [
+        "memory__delete_entities",
+        "memory__create_entities",
+        "memory__create_relations",
+        "memory__delete_observations",
+        "memory__delete_relations"
+      ]
+    },
+    {
+      "need": "retrieve saved facts from earlier sessions",
+      "tool": "memory__search_nodes",
+      "generalization": true,
+      "day1Rank": null,
+      "day2Rank": null,
+      "cosSpan": 0.5076,
+      "denseGoverned": true,
+      "top5": [
+        "fs__get_file_info",
+        "memory__delete_observations",
+        "memory__add_observations",
+        "memory__delete_relations",
+        "memory__delete_entities"
+      ]
+    },
+    {
+      "need": "double-check the theme setting file",
+      "tool": "fs__read_text_file",
+      "generalization": true,
+      "day1Rank": null,
+      "day2Rank": 1,
+      "cosSpan": 0.4721,
+      "denseGoverned": true,
+      "top5": [
+        "fs__read_text_file",
+        "fs__get_file_info",
+        "fs__read_file",
+        "fs__create_directory",
+        "fs__write_file"
+      ]
+    }
+  ],
+  "killProbe": {
+    "killed": {
+      "pid": 9437,
+      "signal": "SIGKILL"
+    },
+    "immediateCall": {
+      "clientMs": 1,
+      "threw": null,
+      "isErrorResult": false,
+      "resultText": "app:\n  theme: dark\n  version: 3\n",
+      "class": "success",
+      "suggestionFired": false,
+      "fullResult": {
+        "content": [
+          {
+            "type": "text",
+            "text": "app:\n  theme: dark\n  version: 3\n"
+          }
+        ],
+        "structuredContent": {
+          "content": "app:\n  theme: dark\n  version: 3\n"
+        }
+      }
+    },
+    "delayedCall": {
+      "clientMs": 30010,
+      "threw": null,
+      "isErrorResult": true,
+      "resultText": "call timed out",
+      "class": "tool_fail:timeout",
+      "suggestionFired": false
+    },
+    "transparent": {
+      "code": -32603,
+      "message": "MCP error -32603: MCP error -32603: call timed out"
+    },
+    "direct": {
+      "code": null,
+      "message": "Not connected"
+    },
+    "comparison": {
+      "directCode": null,
+      "transparentCode": -32603,
+      "codePreserved": false
+    }
+  },
+  "attribution": {
+    "totalOutcomeRows": 45,
+    "distinctSessions": 1,
+    "sessionRowCount": 40,
+    "needHashMismatches": [],
+    "softFailRows": [
+      {
+        "id": 7,
+        "capability": "fs__read_text_file",
+        "class": "tool_fail:other"
+      },
+      {
+        "id": 8,
+        "capability": "fs__read_text_file",
+        "class": "success"
+      },
+      {
+        "id": 27,
+        "capability": "fs__edit_file",
+        "class": "tool_fail:other"
+      },
+      {
+        "id": 42,
+        "capability": "fs__read_text_file",
+        "class": "success"
+      },
+      {
+        "id": 43,
+        "capability": "fs__read_text_file",
+        "class": "success"
+      }
+    ],
+    "softFailOnSuccessRows": 3,
+    "classHistogram": {
+      "success": 38,
+      "tool_fail:other": 4,
+      "tool_fail:timeout": 2,
+      "tool_fail:schema": 1
+    }
+  },
+  "learning": {
+    "first10": {
+      "n": 10,
+      "inDraftRate": 0.3,
+      "meanRank": 1,
+      "mrr": 0.3
+    },
+    "last10": {
+      "n": 10,
+      "inDraftRate": 0.4,
+      "meanRank": 1.5,
+      "mrr": 0.333
+    },
+    "denseGovernedDrafts": 37,
+    "totalNewDrafts": 37,
+    "cosSpanStats": {
+      "min": 0.169,
+      "p50": 0.2851,
+      "max": 0.574
+    },
+    "repeatNeedTrajectories": [
+      {
+        "need": "show me what's inside config.yaml",
+        "ranks": [
+          {
+            "call": 1,
+            "tool": "fs__read_text_file",
+            "rank": null
+          },
+          {
+            "call": 7,
+            "tool": "fs__read_text_file",
+            "rank": null
+          },
+          {
+            "call": 11,
+            "tool": "fs__read_text_file",
+            "rank": null
+          },
+          {
+            "call": 20,
+            "tool": "fs__read_text_file",
+            "rank": null
+          },
+          {
+            "call": 32,
+            "tool": "fs__read_text_file",
+            "rank": null
+          }
+        ]
+      },
+      {
+        "need": "what do we already know about this person",
+        "ranks": [
+          {
+            "call": 6,
+            "tool": "memory__search_nodes",
+            "rank": null
+          },
+          {
+            "call": 21,
+            "tool": "memory__search_nodes",
+            "rank": null
+          },
+          {
+            "call": 33,
+            "tool": "memory__search_nodes",
+            "rank": null
+          },
+          {
+            "call": 40,
+            "tool": "memory__search_nodes",
+            "rank": null
+          }
+        ]
+      },
+      {
+        "need": "find every markdown file in the project",
+        "ranks": [
+          {
+            "call": 5,
+            "tool": "fs__search_files",
+            "rank": null
+          },
+          {
+            "call": 22,
+            "tool": "fs__search_files",
+            "rank": null
+          },
+          {
+            "call": 34,
+            "tool": "fs__search_files",
+            "rank": null
+          }
+        ]
+      },
+      {
+        "need": "how big is that log file",
+        "ranks": [
+          {
+            "call": 13,
+            "tool": "fs__get_file_info",
+            "rank": 1
+          },
+          {
+            "call": 25,
+            "tool": "fs__get_file_info",
+            "rank": 1
+          },
+          {
+            "call": 36,
+            "tool": "fs__get_file_info",
+            "rank": 1
+          }
+        ]
+      }
+    ],
+    "latency": {
+      "draftMs": {
+        "p50": 2,
+        "p95": 5
+      },
+      "callMs": {
+        "p50": 2,
+        "p95": 5
+      }
+    }
+  },
+  "followup": {
+    "startedAt": "2026-07-04T20:11:55.124Z",
+    "A1_wrapperKill": {
+      "wrapperPid": 17580,
+      "serverPid": 17593,
+      "treeAtBoot": [
+        {
+          "pid": 17593,
+          "cmd": "node /Users/mo/.npm/_npx/a3241bba59c344f5/node_modules/.bin/mcp-server-filesystem /Users/mo/Downloads/roster/d"
+        }
+      ],
+      "baseline": {
+        "ms": 3,
+        "class": "success",
+        "evidence": {
+          "outputSchemaViolation": false
+        },
+        "resultText": "alpha\n"
+      },
+      "callAfterKill1": {
+        "ms": 0,
+        "class": "hard_fail:transport",
+        "evidence": {
+          "transportError": true,
+          "errorText": "Not connected"
+        },
+        "resultText": null
+      },
+      "callAfterKill2": {
+        "ms": 0,
+        "class": "hard_fail:transport",
+        "evidence": {
+          "transportError": true,
+          "errorText": "Not connected"
+        },
+        "resultText": null
+      },
+      "survivorsAfterKill": [],
+      "serverLeaked": false
+    },
+    "A2_serverKill": {
+      "wrapperPid": 17606,
+      "serverPid": 17619,
+      "baseline": {
+        "ms": 2,
+        "class": "success",
+        "evidence": {
+          "outputSchemaViolation": false
+        },
+        "resultText": "alpha\n"
+      },
+      "callAfterKill1": {
+        "ms": 1,
+        "class": "hard_fail:transport",
+        "evidence": {
+          "transportError": true,
+          "errorText": "Not connected"
+        },
+        "resultText": null
+      },
+      "callAfterKill2": {
+        "ms": 0,
+        "class": "hard_fail:transport",
+        "evidence": {
+          "transportError": true,
+          "errorText": "Not connected"
+        },
+        "resultText": null
+      },
+      "survivorsAfterKill": [],
+      "sixthManEligible": true
+    },
+    "B_badArgsTriangle": {
+      "direct": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool delete_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entityNames\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      },
+      "directResolved": true,
+      "transparent": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool delete_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entityNames\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      },
+      "transparentResolved": true,
+      "fiveFromMainRun": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool delete_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entityNames\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      },
+      "transparentEqualsDirect": true,
+      "fiveEqualsDirect": true,
+      "unknownTool": {
+        "direct": null,
+        "transparent": {
+          "code": -32602,
+          "message": "MCP error -32602: MCP error -32602: Unknown tool: memory__tool_that_does_not_exist"
+        },
+        "fiveFromMainRun": {
+          "code": -32602,
+          "message": "MCP error -32602: MCP error -32602: Unknown capability: gh__create_issue"
+        }
+      }
+    },
+    "mainRunOrphansReaped": [
+      {
+        "pid": 9450,
+        "cmd": "node /Users/mo/.npm/_npx/a3241bba59c344f5/node_modules/.bin/mcp-server-filesystem /Users/mo/Downloads/roster/d"
+      }
+    ],
+    "unrelatedStaleServersObserved": [
+      {
+        "pid": 62706,
+        "cmd": "npm exec @modelcontextprotocol/server-filesystem /var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-e2e-f"
+      },
+      {
+        "pid": 62719,
+        "cmd": "node /Users/mo/.npm/_npx/a3241bba59c344f5/node_modules/.bin/mcp-server-filesystem /var/folders/4h/nk1j63wn57qb"
+      },
+      {
+        "pid": 62720,
+        "cmd": "npm exec @modelcontextprotocol/server-memory   "
+      },
+      {
+        "pid": 62735,
+        "cmd": "node /Users/mo/.npm/_npx/15b07286cbcc3329/node_modules/.bin/mcp-server-memory"
+      }
+    ],
+    "finishedAt": "2026-07-04T20:11:59.132Z"
+  }
+}

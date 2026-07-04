@@ -21,6 +21,16 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(@types/node@22.20.0)(vite@7.3.6(@types/node@22.20.0)(tsx@4.22.5)(yaml@2.9.0))
 
+  apps/league:
+    dependencies:
+      '@rosterhq/combine':
+        specifier: workspace:*
+        version: link:../../packages/combine
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.0
+        version: 22.20.0
+
   packages/cli:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -83,16 +93,6 @@ importers:
       yaml:
         specifier: ^2.6.0
         version: 2.9.0
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.0
-        version: 22.20.0
-
-  packages/league:
-    dependencies:
-      '@rosterhq/combine':
-        specifier: workspace:*
-        version: link:../combine
     devDependencies:
       '@types/node':
         specifier: ^22.20.0

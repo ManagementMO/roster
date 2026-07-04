@@ -7,6 +7,6 @@
     { "path": "packages/router" },
     { "path": "packages/cli" },
     { "path": "packages/combine" },
-    { "path": "packages/league" }
+    { "path": "apps/league" }
   ]
 }

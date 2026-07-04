@@ -10,7 +10,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "league:build": "node packages/league/dist/build.js"
+    "league:build": "node apps/league/dist/build.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

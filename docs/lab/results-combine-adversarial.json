@@ -1,0 +1,894 @@
+{
+  "slug": "combine-adversarial",
+  "generatedAt": "2026-07-04T19:59:42.378Z",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "host_fs": {
+    "caseInsensitive": true,
+    "unicodeNormalizing": true,
+    "tmpdir": "/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T",
+    "probe": "CaseProbe.txt->existsSync(caseprobe.txt)=true; NFC café written, NFD existsSync=true"
+  },
+  "server_under_test": {
+    "name": "@modelcontextprotocol/server-filesystem",
+    "via": "npx -y",
+    "tools": [
+      "create_directory",
+      "directory_tree",
+      "edit_file",
+      "get_file_info",
+      "list_allowed_directories",
+      "list_directory",
+      "list_directory_with_sizes",
+      "move_file",
+      "read_file",
+      "read_media_file",
+      "read_multiple_files",
+      "read_text_file",
+      "search_files",
+      "write_file"
+    ]
+  },
+  "experiments": {
+    "a_determinism": {
+      "experiment": "a-determinism",
+      "startedAt": "2026-07-04T19:49:31.833Z",
+      "server": {
+        "name": "filesystem",
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "{{sandbox}}"
+        ]
+      },
+      "N": 3,
+      "runs": [
+        {
+          "rep": 0,
+          "elapsedMs": 3773,
+          "results": [
+            {
+              "taskId": "fs.write-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 763
+            },
+            {
+              "taskId": "fs.read-text-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 417
+            },
+            {
+              "taskId": "fs.create-directory.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 414
+            },
+            {
+              "taskId": "fs.list-directory.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 423
+            },
+            {
+              "taskId": "fs.move-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 442
+            },
+            {
+              "taskId": "fs.get-file-info.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 422
+            },
+            {
+              "taskId": "fs.search-files.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 424
+            },
+            {
+              "taskId": "fs.list-allowed.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 399
+            }
+          ],
+          "summary": {
+            "n": 8,
+            "passes": 8,
+            "passRate": 1,
+            "wilsonLb": 0.6755843804891231,
+            "signedN": 0,
+            "signedPasses": 0,
+            "signedWilsonLb": 0
+          }
+        },
+        {
+          "rep": 1,
+          "elapsedMs": 3508,
+          "results": [
+            {
+              "taskId": "fs.write-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 422
+            },
+            {
+              "taskId": "fs.read-text-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 581
+            },
+            {
+              "taskId": "fs.create-directory.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 397
+            },
+            {
+              "taskId": "fs.list-directory.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 396
+            },
+            {
+              "taskId": "fs.move-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 433
+            },
+            {
+              "taskId": "fs.get-file-info.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 421
+            },
+            {
+              "taskId": "fs.search-files.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 394
+            },
+            {
+              "taskId": "fs.list-allowed.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 400
+            }
+          ],
+          "summary": {
+            "n": 8,
+            "passes": 8,
+            "passRate": 1,
+            "wilsonLb": 0.6755843804891231,
+            "signedN": 0,
+            "signedPasses": 0,
+            "signedWilsonLb": 0
+          }
+        },
+        {
+          "rep": 2,
+          "elapsedMs": 3285,
+          "results": [
+            {
+              "taskId": "fs.write-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 416
+            },
+            {
+              "taskId": "fs.read-text-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 397
+            },
+            {
+              "taskId": "fs.create-directory.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 406
+            },
+            {
+              "taskId": "fs.list-directory.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 413
+            },
+            {
+              "taskId": "fs.move-file.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 396
+            },
+            {
+              "taskId": "fs.get-file-info.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 406
+            },
+            {
+              "taskId": "fs.search-files.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 394
+            },
+            {
+              "taskId": "fs.list-allowed.v1",
+              "signed": false,
+              "pass": true,
+              "stage": null,
+              "detail": null,
+              "latencyMs": 393
+            }
+          ],
+          "summary": {
+            "n": 8,
+            "passes": 8,
+            "passRate": 1,
+            "wilsonLb": 0.6755843804891231,
+            "signedN": 0,
+            "signedPasses": 0,
+            "signedWilsonLb": 0
+          }
+        }
+      ],
+      "labMeta": [
+        {
+          "rep": 0,
+          "environmentDigest": "192ca160ad31db34e03047d7a54da963701166ce695de6339bd684ab7ecb9112",
+          "generatedAt": "2026-07-04T19:49:35.613Z",
+          "environment": {
+            "node": "v22.22.3",
+            "platform": "darwin",
+            "arch": "arm64"
+          }
+        },
+        {
+          "rep": 1,
+          "environmentDigest": "192ca160ad31db34e03047d7a54da963701166ce695de6339bd684ab7ecb9112",
+          "generatedAt": "2026-07-04T19:49:39.121Z",
+          "environment": {
+            "node": "v22.22.3",
+            "platform": "darwin",
+            "arch": "arm64"
+          }
+        },
+        {
+          "rep": 2,
+          "environmentDigest": "192ca160ad31db34e03047d7a54da963701166ce695de6339bd684ab7ecb9112",
+          "generatedAt": "2026-07-04T19:49:42.405Z",
+          "environment": {
+            "node": "v22.22.3",
+            "platform": "darwin",
+            "arch": "arm64"
+          }
+        }
+      ],
+      "analysis": {
+        "identicalModuloTiming": true,
+        "digestStableAcrossReps": true,
+        "digest": "192ca160ad31db34e03047d7a54da963701166ce695de6339bd684ab7ecb9112",
+        "generatedAtVaries": true,
+        "generatedAts": [
+          "2026-07-04T19:49:35.613Z",
+          "2026-07-04T19:49:39.121Z",
+          "2026-07-04T19:49:42.405Z"
+        ],
+        "perTaskFieldDiffs": [],
+        "latencyByTask": {
+          "fs.write-file.v1": {
+            "min": 416,
+            "max": 763,
+            "values": [
+              763,
+              422,
+              416
+            ]
+          },
+          "fs.read-text-file.v1": {
+            "min": 397,
+            "max": 581,
+            "values": [
+              417,
+              581,
+              397
+            ]
+          },
+          "fs.create-directory.v1": {
+            "min": 397,
+            "max": 414,
+            "values": [
+              414,
+              397,
+              406
+            ]
+          },
+          "fs.list-directory.v1": {
+            "min": 396,
+            "max": 423,
+            "values": [
+              423,
+              396,
+              413
+            ]
+          },
+          "fs.move-file.v1": {
+            "min": 396,
+            "max": 442,
+            "values": [
+              442,
+              433,
+              396
+            ]
+          },
+          "fs.get-file-info.v1": {
+            "min": 406,
+            "max": 422,
+            "values": [
+              422,
+              421,
+              406
+            ]
+          },
+          "fs.search-files.v1": {
+            "min": 394,
+            "max": 424,
+            "values": [
+              424,
+              394,
+              394
+            ]
+          },
+          "fs.list-allowed.v1": {
+            "min": 393,
+            "max": 400,
+            "values": [
+              399,
+              400,
+              393
+            ]
+          }
+        },
+        "verdict": "DETERMINISTIC: pass/stage/detail/signed identical across reps; digest stable; only latencyMs+generatedAt vary"
+      },
+      "finishedAt": "2026-07-04T19:49:42.406Z"
+    },
+    "b_mutation": {
+      "experiment": "b-mutation",
+      "startedAt": "2026-07-04T19:51:58.517Z",
+      "fsCaseInsensitive": true,
+      "baseline": [
+        {
+          "taskId": "fs.write-file.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.read-text-file.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.create-directory.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.list-directory.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.move-file.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.get-file-info.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.search-files.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        },
+        {
+          "taskId": "fs.list-allowed.v1",
+          "pass": true,
+          "stage": null,
+          "detail": null
+        }
+      ],
+      "mutants": [
+        {
+          "baseId": "fs.write-file.v1",
+          "label": "wrong-content",
+          "note": "server writes different bytes",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "content mismatch in combine-{{run_id}}.txt",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.write-file.v1",
+          "label": "missing-file",
+          "note": "server writes to a decoy name; expected file never created",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "expected combine-{{run_id}}.txt to exist",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.write-file.v1",
+          "label": "right-content-wrong-path",
+          "note": "correct bytes, wrong filename",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "expected combine-{{run_id}}.txt to exist",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.write-file.v1",
+          "label": "case-flipped-filename",
+          "note": "correct bytes at case-variant name (combine->COMBINE, .txt->.TXT)",
+          "expectedFail": true,
+          "actualPass": true,
+          "stage": null,
+          "detail": null,
+          "falsePass": true
+        },
+        {
+          "baseId": "fs.write-file.v1",
+          "label": "trailing-newline-delta",
+          "note": "correct bytes + one trailing \\n",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "content mismatch in combine-{{run_id}}.txt",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.write-file.v1",
+          "label": "unicode-nfd-filename",
+          "note": "correct bytes at NFD-normalized name",
+          "expectedFail": true,
+          "actualPass": true,
+          "stage": null,
+          "detail": null,
+          "falsePass": true
+        },
+        {
+          "baseId": "fs.read-text-file.v1",
+          "label": "wrong-content",
+          "note": "seeded file has different content",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "result text missing expected content",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.read-text-file.v1",
+          "label": "missing-file",
+          "note": "no seed; read errors (tool isError must not pass)",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "invoke",
+          "detail": "ENOENT: no such file or directory, open '/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-combine-a4aQMa/seeded-2d4d49a5.txt'",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.create-directory.v1",
+          "label": "missing",
+          "note": "creates a different dir; expected dir absent",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "expected newdir-{{run_id}} to exist",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.create-directory.v1",
+          "label": "case-flipped",
+          "note": "creates case-variant dir name (NEWDIR)",
+          "expectedFail": true,
+          "actualPass": true,
+          "stage": null,
+          "detail": null,
+          "falsePass": true
+        },
+        {
+          "baseId": "fs.create-directory.v1",
+          "label": "wrong-type-file",
+          "note": "creates a FILE named newdir instead of a directory",
+          "expectedFail": true,
+          "actualPass": true,
+          "stage": null,
+          "detail": null,
+          "falsePass": true
+        },
+        {
+          "baseId": "fs.list-directory.v1",
+          "label": "wrong-content",
+          "note": "seeds a differently-named file; listing lacks alpha",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "result text missing expected content",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.list-directory.v1",
+          "label": "missing-dir",
+          "note": "no listing dir; list errors",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "invoke",
+          "detail": "ENOENT: no such file or directory, scandir '/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-combine-8Iyshj/listing'",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.move-file.v1",
+          "label": "src-not-removed",
+          "note": "copy-like: read src (leaves it); dst never made -> fileAbsent(src) must fail",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "expected src-{{run_id}}.txt to be absent",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.move-file.v1",
+          "label": "dst-wrong-path",
+          "note": "moves src to a different dst -> fileEquals(dst) must fail",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "expected dst-{{run_id}}.txt to exist",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.get-file-info.v1",
+          "label": "missing-file",
+          "note": "no seed; get_file_info errors",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "invoke",
+          "detail": "ENOENT: no such file or directory, stat '/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-combine-Hu97D7/info-66087834.txt'",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.search-files.v1",
+          "label": "wrong-content",
+          "note": "seed a differently-named file; search finds nothing",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "result text missing expected content",
+          "falsePass": false
+        },
+        {
+          "baseId": "fs.list-allowed.v1",
+          "label": "wrong-allowed-root",
+          "note": "server rooted at a DECOY dir; result won't contain {{sandbox}}",
+          "expectedFail": true,
+          "actualPass": false,
+          "stage": "verify",
+          "detail": "result text missing expected content",
+          "falsePass": false
+        }
+      ],
+      "summary": {
+        "baselineAllPass": true,
+        "mutantsTotal": 18,
+        "falsePasses": 4,
+        "falsePassLabels": [
+          "fs.write-file.v1::case-flipped-filename",
+          "fs.write-file.v1::unicode-nfd-filename",
+          "fs.create-directory.v1::case-flipped",
+          "fs.create-directory.v1::wrong-type-file"
+        ],
+        "verdict": "4 FALSE-PASS(es) — verifier accepted a sabotaged end-state"
+      },
+      "finishedAt": "2026-07-04T19:52:11.353Z"
+    },
+    "c_falsefail": {
+      "experiment": "c-falsefail",
+      "startedAt": "2026-07-04T19:57:40.168Z",
+      "origTmpdir": "/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T",
+      "scenarios": [
+        {
+          "label": "default",
+          "tmpdirRoot": "/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T",
+          "tmpdirLen": 48,
+          "observedTmp": "/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T",
+          "elapsedMs": 4223,
+          "n": 8,
+          "passes": 8,
+          "allPass": true,
+          "failures": [],
+          "error": null
+        },
+        {
+          "label": "short",
+          "tmpdirRoot": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-Rawvkj",
+          "tmpdirLen": 73,
+          "observedTmp": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-Rawvkj",
+          "elapsedMs": 3410,
+          "n": 8,
+          "passes": 8,
+          "allPass": true,
+          "failures": [],
+          "error": null
+        },
+        {
+          "label": "deep-nested",
+          "tmpdirRoot": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-vrV2Nv/a/b/c/d/e/f/g/h",
+          "tmpdirLen": 89,
+          "observedTmp": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-vrV2Nv/a/b/c/d/e/f/g/h",
+          "elapsedMs": 3960,
+          "n": 8,
+          "passes": 8,
+          "allPass": true,
+          "failures": [],
+          "error": null
+        },
+        {
+          "label": "very-long-segment",
+          "tmpdirRoot": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-8BADy9/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "tmpdirLen": 194,
+          "observedTmp": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-8BADy9/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "elapsedMs": 3725,
+          "n": 8,
+          "passes": 8,
+          "allPass": true,
+          "failures": [],
+          "error": null
+        },
+        {
+          "label": "long-and-deep",
+          "tmpdirRoot": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-9tQ0TS/seg-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz/wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+          "tmpdirLen": 200,
+          "observedTmp": "/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-ff-9tQ0TS/seg-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz/wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+          "elapsedMs": 4116,
+          "n": 8,
+          "passes": 8,
+          "allPass": true,
+          "failures": [],
+          "error": null
+        }
+      ],
+      "summary": {
+        "scenarios": 5,
+        "allScenariosClean": true,
+        "verdict": "NO FALSE-FAILS across path lengths/nesting; suite fully passes each shape"
+      },
+      "finishedAt": "2026-07-04T19:57:59.604Z"
+    },
+    "d_containment": {
+      "experiment": "d-containment",
+      "startedAt": "2026-07-04T19:57:37.033Z",
+      "serverTools": [
+        "create_directory",
+        "directory_tree",
+        "edit_file",
+        "get_file_info",
+        "list_allowed_directories",
+        "list_directory",
+        "list_directory_with_sizes",
+        "move_file",
+        "read_file",
+        "read_media_file",
+        "read_multiple_files",
+        "read_text_file",
+        "search_files",
+        "write_file"
+      ],
+      "cases": [
+        {
+          "name": "setup-dotdot-traversal",
+          "layer": "runner-guard",
+          "expectReject": true,
+          "pass": false,
+          "stage": "transport",
+          "detail": "path escapes sandbox: ../escape-CANARY-1783195057034.txt",
+          "contained": true
+        },
+        {
+          "name": "setup-absolute-path",
+          "layer": "runner-guard",
+          "expectReject": true,
+          "pass": false,
+          "stage": "transport",
+          "detail": "path escapes sandbox: /Users/mo/Downloads/roster/docs/lab/tmp-combine-adversarial/canary-outside-xRDaek/pwned-CANARY-1783195057034.txt",
+          "contained": true
+        },
+        {
+          "name": "setup-null-byte",
+          "layer": "runner-guard",
+          "expectReject": true,
+          "pass": false,
+          "stage": "transport",
+          "detail": "The argument 'path' must be a string, Uint8Array, or URL without null bytes. Received '/private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/roster-combine-b6jO6T/foo\\x00CANARY-1783195057034.txt'",
+          "contained": true
+        },
+        {
+          "name": "setup-tilde",
+          "layer": "runner-guard",
+          "expectReject": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "contained": true
+        },
+        {
+          "name": "verify-dotdot-to-etc-hosts",
+          "layer": "runner-guard",
+          "expectReject": true,
+          "pass": false,
+          "stage": "transport",
+          "detail": "path escapes sandbox: ../../../../../../../../../../../../../../../../../../../../etc/hosts",
+          "contained": true
+        },
+        {
+          "name": "verify-absolute-etc-hosts",
+          "layer": "runner-guard",
+          "expectReject": true,
+          "pass": false,
+          "stage": "transport",
+          "detail": "path escapes sandbox: /etc/hosts",
+          "contained": true
+        },
+        {
+          "name": "invoke-dotdot-write",
+          "layer": "server-sandbox",
+          "expectReject": true,
+          "pass": false,
+          "stage": "invoke",
+          "detail": "Access denied - path outside allowed directories: /private/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T/escape-CANARY-1783195057034-INVOKE.txt not in /private/var/folders/4h/nk1j63wn57qb138f3954l8g",
+          "contained": true
+        },
+        {
+          "name": "invoke-absolute-write",
+          "layer": "server-sandbox",
+          "expectReject": true,
+          "pass": false,
+          "stage": "invoke",
+          "detail": "Access denied - path outside allowed directories: /Users/mo/Downloads/roster/docs/lab/tmp-combine-adversarial/canary-outside-xRDaek/pwned-CANARY-1783195057034-INVOKE.txt not in /private/var/folders/4h",
+          "contained": true
+        }
+      ],
+      "scan": {
+        "canaryDir": "/Users/mo/Downloads/roster/docs/lab/tmp-combine-adversarial/canary-outside-xRDaek",
+        "canaryDirContents": [],
+        "tmpRoot": "/var/folders/4h/nk1j63wn57qb138f3954l8gw0000gn/T",
+        "tmpRootLeaks": [],
+        "homeDir": "/Users/mo",
+        "homeLeaks": [],
+        "clean": true
+      },
+      "summary": {
+        "casesTotal": 8,
+        "allContainedCleanly": true,
+        "filesystemScanClean": true,
+        "escaped": [],
+        "verdict": "FULLY CONTAINED — every escape attempt failed cleanly; nothing written outside a sandbox"
+      },
+      "symlinkNote": {
+        "guard": "containedPath uses path.resolve (lexical), not fs.realpathSync",
+        "serverHasSymlinkTool": false,
+        "reachableToday": false,
+        "note": "No symlink is plantable inside a fresh task sandbox: setup.files writes regular files only, and the official fs server exposes no symlink-creation tool. So symlink traversal through a verifier is LATENT, not currently reachable. If a future suite schema gains symlink setup, or a server-under-test exposes symlink creation, fileEquals/fileContains verifiers (fs.readFileSync) would follow a sandbox-internal symlink OUT of the sandbox because the guard is lexical."
+      },
+      "finishedAt": "2026-07-04T19:57:40.077Z"
+    },
+    "e_timeout": {
+      "experiment": "e-timeout",
+      "startedAt": "2026-07-04T19:58:05.968Z",
+      "cases": [
+        {
+          "name": "hang-on-connect",
+          "elapsedMs": 17018,
+          "suiteReturned": true,
+          "pass": false,
+          "stage": "transport",
+          "detail": "connect timeout",
+          "childPid": 4831,
+          "childKilled": true,
+          "expected": {
+            "stage": "transport",
+            "detailContains": "connect timeout",
+            "elapsedNear": 15000
+          },
+          "classifiedAsDesigned": true
+        },
+        {
+          "name": "hang-on-call",
+          "elapsedMs": 2622,
+          "suiteReturned": true,
+          "pass": false,
+          "stage": "invoke",
+          "detail": "MCP error -32001: Request timed out",
+          "childPid": 5168,
+          "childKilled": true,
+          "expected": {
+            "stage": "invoke",
+            "elapsedNear": 2500
+          },
+          "classifiedAsDesigned": true
+        }
+      ],
+      "summary": {
+        "bothSuitesReturned": true,
+        "bothClassifiedAsDesigned": true,
+        "bothChildrenKilled": true,
+        "verdict": "TIMEOUTS HANDLED — hangs classified per design; suite completes; children reaped"
+      },
+      "finishedAt": "2026-07-04T19:58:25.611Z"
+    }
+  }
+}

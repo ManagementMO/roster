@@ -12,11 +12,16 @@ export default defineConfig({
       "@rosterhq/playbook": pkg("playbook"),
       "@rosterhq/router": pkg("router"),
       "@rosterhq/combine": pkg("combine"),
-      "@rosterhq/league": pkg("league"),
+      "@rosterhq/league": fileURLToPath(new URL("./apps/league/src/index.ts", import.meta.url)),
     },
   },
   test: {
-    include: ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.test.ts"],
+    include: [
+      "packages/*/src/**/*.test.ts",
+      "packages/*/test/**/*.test.ts",
+      "apps/*/src/**/*.test.ts",
+      "apps/*/test/**/*.test.ts",
+    ],
     testTimeout: 20_000,
     hookTimeout: 20_000,
   },

@@ -80,7 +80,7 @@ export function main(argv = process.argv.slice(2)): number {
   const opts: BuildOptions = {
     artifactsDir: flagValue(argv, "--artifacts") ?? "docs/verification",
     suitesDir: flagValue(argv, "--suites") ?? "suites",
-    outDir: flagValue(argv, "--out") ?? "packages/league/dist-site",
+    outDir: flagValue(argv, "--out") ?? "apps/league/dist-site",
   };
   const report = buildSite(opts);
   for (const s of report.skipped) {

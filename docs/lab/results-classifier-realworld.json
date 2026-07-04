@@ -1,0 +1,1630 @@
+{
+  "experiment": "classifier-realworld — outcome classifier vs real wire shapes from real failures",
+  "when": "2026-07-04T19:54:27.252Z",
+  "environment": {
+    "node": "v22.22.3",
+    "mcpSdk": "1.29.0 (repo pnpm store, used by BOTH the router client and the lab fail-server)",
+    "servers": {
+      "@modelcontextprotocol/server-filesystem": "2026.1.14 (npx cache)",
+      "@modelcontextprotocol/server-memory": "2026.1.26 (npx cache)"
+    },
+    "note": "all failures real: real npx-spawned MCP servers over stdio, real OS errors (ENOENT/EACCES), real process exit mid-call, real non-MCP hanging process; classification via built dist of @rosterhq/router BackendManager + @rosterhq/coach classifyOutcome"
+  },
+  "partA_scenarios": {
+    "experiment": "classifier-realworld part (a) — real wire shapes vs classifyOutcome",
+    "when": "2026-07-04T19:50:49.994Z",
+    "node": "v22.22.3",
+    "wallMs": 60007,
+    "rows": [
+      {
+        "id": "S1-fs-read-nonexistent",
+        "scenario": "fs: read nonexistent path",
+        "wire": {
+          "via": "result",
+          "result": {
+            "isError": true,
+            "hasStructuredContent": false,
+            "content": [
+              {
+                "type": "text",
+                "text": "ENOENT: no such file or directory, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/does-not-exist.txt'"
+              }
+            ]
+          }
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "ENOENT: no such file or directory, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/does-not-exist.txt'"
+        },
+        "latencyMs": 3,
+        "class": "tool_fail:other",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "tool_fail:other",
+          "why": "not-found has no ToolFailKind; handoff 6.2 rule 2 catch-all"
+        },
+        "verdict": "MATCHES-SPEC"
+      },
+      {
+        "id": "S1b-fs-read-nonexistent-token-filename",
+        "scenario": "fs: read nonexistent file named auth-tokens.txt (trigger word inside path echoed into error text)",
+        "wire": {
+          "via": "manager-only",
+          "note": "same wire as S1, different filename"
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "ENOENT: no such file or directory, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/auth-tokens.txt'"
+        },
+        "latencyMs": 1,
+        "class": "tool_fail:auth",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "tool_fail:other",
+          "why": "still a not-found; the filename should not change the kind"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S2-fs-write-outside-sandbox",
+        "scenario": "fs: write to path outside allowed root",
+        "wire": {
+          "via": "result",
+          "result": {
+            "isError": true,
+            "hasStructuredContent": false,
+            "content": [
+              {
+                "type": "text",
+                "text": "Access denied - path outside allowed directories: /Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/outside-root/escape.txt not in /Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox"
+              }
+            ]
+          }
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "Access denied - path outside allowed directories: /Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/outside-root/escape.txt not in /Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox"
+        },
+        "latencyMs": 1,
+        "class": "tool_fail:other",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "tool_fail:auth",
+          "why": "permission/access-denied family; classifier comment says auth covers permission-denied"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S3-fs-chmod000-read",
+        "scenario": "fs: read chmod-000 file (EACCES)",
+        "wire": {
+          "via": "result",
+          "result": {
+            "isError": true,
+            "hasStructuredContent": false,
+            "content": [
+              {
+                "type": "text",
+                "text": "EACCES: permission denied, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/locked.txt'"
+              }
+            ]
+          }
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "EACCES: permission denied, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/locked.txt'"
+        },
+        "latencyMs": 1,
+        "class": "tool_fail:auth",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "tool_fail:auth",
+          "why": "EACCES permission denied → auth per classifier's own auth-covers-permission rule"
+        },
+        "verdict": "MATCHES-SPEC"
+      },
+      {
+        "id": "S4-memory-malformed-args",
+        "scenario": "memory: create_entities with wrong-shape args",
+        "wire": {
+          "via": "result",
+          "result": {
+            "isError": true,
+            "hasStructuredContent": false,
+            "content": [
+              {
+                "type": "text",
+                "text": "MCP error -32602: Input validation error: Invalid arguments for tool create_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entities\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+              }
+            ]
+          }
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "MCP error -32602: Input validation error: Invalid arguments for tool create_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entities\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]"
+        },
+        "latencyMs": 2,
+        "class": "tool_fail:schema",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "AGENT-FAULT(see methodology-8)",
+          "why": "methodology 8: caller's bad args must not punish the tool; whatever class lands here is attributable and will"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S4b-memory-missing-args",
+        "scenario": "memory: create_entities with {} (required key absent)",
+        "wire": {
+          "via": "manager-only"
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "MCP error -32602: Input validation error: Invalid arguments for tool create_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entities\"\n    ],\n    \"message\": \"Invalid input: expected array, received undefined\"\n  }\n]"
+        },
+        "latencyMs": 1,
+        "class": "tool_fail:schema",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "AGENT-FAULT(see methodology-8)",
+          "why": "same as S4"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S5-memory-unknown-tool",
+        "scenario": "memory: call a tool the server does not have",
+        "wire": {
+          "via": "result",
+          "result": {
+            "isError": true,
+            "hasStructuredContent": false,
+            "content": [
+              {
+                "type": "text",
+                "text": "MCP error -32602: Tool tool_that_does_not_exist not found"
+              }
+            ]
+          }
+        },
+        "evidence": {
+          "isError": true,
+          "errorText": "MCP error -32602: Tool tool_that_does_not_exist not found"
+        },
+        "latencyMs": 1,
+        "class": "tool_fail:other",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "hard_fail:protocol",
+          "why": "JSON-RPC method/tool-not-found is a protocol error per handoff 6.2 rule 1"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S6-kill-mid-call",
+        "scenario": "lab: server process exits while the call is pending",
+        "wire": {
+          "via": "throw",
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32000,
+            "message": "MCP error -32000: Connection closed"
+          }
+        },
+        "evidence": {
+          "protocolError": true,
+          "errorText": "MCP error -32000: Connection closed"
+        },
+        "latencyMs": 34,
+        "class": "hard_fail:protocol",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "hard_fail:transport",
+          "why": "handoff 6.2 rule 1 + CallEvidence doc: 'connection died / stream broke' is transportError"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S7-hang-call-timeout",
+        "scenario": "lab: tool never responds; router deadline 2500ms",
+        "wire": {
+          "via": "throw",
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32001,
+            "message": "MCP error -32001: Request timed out"
+          }
+        },
+        "evidence": {
+          "timedOut": true
+        },
+        "latencyMs": 2501,
+        "class": "tool_fail:timeout",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "tool_fail:timeout",
+          "why": "call exceeded its deadline → timedOut evidence"
+        },
+        "verdict": "MATCHES-SPEC"
+      },
+      {
+        "id": "S10a-drift-missing-key",
+        "scenario": "lab: drift_missing_key — declared outputSchema violated by real result",
+        "wire": {
+          "via": "throw",
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32602,
+            "message": "MCP error -32602: Structured content does not match the tool's output schema: data must have required property 'value'"
+          }
+        },
+        "evidence": {
+          "protocolError": true,
+          "errorText": "MCP error -32602: Structured content does not match the tool's output schema: data must have required property 'value'"
+        },
+        "latencyMs": 1,
+        "class": "hard_fail:protocol",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "schema_drift_suspect",
+          "why": "handoff 6.2 rule 3: output violates declared output schema → schema_drift_suspect + drift event"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S10b-drift-no-structured",
+        "scenario": "lab: drift_no_structured — declared outputSchema violated by real result",
+        "wire": {
+          "via": "throw",
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32600,
+            "message": "MCP error -32600: Tool drift_no_structured has an output schema but did not return structured content"
+          }
+        },
+        "evidence": {
+          "protocolError": true,
+          "errorText": "MCP error -32600: Tool drift_no_structured has an output schema but did not return structured content"
+        },
+        "latencyMs": 1,
+        "class": "hard_fail:protocol",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "schema_drift_suspect",
+          "why": "handoff 6.2 rule 3: output violates declared output schema → schema_drift_suspect + drift event"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S10c-drift-wrong-type",
+        "scenario": "lab: drift_wrong_type — declared outputSchema violated by real result",
+        "wire": {
+          "via": "throw",
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32602,
+            "message": "MCP error -32602: Structured content does not match the tool's output schema: data/value must be string"
+          }
+        },
+        "evidence": {
+          "protocolError": true,
+          "errorText": "MCP error -32602: Structured content does not match the tool's output schema: data/value must be string"
+        },
+        "latencyMs": 1,
+        "class": "hard_fail:protocol",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "schema_drift_suspect",
+          "why": "handoff 6.2 rule 3: output violates declared output schema → schema_drift_suspect + drift event"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S10d-drift-schema-not-passed",
+        "scenario": "lab: drift_missing_key with outputSchema arg omitted (isolation probe)",
+        "wire": {
+          "via": "manager-only"
+        },
+        "evidence": {
+          "protocolError": true,
+          "errorText": "MCP error -32602: Structured content does not match the tool's output schema: data must have required property 'value'"
+        },
+        "latencyMs": 1,
+        "class": "hard_fail:protocol",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "schema_drift_suspect",
+          "why": "if drift detection lived in backends.ts alone this would need the schema; shows where the throw actually happens"
+        },
+        "verdict": "DIVERGES-FROM-SPEC"
+      },
+      {
+        "id": "S11-success-control",
+        "scenario": "lab: normal success",
+        "wire": {
+          "via": "manager-only"
+        },
+        "evidence": {
+          "outputSchemaViolation": false
+        },
+        "latencyMs": 0,
+        "class": "success",
+        "attributable": true,
+        "specIntent": {
+          "expectedClass": "success",
+          "why": "control"
+        },
+        "verdict": "MATCHES-SPEC"
+      },
+      {
+        "id": "S8-hanging-server-bounded-connect",
+        "scenario": "connect to live process that never speaks MCP, explicit 3s timeout",
+        "wire": {
+          "via": "throw",
+          "ms": 3001,
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32001,
+            "message": "MCP error -32001: Request timed out"
+          }
+        },
+        "evidence": null,
+        "class": "NO-OUTCOME-ROW (connect-path failure, classifier never runs)",
+        "attributable": null,
+        "specIntent": {
+          "expectedClass": "n/a",
+          "why": "connect failures precede any call; charter asks what actually happens"
+        },
+        "verdict": "OBSERVATION"
+      },
+      {
+        "id": "S9-spawn-nonexistent-command",
+        "scenario": "BackendManager.connect with a command that does not exist",
+        "wire": {
+          "via": "throw",
+          "ms": 9,
+          "error": {
+            "ctor": "Error",
+            "name": "Error",
+            "code": "ENOENT",
+            "message": "spawn roster-lab-no-such-cmd-xyz ENOENT"
+          }
+        },
+        "evidence": null,
+        "class": "NO-OUTCOME-ROW (connect-path failure, classifier never runs)",
+        "attributable": null,
+        "specIntent": {
+          "expectedClass": "n/a",
+          "why": "spawn failure surfaces before any call"
+        },
+        "verdict": "OBSERVATION"
+      },
+      {
+        "id": "S8b-hanging-server-unbounded-connect",
+        "scenario": "BackendManager.connect (production path, no timeout arg) to a live non-MCP process",
+        "wire": {
+          "settled": "rejected",
+          "ms": 60006,
+          "error": {
+            "ctor": "McpError",
+            "name": "McpError",
+            "code": -32001,
+            "message": "MCP error -32001: Request timed out"
+          }
+        },
+        "evidence": null,
+        "class": "NO-OUTCOME-ROW (connect-path failure, classifier never runs)",
+        "attributable": null,
+        "specIntent": {
+          "expectedClass": "n/a",
+          "why": "measures how long the real router-side connect blocks (SDK default initialize timeout)"
+        },
+        "verdict": "OBSERVATION"
+      }
+    ]
+  },
+  "partB_fuzz": {
+    "experiment": "classifier-realworld part (b) — precedence fuzz on built dist",
+    "when": "2026-07-04T19:49:41.444Z",
+    "seedNote": "mulberry32 seed 20260704 — reproducible",
+    "b1": {
+      "n": 500,
+      "precedenceMismatches": 0,
+      "mismatchSamples": [],
+      "nonAttributableEmitted": 0,
+      "nonAttributableSamples": [],
+      "classDistribution": {
+        "hard_fail:transport": 144,
+        "hard_fail:protocol": 96,
+        "tool_fail:other": 45,
+        "schema_drift_suspect": 20,
+        "tool_fail:timeout": 77,
+        "success": 84,
+        "tool_fail:quota": 7,
+        "tool_fail:schema": 5,
+        "tool_fail:auth": 19,
+        "tool_fail:internal": 3
+      }
+    },
+    "b2": {
+      "n": 500,
+      "kindPrecedenceMismatches": 0,
+      "mismatchSamples": []
+    },
+    "attrTable": {
+      "success": true,
+      "hard_fail:transport": true,
+      "hard_fail:protocol": true,
+      "tool_fail:auth": true,
+      "tool_fail:quota": true,
+      "tool_fail:schema": true,
+      "tool_fail:timeout": true,
+      "tool_fail:internal": true,
+      "tool_fail:other": true,
+      "schema_drift_suspect": true,
+      "soft_fail": false,
+      "explored": false
+    }
+  },
+  "partC_errtexts": {
+    "experiment": "classifier-realworld part (c) — realistic error texts",
+    "when": "2026-07-04T19:51:49.744Z",
+    "wallMs": 130,
+    "summary": {
+      "total": 39,
+      "matchedAny": 30,
+      "misclassified": 9,
+      "misRateAnyPct": 23.1,
+      "misPrimary": 12,
+      "misRatePrimaryPct": 30.8,
+      "misclassifiedList": [
+        "github-403-rate-limit (verbatim docs text): expected quota got auth",
+        "openai-429-tpm: expected quota got auth",
+        "slack-invalid-auth: expected auth got other",
+        "slack-not-authed: expected auth got other",
+        "aws-signature-expired: expected auth got other",
+        "fs-server-access-denied (real text captured in part a S2): expected auth got other",
+        "json-parse-unexpected-token (upstream returned HTML): expected other|internal got auth",
+        "llm-context-length: expected other|quota got auth",
+        "enoent-token-filename: expected other got auth"
+      ]
+    },
+    "rows": [
+      {
+        "source": "github-403-rate-limit (verbatim docs text)",
+        "text": "API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "github-secondary-rate-limit",
+        "text": "You have exceeded a secondary rate limit. Please wait a few minutes before you try again.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "You have exceeded a secondary rate limit. Please wait a few minutes before you try again."
+        },
+        "class": "tool_fail:quota",
+        "actualKind": "quota",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "openai-insufficient-quota",
+        "text": "You exceeded your current quota, please check your plan and billing details.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "You exceeded your current quota, please check your plan and billing details."
+        },
+        "class": "tool_fail:quota",
+        "actualKind": "quota",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "openai-429-tpm",
+        "text": "Rate limit reached for gpt-4o in organization org-Abc123 on tokens per min (TPM): Limit 30000, Used 29869, Requested 654. Please try again in 1.046s.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Rate limit reached for gpt-4o in organization org-Abc123 on tokens per min (TPM): Limit 30000, Used 29869, Requested 654. Please try again in 1.046s."
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "google-api-quota",
+        "text": "Quota exceeded for quota metric 'Queries' and limit 'Queries per day' of service 'customsearch.googleapis.com'.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Quota exceeded for quota metric 'Queries' and limit 'Queries per day' of service 'customsearch.googleapis.com'."
+        },
+        "class": "tool_fail:quota",
+        "actualKind": "quota",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "http-429-plain",
+        "text": "429 Too Many Requests",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "429 Too Many Requests"
+        },
+        "class": "tool_fail:quota",
+        "actualKind": "quota",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "npm-registry-quota",
+        "text": "Monthly download quota exceeded for package @scope/name.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Monthly download quota exceeded for package @scope/name."
+        },
+        "class": "tool_fail:quota",
+        "actualKind": "quota",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "slack-invalid-auth",
+        "text": "Slack API error: invalid_auth",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Slack API error: invalid_auth"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "slack-not-authed",
+        "text": "An API error occurred: not_authed",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "An API error occurred: not_authed"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "github-bad-credentials",
+        "text": "Bad credentials",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Bad credentials"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "anthropic-401",
+        "text": "authentication_error: invalid x-api-key",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "authentication_error: invalid x-api-key"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "aws-invalid-token",
+        "text": "The security token included in the request is invalid.",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "The security token included in the request is invalid."
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "aws-signature-expired",
+        "text": "Signature expired: 20260704T000000Z is now earlier than 20260704T010000Z (20260704T011500Z - 15 min.)",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Signature expired: 20260704T000000Z is now earlier than 20260704T010000Z (20260704T011500Z - 15 min.)"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "git-auth-failed",
+        "text": "fatal: Authentication failed for 'https://github.com/o/r.git/'",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "fatal: Authentication failed for 'https://github.com/o/r.git/'"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "notion-invalid-token",
+        "text": "API token is invalid.",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "API token is invalid."
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "google-oauth-invalid-grant",
+        "text": "invalid_grant: Token has been expired or revoked.",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "invalid_grant: Token has been expired or revoked."
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "http-403-plain",
+        "text": "403 Forbidden",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "403 Forbidden"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "eacces",
+        "text": "EACCES: permission denied, open '/etc/hosts'",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "EACCES: permission denied, open '/etc/hosts'"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "fs-server-access-denied (real text captured in part a S2)",
+        "text": "Access denied - path outside allowed directories: /private/tmp/x.txt not in /tmp/sandbox",
+        "expectedKinds": [
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Access denied - path outside allowed directories: /private/tmp/x.txt not in /tmp/sandbox"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "node-etimedout",
+        "text": "connect ETIMEDOUT 10.0.0.1:443",
+        "expectedKinds": [
+          "timeout"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "connect ETIMEDOUT 10.0.0.1:443"
+        },
+        "class": "tool_fail:timeout",
+        "actualKind": "timeout",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "generic-timed-out",
+        "text": "The operation timed out after 30000 milliseconds with 0 bytes received",
+        "expectedKinds": [
+          "timeout"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "The operation timed out after 30000 milliseconds with 0 bytes received"
+        },
+        "class": "tool_fail:timeout",
+        "actualKind": "timeout",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "gateway-timeout",
+        "text": "504 Gateway Time-out",
+        "expectedKinds": [
+          "timeout"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "504 Gateway Time-out"
+        },
+        "class": "tool_fail:timeout",
+        "actualKind": "timeout",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "sdk-invalid-arguments",
+        "text": "Invalid arguments for tool create_entities: expected array, received string at path 'entities'",
+        "expectedKinds": [
+          "schema"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Invalid arguments for tool create_entities: expected array, received string at path 'entities'"
+        },
+        "class": "tool_fail:schema",
+        "actualKind": "schema",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "missing-required-param",
+        "text": "Missing required parameter: 'query'",
+        "expectedKinds": [
+          "schema"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Missing required parameter: 'query'"
+        },
+        "class": "tool_fail:schema",
+        "actualKind": "schema",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "zod-must-be-type",
+        "text": "Validation failed: name must be of type string",
+        "expectedKinds": [
+          "schema"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Validation failed: name must be of type string"
+        },
+        "class": "tool_fail:schema",
+        "actualKind": "schema",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "http-500-plain",
+        "text": "Request failed with status code 500",
+        "expectedKinds": [
+          "internal"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Request failed with status code 500"
+        },
+        "class": "tool_fail:internal",
+        "actualKind": "internal",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "internal-server-error",
+        "text": "Internal server error occurred while processing your request.",
+        "expectedKinds": [
+          "internal"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Internal server error occurred while processing your request."
+        },
+        "class": "tool_fail:internal",
+        "actualKind": "internal",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "panic",
+        "text": "panic: runtime error: invalid memory address or nil pointer dereference",
+        "expectedKinds": [
+          "internal"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "panic: runtime error: invalid memory address or nil pointer dereference"
+        },
+        "class": "tool_fail:internal",
+        "actualKind": "internal",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "http-503",
+        "text": "503 Service Unavailable: back-off and retry in 30 seconds",
+        "expectedKinds": [
+          "internal",
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "503 Service Unavailable: back-off and retry in 30 seconds"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": false
+      },
+      {
+        "source": "slack-channel-not-found",
+        "text": "An API error occurred: channel_not_found",
+        "expectedKinds": [
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "An API error occurred: channel_not_found"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "enoent",
+        "text": "ENOENT: no such file or directory, open '/data/config.json'",
+        "expectedKinds": [
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "ENOENT: no such file or directory, open '/data/config.json'"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "econnrefused",
+        "text": "connect ECONNREFUSED 127.0.0.1:5432",
+        "expectedKinds": [
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "connect ECONNREFUSED 127.0.0.1:5432"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "sqlite-locked",
+        "text": "SQLITE_BUSY: database is locked",
+        "expectedKinds": [
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "SQLITE_BUSY: database is locked"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "http-402",
+        "text": "402 Payment Required",
+        "expectedKinds": [
+          "quota",
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "402 Payment Required"
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": false
+      },
+      {
+        "source": "stripe-card-declined",
+        "text": "Your card was declined.",
+        "expectedKinds": [
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Your card was declined."
+        },
+        "class": "tool_fail:other",
+        "actualKind": "other",
+        "match": true,
+        "primaryMatch": true
+      },
+      {
+        "source": "json-parse-unexpected-token (upstream returned HTML)",
+        "text": "Unexpected token < in JSON at position 0",
+        "expectedKinds": [
+          "other",
+          "internal"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Unexpected token < in JSON at position 0"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "llm-context-length",
+        "text": "This model's maximum context length is 128000 tokens. However, your messages resulted in 143021 tokens.",
+        "expectedKinds": [
+          "other",
+          "quota"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "This model's maximum context length is 128000 tokens. However, your messages resulted in 143021 tokens."
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "enoent-token-filename",
+        "text": "ENOENT: no such file or directory, open '/home/u/.config/auth-tokens.json'",
+        "expectedKinds": [
+          "other"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "ENOENT: no such file or directory, open '/home/u/.config/auth-tokens.json'"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": false,
+        "primaryMatch": false
+      },
+      {
+        "source": "oauth-refresh-rate-limited",
+        "text": "Failed to refresh access token: rate limit exceeded",
+        "expectedKinds": [
+          "quota",
+          "auth"
+        ],
+        "evidence": {
+          "isError": true,
+          "errorText": "Failed to refresh access token: rate limit exceeded"
+        },
+        "class": "tool_fail:auth",
+        "actualKind": "auth",
+        "match": true,
+        "primaryMatch": false
+      }
+    ]
+  },
+  "partC2_proposal": {
+    "experiment": "classifier-realworld part (c2) — proposal evaluation (repo untouched)",
+    "when": "2026-07-04T19:53:59.616Z",
+    "summary": {
+      "n": 46,
+      "currentMisclassified": 11,
+      "currentMisPct": 23.9,
+      "proposedMisclassified": 0,
+      "proposedMisPct": 0,
+      "fixedByProposal": [
+        "github-403-rate-limit (verbatim docs text): auth → quota",
+        "openai-429-tpm: auth → quota",
+        "slack-invalid-auth: other → auth",
+        "slack-not-authed: other → auth",
+        "aws-signature-expired: other → auth",
+        "fs-server-access-denied (real text captured in part a S2): other → auth",
+        "json-parse-unexpected-token (upstream returned HTML): auth → other",
+        "llm-context-length: auth → other",
+        "enoent-token-filename: auth → other",
+        "live-wire:S1b-fs-read-nonexistent-token-filename: auth → other",
+        "live-wire:S2-fs-write-outside-sandbox: other → auth"
+      ],
+      "regressionsFromProposal": [],
+      "stillWrongUnderProposal": []
+    },
+    "rows": [
+      {
+        "source": "github-403-rate-limit (verbatim docs text)",
+        "text": "API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "auth",
+        "proposed": "quota",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "github-secondary-rate-limit",
+        "text": "You have exceeded a secondary rate limit. Please wait a few minutes before you try again.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "quota",
+        "proposed": "quota",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "openai-insufficient-quota",
+        "text": "You exceeded your current quota, please check your plan and billing details.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "quota",
+        "proposed": "quota",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "openai-429-tpm",
+        "text": "Rate limit reached for gpt-4o in organization org-Abc123 on tokens per min (TPM): Limit 30000, Used 29869, Requested 654. Please try again in 1.046s.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "auth",
+        "proposed": "quota",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "google-api-quota",
+        "text": "Quota exceeded for quota metric 'Queries' and limit 'Queries per day' of service 'customsearch.googleapis.com'.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "quota",
+        "proposed": "quota",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "http-429-plain",
+        "text": "429 Too Many Requests",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "quota",
+        "proposed": "quota",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "npm-registry-quota",
+        "text": "Monthly download quota exceeded for package @scope/name.",
+        "expectedKinds": [
+          "quota"
+        ],
+        "current": "quota",
+        "proposed": "quota",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "slack-invalid-auth",
+        "text": "Slack API error: invalid_auth",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "other",
+        "proposed": "auth",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "slack-not-authed",
+        "text": "An API error occurred: not_authed",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "other",
+        "proposed": "auth",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "github-bad-credentials",
+        "text": "Bad credentials",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "anthropic-401",
+        "text": "authentication_error: invalid x-api-key",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "aws-invalid-token",
+        "text": "The security token included in the request is invalid.",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "aws-signature-expired",
+        "text": "Signature expired: 20260704T000000Z is now earlier than 20260704T010000Z (20260704T011500Z - 15 min.)",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "other",
+        "proposed": "auth",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "git-auth-failed",
+        "text": "fatal: Authentication failed for 'https://github.com/o/r.git/'",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "notion-invalid-token",
+        "text": "API token is invalid.",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "google-oauth-invalid-grant",
+        "text": "invalid_grant: Token has been expired or revoked.",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "http-403-plain",
+        "text": "403 Forbidden",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "eacces",
+        "text": "EACCES: permission denied, open '/etc/hosts'",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "fs-server-access-denied (real text captured in part a S2)",
+        "text": "Access denied - path outside allowed directories: /private/tmp/x.txt not in /tmp/sandbox",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "other",
+        "proposed": "auth",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "node-etimedout",
+        "text": "connect ETIMEDOUT 10.0.0.1:443",
+        "expectedKinds": [
+          "timeout"
+        ],
+        "current": "timeout",
+        "proposed": "timeout",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "generic-timed-out",
+        "text": "The operation timed out after 30000 milliseconds with 0 bytes received",
+        "expectedKinds": [
+          "timeout"
+        ],
+        "current": "timeout",
+        "proposed": "timeout",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "gateway-timeout",
+        "text": "504 Gateway Time-out",
+        "expectedKinds": [
+          "timeout"
+        ],
+        "current": "timeout",
+        "proposed": "timeout",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "sdk-invalid-arguments",
+        "text": "Invalid arguments for tool create_entities: expected array, received string at path 'entities'",
+        "expectedKinds": [
+          "schema"
+        ],
+        "current": "schema",
+        "proposed": "schema",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "missing-required-param",
+        "text": "Missing required parameter: 'query'",
+        "expectedKinds": [
+          "schema"
+        ],
+        "current": "schema",
+        "proposed": "schema",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "zod-must-be-type",
+        "text": "Validation failed: name must be of type string",
+        "expectedKinds": [
+          "schema"
+        ],
+        "current": "schema",
+        "proposed": "schema",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "http-500-plain",
+        "text": "Request failed with status code 500",
+        "expectedKinds": [
+          "internal"
+        ],
+        "current": "internal",
+        "proposed": "internal",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "internal-server-error",
+        "text": "Internal server error occurred while processing your request.",
+        "expectedKinds": [
+          "internal"
+        ],
+        "current": "internal",
+        "proposed": "internal",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "panic",
+        "text": "panic: runtime error: invalid memory address or nil pointer dereference",
+        "expectedKinds": [
+          "internal"
+        ],
+        "current": "internal",
+        "proposed": "internal",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "http-503",
+        "text": "503 Service Unavailable: back-off and retry in 30 seconds",
+        "expectedKinds": [
+          "internal",
+          "other"
+        ],
+        "current": "other",
+        "proposed": "internal",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "slack-channel-not-found",
+        "text": "An API error occurred: channel_not_found",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "enoent",
+        "text": "ENOENT: no such file or directory, open '/data/config.json'",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "econnrefused",
+        "text": "connect ECONNREFUSED 127.0.0.1:5432",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "sqlite-locked",
+        "text": "SQLITE_BUSY: database is locked",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "http-402",
+        "text": "402 Payment Required",
+        "expectedKinds": [
+          "quota",
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "stripe-card-declined",
+        "text": "Your card was declined.",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "json-parse-unexpected-token (upstream returned HTML)",
+        "text": "Unexpected token < in JSON at position 0",
+        "expectedKinds": [
+          "other",
+          "internal"
+        ],
+        "current": "auth",
+        "proposed": "other",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "llm-context-length",
+        "text": "This model's maximum context length is 128000 tokens. However, your messages resulted in 143021 tokens.",
+        "expectedKinds": [
+          "other",
+          "quota"
+        ],
+        "current": "auth",
+        "proposed": "other",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "enoent-token-filename",
+        "text": "ENOENT: no such file or directory, open '/home/u/.config/auth-tokens.json'",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "auth",
+        "proposed": "other",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "oauth-refresh-rate-limited",
+        "text": "Failed to refresh access token: rate limit exceeded",
+        "expectedKinds": [
+          "quota",
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "quota",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S1-fs-read-nonexistent",
+        "text": "ENOENT: no such file or directory, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/does-not-exist.txt'",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S1b-fs-read-nonexistent-token-filename",
+        "text": "ENOENT: no such file or directory, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/auth-tokens.txt'",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "auth",
+        "proposed": "other",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S2-fs-write-outside-sandbox",
+        "text": "Access denied - path outside allowed directories: /Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/outside-root/escape.txt not in /Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "other",
+        "proposed": "auth",
+        "currentOk": false,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S3-fs-chmod000-read",
+        "text": "EACCES: permission denied, open '/Users/mo/Downloads/roster/docs/lab/tmp-classifier-realworld/sandbox/locked.txt'",
+        "expectedKinds": [
+          "auth"
+        ],
+        "current": "auth",
+        "proposed": "auth",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S4-memory-malformed-args",
+        "text": "MCP error -32602: Input validation error: Invalid arguments for tool create_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entities\"\n    ],\n    \"message\": \"Invalid input: expected array, received string\"\n  }\n]",
+        "expectedKinds": [
+          "schema"
+        ],
+        "current": "schema",
+        "proposed": "schema",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S4b-memory-missing-args",
+        "text": "MCP error -32602: Input validation error: Invalid arguments for tool create_entities: [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"entities\"\n    ],\n    \"message\": \"Invalid input: expected array, received undefined\"\n  }\n]",
+        "expectedKinds": [
+          "schema"
+        ],
+        "current": "schema",
+        "proposed": "schema",
+        "currentOk": true,
+        "proposedOk": true
+      },
+      {
+        "source": "live-wire:S5-memory-unknown-tool",
+        "text": "MCP error -32602: Tool tool_that_does_not_exist not found",
+        "expectedKinds": [
+          "other"
+        ],
+        "current": "other",
+        "proposed": "other",
+        "currentOk": true,
+        "proposedOk": true
+      }
+    ]
+  }
+}

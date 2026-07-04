@@ -1,0 +1,3097 @@
+{
+  "meta": {
+    "startedAt": "2026-07-04T19:37:12.433Z",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "node": "v22.22.3",
+    "corpusTools": 133,
+    "needs": 66,
+    "shipped": {
+      "lexWeight": 0.3,
+      "cosWeight": 0.7,
+      "minInformativeCosSpan": 0.15
+    },
+    "toolTextRule": "serve.ts:116 `${name}\\n${description}\\n${body ?? ''}`.slice(0,2000), kind=document",
+    "needTextRule": "serve.ts:141 raw need, kind=query",
+    "sanity": {
+      "cosDogPuppy": 0.8049,
+      "cosDogQft": 0.1188,
+      "dims": 384
+    },
+    "toolEmbedMs": 151,
+    "needEmbedMs": 72,
+    "finishedAt": "2026-07-04T19:37:13.121Z"
+  },
+  "parity": {
+    "mismatches": 0,
+    "detail": [],
+    "note": "mirror top-5 vs real draftCandidates top-5 at shipped config, needs with >=5 scored candidates"
+  },
+  "shippedDraftK5": {
+    "lexicalOnly": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.439,
+        "hit5": 0.621,
+        "mrr": 0.46
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.452,
+          "hit5": 0.645,
+          "mrr": 0.484
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0,
+          "hit5": 0.125,
+          "mrr": 0.042
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 0.923,
+          "mrr": 0.714
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.6,
+          "hit5": 0.8,
+          "mrr": 0.45
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.25
+        }
+      }
+    },
+    "hybrid": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.591,
+        "hit5": 0.788,
+        "mrr": 0.622
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.645,
+          "hit5": 0.806,
+          "mrr": 0.667
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.333
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.25
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.692,
+          "hit5": 1,
+          "mrr": 0.801
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "draftLatencyMs": {
+      "lex": {
+        "mean": 0.09,
+        "p95": 0.13
+      },
+      "hyb": {
+        "mean": 0.36,
+        "p95": 0.57
+      }
+    }
+  },
+  "rankMovement": {
+    "regressions": 4,
+    "improvements": 30,
+    "unchanged": 32,
+    "hit5Losses": 1,
+    "hit5Gains": 12,
+    "regressionDetail": [
+      {
+        "need": "remember that the user prefers dark mode",
+        "style": "paraphrase",
+        "lexRank": 31,
+        "hybRank": 108,
+        "cosSpan": 0.3252,
+        "bestAcceptableCos": -0.0446,
+        "maxCos": 0.2078,
+        "hybTop5": [
+          "slack__slack_get_user_profile",
+          "playwright__browser_navigate_back",
+          "playwright__browser_wait_for",
+          "playwright__browser_snapshot",
+          "seq__sequentialthinking"
+        ]
+      },
+      {
+        "need": "save a fact about the user so future sessions can recall it",
+        "style": "paraphrase",
+        "lexRank": 31,
+        "hybRank": 36,
+        "cosSpan": 0.4148,
+        "bestAcceptableCos": 0.0909,
+        "maxCos": 0.3058,
+        "hybTop5": [
+          "slack__slack_get_user_profile",
+          "playwright__browser_handle_dialog",
+          "slack__slack_get_channel_history",
+          "playwright__browser_navigate_back",
+          "sqlite__append_insight"
+        ]
+      },
+      {
+        "need": "Persist the following durable preference so that any future conversation can retrieve it without the user restating it: the user's timezone is America/Toronto",
+        "style": "verbose",
+        "lexRank": 35,
+        "hybRank": 39,
+        "cosSpan": 0.6062,
+        "bestAcceptableCos": 0.0532,
+        "maxCos": 0.4772,
+        "hybTop5": [
+          "time__get_current_time",
+          "time__convert_time",
+          "slack__slack_get_user_profile",
+          "playwright__browser_handle_dialog",
+          "fs__list_allowed_directories"
+        ]
+      },
+      {
+        "need": "go to the pricing page",
+        "style": "zero-overlap",
+        "lexRank": 14,
+        "hybRank": 18,
+        "cosSpan": 0.2537,
+        "bestAcceptableCos": 0.0398,
+        "maxCos": 0.1468,
+        "hybTop5": [
+          "playwright__browser_evaluate",
+          "playwright__browser_navigate_back",
+          "github__get_pull_request",
+          "puppeteer__puppeteer_hover",
+          "github__merge_pull_request"
+        ]
+      }
+    ]
+  },
+  "weightSweep": {
+    "lex1_cos0_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.424,
+        "hit5": 0.591,
+        "mrr": 0.447
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.452,
+          "hit5": 0.613,
+          "mrr": 0.473
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0,
+          "hit5": 0.125,
+          "mrr": 0.042
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 0.923,
+          "mrr": 0.714
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.6,
+          "hit5": 0.8,
+          "mrr": 0.45
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        }
+      }
+    },
+    "lex0.7_cos0.3_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.515,
+        "hit5": 0.712,
+        "mrr": 0.529
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.548,
+          "hit5": 0.71,
+          "mrr": 0.54
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.125,
+          "hit5": 0.375,
+          "mrr": 0.198
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 1,
+          "mrr": 0.75
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 0.8,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.5_cos0.5_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.53,
+        "hit5": 0.712,
+        "mrr": 0.548
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.548,
+          "hit5": 0.71,
+          "mrr": 0.556
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.375,
+          "mrr": 0.281
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.1
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 1,
+          "mrr": 0.744
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 0.8,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.3_cos0.7_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.591,
+        "hit5": 0.788,
+        "mrr": 0.622
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.645,
+          "hit5": 0.806,
+          "mrr": 0.667
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.333
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.25
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.692,
+          "hit5": 1,
+          "mrr": 0.801
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.2_cos0.8_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.636,
+        "hit5": 0.833,
+        "mrr": 0.639
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.677,
+          "hit5": 0.871,
+          "mrr": 0.68
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.5
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.769,
+          "hit5": 1,
+          "mrr": 0.84
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.625
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.15_cos0.85_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.636,
+        "hit5": 0.833,
+        "mrr": 0.649
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.677,
+          "hit5": 0.871,
+          "mrr": 0.701
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.5
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.769,
+          "hit5": 1,
+          "mrr": 0.84
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.625
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.1_cos0.9_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.652,
+        "hit5": 0.833,
+        "mrr": 0.641
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.677,
+          "hit5": 0.871,
+          "mrr": 0.689
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.5
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.769,
+          "hit5": 1,
+          "mrr": 0.84
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.583
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 1,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0_cos1_abstain0.15": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.636,
+        "hit5": 0.833,
+        "mrr": 0.634
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.645,
+          "hit5": 0.871,
+          "mrr": 0.669
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.25
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.846,
+          "hit5": 1,
+          "mrr": 0.891
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.583
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 1,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex1_cos0_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.424,
+        "hit5": 0.591,
+        "mrr": 0.447
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.452,
+          "hit5": 0.613,
+          "mrr": 0.473
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0,
+          "hit5": 0.125,
+          "mrr": 0.042
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 0.923,
+          "mrr": 0.714
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.6,
+          "hit5": 0.8,
+          "mrr": 0.45
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        }
+      }
+    },
+    "lex0.7_cos0.3_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.515,
+        "hit5": 0.712,
+        "mrr": 0.529
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.548,
+          "hit5": 0.71,
+          "mrr": 0.54
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.125,
+          "hit5": 0.375,
+          "mrr": 0.198
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 1,
+          "mrr": 0.75
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 0.8,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.5_cos0.5_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.53,
+        "hit5": 0.712,
+        "mrr": 0.548
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.548,
+          "hit5": 0.71,
+          "mrr": 0.556
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.375,
+          "mrr": 0.281
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.1
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.615,
+          "hit5": 1,
+          "mrr": 0.744
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 0.8,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.3_cos0.7_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.591,
+        "hit5": 0.788,
+        "mrr": 0.622
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.645,
+          "hit5": 0.806,
+          "mrr": 0.667
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.333
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.25
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.692,
+          "hit5": 1,
+          "mrr": 0.801
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.75
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 0,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.2_cos0.8_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.636,
+        "hit5": 0.833,
+        "mrr": 0.639
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.677,
+          "hit5": 0.871,
+          "mrr": 0.68
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.5
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.769,
+          "hit5": 1,
+          "mrr": 0.84
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.625
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.15_cos0.85_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.636,
+        "hit5": 0.833,
+        "mrr": 0.649
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.677,
+          "hit5": 0.871,
+          "mrr": 0.701
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.5
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.769,
+          "hit5": 1,
+          "mrr": 0.84
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.625
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 0.8,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0.1_cos0.9_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.652,
+        "hit5": 0.833,
+        "mrr": 0.641
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.677,
+          "hit5": 0.871,
+          "mrr": 0.689
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.5
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.769,
+          "hit5": 1,
+          "mrr": 0.84
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.583
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 1,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    },
+    "lex0_cos1_abstain0": {
+      "overall": {
+        "n": 66,
+        "hit1": 0.636,
+        "hit5": 0.833,
+        "mrr": 0.634
+      },
+      "byStyle": {
+        "paraphrase": {
+          "n": 31,
+          "hit1": 0.645,
+          "hit5": 0.871,
+          "mrr": 0.669
+        },
+        "zero-overlap": {
+          "n": 8,
+          "hit1": 0.25,
+          "hit5": 0.5,
+          "mrr": 0.354
+        },
+        "verbose": {
+          "n": 2,
+          "hit1": 0,
+          "hit5": 0.5,
+          "mrr": 0.25
+        },
+        "terse": {
+          "n": 13,
+          "hit1": 0.846,
+          "hit5": 1,
+          "mrr": 0.891
+        },
+        "cross-server": {
+          "n": 4,
+          "hit1": 0.75,
+          "hit5": 0.75,
+          "mrr": 0.583
+        },
+        "trap": {
+          "n": 5,
+          "hit1": 1,
+          "hit5": 1,
+          "mrr": 0.7
+        },
+        "typo": {
+          "n": 1,
+          "hit1": 0,
+          "hit5": 1,
+          "mrr": 0
+        },
+        "non-english": {
+          "n": 2,
+          "hit1": 0.5,
+          "hit5": 0.5,
+          "mrr": 0.167
+        }
+      }
+    }
+  },
+  "spanDistribution": {
+    "deciles": {
+      "p0": 0.2175,
+      "p10": 0.3459,
+      "p20": 0.4148,
+      "p30": 0.4622,
+      "p40": 0.4931,
+      "p50": 0.5541,
+      "p60": 0.5849,
+      "p70": 0.6342,
+      "p80": 0.7091,
+      "p90": 0.7545,
+      "p100": 0.9354
+    },
+    "mean": 0.5515,
+    "abstainRateAt015": 0,
+    "abstainedNeeds": []
+  },
+  "thresholdSweep": [
+    {
+      "threshold": 0,
+      "abstainRate": 0,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.05,
+      "abstainRate": 0,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.1,
+      "abstainRate": 0,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.15,
+      "abstainRate": 0,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.2,
+      "abstainRate": 0,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.25,
+      "abstainRate": 0.015,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.3,
+      "abstainRate": 0.045,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "threshold": 0.35,
+      "abstainRate": 0.106,
+      "hit1": 0.576,
+      "hit5": 0.788,
+      "mrr": 0.617
+    },
+    {
+      "threshold": 0.4,
+      "abstainRate": 0.167,
+      "hit1": 0.561,
+      "hit5": 0.773,
+      "mrr": 0.595
+    }
+  ],
+  "pairedPureCosVsShipped": {
+    "rrWins01": 9,
+    "rrWins0307": 5,
+    "rrTies": 52,
+    "hit5Wins01": 3,
+    "hit5Wins0307": 0,
+    "hit5Ties": 63
+  },
+  "maxCosGateSweep": [
+    {
+      "gate": 0,
+      "wLex": 0.3,
+      "wCos": 0.7,
+      "abstainRate": 0,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "gate": 0,
+      "wLex": 0,
+      "wCos": 1,
+      "abstainRate": 0,
+      "hit1": 0.636,
+      "hit5": 0.833,
+      "mrr": 0.634
+    },
+    {
+      "gate": 0.2,
+      "wLex": 0.3,
+      "wCos": 0.7,
+      "abstainRate": 0.045,
+      "hit1": 0.591,
+      "hit5": 0.788,
+      "mrr": 0.622
+    },
+    {
+      "gate": 0.2,
+      "wLex": 0,
+      "wCos": 1,
+      "abstainRate": 0.045,
+      "hit1": 0.636,
+      "hit5": 0.833,
+      "mrr": 0.634
+    },
+    {
+      "gate": 0.25,
+      "wLex": 0.3,
+      "wCos": 0.7,
+      "abstainRate": 0.121,
+      "hit1": 0.576,
+      "hit5": 0.788,
+      "mrr": 0.617
+    },
+    {
+      "gate": 0.25,
+      "wLex": 0,
+      "wCos": 1,
+      "abstainRate": 0.121,
+      "hit1": 0.621,
+      "hit5": 0.833,
+      "mrr": 0.64
+    },
+    {
+      "gate": 0.3,
+      "wLex": 0.3,
+      "wCos": 0.7,
+      "abstainRate": 0.212,
+      "hit1": 0.561,
+      "hit5": 0.742,
+      "mrr": 0.582
+    },
+    {
+      "gate": 0.3,
+      "wLex": 0,
+      "wCos": 1,
+      "abstainRate": 0.212,
+      "hit1": 0.591,
+      "hit5": 0.773,
+      "mrr": 0.594
+    },
+    {
+      "gate": 0.35,
+      "wLex": 0.3,
+      "wCos": 0.7,
+      "abstainRate": 0.348,
+      "hit1": 0.53,
+      "hit5": 0.697,
+      "mrr": 0.564
+    },
+    {
+      "gate": 0.35,
+      "wLex": 0,
+      "wCos": 1,
+      "abstainRate": 0.348,
+      "hit1": 0.561,
+      "hit5": 0.727,
+      "mrr": 0.584
+    },
+    {
+      "gate": 0.4,
+      "wLex": 0.3,
+      "wCos": 0.7,
+      "abstainRate": 0.485,
+      "hit1": 0.5,
+      "hit5": 0.652,
+      "mrr": 0.527
+    },
+    {
+      "gate": 0.4,
+      "wLex": 0,
+      "wCos": 1,
+      "abstainRate": 0.485,
+      "hit1": 0.515,
+      "hit5": 0.682,
+      "mrr": 0.539
+    }
+  ],
+  "maxCosDiagnostics": {
+    "deciles": {
+      "p0": 0.1278,
+      "p10": 0.2149,
+      "p20": 0.2995,
+      "p30": 0.3281,
+      "p40": 0.3548,
+      "p50": 0.4046,
+      "p60": 0.4321,
+      "p70": 0.5027,
+      "p80": 0.5452,
+      "p90": 0.6093,
+      "p100": 0.8507
+    },
+    "meanWhereHybridImproved": 0.3582,
+    "meanWhereHybridRegressed": 0.2844,
+    "meanWhereUnchanged": 0.4906
+  },
+  "perNeed": [
+    {
+      "need": "remember that the user prefers dark mode",
+      "style": "paraphrase",
+      "cosSpan": 0.3252,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2078,
+      "bestAcceptableCos": -0.0446,
+      "lexTop5": [
+        "slack__slack_get_user_profile",
+        "git__git_diff_staged",
+        "git__git_diff_unstaged",
+        "fs__list_allowed_directories",
+        "firecrawl__firecrawl_search"
+      ],
+      "hybTop5": [
+        "slack__slack_get_user_profile",
+        "playwright__browser_navigate_back",
+        "playwright__browser_wait_for",
+        "playwright__browser_snapshot",
+        "seq__sequentialthinking"
+      ],
+      "lexRankFull": 31,
+      "hybRankFull": 108,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "what do we already know about this person",
+      "style": "zero-overlap",
+      "cosSpan": 0.3323,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2149,
+      "bestAcceptableCos": 0.0761,
+      "lexTop5": [
+        "fs__get_file_info",
+        "linear__linear_get_issue",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file"
+      ],
+      "hybTop5": [
+        "fs__get_file_info",
+        "slack__slack_get_user_profile",
+        "linear__linear_get_issue",
+        "memory__add_observations",
+        "slack__slack_get_users"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 30,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "save a fact about the user so future sessions can recall it",
+      "style": "paraphrase",
+      "cosSpan": 0.4148,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3058,
+      "bestAcceptableCos": 0.0909,
+      "lexTop5": [
+        "slack__slack_get_user_profile",
+        "playwright__browser_handle_dialog",
+        "fs__get_file_info",
+        "linear__linear_get_issue",
+        "firecrawl__firecrawl_search"
+      ],
+      "hybTop5": [
+        "slack__slack_get_user_profile",
+        "playwright__browser_handle_dialog",
+        "slack__slack_get_channel_history",
+        "playwright__browser_navigate_back",
+        "sqlite__append_insight"
+      ],
+      "lexRankFull": 31,
+      "hybRankFull": 36,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "link these two concepts together in the knowledge base",
+      "style": "paraphrase",
+      "cosSpan": 0.5387,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4046,
+      "bestAcceptableCos": 0.3991,
+      "lexTop5": [
+        "everything__add",
+        "git__git_create_branch",
+        "playwright__browser_drag",
+        "memory__create_entities",
+        "memory__delete_observations"
+      ],
+      "hybTop5": [
+        "memory__create_relations",
+        "memory__create_entities",
+        "memory__search_nodes",
+        "memory__delete_entities",
+        "memory__delete_observations"
+      ],
+      "lexRankFull": 6,
+      "hybRankFull": 1,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "forget everything we stored about acme corp",
+      "style": "paraphrase",
+      "cosSpan": 0.4153,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2856,
+      "bestAcceptableCos": 0.2305,
+      "lexTop5": [
+        "fs__get_file_info",
+        "linear__linear_get_issue",
+        "everything__add",
+        "everything__printEnv",
+        "everything__echo"
+      ],
+      "hybTop5": [
+        "sqlite__append_insight",
+        "fs__get_file_info",
+        "memory__delete_entities",
+        "memory__delete_relations",
+        "memory__delete_observations"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 3,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "Persist the following durable preference so that any future conversation can retrieve it without the user restating it: the user's timezone is America/Toronto",
+      "style": "verbose",
+      "cosSpan": 0.6062,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4772,
+      "bestAcceptableCos": 0.0532,
+      "lexTop5": [
+        "fs__list_allowed_directories",
+        "slack__slack_get_user_profile",
+        "time__get_current_time",
+        "playwright__browser_handle_dialog",
+        "fs__get_file_info"
+      ],
+      "hybTop5": [
+        "time__get_current_time",
+        "time__convert_time",
+        "slack__slack_get_user_profile",
+        "playwright__browser_handle_dialog",
+        "fs__list_allowed_directories"
+      ],
+      "lexRankFull": 35,
+      "hybRankFull": 39,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "show me what's inside config.yaml",
+      "style": "paraphrase",
+      "cosSpan": 0.2879,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2042,
+      "bestAcceptableCos": 0.1044,
+      "lexTop5": [
+        "git__git_show",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file",
+        "fs__read_multiple_files"
+      ],
+      "hybTop5": [
+        "git__git_show",
+        "git__git_add",
+        "everything__printEnv",
+        "git__git_log",
+        "git__git_status"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 34,
+      "lexHit5": 1,
+      "hybHit5": 0
+    },
+    {
+      "need": "make a folder for the build artifacts",
+      "style": "paraphrase",
+      "cosSpan": 0.526,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3838,
+      "bestAcceptableCos": 0.3838,
+      "lexTop5": [
+        "fs__edit_file",
+        "playwright__browser_wait_for",
+        "github__search_repositories",
+        "github__search_users",
+        "github__search_code"
+      ],
+      "hybTop5": [
+        "fs__create_directory",
+        "github__search_code",
+        "github__search_repositories",
+        "fs__edit_file",
+        "fs__search_files"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 1,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "find every markdown file in the project",
+      "style": "paraphrase",
+      "cosSpan": 0.4622,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3538,
+      "bestAcceptableCos": 0.2809,
+      "lexTop5": [
+        "fs__read_file",
+        "fetch__fetch",
+        "firecrawl__firecrawl_scrape",
+        "github__create_or_update_file",
+        "fs__read_text_file"
+      ],
+      "hybTop5": [
+        "fetch__fetch",
+        "fs__get_file_info",
+        "firecrawl__firecrawl_scrape",
+        "fs__read_file",
+        "fs__edit_file"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 15,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "rename report.txt to final-report.txt",
+      "style": "paraphrase",
+      "cosSpan": 0.3711,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2928,
+      "bestAcceptableCos": 0.2928,
+      "lexTop5": [
+        "sqlite__append_insight",
+        "fs__move_file",
+        "slack__slack_reply_to_thread",
+        "playwright__browser_wait_for",
+        "git__git_commit"
+      ],
+      "hybTop5": [
+        "sqlite__append_insight",
+        "fs__move_file",
+        "fs__write_file",
+        "fs__read_text_file",
+        "github__add_issue_comment"
+      ],
+      "lexRankFull": 2,
+      "hybRankFull": 2,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "how big is that log file",
+      "style": "zero-overlap",
+      "cosSpan": 0.4591,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3551,
+      "bestAcceptableCos": 0.2994,
+      "lexTop5": [
+        "fs__list_allowed_directories",
+        "git__git_log",
+        "git__git_diff_staged",
+        "fs__read_file",
+        "fs__write_file"
+      ],
+      "hybTop5": [
+        "git__git_log",
+        "fs__list_directory_with_sizes",
+        "fs__get_file_info",
+        "fs__read_file",
+        "fs__read_text_file"
+      ],
+      "lexRankFull": 8,
+      "hybRankFull": 2,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "append a line to my notes file",
+      "style": "paraphrase",
+      "cosSpan": 0.5593,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4262,
+      "bestAcceptableCos": 0.4262,
+      "lexTop5": [
+        "fs__edit_file",
+        "sqlite__append_insight",
+        "git__git_add",
+        "fs__read_file",
+        "fs__write_file"
+      ],
+      "hybTop5": [
+        "fs__edit_file",
+        "sqlite__append_insight",
+        "fs__write_file",
+        "fs__read_text_file",
+        "github__add_issue_comment"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "which directories am i allowed to touch",
+      "style": "paraphrase",
+      "cosSpan": 0.6583,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5117,
+      "bestAcceptableCos": 0.5117,
+      "lexTop5": [
+        "fs__list_allowed_directories",
+        "fs__move_file",
+        "fs__search_files",
+        "fs__list_directory",
+        "fs__directory_tree"
+      ],
+      "hybTop5": [
+        "fs__list_allowed_directories",
+        "fs__move_file",
+        "fs__create_directory",
+        "fs__directory_tree",
+        "fs__list_directory"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "open a pull request with my changes",
+      "style": "terse",
+      "cosSpan": 0.8001,
+      "abstainedAtShipped": false,
+      "maxCos": 0.6773,
+      "bestAcceptableCos": 0.6282,
+      "lexTop5": [
+        "github__merge_pull_request",
+        "github__get_pull_request",
+        "github__create_pull_request_review",
+        "github__create_pull_request",
+        "github__get_pull_request_files"
+      ],
+      "hybTop5": [
+        "github__merge_pull_request",
+        "github__get_pull_request",
+        "github__get_pull_request_files",
+        "github__create_pull_request",
+        "github__create_pull_request_review"
+      ],
+      "lexRankFull": 4,
+      "hybRankFull": 4,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "file a bug report on the upstream repo",
+      "style": "paraphrase",
+      "cosSpan": 0.6719,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5248,
+      "bestAcceptableCos": 0.4335,
+      "lexTop5": [
+        "sqlite__append_insight",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__write_file",
+        "gdrive__gdrive_read_file"
+      ],
+      "hybTop5": [
+        "github__create_or_update_file",
+        "github__get_issue",
+        "sqlite__append_insight",
+        "github__search_issues",
+        "github__get_file_contents"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 8,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "who changed this file recently",
+      "style": "cross-server",
+      "cosSpan": 0.4468,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3533,
+      "bestAcceptableCos": 0.2131,
+      "lexTop5": [
+        "github__get_pull_request_files",
+        "fs__list_allowed_directories",
+        "fs__read_file",
+        "fs__write_file",
+        "fs__read_text_file"
+      ],
+      "hybTop5": [
+        "github__get_pull_request_files",
+        "fs__read_file",
+        "fs__write_file",
+        "fs__get_file_info",
+        "fs__edit_file"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 15,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "find repositories about vector databases",
+      "style": "terse",
+      "cosSpan": 0.6486,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5116,
+      "bestAcceptableCos": 0.5116,
+      "lexTop5": [
+        "github__search_repositories",
+        "notion__notion_search",
+        "github__search_code",
+        "fs__get_file_info",
+        "linear__linear_get_issue"
+      ],
+      "hybTop5": [
+        "github__search_repositories",
+        "github__search_code",
+        "notion__notion_search",
+        "github__search_issues",
+        "github__search_users"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "merge that approved pull request",
+      "style": "terse",
+      "cosSpan": 0.9354,
+      "abstainedAtShipped": false,
+      "maxCos": 0.8507,
+      "bestAcceptableCos": 0.8507,
+      "lexTop5": [
+        "github__merge_pull_request",
+        "github__get_pull_request",
+        "github__create_pull_request_review",
+        "github__create_pull_request",
+        "github__get_pull_request_files"
+      ],
+      "hybTop5": [
+        "github__merge_pull_request",
+        "github__get_pull_request",
+        "github__create_pull_request",
+        "github__create_pull_request_review",
+        "github__get_pull_request_files"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "leave a comment on issue 42",
+      "style": "terse",
+      "cosSpan": 0.5541,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4208,
+      "bestAcceptableCos": 0.4208,
+      "lexTop5": [
+        "github__add_issue_comment",
+        "linear__linear_create_comment",
+        "github__create_issue",
+        "github__update_issue",
+        "linear__linear_update_issue"
+      ],
+      "hybTop5": [
+        "github__add_issue_comment",
+        "linear__linear_create_comment",
+        "github__create_issue",
+        "github__update_issue",
+        "github__get_issue"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "grab the raw contents of the README from the remote repo",
+      "style": "trap",
+      "cosSpan": 0.6376,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4489,
+      "bestAcceptableCos": 0.4489,
+      "lexTop5": [
+        "github__get_file_contents",
+        "gdrive__gdrive_read_file",
+        "fs__read_file",
+        "fs__read_text_file",
+        "git__git_show"
+      ],
+      "hybTop5": [
+        "github__get_file_contents",
+        "fetch__fetch",
+        "gdrive__gdrive_read_file",
+        "fs__read_file",
+        "fs__read_text_file"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "which files did that pull request touch",
+      "style": "paraphrase",
+      "cosSpan": 0.68,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5243,
+      "bestAcceptableCos": 0.5243,
+      "lexTop5": [
+        "github__get_pull_request_files",
+        "github__merge_pull_request",
+        "github__get_pull_request",
+        "github__create_pull_request_review",
+        "github__create_pull_request"
+      ],
+      "hybTop5": [
+        "github__get_pull_request_files",
+        "github__get_pull_request",
+        "github__merge_pull_request",
+        "github__create_pull_request",
+        "github__create_pull_request_review"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "commit my staged changes with a message",
+      "style": "terse",
+      "cosSpan": 0.7545,
+      "abstainedAtShipped": false,
+      "maxCos": 0.6313,
+      "bestAcceptableCos": 0.46,
+      "lexTop5": [
+        "git__git_diff_staged",
+        "git__git_reset",
+        "git__git_commit",
+        "git__git_diff_unstaged",
+        "slack__slack_post_message"
+      ],
+      "hybTop5": [
+        "git__git_diff_staged",
+        "git__git_reset",
+        "git__git_commit",
+        "git__git_diff_unstaged",
+        "slack__slack_post_message"
+      ],
+      "lexRankFull": 3,
+      "hybRankFull": 3,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "what's changed since my last commit",
+      "style": "paraphrase",
+      "cosSpan": 0.7344,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5788,
+      "bestAcceptableCos": 0.4582,
+      "lexTop5": [
+        "playwright__browser_network_requests",
+        "github__get_pull_request_files",
+        "git__git_log",
+        "git__git_commit",
+        "git__git_show"
+      ],
+      "hybTop5": [
+        "git__git_commit",
+        "git__git_log",
+        "git__git_diff_staged",
+        "git__git_show",
+        "github__get_pull_request_files"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 6,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "start a new branch for the hotfix",
+      "style": "cross-server",
+      "cosSpan": 0.5614,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3865,
+      "bestAcceptableCos": 0.3865,
+      "lexTop5": [
+        "git__git_create_branch",
+        "github__create_branch",
+        "github__list_commits",
+        "fs__write_file",
+        "playwright__browser_wait_for"
+      ],
+      "hybTop5": [
+        "github__create_branch",
+        "git__git_create_branch",
+        "git__git_checkout",
+        "github__create_pull_request",
+        "github__create_repository"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "show me this repo's history",
+      "style": "paraphrase",
+      "cosSpan": 0.5282,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4218,
+      "bestAcceptableCos": 0.3899,
+      "lexTop5": [
+        "git__git_show",
+        "slack__slack_get_channel_history",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file"
+      ],
+      "hybTop5": [
+        "git__git_show",
+        "git__git_commit",
+        "github__list_commits",
+        "slack__slack_get_channel_history",
+        "github__search_repositories"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 3,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "unstage everything i added",
+      "style": "paraphrase",
+      "cosSpan": 0.4719,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2909,
+      "bestAcceptableCos": 0.2494,
+      "lexTop5": [
+        "everything__add",
+        "everything__printEnv",
+        "everything__echo",
+        "everything__getTinyImage",
+        "everything__longRunningOperation"
+      ],
+      "hybTop5": [
+        "everything__add",
+        "git__git_reset",
+        "git__git_diff_unstaged",
+        "everything__echo",
+        "everything__printEnv"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 2,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "post an update to the team channel",
+      "style": "paraphrase",
+      "cosSpan": 0.587,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4524,
+      "bestAcceptableCos": 0.4524,
+      "lexTop5": [
+        "slack__slack_post_message",
+        "github__update_issue",
+        "linear__linear_update_issue",
+        "notion__notion_update_page",
+        "slack__slack_get_channel_history"
+      ],
+      "hybTop5": [
+        "slack__slack_post_message",
+        "github__update_issue",
+        "slack__slack_get_channel_history",
+        "linear__linear_create_issue",
+        "linear__linear_update_issue"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "read the room before replying",
+      "style": "trap",
+      "cosSpan": 0.477,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3224,
+      "bestAcceptableCos": 0.3224,
+      "lexTop5": [
+        "memory__read_graph",
+        "fs__read_multiple_files",
+        "fs__read_file",
+        "gdrive__gdrive_read_file",
+        "fs__read_text_file"
+      ],
+      "hybTop5": [
+        "memory__read_graph",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_multiple_files",
+        "slack__slack_get_thread_replies"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 5,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "react with a thumbs up to that message",
+      "style": "paraphrase",
+      "cosSpan": 0.5717,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4169,
+      "bestAcceptableCos": 0.4169,
+      "lexTop5": [
+        "slack__slack_post_message",
+        "slack__slack_reply_to_thread",
+        "slack__slack_add_reaction",
+        "fs__list_allowed_directories",
+        "everything__echo"
+      ],
+      "hybTop5": [
+        "slack__slack_add_reaction",
+        "slack__slack_reply_to_thread",
+        "slack__slack_post_message",
+        "puppeteer__puppeteer_click",
+        "slack__slack_get_thread_replies"
+      ],
+      "lexRankFull": 3,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "who is in this workspace",
+      "style": "terse",
+      "cosSpan": 0.4978,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3952,
+      "bestAcceptableCos": 0.3952,
+      "lexTop5": [
+        "fs__list_allowed_directories",
+        "linear__linear_list_projects",
+        "slack__slack_list_channels",
+        "notion__notion_move_pages",
+        "linear__linear_list_issues"
+      ],
+      "hybTop5": [
+        "linear__linear_list_projects",
+        "slack__slack_get_users",
+        "linear__linear_list_issues",
+        "notion__notion_move_pages",
+        "slack__slack_list_channels"
+      ],
+      "lexRankFull": 7,
+      "hybRankFull": 2,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "reply inside the thread, not the main channel",
+      "style": "paraphrase",
+      "cosSpan": 0.7091,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5452,
+      "bestAcceptableCos": 0.5452,
+      "lexTop5": [
+        "slack__slack_reply_to_thread",
+        "slack__slack_get_channel_history",
+        "slack__slack_get_thread_replies",
+        "git__git_diff_unstaged",
+        "slack__slack_post_message"
+      ],
+      "hybTop5": [
+        "slack__slack_reply_to_thread",
+        "slack__slack_get_thread_replies",
+        "slack__slack_post_message",
+        "slack__slack_get_channel_history",
+        "linear__linear_create_comment"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "take a screenshot of the current page",
+      "style": "cross-server",
+      "cosSpan": 0.9236,
+      "abstainedAtShipped": false,
+      "maxCos": 0.8011,
+      "bestAcceptableCos": 0.8011,
+      "lexTop5": [
+        "playwright__browser_take_screenshot",
+        "puppeteer__puppeteer_screenshot",
+        "playwright__browser_snapshot",
+        "playwright__browser_close",
+        "time__get_current_time"
+      ],
+      "hybTop5": [
+        "playwright__browser_take_screenshot",
+        "puppeteer__puppeteer_screenshot",
+        "playwright__browser_snapshot",
+        "playwright__browser_close",
+        "playwright__browser_navigate_back"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "go to the pricing page",
+      "style": "zero-overlap",
+      "cosSpan": 0.2537,
+      "abstainedAtShipped": false,
+      "maxCos": 0.1468,
+      "bestAcceptableCos": 0.0398,
+      "lexTop5": [
+        "playwright__browser_navigate_back",
+        "notion__notion_update_page",
+        "playwright__browser_close",
+        "puppeteer__puppeteer_click",
+        "puppeteer__puppeteer_hover"
+      ],
+      "hybTop5": [
+        "playwright__browser_evaluate",
+        "playwright__browser_navigate_back",
+        "github__get_pull_request",
+        "puppeteer__puppeteer_hover",
+        "github__merge_pull_request"
+      ],
+      "lexRankFull": 14,
+      "hybRankFull": 18,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "click the submit button",
+      "style": "terse",
+      "cosSpan": 0.4642,
+      "abstainedAtShipped": false,
+      "maxCos": 0.34,
+      "bestAcceptableCos": 0.34,
+      "lexTop5": [
+        "puppeteer__puppeteer_click",
+        "playwright__browser_click",
+        "firecrawl__firecrawl_search",
+        "sqlite__append_insight",
+        "fs__read_text_file"
+      ],
+      "hybTop5": [
+        "puppeteer__puppeteer_click",
+        "playwright__browser_click",
+        "playwright__browser_press_key",
+        "playwright__browser_fill_form",
+        "puppeteer__puppeteer_fill"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "type my email into the signup form",
+      "style": "cross-server",
+      "cosSpan": 0.4027,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2181,
+      "bestAcceptableCos": 0.2181,
+      "lexTop5": [
+        "playwright__browser_type",
+        "playwright__browser_fill_form",
+        "fs__read_media_file",
+        "firecrawl__firecrawl_search",
+        "sqlite__append_insight"
+      ],
+      "hybTop5": [
+        "playwright__browser_type",
+        "playwright__browser_fill_form",
+        "playwright__browser_press_key",
+        "puppeteer__puppeteer_fill",
+        "slack__slack_add_reaction"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "what does this page look like to a screen reader",
+      "style": "paraphrase",
+      "cosSpan": 0.5777,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4321,
+      "bestAcceptableCos": 0.4321,
+      "lexTop5": [
+        "fs__list_allowed_directories",
+        "playwright__browser_navigate_back",
+        "notion__notion_update_page",
+        "playwright__browser_close",
+        "slack__slack_reply_to_thread"
+      ],
+      "hybTop5": [
+        "playwright__browser_snapshot",
+        "playwright__browser_navigate_back",
+        "playwright__browser_take_screenshot",
+        "puppeteer__puppeteer_screenshot",
+        "fs__list_allowed_directories"
+      ],
+      "lexRankFull": 24,
+      "hybRankFull": 1,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "run some javascript on the page and give me the result",
+      "style": "paraphrase",
+      "cosSpan": 0.7404,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5471,
+      "bestAcceptableCos": 0.5471,
+      "lexTop5": [
+        "playwright__browser_evaluate",
+        "puppeteer__puppeteer_click",
+        "puppeteer__puppeteer_hover",
+        "playwright__browser_hover",
+        "postgres__query"
+      ],
+      "hybTop5": [
+        "playwright__browser_evaluate",
+        "puppeteer__puppeteer_evaluate",
+        "playwright__browser_click",
+        "puppeteer__puppeteer_click",
+        "fetch__fetch"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "close the extra browser tabs",
+      "style": "terse",
+      "cosSpan": 0.8021,
+      "abstainedAtShipped": false,
+      "maxCos": 0.7185,
+      "bestAcceptableCos": 0.7185,
+      "lexTop5": [
+        "playwright__browser_tabs",
+        "playwright__browser_close",
+        "playwright__browser_resize",
+        "playwright__browser_navigate",
+        "playwright__browser_handle_dialog"
+      ],
+      "hybTop5": [
+        "playwright__browser_tabs",
+        "playwright__browser_close",
+        "playwright__browser_resize",
+        "playwright__browser_handle_dialog",
+        "playwright__browser_navigate_back"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "upload my resume through the file picker on the page",
+      "style": "paraphrase",
+      "cosSpan": 0.7748,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5601,
+      "bestAcceptableCos": 0.5601,
+      "lexTop5": [
+        "playwright__browser_file_upload",
+        "puppeteer__puppeteer_click",
+        "puppeteer__puppeteer_hover",
+        "playwright__browser_hover",
+        "playwright__browser_evaluate"
+      ],
+      "hybTop5": [
+        "playwright__browser_file_upload",
+        "puppeteer__puppeteer_select",
+        "puppeteer__puppeteer_screenshot",
+        "playwright__browser_select_option",
+        "playwright__browser_take_screenshot"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "what errors showed up in the browser console",
+      "style": "paraphrase",
+      "cosSpan": 0.7149,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5602,
+      "bestAcceptableCos": 0.5602,
+      "lexTop5": [
+        "puppeteer__puppeteer_evaluate",
+        "playwright__browser_console_messages",
+        "puppeteer__puppeteer_navigate",
+        "playwright__browser_select_option",
+        "playwright__browser_resize"
+      ],
+      "hybTop5": [
+        "playwright__browser_console_messages",
+        "puppeteer__puppeteer_evaluate",
+        "playwright__browser_resize",
+        "playwright__browser_tabs",
+        "playwright__browser_press_key"
+      ],
+      "lexRankFull": 2,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "search the web for the latest node lts version",
+      "style": "terse",
+      "cosSpan": 0.4779,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3537,
+      "bestAcceptableCos": 0.3537,
+      "lexTop5": [
+        "brave__brave_web_search",
+        "exa__web_search_exa",
+        "firecrawl__firecrawl_search",
+        "github__search_repositories",
+        "github__search_users"
+      ],
+      "hybTop5": [
+        "brave__brave_web_search",
+        "github__search_repositories",
+        "exa__web_search_exa",
+        "memory__search_nodes",
+        "github__search_code"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "pull the text content of that url",
+      "style": "paraphrase",
+      "cosSpan": 0.81,
+      "abstainedAtShipped": false,
+      "maxCos": 0.6397,
+      "bestAcceptableCos": 0.6397,
+      "lexTop5": [
+        "exa__crawling_exa",
+        "github__get_pull_request",
+        "fs__read_text_file",
+        "github__get_pull_request_files",
+        "fs__list_allowed_directories"
+      ],
+      "hybTop5": [
+        "exa__crawling_exa",
+        "fetch__fetch",
+        "github__get_pull_request",
+        "fs__read_text_file",
+        "firecrawl__firecrawl_scrape"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "crawl the whole documentation site",
+      "style": "terse",
+      "cosSpan": 0.7464,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5486,
+      "bestAcceptableCos": 0.5486,
+      "lexTop5": [
+        "firecrawl__firecrawl_crawl",
+        "firecrawl__firecrawl_map",
+        "firecrawl__firecrawl_search",
+        "sqlite__append_insight",
+        "fs__read_text_file"
+      ],
+      "hybTop5": [
+        "firecrawl__firecrawl_crawl",
+        "firecrawl__firecrawl_map",
+        "exa__crawling_exa",
+        "firecrawl__firecrawl_search",
+        "github__search_issues"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "good coffee shops near me",
+      "style": "zero-overlap",
+      "cosSpan": 0.3825,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2706,
+      "bestAcceptableCos": 0.2706,
+      "lexTop5": [
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file",
+        "fs__read_multiple_files",
+        "fs__write_file"
+      ],
+      "hybTop5": [
+        "brave__brave_local_search",
+        "github__search_repositories",
+        "github__search_users",
+        "fs__search_files",
+        "gdrive__gdrive_search"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 1,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "serach for recent security advisores about openssl",
+      "style": "typo",
+      "cosSpan": 0.3866,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2995,
+      "bestAcceptableCos": 0.2062,
+      "lexTop5": [
+        "slack__slack_get_channel_history",
+        "fs__get_file_info",
+        "linear__linear_get_issue",
+        "playwright__browser_wait_for",
+        "github__search_repositories"
+      ],
+      "hybTop5": [
+        "github__search_issues",
+        "github__search_users",
+        "slack__slack_get_channel_history",
+        "sentry__get_sentry_issue",
+        "github__search_repositories"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 7,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "which urls exist on that website",
+      "style": "paraphrase",
+      "cosSpan": 0.576,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4281,
+      "bestAcceptableCos": 0.4281,
+      "lexTop5": [
+        "firecrawl__firecrawl_map",
+        "firecrawl__firecrawl_crawl",
+        "git__git_diff_staged",
+        "git__git_diff_unstaged",
+        "fs__list_allowed_directories"
+      ],
+      "hybTop5": [
+        "firecrawl__firecrawl_map",
+        "fetch__fetch",
+        "playwright__browser_navigate",
+        "playwright__browser_network_requests",
+        "firecrawl__firecrawl_search"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "extract product names and prices from these pages as json",
+      "style": "paraphrase",
+      "cosSpan": 0.5849,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4008,
+      "bestAcceptableCos": 0.4008,
+      "lexTop5": [
+        "fetch__fetch",
+        "fs__directory_tree",
+        "firecrawl__firecrawl_extract",
+        "firecrawl__firecrawl_crawl",
+        "notion__notion_search"
+      ],
+      "hybTop5": [
+        "fetch__fetch",
+        "firecrawl__firecrawl_extract",
+        "fs__directory_tree",
+        "firecrawl__firecrawl_scrape",
+        "firecrawl__firecrawl_crawl"
+      ],
+      "lexRankFull": 3,
+      "hybRankFull": 2,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "I'm orchestrating a research task and need the raw contents of several web pages for offline parsing, ideally with minimal fuss",
+      "style": "verbose",
+      "cosSpan": 0.6311,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4894,
+      "bestAcceptableCos": 0.4893,
+      "lexTop5": [
+        "exa__web_search_exa",
+        "notion__notion_search",
+        "brave__brave_web_search",
+        "firecrawl__firecrawl_search",
+        "git__git_show"
+      ],
+      "hybTop5": [
+        "exa__web_search_exa",
+        "fetch__fetch",
+        "firecrawl__firecrawl_crawl",
+        "brave__brave_web_search",
+        "firecrawl__firecrawl_search"
+      ],
+      "lexRankFull": 7,
+      "hybRankFull": 1,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "how many users signed up last week",
+      "style": "zero-overlap",
+      "cosSpan": 0.5079,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3256,
+      "bestAcceptableCos": -0.0005,
+      "lexTop5": [
+        "github__search_users",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file",
+        "fs__read_multiple_files"
+      ],
+      "hybTop5": [
+        "github__search_users",
+        "slack__slack_get_users",
+        "slack__slack_get_user_profile",
+        "slack__slack_get_channel_history",
+        "playwright__browser_network_requests"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 74,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "add a table for invoices",
+      "style": "terse",
+      "cosSpan": 0.4651,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3404,
+      "bestAcceptableCos": 0.3404,
+      "lexTop5": [
+        "sqlite__describe_table",
+        "sqlite__create_table",
+        "sqlite__append_insight",
+        "github__add_issue_comment",
+        "slack__slack_add_reaction"
+      ],
+      "hybTop5": [
+        "sqlite__create_table",
+        "sqlite__describe_table",
+        "sqlite__append_insight",
+        "everything__add",
+        "sqlite__list_tables"
+      ],
+      "lexRankFull": 2,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "what tables exist in this database",
+      "style": "paraphrase",
+      "cosSpan": 0.6213,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5238,
+      "bestAcceptableCos": 0.5238,
+      "lexTop5": [
+        "sqlite__list_tables",
+        "fs__list_allowed_directories",
+        "sqlite__create_table",
+        "notion__notion_create_database",
+        "sqlite__read_query"
+      ],
+      "hybTop5": [
+        "sqlite__list_tables",
+        "sqlite__describe_table",
+        "sqlite__create_table",
+        "notion__notion_create_database",
+        "memory__delete_entities"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "note this analytics insight down for the final report",
+      "style": "trap",
+      "cosSpan": 0.5904,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4842,
+      "bestAcceptableCos": 0.4842,
+      "lexTop5": [
+        "sqlite__append_insight",
+        "fs__list_allowed_directories",
+        "playwright__browser_wait_for",
+        "github__search_repositories",
+        "github__search_users"
+      ],
+      "hybTop5": [
+        "sqlite__append_insight",
+        "memory__delete_observations",
+        "memory__add_observations",
+        "github__search_users",
+        "everything__longRunningOperation"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "what time is it in tokyo right now",
+      "style": "paraphrase",
+      "cosSpan": 0.4931,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3457,
+      "bestAcceptableCos": 0.3457,
+      "lexTop5": [
+        "time__get_current_time",
+        "time__convert_time",
+        "playwright__browser_handle_dialog",
+        "fs__list_allowed_directories",
+        "playwright__browser_wait_for"
+      ],
+      "hybTop5": [
+        "time__get_current_time",
+        "time__convert_time",
+        "playwright__browser_wait_for",
+        "playwright__browser_handle_dialog",
+        "slack__slack_get_channel_history"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "convert 3pm eastern to london time",
+      "style": "paraphrase",
+      "cosSpan": 0.6342,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5027,
+      "bestAcceptableCos": 0.5027,
+      "lexTop5": [
+        "time__convert_time",
+        "time__get_current_time",
+        "playwright__browser_wait_for",
+        "slack__slack_reply_to_thread",
+        "git__git_commit"
+      ],
+      "hybTop5": [
+        "time__convert_time",
+        "time__get_current_time",
+        "playwright__browser_wait_for",
+        "fetch__fetch",
+        "exa__crawling_exa"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "find the quarterly planning doc in drive",
+      "style": "paraphrase",
+      "cosSpan": 0.4936,
+      "abstainedAtShipped": false,
+      "maxCos": 0.31,
+      "bestAcceptableCos": 0.2172,
+      "lexTop5": [
+        "gdrive__gdrive_search",
+        "gdrive__gdrive_read_file",
+        "puppeteer__puppeteer_evaluate",
+        "puppeteer__puppeteer_navigate",
+        "sqlite__list_tables"
+      ],
+      "hybTop5": [
+        "gdrive__gdrive_search",
+        "sqlite__append_insight",
+        "seq__sequentialthinking",
+        "gdrive__gdrive_read_file",
+        "linear__linear_list_projects"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "show me the stack trace for that production error",
+      "style": "zero-overlap",
+      "cosSpan": 0.4389,
+      "abstainedAtShipped": false,
+      "maxCos": 0.364,
+      "bestAcceptableCos": 0.364,
+      "lexTop5": [
+        "git__git_diff_staged",
+        "git__git_show",
+        "sentry__get_sentry_issue",
+        "git__git_diff_unstaged",
+        "fs__list_allowed_directories"
+      ],
+      "hybTop5": [
+        "sentry__get_sentry_issue",
+        "git__git_show",
+        "git__git_diff_staged",
+        "fs__list_allowed_directories",
+        "github__search_issues"
+      ],
+      "lexRankFull": 3,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "add the meeting notes to our workspace wiki",
+      "style": "zero-overlap",
+      "cosSpan": 0.4397,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3281,
+      "bestAcceptableCos": 0.3257,
+      "lexTop5": [
+        "github__add_issue_comment",
+        "slack__slack_add_reaction",
+        "memory__add_observations",
+        "git__git_add",
+        "linear__linear_create_comment"
+      ],
+      "hybTop5": [
+        "sqlite__append_insight",
+        "memory__add_observations",
+        "notion__notion_create_pages",
+        "notion__notion_move_pages",
+        "github__add_issue_comment"
+      ],
+      "lexRankFull": 13,
+      "hybRankFull": 3,
+      "lexHit5": 0,
+      "hybHit5": 1
+    },
+    {
+      "need": "find the product roadmap page in notion",
+      "style": "terse",
+      "cosSpan": 0.613,
+      "abstainedAtShipped": false,
+      "maxCos": 0.4664,
+      "bestAcceptableCos": 0.4664,
+      "lexTop5": [
+        "notion__notion_update_page",
+        "notion__notion_fetch",
+        "notion__notion_create_pages",
+        "notion__notion_move_pages",
+        "notion__notion_search"
+      ],
+      "hybTop5": [
+        "notion__notion_update_page",
+        "notion__notion_fetch",
+        "notion__notion_search",
+        "notion__notion_create_pages",
+        "notion__notion_move_pages"
+      ],
+      "lexRankFull": 2,
+      "hybRankFull": 2,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "create a ticket for the login bug",
+      "style": "paraphrase",
+      "cosSpan": 0.3459,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2138,
+      "bestAcceptableCos": 0.2138,
+      "lexTop5": [
+        "memory__create_entities",
+        "sqlite__create_table",
+        "memory__create_relations",
+        "github__create_repository",
+        "github__create_issue"
+      ],
+      "hybTop5": [
+        "github__create_issue",
+        "github__create_repository",
+        "linear__linear_create_issue",
+        "github__create_branch",
+        "github__add_issue_comment"
+      ],
+      "lexRankFull": 5,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "what's on my plate this sprint",
+      "style": "zero-overlap",
+      "cosSpan": 0.33,
+      "abstainedAtShipped": false,
+      "maxCos": 0.1834,
+      "bestAcceptableCos": -0.0322,
+      "lexTop5": [
+        "fs__list_allowed_directories",
+        "github__search_users",
+        "puppeteer__puppeteer_click",
+        "puppeteer__puppeteer_hover",
+        "playwright__browser_click"
+      ],
+      "hybTop5": [
+        "everything__echo",
+        "linear__linear_create_issue",
+        "linear__linear_update_issue",
+        "everything__longRunningOperation",
+        "everything__getTinyImage"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 102,
+      "lexHit5": 0,
+      "hybHit5": 0
+    },
+    {
+      "need": "think through this problem step by step before acting",
+      "style": "paraphrase",
+      "cosSpan": 0.4688,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3548,
+      "bestAcceptableCos": 0.3548,
+      "lexTop5": [
+        "seq__sequentialthinking",
+        "fs__list_allowed_directories",
+        "playwright__browser_file_upload",
+        "memory__open_nodes",
+        "playwright__browser_handle_dialog"
+      ],
+      "hybTop5": [
+        "seq__sequentialthinking",
+        "linear__linear_create_issue",
+        "slack__slack_add_reaction",
+        "puppeteer__puppeteer_screenshot",
+        "puppeteer__puppeteer_fill"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "echo back exactly what i send you",
+      "style": "terse",
+      "cosSpan": 0.738,
+      "abstainedAtShipped": false,
+      "maxCos": 0.6093,
+      "bestAcceptableCos": 0.6093,
+      "lexTop5": [
+        "everything__echo",
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file",
+        "fs__read_multiple_files"
+      ],
+      "hybTop5": [
+        "everything__echo",
+        "playwright__browser_console_messages",
+        "slack__slack_add_reaction",
+        "puppeteer__puppeteer_fill",
+        "everything__printEnv"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "add 3 and 4",
+      "style": "trap",
+      "cosSpan": 0.7488,
+      "abstainedAtShipped": false,
+      "maxCos": 0.5898,
+      "bestAcceptableCos": 0.5898,
+      "lexTop5": [
+        "github__add_issue_comment",
+        "slack__slack_add_reaction",
+        "memory__add_observations",
+        "everything__add",
+        "git__git_add"
+      ],
+      "hybTop5": [
+        "everything__add",
+        "slack__slack_add_reaction",
+        "github__add_issue_comment",
+        "memory__add_observations",
+        "linear__linear_create_comment"
+      ],
+      "lexRankFull": 4,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "wait a while and then finish",
+      "style": "trap",
+      "cosSpan": 0.3674,
+      "abstainedAtShipped": false,
+      "maxCos": 0.2691,
+      "bestAcceptableCos": 0.2691,
+      "lexTop5": [
+        "playwright__browser_wait_for",
+        "sentry__get_sentry_issue",
+        "fs__move_file",
+        "github__list_pull_requests",
+        "playwright__browser_drag"
+      ],
+      "hybTop5": [
+        "playwright__browser_wait_for",
+        "everything__longRunningOperation",
+        "playwright__browser_close",
+        "seq__sequentialthinking",
+        "firecrawl__firecrawl_crawl"
+      ],
+      "lexRankFull": 1,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "lis le contenu du fichier readme",
+      "style": "non-english",
+      "cosSpan": 0.411,
+      "abstainedAtShipped": false,
+      "maxCos": 0.3137,
+      "bestAcceptableCos": 0.3137,
+      "lexTop5": [
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file",
+        "fs__read_multiple_files",
+        "fs__write_file"
+      ],
+      "hybTop5": [
+        "fs__read_file",
+        "fs__read_multiple_files",
+        "fs__read_text_file",
+        "memory__read_graph",
+        "postgres__query"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 1,
+      "lexHit5": 1,
+      "hybHit5": 1
+    },
+    {
+      "need": "在网上搜索最新的AI新闻",
+      "style": "non-english",
+      "cosSpan": 0.2175,
+      "abstainedAtShipped": false,
+      "maxCos": 0.1278,
+      "bestAcceptableCos": 0.0618,
+      "lexTop5": [
+        "fs__read_file",
+        "fs__read_text_file",
+        "fs__read_media_file",
+        "fs__read_multiple_files",
+        "fs__write_file"
+      ],
+      "hybTop5": [
+        "everything__add",
+        "slack__slack_add_reaction",
+        "linear__linear_update_issue",
+        "memory__add_observations",
+        "sqlite__append_insight"
+      ],
+      "lexRankFull": null,
+      "hybRankFull": 9,
+      "lexHit5": 0,
+      "hybHit5": 0
+    }
+  ]
+}
