@@ -2,7 +2,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CoachStore, openCoachDb, TransformersEmbeddings } from "@rosterhq/coach";
 import { defaultSkillSources, scanSkillSources } from "@rosterhq/playbook";
 import { BackendManager, RosterServer, type RouterMode } from "@rosterhq/router";
-import { coachDbPath } from "./paths.js";
+import { coachDbPath, homeDir } from "./paths.js";
 import { loadConfig } from "./rosterfile.js";
 
 /**
@@ -30,7 +30,11 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
     }
   }
 
-  const skills = scanSkillSources([...config.skillSources, ...defaultSkillSources()]);
+  // homeDir() honors ROSTER_TEST_HOME so serve stays hermetic under test.
+  const skills = scanSkillSources([
+    ...config.skillSources,
+    ...defaultSkillSources({ home: homeDir() }),
+  ]);
 
   let embedNeed: ((need: string) => Promise<Float32Array | null>) | undefined;
   if (config.embeddings === "auto" && !process.env.ROSTER_NO_FETCH) {

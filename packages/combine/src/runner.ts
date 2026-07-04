@@ -52,13 +52,19 @@ export async function runSuite(suite: Suite, server: TargetServer): Promise<Suit
 }
 
 async function runTask(task: CombineTask, server: TargetServer): Promise<TaskResult> {
-  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "roster-combine-"));
+  // realpath matters: servers commonly resolve symlinks when validating
+  // allowed roots (macOS /var → /private/var). An unresolved sandbox path
+  // here produced 7 FALSE failures against the official filesystem server —
+  // the exact misattribution class the signing protocol exists to catch.
+  const sandbox = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "roster-combine-")));
   const vars = { sandbox, runId: randomUUID().slice(0, 8) };
   const started = Date.now();
   let client: Client | null = null;
   try {
     for (const [rel, content] of Object.entries(task.setup?.files ?? {})) {
-      const abs = path.join(sandbox, rel);
+      // Both the file name and its content are templated — a literal
+      // "seeded-{{run_id}}.txt" on disk caused false ENOENT failures.
+      const abs = path.join(sandbox, template(rel, vars));
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, template(content, vars));
     }

@@ -27,12 +27,12 @@ tasks:
       - { kind: resultContains, contains: "needle-{{run_id}}" }
 
   - id: fs.create-directory.v1
-    description: create a nested directory; verify it exists
+    description: create a directory; verify it exists (server does not mkdir -p)
     invoke:
       tool: create_directory
-      args: { path: "{{sandbox}}/nested/dir-{{run_id}}" }
+      args: { path: "{{sandbox}}/newdir-{{run_id}}" }
     verify:
-      - { kind: fileExists, path: "nested/dir-{{run_id}}" }
+      - { kind: fileExists, path: "newdir-{{run_id}}" }
 
   - id: fs.list-directory.v1
     description: list a seeded directory; result must name the seeded file
@@ -71,7 +71,9 @@ tasks:
       files: { "deep/haystack/unique-{{run_id}}.log": "z" }
     invoke:
       tool: search_files
-      args: { path: "{{sandbox}}", pattern: "unique-{{run_id}}" }
+      # empirical (probed 2026-07-04): this server matches nested files only
+      # with a full glob — bare substrings return "No matches found"
+      args: { path: "{{sandbox}}", pattern: "**/*unique-{{run_id}}*" }
     verify:
       - { kind: resultContains, contains: "unique-{{run_id}}.log" }
 

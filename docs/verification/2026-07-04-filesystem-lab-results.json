@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-07-04T07:03:08.931Z",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "runs": [
+    {
+      "server": "filesystem",
+      "suite": "filesystem-core",
+      "suiteVersion": "0.1.0",
+      "category": "filesystem",
+      "results": [
+        {
+          "taskId": "fs.write-file.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 699
+        },
+        {
+          "taskId": "fs.read-text-file.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 516
+        },
+        {
+          "taskId": "fs.create-directory.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 421
+        },
+        {
+          "taskId": "fs.list-directory.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 427
+        },
+        {
+          "taskId": "fs.move-file.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 483
+        },
+        {
+          "taskId": "fs.get-file-info.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 462
+        },
+        {
+          "taskId": "fs.search-files.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 477
+        },
+        {
+          "taskId": "fs.list-allowed.v1",
+          "signed": false,
+          "pass": true,
+          "stage": null,
+          "detail": null,
+          "latencyMs": 465
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "passes": 8,
+        "passRate": 1,
+        "wilsonLb": 0.6755843804891231,
+        "signedN": 0,
+        "signedPasses": 0
+      }
+    }
+  ]
+}
