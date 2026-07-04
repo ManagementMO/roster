@@ -45,10 +45,21 @@ export function saveConfig(config: RosterConfig): void {
   fs.writeFileSync(rosterConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
 }
 
-/** Identity of a server for dedupe: what it runs, not what it's named. */
-export function serverIdentity(server: Pick<ImportedServer, "command" | "args" | "url">): string {
+/**
+ * Identity of a server for dedupe: what it runs INCLUDING env — two servers
+ * with different tokens are different servers; merging them would silently
+ * discard a credential.
+ */
+export function serverIdentity(
+  server: Pick<ImportedServer, "command" | "args" | "url" | "env">,
+): string {
   return sha256Hex(
-    JSON.stringify({ command: server.command ?? null, args: server.args ?? [], url: server.url ?? null }),
+    JSON.stringify({
+      command: server.command ?? null,
+      args: server.args ?? [],
+      url: server.url ?? null,
+      env: server.env ?? {},
+    }),
   );
 }
 

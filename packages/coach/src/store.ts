@@ -65,7 +65,17 @@ export function defHash(entry: CapabilityEntry): string {
 }
 
 export class CoachStore {
-  constructor(private readonly db: CoachDb) {}
+  // Initialized in the constructor BODY: with ES2022 class fields, field
+  // initializers run before parameter-property assignment — `this.db` would
+  // still be undefined here.
+  private activeCapabilityStmt!: ReturnType<CoachDb["prepare"]>;
+
+  constructor(private readonly db: CoachDb) {
+    this.activeCapabilityStmt = this.db.prepare(
+      `SELECT id, kind, source, name, description, input_schema, output_schema, body, path, quarantined
+       FROM capability WHERE id = ? AND quarantined = 0`,
+    );
+  }
 
   // ── capabilities ────────────────────────────────────────────────────────
 
@@ -115,8 +125,7 @@ export class CoachStore {
           ftsInsert.run(entry.id, entry.name, entry.description, entry.body ?? "");
           result.added.push(entry.id);
         } else if (row.def_hash !== hash) {
-          // Definition drifted: record the event and quarantine from default rosters
-          // until a human (or a re-Combine) clears it. Handoff §7 drift rule.
+          // Definition drifted: record the event and quarantine from default rosters.
           drift.run(now, entry.id, row.def_hash, hash);
           update.run({ ...params, quarantined: 1 });
           ftsDelete.run(entry.id);
@@ -124,7 +133,12 @@ export class CoachStore {
           result.changed.push(entry.id);
           result.driftEvents += 1;
         } else {
-          touch.run(now, entry.id);
+          // Stable re-sight of the SAME definition clears an earlier quarantine:
+          // the alarm fired once; a second boot with an unchanged hash means the
+          // new definition is what upstream now ships (no one-way door).
+          this.db
+            .prepare("UPDATE capability SET quarantined = 0, last_seen = ? WHERE id = ?")
+            .run(now, entry.id);
         }
       }
     });
@@ -160,13 +174,48 @@ export class CoachStore {
 
   /** Draft-path lookup: quarantined capabilities never enter a roster. */
   private activeCapability(id: string): CapabilityEntry | null {
-    const row = this.db
-      .prepare(
-        `SELECT id, kind, source, name, description, input_schema, output_schema, body, path, quarantined
-         FROM capability WHERE id = ? AND quarantined = 0`,
-      )
-      .get(id) as CapabilityRow | undefined;
+    const row = this.activeCapabilityStmt.get(id) as CapabilityRow | undefined;
     return row ? rowToEntry(row) : null;
+  }
+
+  /**
+   * Remove capabilities that no longer exist upstream (server removed, skill
+   * deleted). Vectors and FTS rows go with them; outcome history is kept.
+   */
+  pruneMissing(presentIds: ReadonlySet<string>): string[] {
+    const all = this.db.prepare("SELECT id FROM capability").all() as Array<{ id: string }>;
+    const gone = all.map((r) => r.id).filter((id) => !presentIds.has(id));
+    const run = this.db.transaction(() => {
+      const delCap = this.db.prepare("DELETE FROM capability WHERE id = ?");
+      const delFts = this.db.prepare("DELETE FROM capability_fts WHERE id = ?");
+      const delVec = this.db.prepare("DELETE FROM vec WHERE capability = ?");
+      for (const id of gone) {
+        delCap.run(id);
+        delFts.run(id);
+        delVec.run(id);
+      }
+    });
+    run();
+    return gone;
+  }
+
+  /** Sixth Man field data: every suggestion is logged; `taken` flips when the agent follows it. */
+  recordSuggestion(session: string, failed: string, suggested: string, now = Date.now()): void {
+    this.db
+      .prepare(
+        "INSERT INTO suggestion(ts, session, failed_capability, suggested_capability) VALUES(?,?,?,?)",
+      )
+      .run(now, session, failed, suggested);
+  }
+
+  private markSuggestionTaken(session: string, capability: string): void {
+    this.db
+      .prepare(
+        `UPDATE suggestion SET taken = 1 WHERE id = (
+           SELECT id FROM suggestion WHERE session = ? AND suggested_capability = ? AND taken = 0
+           ORDER BY id DESC LIMIT 1)`,
+      )
+      .run(session, capability);
   }
 
   clearQuarantine(id: string): void {
@@ -207,6 +256,7 @@ export class CoachStore {
     });
     const id = Number(info.lastInsertRowid);
     this.markSoftFailIfRetry(id, input);
+    this.markSuggestionTaken(input.session, input.capability);
     return id;
   }
 
@@ -329,11 +379,16 @@ export class CoachStore {
         .all(match, k) as Array<{ id: string; rank: number }>;
       if (rows.length === 0) return [];
       // bm25(): lower is better (negative). Normalize to [0,1], best = 1.
+      // NB: no `|| 1` shortcuts here — that bug once promoted the WORST
+      // match to a perfect score and corrupted every lexical draft.
       const ranks = rows.map((r) => r.rank);
       const best = Math.min(...ranks);
       const worst = Math.max(...ranks);
-      const span = worst - best || 1;
-      return rows.map((r) => ({ id: r.id, lexScore: (worst - r.rank) / span || 1 }));
+      const span = worst - best;
+      return rows.map((r) => ({
+        id: r.id,
+        lexScore: span === 0 ? 1 : (worst - r.rank) / span,
+      }));
     } catch {
       return []; // malformed MATCH input must never break a draft
     }

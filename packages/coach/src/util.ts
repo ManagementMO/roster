@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 
-export function sha256Hex(input: string): string {
-  return createHash("sha256").update(input, "utf8").digest("hex");
+export function sha256Hex(input: string | Buffer): string {
+  const hash = createHash("sha256");
+  if (typeof input === "string") hash.update(input, "utf8");
+  else hash.update(input);
+  return hash.digest("hex");
 }
 
 /** Key-sorted stringify so semantically-equal args hash identically. */

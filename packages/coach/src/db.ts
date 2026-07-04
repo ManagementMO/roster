@@ -37,7 +37,16 @@ function migrate(db: CoachDb): void {
       last_seen INTEGER NOT NULL
     );
 
-    CREATE VIRTUAL TABLE IF NOT EXISTS capability_fts USING fts5(id, name, description, body);
+    CREATE VIRTUAL TABLE IF NOT EXISTS capability_fts USING fts5(id UNINDEXED, name, description, body);
+
+    CREATE TABLE IF NOT EXISTS suggestion(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ts INTEGER NOT NULL,
+      session TEXT NOT NULL,
+      failed_capability TEXT NOT NULL,
+      suggested_capability TEXT NOT NULL,
+      taken INTEGER NOT NULL DEFAULT 0
+    );
 
     CREATE TABLE IF NOT EXISTS outcome(
       id INTEGER PRIMARY KEY AUTOINCREMENT,

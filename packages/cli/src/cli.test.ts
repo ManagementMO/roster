@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 const FIXTURES: Record<string, string> = {
-  ".claude/settings.json": JSON.stringify({
+  ".claude.json": JSON.stringify({
     theme: "dark",
     mcpServers: { github: { command: "npx", args: ["-y", "@modelcontextprotocol/server-github"] } },
   }),
@@ -183,7 +183,7 @@ args = ["-y", "@upstash/context7-mcp"]
   beforeEach(() => {
     write(".codex/config.toml", gnarlyToml);
     write(
-      ".claude/settings.json",
+      ".claude.json",
       `{\n  "theme": "dark",\n  "mcpServers": { "github": { "command": "npx" } }\n}\n`,
     );
   });
@@ -216,7 +216,7 @@ args = ["-y", "@upstash/context7-mcp"]
   });
 
   it("refuses to clobber post-sync manual edits without --force", () => {
-    const configPath = path.join(home, ".claude/settings.json");
+    const configPath = path.join(home, ".claude.json");
     const original = fs.readFileSync(configPath);
     syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
     fs.appendFileSync(configPath, "\n// user edited after sync\n");
@@ -231,7 +231,7 @@ args = ["-y", "@upstash/context7-mcp"]
   });
 
   it("handles deleted config with --force by recreating from backup", () => {
-    const configPath = path.join(home, ".claude/settings.json");
+    const configPath = path.join(home, ".claude.json");
     const original = fs.readFileSync(configPath);
     syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
     fs.rmSync(configPath);
@@ -244,5 +244,44 @@ args = ["-y", "@upstash/context7-mcp"]
 
   it("eject with no backup is a clean no-op", () => {
     expect(ejectClient("cursor").action).toBe("no-backup");
+  });
+
+  it("re-sync imports servers the user added after first sync; eject restores the PRISTINE original", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    const pristineBytes = fs.readFileSync(configPath);
+
+    // First sync: config becomes roster-only; context7 imported into roster.json.
+    const first = syncClient("codex", new Date("2026-07-05T01:00:00Z"));
+    expect(first.action).toBe("synced");
+    expect(first.imported).toBeGreaterThanOrEqual(1);
+
+    // User manually adds a NEW server after syncing.
+    fs.writeFileSync(
+      configPath,
+      `model = "gpt-5"
+
+[mcp_servers.roster]
+command = "roster"
+args = ["serve"]
+
+[mcp_servers.late-addition]
+command = "npx"
+args = ["-y", "late-mcp"]
+`,
+    );
+
+    // Second sync must IMPORT late-addition (never eat it), then rewrite.
+    const second = syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    expect(second.action).toBe("synced");
+    const roster = JSON.parse(
+      fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+    ) as { servers: Record<string, unknown> };
+    expect(Object.keys(roster.servers)).toContain("late-addition");
+    expect(Object.keys(roster.servers)).not.toContain("roster");
+
+    // Eject restores the ORIGINAL pre-Roster config, not the intermediate rosterized one.
+    const ejected = ejectClient("codex");
+    expect(ejected.action).toBe("restored");
+    expect(Buffer.compare(fs.readFileSync(configPath), pristineBytes)).toBe(0);
   });
 });

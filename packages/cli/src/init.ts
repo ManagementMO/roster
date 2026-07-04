@@ -15,9 +15,8 @@ export function init(): void {
   const config = loadConfig();
   const { added, merged } = mergeServers(config, imported);
 
-  const skillSources = defaultSkillSources().filter(
-    (src, i, all) => all.indexOf(src) === i,
-  );
+  // Union with existing sources — a re-run must never clobber user additions.
+  const skillSources = [...new Set([...config.skillSources, ...defaultSkillSources()])];
   config.skillSources = skillSources;
   const skills = scanSkillSources(skillSources);
   const trustReview = skills.filter((s) => trustScan(s).status === "review").length;

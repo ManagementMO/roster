@@ -6,7 +6,7 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Ajv } from "ajv";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import type { CoachStore } from "@rosterhq/coach";
 import { classifyOutcome, hashArgs, hashNeed } from "@rosterhq/coach";
 import type { ParsedSkill } from "@rosterhq/playbook";
@@ -83,8 +83,13 @@ export class RosterServer {
   private readonly embedNeed?: (need: string) => Promise<Float32Array | null>;
   private readonly defaultK: number;
   private readonly sessionId: string;
-  private readonly ajv = new Ajv({ strict: false });
-  private lastDraft: DraftCache | null = null;
+  // 2020-12 is MCP's schema dialect; plain Ajv can't compile it and every
+  // args_compatible would silently read false.
+  private readonly ajv = new Ajv2020({ strict: false });
+  /** Recent drafts by id — parallel draft/call pairs must not cross-attribute. */
+  private readonly drafts = new Map<string, DraftCache>();
+  private lastDraftId: string | null = null;
+  private draftCounter = 0;
 
   constructor(opts: RosterServerOptions) {
     this.mode = opts.mode;
@@ -123,13 +128,14 @@ export class RosterServer {
     });
   }
 
-  /** Index everything the router fronts into the coach (drift detection included). */
+  /** Index everything the router fronts (drift detection) and prune ghosts. */
   syncCapabilities(): void {
     const entries: CapabilityEntry[] = [
       ...this.manager.allTools(),
       ...[...this.skills.values()].map(skillToCapabilityEntry),
     ];
     this.store.upsertCapabilities(entries);
+    this.store.pruneMissing(new Set(entries.map((e) => e.id)));
   }
 
   private listTools(): Array<Record<string, unknown>> {
@@ -165,7 +171,16 @@ export class RosterServer {
     );
     this.record(namespacedName, target.backend, outcome.evidence, outcome.latencyMs, args, null);
     if (outcome.result) return outcome.result;
-    return errorResult(describeFailure(outcome.evidence));
+    // Transparent means transparent: protocol/transport failures surface as
+    // protocol errors, exactly as a direct connection would show them —
+    // never repackaged into a "successful" isError result.
+    if (outcome.evidence.protocolError) {
+      throw new McpError(ErrorCode.InternalError, outcome.evidence.errorText ?? "backend protocol error");
+    }
+    throw new McpError(
+      ErrorCode.InternalError,
+      describeFailure(outcome.evidence),
+    );
   }
 
   // ── five mode ────────────────────────────────────────────────────────────
@@ -191,7 +206,13 @@ export class RosterServer {
     }
 
     const candidates = this.store.draftCandidates(need, k, needVec);
-    this.lastDraft = { need, needHash, rankedIds: candidates.map((c) => c.entry.id) };
+    const draftId = `d${++this.draftCounter}`;
+    this.drafts.set(draftId, { need, needHash, rankedIds: candidates.map((c) => c.entry.id) });
+    this.lastDraftId = draftId;
+    if (this.drafts.size > 16) {
+      const oldest = this.drafts.keys().next().value;
+      if (oldest) this.drafts.delete(oldest);
+    }
     const starters = candidates.map((c) => toCard(c.entry));
     return {
       content: [
@@ -200,8 +221,10 @@ export class RosterServer {
           text: JSON.stringify(
             {
               need,
+              draft_id: draftId,
               starters,
-              usage: "Invoke with call({tool: <id>, args: {…}}). Re-draft when your need changes.",
+              usage:
+                "Invoke with call({tool: <id>, args: {…}, draft_id}). Re-draft when your need changes.",
             },
             null,
             2,
@@ -212,15 +235,19 @@ export class RosterServer {
   }
 
   private async handleFiveCall(
-    args: { tool?: string; args?: Record<string, unknown> } | undefined,
+    args: { tool?: string; args?: Record<string, unknown>; draft_id?: string } | undefined,
   ): Promise<Record<string, unknown>> {
     const id = args?.tool ?? "";
     const callArgs = args?.args;
     if (id === "") throw new McpError(ErrorCode.InvalidParams, "call requires `tool`");
+    const draft =
+      (args?.draft_id ? this.drafts.get(args.draft_id) : undefined) ??
+      (this.lastDraftId ? this.drafts.get(this.lastDraftId) : undefined) ??
+      null;
 
-    const skill = this.skills.get(id);
+    const skill = id.startsWith("skill__") ? this.skills.get(id) : undefined;
     if (skill) {
-      this.record(id, "skill", {}, 0, callArgs, this.lastDraft?.needHash ?? null);
+      this.record(id, "skill", {}, 0, callArgs, draft?.needHash ?? null);
       return {
         content: [
           { type: "text", text: JSON.stringify(skillInvocationResult(skill), null, 2) },
@@ -238,13 +265,16 @@ export class RosterServer {
       outcome.evidence,
       outcome.latencyMs,
       callArgs,
-      this.lastDraft?.needHash ?? null,
+      draft?.needHash ?? null,
     );
 
     const base = outcome.result ?? errorResult(describeFailure(outcome.evidence));
     if (base.isError === true && SUGGESTION_CLASSES.has(cls)) {
-      const suggestion = this.sixthManSuggestion(id, callArgs);
+      const suggestion = this.sixthManSuggestion(draft, id, callArgs);
       if (suggestion) {
+        // Field data gating post-launch auto-substitution: every suggestion is
+        // logged; the store flips `taken` if the agent follows it.
+        this.store.recordSuggestion(this.sessionId, id, suggestion.tool);
         const content = Array.isArray(base.content) ? [...base.content] : [];
         content.push({
           type: "text",
@@ -262,12 +292,13 @@ export class RosterServer {
    * whether its args validate against the alternate's schema as-is.
    */
   private sixthManSuggestion(
+    draft: DraftCache | null,
     failedId: string,
     args: Record<string, unknown> | undefined,
   ): { tool: string; reason: string; args_compatible: boolean } | null {
-    if (!this.lastDraft) return null;
+    if (!draft) return null;
     const failedSource = failedId.split("__")[0];
-    for (const candidateId of this.lastDraft.rankedIds) {
+    for (const candidateId of draft.rankedIds) {
       if (candidateId === failedId) continue;
       if (candidateId.split("__")[0] === failedSource) continue;
       if (this.skills.has(candidateId)) continue;
@@ -283,7 +314,7 @@ export class RosterServer {
       }
       return {
         tool: candidateId,
-        reason: `the bench suggests ${candidateId} for the same need ("${this.lastDraft.need}")`,
+        reason: `the bench suggests ${candidateId} for the same need ("${draft.need}")`,
         args_compatible: compatible,
       };
     }
@@ -314,8 +345,9 @@ export class RosterServer {
   }
 }
 
-function clampK(k: number): number {
-  return Math.max(1, Math.min(10, Math.round(k)));
+function clampK(k: unknown): number {
+  const n = typeof k === "number" && Number.isFinite(k) ? Math.round(k) : 5;
+  return Math.max(1, Math.min(10, n));
 }
 
 function errorResult(message: string): Record<string, unknown> {

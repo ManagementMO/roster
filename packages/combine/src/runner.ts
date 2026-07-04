@@ -6,6 +6,32 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { template, type CombineTask, type Suite, type Verifier } from "./task.js";
 
+const CONNECT_TIMEOUT_MS = 15_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(label)), ms);
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** Contributed suites are untrusted: every sandbox-relative path must stay inside it. */
+function containedPath(sandbox: string, rel: string): string {
+  const resolved = path.resolve(sandbox, rel);
+  if (resolved !== sandbox && !resolved.startsWith(sandbox + path.sep)) {
+    throw new Error(`path escapes sandbox: ${rel}`);
+  }
+  return resolved;
+}
+
 export interface TargetServer {
   name: string;
   command: string;
@@ -64,7 +90,7 @@ async function runTask(task: CombineTask, server: TargetServer): Promise<TaskRes
     for (const [rel, content] of Object.entries(task.setup?.files ?? {})) {
       // Both the file name and its content are templated — a literal
       // "seeded-{{run_id}}.txt" on disk caused false ENOENT failures.
-      const abs = path.join(sandbox, template(rel, vars));
+      const abs = containedPath(sandbox, template(rel, vars));
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, template(content, vars));
     }
@@ -76,7 +102,9 @@ async function runTask(task: CombineTask, server: TargetServer): Promise<TaskRes
       env: server.env,
       stderr: "ignore",
     });
-    await client.connect(transport);
+    // A server that spawns but never completes initialize must not hang the
+    // suite — the Combine's whole job is probing servers that misbehave.
+    await withTimeout(client.connect(transport), CONNECT_TIMEOUT_MS, "connect timeout");
 
     const args = template(task.invoke.args, vars);
     let result: Record<string, unknown>;
@@ -110,7 +138,7 @@ function checkVerifier(
   result: Record<string, unknown>,
   vars: { sandbox: string; runId: string },
 ): string | null {
-  const resolvePath = (rel: string) => path.join(sandbox, template(rel, vars));
+  const resolvePath = (rel: string) => containedPath(sandbox, template(rel, vars));
   switch (verifier.kind) {
     case "fileExists":
       return fs.existsSync(resolvePath(verifier.path)) ? null : `expected ${verifier.path} to exist`;

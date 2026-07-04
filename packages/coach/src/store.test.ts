@@ -60,6 +60,32 @@ describe("lexical search", () => {
     expect(store.lexicalSearch("")).toEqual([]);
   });
 
+  it("normalizes bm25 so the worst match never scores 1.0 (regression: || 1 bug)", () => {
+    const hits = store.lexicalSearch("read a text file from the filesystem");
+    expect(hits.length).toBeGreaterThanOrEqual(2);
+    expect(hits[0]!.lexScore).toBe(1);
+    const last = hits[hits.length - 1]!;
+    expect(last.lexScore).toBeLessThan(hits[0]!.lexScore);
+    expect(last.lexScore).toBeGreaterThanOrEqual(0);
+  });
+
+  it("auto-clears quarantine when the drifted definition re-appears unchanged", () => {
+    const drifted = tool("fs__read_file", "read_file", "a NEW description");
+    store.upsertCapabilities([drifted]); // drift vs beforeEach seed → quarantined
+    expect(store.listCapabilities().find((c) => c.id === "fs__read_file")).toBeUndefined();
+    store.upsertCapabilities([drifted]); // stable re-sight of the same new hash
+    expect(store.listCapabilities().find((c) => c.id === "fs__read_file")).toBeDefined();
+    expect(store.driftEvents()).toHaveLength(1); // alarm fired exactly once
+  });
+
+  it("pruneMissing removes ghosts but keeps present ids", () => {
+    expect(store.listCapabilities()).toHaveLength(3);
+    const gone = store.pruneMissing(new Set(["fs__read_file"]));
+    expect(gone.sort()).toEqual(["mail__send", "web__search"]);
+    expect(store.listCapabilities().map((c) => c.id)).toEqual(["fs__read_file"]);
+    expect(store.lexicalSearch("email message")).toEqual([]);
+  });
+
   it("draftCandidates excludes quarantined entries", () => {
     store.upsertCapabilities([
       { ...tool("fs__read_file", "read_file", "changed description triggers drift"), kind: "tool" },
@@ -142,6 +168,23 @@ describe("outcomes, soft-fail, ratings", () => {
     expect(rating!.successes).toBe(9);
     expect(rating!.wilsonLb).toBeCloseTo(wilsonLowerBound(9, 11), 6);
     expect(rating!.p50Ms).toBeGreaterThan(0);
+  });
+});
+
+describe("Sixth Man suggestion logging", () => {
+  it("records suggestions and flips taken when the agent follows one", () => {
+    store.recordSuggestion("s1", "alpha__flaky", "beta__echo");
+    let row = db.prepare("SELECT taken FROM suggestion").get() as { taken: number };
+    expect(row.taken).toBe(0);
+    store.recordOutcome({
+      session: "s1",
+      source: "beta",
+      capability: "beta__echo",
+      outcomeClass: "success",
+      latencyMs: 12,
+    });
+    row = db.prepare("SELECT taken FROM suggestion").get() as { taken: number };
+    expect(row.taken).toBe(1);
   });
 });
 

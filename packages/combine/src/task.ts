@@ -59,9 +59,26 @@ function parseTask(raw: Record<string, unknown>, category: string, index: number
     throw new Error(`${where}: verify[] required — unverifiable tasks are not tasks`);
   }
   const verify = verifyRaw.map((v, j) => {
-    const kind = (v as Record<string, unknown>).kind;
+    const entry = v as Record<string, unknown>;
+    const kind = entry.kind;
     if (typeof kind !== "string" || !VERIFIER_KINDS.has(kind)) {
       throw new Error(`${where}.verify[${j}]: unknown kind ${String(kind)}`);
+    }
+    const requireField = (field: string): void => {
+      if (typeof entry[field] !== "string" || entry[field] === "") {
+        throw new Error(`${where}.verify[${j}]: ${kind} requires string ${field}`);
+      }
+    };
+    if (kind === "fileEquals") {
+      requireField("path");
+      requireField("equals");
+    } else if (kind === "fileContains") {
+      requireField("path");
+      requireField("contains");
+    } else if (kind === "fileExists" || kind === "fileAbsent") {
+      requireField("path");
+    } else if (kind === "resultContains") {
+      requireField("contains");
     }
     return v as Verifier;
   });

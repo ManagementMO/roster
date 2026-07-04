@@ -50,7 +50,13 @@ export class BackendManager {
   }
 
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
-    const name = sanitizeSource(config.name);
+    let name = sanitizeSource(config.name);
+    // "skill" is the Playbook's reserved namespace; and two configured names
+    // must never silently collapse onto one key after sanitization.
+    if (name === "skill") name = "skill-server";
+    let suffix = 2;
+    const base = name;
+    while (this.backends.has(name)) name = `${base}-${suffix++}`;
     const client = new Client({ name: "roster-router", version: "0.0.1" });
     const transport: Transport =
       "transport" in config

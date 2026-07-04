@@ -84,9 +84,24 @@ async function main(): Promise<number> {
       return -1; // long-running; keep the process alive on the transport
 
     case "combine": {
-      const [sub, suitePath] = rest.filter((a) => !a.startsWith("--"));
+      // Everything after `--` is the server command; flags/positionals live before it.
       const dashDash = process.argv.indexOf("--");
+      const pre = dashDash >= 0 ? process.argv.slice(3, dashDash) : process.argv.slice(3);
       const serverCmd = dashDash >= 0 ? process.argv.slice(dashDash + 1) : [];
+      const positionals: string[] = [];
+      for (let i = 0; i < pre.length; i++) {
+        const a = pre[i]!;
+        if (a.startsWith("--")) {
+          i++; // skip the flag's value
+          continue;
+        }
+        positionals.push(a);
+      }
+      const [sub, suitePath] = positionals;
+      const preFlag = (name: string): string | undefined => {
+        const idx = pre.indexOf(name);
+        return idx >= 0 ? pre[idx + 1] : undefined;
+      };
       if (sub !== "run" || !suitePath || serverCmd.length === 0) {
         process.stdout.write(
           "usage: roster combine run <suite.yaml> --name <server-name> -- <command> [args…]\n" +
@@ -97,14 +112,14 @@ async function main(): Promise<number> {
       const { parseSuite, runSuite, buildLabResults } = await import("@rosterhq/combine");
       const fs = await import("node:fs");
       const suite = parseSuite(fs.readFileSync(suitePath, "utf8"));
-      const name = flagValue("--name") ?? "server-under-test";
+      const name = preFlag("--name") ?? "server-under-test";
       const run = await runSuite(suite, {
         name,
         command: serverCmd[0]!,
         args: serverCmd.slice(1),
       });
       const lab = buildLabResults([run]);
-      const outPath = flagValue("--out") ?? "lab-results.json";
+      const outPath = preFlag("--out") ?? "lab-results.json";
       fs.writeFileSync(outPath, `${JSON.stringify(lab, null, 2)}\n`);
       const summary = lab.runs[0]!.summary;
       for (const r of run.results) {

@@ -79,8 +79,10 @@ export const CLIENTS: ClientSpec[] = [
     id: "claude-code",
     displayName: "Claude Code",
     nativeToolSearch: true,
+    // Verified 2026-07-04 on a live machine: user-scope MCP servers live in
+    // ~/.claude.json (NOT ~/.claude/settings.json — handoff §8 amended).
     configPaths: () => [
-      path.join(home(), ".claude", "settings.json"),
+      path.join(home(), ".claude.json"),
       path.join(process.cwd(), ".mcp.json"),
     ],
     parse: (content, sourcePath) => {
