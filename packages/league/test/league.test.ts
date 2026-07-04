@@ -82,7 +82,7 @@ describe("methodology enforced in the renderer", () => {
   it("mints a rank once a run crosses the signed threshold", () => {
     const ranked = syntheticRun({ signedN: 30, signedPasses: 28, signedWilsonLb: 0.812 });
     const html = renderStandings([ranked]);
-    expect(html).toContain(`<td class="rk">1</td>`);
+    expect(html).toContain(`<td class="rk medal">1</td>`);
     expect(html).toContain("RANKED");
     expect(html).toContain("0.812");
     expect(html).not.toContain("PRE-SEASON</span>");

@@ -6,7 +6,7 @@ import {
   type LeagueRun,
   type LoadedArtifact,
 } from "./artifact.js";
-import { esc, fmt3, layout, pct1 } from "./html.js";
+import { esc, fmt3, layout } from "./html.js";
 
 export interface StandingsEntry {
   artifact: LoadedArtifact;
@@ -22,31 +22,31 @@ const record = (run: LeagueRun): string => `${run.summary.passes}–${run.summar
 /**
  * The number a row is judged by. Methodology: signedWilsonLb is the only
  * figure that may back a NAMED score; with zero signed tasks we display the
- * all-tasks Wilson LB marked ᵁ (unsigned tier) for transparency — it can
- * order the pre-season table but can never mint a rank.
+ * all-tasks Wilson LB labeled unofficial — it can order the pre-season table
+ * but can never mint a rank.
  */
 const displayLb = (run: LeagueRun): { value: number; unsigned: boolean } =>
   run.summary.signedN > 0
     ? { value: run.summary.signedWilsonLb, unsigned: false }
     : { value: run.summary.wilsonLb, unsigned: true };
 
-const statusChip = (run: LeagueRun): string => {
-  if (isRankable(run)) return `<span class="chip ranked">RANKED</span>`;
-  if (isPreSeason(run)) return `<span class="chip pre">PRE-SEASON</span>`;
-  return `<span class="chip">UNRANKED · ${run.summary.signedN}/${MIN_RANKED_SIGNED_N} SIGNED</span>`;
+const statusBadge = (run: LeagueRun): string => {
+  if (isRankable(run)) return `<span class="badge gold">RANKED</span>`;
+  if (isPreSeason(run)) return `<span class="badge pre">PRE-SEASON</span>`;
+  return `<span class="badge">CERTIFYING · ${run.summary.signedN}/${MIN_RANKED_SIGNED_N}</span>`;
 };
 
-function standingsRow(entry: StandingsEntry, rank: number | null): string {
+function standingsRow(entry: StandingsEntry, rank: number | null, index: number): string {
   const { run } = entry;
   const lb = displayLb(run);
-  return `<tr>
-<td class="rk">${rank === null ? "—" : String(rank)}</td>
-<td class="teamcell"><a href="${esc(boxScoreFilename(run))}">${esc(run.server)}</a><span class="cat">${esc(run.suite)} v${esc(run.suiteVersion)}</span></td>
-<td class="record num">${record(run)}</td>
-<td class="num">${pct1(run.summary.passRate)}</td>
-<td class="lbcell"><span class="lbval">${fmt3(lb.value)}${lb.unsigned ? "<sup>U</sup>" : ""}</span><span class="lbbar"><i style="width:${Math.round(lb.value * 100)}%"></i></span></td>
-<td class="num">${run.summary.signedN}/${run.summary.n}</td>
-<td>${statusChip(run)}</td>
+  const s = run.summary;
+  return `<tr style="--i:${index}">
+<td class="rk${rank !== null && rank <= 3 ? " medal" : ""}">${rank === null ? "—" : String(rank)}</td>
+<td class="teamcell"><a href="${esc(boxScoreFilename(run))}">${esc(run.server)}</a><span class="sub">${esc(run.suite)} v${esc(run.suiteVersion)}</span></td>
+<td class="scorecell"><span class="scoreval">${fmt3(lb.value)}</span><span class="scoresub">${lb.unsigned ? "unofficial — no certified tasks yet" : "official — certified tasks only"}</span><span class="scorebar"><i style="width:${Math.round(lb.value * 100)}%"></i></span></td>
+<td class="pair">${s.passes}/${s.n}<span class="sub">tasks passed</span></td>
+<td class="pair">${s.signedN}/${s.n}<span class="sub">human-certified</span></td>
+<td>${statusBadge(run)}</td>
 </tr>`;
 }
 
@@ -61,84 +61,89 @@ export function renderStandings(entries: StandingsEntry[]): string {
   const sections = [...divisions.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([category, rows]) => {
-      // Ranked rows first (by signed Wilson LB); the rest ordered by the
-      // unsigned-tier LB for readability, forever rank-less until signed.
-      const ranked = rows.filter((r) => isRankable(r.run)).sort((a, b) => b.run.summary.signedWilsonLb - a.run.summary.signedWilsonLb);
-      const rest = rows.filter((r) => !isRankable(r.run)).sort((a, b) => b.run.summary.wilsonLb - a.run.summary.wilsonLb);
+      // Ranked rows first (by certified score); the rest ordered by the
+      // unofficial score for readability, forever rank-less until certified.
+      const ranked = rows
+        .filter((r) => isRankable(r.run))
+        .sort((a, b) => b.run.summary.signedWilsonLb - a.run.summary.signedWilsonLb);
+      const rest = rows
+        .filter((r) => !isRankable(r.run))
+        .sort((a, b) => b.run.summary.wilsonLb - a.run.summary.wilsonLb);
       const body = [
-        ...ranked.map((r, i) => standingsRow(r, i + 1)),
-        ...rest.map((r) => standingsRow(r, null)),
+        ...ranked.map((r, i) => standingsRow(r, i + 1, i)),
+        ...rest.map((r, i) => standingsRow(r, null, ranked.length + i)),
       ].join("\n");
-      const anyPre = rows.some((r) => isPreSeason(r.run));
       return `<section class="division">
-<div class="divhead"><h2>${esc(category)} division</h2><span class="tierchip">LAB TIER · CONTROLLED SUITES</span></div>
+<div class="divhead"><h2>${esc(category)} <span>division</span></h2><span class="tierchip">Lab tier — identical suites, sandboxed runs</span></div>
 <div class="tablewrap">
-<table class="standings">
-<thead><tr><th>RK</th><th>Server</th><th>W–L</th><th>Win%</th><th>Wilson LB</th><th>Signed</th><th>Status</th></tr></thead>
+<table>
+<thead><tr><th>RK</th><th>Server</th><th>Score</th><th>Tasks</th><th>Certified</th><th>Status</th></tr></thead>
 <tbody>
 ${body}
 </tbody>
 </table>
 </div>
-<p class="tablefoot"><sup>U</sup> = all-tasks Wilson lower bound (unsigned tier) — shown for transparency, ineligible to mint a rank. Ranked placement requires ≥${MIN_RANKED_SIGNED_N} human-signed tasks.${anyPre ? " Named standings unlock at the first human signing (methodology §4)." : ""}</p>
+<p class="tablefoot">Score is the Wilson 95% lower bound — small samples score humbly by construction. A rank requires ${MIN_RANKED_SIGNED_N}+ human-certified tasks; until then results are shown, never ranked.</p>
 </section>`;
     })
     .join("\n");
 
   const body = `<header>
-<div class="brandrow"><span class="wordmark">R<b>O</b>STER</span><span class="season">SEASON 0 · <b>PRE-SEASON</b></span></div>
+<div class="brandrow"><span class="wordmark">R<b>O</b>STER</span><span class="leaguetag">the mcp server leaderboard</span></div>
 <h1 class="masthead">The League<span class="dot">.</span></h1>
-<p class="tag">Public standings for MCP servers. Measured in the open, reproducible by anyone, certified by humans.</p>
-<ul class="creed">
-<li>Wilson lower bound, never bare averages</li>
-<li>n shown on every number</li>
-<li>no named score without a human-signed task</li>
-</ul>
+<p class="tag">Real tasks, verified outcomes, humble statistics. Every number on this page traces to a reproducible run.</p>
+<p class="seasonline"><b>SEASON 0</b> · Pre-season — standings unlock at the first human-certified task.</p>
 </header>
-${sections || `<p class="section-note">No run artifacts yet — the standings publish themselves from <code>lab-results.json</code> files.</p>`}
-<footer class="meta">Every number on this page traces to a run artifact in <code>docs/verification/</code>. Methodology ${esc(METHODOLOGY_VERSION)} · generated by <code>@rosterhq/league</code> — static, zero backend, fork and rerun.</footer>`;
+<ul class="how">
+<li><span class="step">01 · RUN</span><b>Same tasks, every server</b><p>Each server faces its division's identical task suite in a clean sandbox.</p></li>
+<li><span class="step">02 · VERIFY</span><b>End state, not vibes</b><p>Outcomes are checked against what actually happened on disk. No LLM judges.</p></li>
+<li><span class="step">03 · CERTIFY</span><b>Humans sign the tests</b><p>A person certifies every task before it can rank a name. Unsigned results never do.</p></li>
+</ul>
+${sections || `<p class="tablefoot">No run artifacts yet — standings publish themselves from <code>lab-results.json</code> files.</p>`}
+<footer class="meta">Every number traces to a run artifact in <code>docs/verification/</code> · methodology ${esc(METHODOLOGY_VERSION)} · static site, zero backend — fork and rerun.</footer>`;
 
-  return layout("ROSTER · The League — MCP server standings", body);
+  return layout("ROSTER · The League — MCP server leaderboard", body);
 }
 
 export function renderBoxScore(entry: StandingsEntry, taskDescriptions: ReadonlyMap<string, string>): string {
   const { run, artifact } = entry;
   const lb = displayLb(run);
-  const eligible = run.summary.signedN > 0;
+  const s = run.summary;
   const rows = run.results
     .map((r, i) => {
       const desc = taskDescriptions.get(r.taskId);
-      return `<tr>
+      return `<tr style="--i:${i}">
 <td class="rk num">${i + 1}</td>
-<td class="taskname">${esc(r.taskId)}${desc ? `<span class="taskdesc">${esc(desc)}</span>` : ""}${r.detail ? `<span class="taskdesc">${esc(r.stage ?? "")}: ${esc(r.detail)}</span>` : ""}</td>
+<td class="taskdesc">${desc ? esc(desc) : esc(r.taskId)}<span class="taskid">${esc(r.taskId)}</span>${r.detail ? `<span class="taskfail">${esc(r.stage ?? "")}: ${esc(r.detail)}</span>` : ""}</td>
 <td><span class="chip ${r.pass ? "win" : "loss"}">${r.pass ? "W" : "L"}</span></td>
-<td class="num">${r.latencyMs} ms</td>
+<td class="r num">${r.latencyMs} ms</td>
 </tr>`;
     })
     .join("\n");
 
   const body = `<a class="back" href="index.html">← Standings</a>
 <header class="scorehead">
-<div class="teamline"><h1>${esc(run.server)}</h1><span class="suitechip">${esc(run.suite)} v${esc(run.suiteVersion)} · ${esc(run.category)} division · LAB tier</span></div>
+<h1>${esc(run.server)}</h1>
+<p class="suiteline">Tested against <b>${esc(run.suite)} v${esc(run.suiteVersion)}</b> · ${esc(run.category)} division · Lab tier — sandboxed, end-state-verified tasks.</p>
 <div class="statrow">
-<div class="stat"><div class="v">${record(run)}</div><div class="k">Record</div><div class="sub">${run.summary.passes} of ${run.summary.n} tasks</div></div>
-<div class="stat"><div class="v">${fmt3(lb.value)}${lb.unsigned ? "<sup>U</sup>" : ""}</div><div class="k">Wilson LB</div><div class="sub">${lb.unsigned ? "all tasks (unsigned tier)" : "human-signed tasks only"}</div></div>
-<div class="stat"><div class="v">${run.summary.signedN}/${run.summary.n}</div><div class="k">Signed</div><div class="sub">named-score eligible: ${eligible ? "yes" : "no"}</div></div>
+<div class="stat"><div class="v">${record(run)}</div><div class="k">Record</div><div class="sub">${s.passes} of ${s.n} tasks passed</div></div>
+<div class="stat"><div class="v">${fmt3(lb.value)}</div><div class="k">Score</div><div class="sub">Wilson LB · ${lb.unsigned ? "unofficial (uncertified)" : "certified tasks only"}</div></div>
+<div class="stat"><div class="v">${s.signedN}/${s.n}</div><div class="k">Certified</div><div class="sub">${MIN_RANKED_SIGNED_N}+ needed to rank</div></div>
 </div>
-${isPreSeason(run) ? `<div class="provenance">PRE-SEASON · UNSIGNED RUN — internal/anonymized tier. This page may not back a named public ranking until its tasks are human-signed (methodology §4).</div>` : ""}
+${isPreSeason(run) ? `<div class="note"><b>UNSIGNED RUN · PRE-SEASON</b><br>These results are real and reproducible, but may not back a named ranking until a human certifies each task (methodology §4).</div>` : ""}
 </header>
-<section class="division">
-<div class="divhead"><h2>Box score</h2><span class="tierchip">END-STATE VERIFIED · NO LLM JUDGE</span></div>
+<section class="section">
+<h3>Box score — end-state verified, no LLM judge</h3>
 <div class="tablewrap">
-<table class="tasks">
-<thead><tr><th>#</th><th>Task</th><th>Result</th><th>Latency</th></tr></thead>
+<table>
+<thead><tr><th>#</th><th>Task</th><th>Result</th><th class="r">Latency</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
 </table>
 </div>
 </section>
-<section class="repro">
+<section class="section">
 <h3>Reproduce this run</h3>
 <pre>roster combine run suites/${esc(run.category)}/tasks.yaml --name ${esc(run.server)} \\
   -- &lt;server command&gt;   # {{sandbox}} in args is replaced per task</pre>
