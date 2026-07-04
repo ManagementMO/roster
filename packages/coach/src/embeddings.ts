@@ -14,6 +14,7 @@ export interface EmbeddingsProvider {
 export const GEMMA_MODEL = "onnx-community/embeddinggemma-300m-ONNX";
 export const MINILM_MODEL = "Xenova/all-MiniLM-L6-v2";
 export const MATRYOSHKA_DIMS = 256;
+export const MINILM_NATIVE_DIMS = 384;
 
 const EIGHT_GIB = 8 * 1024 * 1024 * 1024;
 const IDLE_UNLOAD_MS = 10 * 60 * 1000;
@@ -47,12 +48,19 @@ type FeaturePipeline = (
  * 10 minutes so resident RAM stays near zero for light users.
  */
 export class TransformersEmbeddings implements EmbeddingsProvider {
-  readonly dims = MATRYOSHKA_DIMS;
+  /**
+   * Matryoshka truncation applies ONLY to models trained for it (Gemma).
+   * Slicing MiniLM's 384 dims to 256 scrambles its geometry — live-verified:
+   * cosines collapsed to ~0 and rankings degraded (docs/verification/).
+   */
+  readonly dims: number;
   private pipe: FeaturePipeline | null = null;
   private queue: Promise<unknown> = Promise.resolve();
   private idleTimer: NodeJS.Timeout | null = null;
 
-  constructor(private readonly modelId = selectModelId()) {}
+  constructor(private readonly modelId = selectModelId()) {
+    this.dims = modelId === GEMMA_MODEL ? MATRYOSHKA_DIMS : MINILM_NATIVE_DIMS;
+  }
 
   static async isAvailable(): Promise<boolean> {
     try {
@@ -68,7 +76,12 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
       const pipe = await this.loadPipeline();
       const output = await pipe([...texts], { pooling: "mean", normalize: true });
       this.touchIdleTimer();
-      return output.tolist().map((row) => truncateAndNormalize(new Float32Array(row)));
+      const truncate = this.modelId === GEMMA_MODEL;
+      return output
+        .tolist()
+        .map((row) =>
+          truncate ? truncateAndNormalize(new Float32Array(row)) : new Float32Array(row),
+        );
     });
     // Keep the chain alive even when a call rejects.
     this.queue = run.catch(() => undefined);
