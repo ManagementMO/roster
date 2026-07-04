@@ -1,0 +1,84 @@
+# Roster Combine — filesystem division, suite v0.1.0
+# Target: @modelcontextprotocol/server-filesystem (sandboxed; {{sandbox}} is the allowed root).
+# Every task is end-state verified. All tasks ship signed: false — they may run
+# for internal/anonymized stats, and MUST NOT feed named public scores until a
+# human certifies each one (handoff §6.4 verifier-certification protocol).
+suite: filesystem-core
+version: "0.1.0"
+category: filesystem
+
+tasks:
+  - id: fs.write-file.v1
+    description: write a new file; verify exact bytes on disk
+    invoke:
+      tool: write_file
+      args: { path: "{{sandbox}}/combine-{{run_id}}.txt", content: "roster combine {{run_id}}" }
+    verify:
+      - { kind: fileEquals, path: "combine-{{run_id}}.txt", equals: "roster combine {{run_id}}" }
+
+  - id: fs.read-text-file.v1
+    description: read a seeded file; result must contain its exact content
+    setup:
+      files: { "seeded-{{run_id}}.txt": "needle-{{run_id}}" }
+    invoke:
+      tool: read_text_file
+      args: { path: "{{sandbox}}/seeded-{{run_id}}.txt" }
+    verify:
+      - { kind: resultContains, contains: "needle-{{run_id}}" }
+
+  - id: fs.create-directory.v1
+    description: create a nested directory; verify it exists
+    invoke:
+      tool: create_directory
+      args: { path: "{{sandbox}}/nested/dir-{{run_id}}" }
+    verify:
+      - { kind: fileExists, path: "nested/dir-{{run_id}}" }
+
+  - id: fs.list-directory.v1
+    description: list a seeded directory; result must name the seeded file
+    setup:
+      files: { "listing/alpha-{{run_id}}.md": "x" }
+    invoke:
+      tool: list_directory
+      args: { path: "{{sandbox}}/listing" }
+    verify:
+      - { kind: resultContains, contains: "alpha-{{run_id}}.md" }
+
+  - id: fs.move-file.v1
+    description: move a file; verify source gone and destination present
+    setup:
+      files: { "src-{{run_id}}.txt": "move me" }
+    invoke:
+      tool: move_file
+      args: { source: "{{sandbox}}/src-{{run_id}}.txt", destination: "{{sandbox}}/dst-{{run_id}}.txt" }
+    verify:
+      - { kind: fileAbsent, path: "src-{{run_id}}.txt" }
+      - { kind: fileEquals, path: "dst-{{run_id}}.txt", equals: "move me" }
+
+  - id: fs.get-file-info.v1
+    description: stat a seeded file; result must mention size
+    setup:
+      files: { "info-{{run_id}}.txt": "12345" }
+    invoke:
+      tool: get_file_info
+      args: { path: "{{sandbox}}/info-{{run_id}}.txt" }
+    verify:
+      - { kind: resultContains, contains: "size" }
+
+  - id: fs.search-files.v1
+    description: search for a uniquely-named seeded file
+    setup:
+      files: { "deep/haystack/unique-{{run_id}}.log": "z" }
+    invoke:
+      tool: search_files
+      args: { path: "{{sandbox}}", pattern: "unique-{{run_id}}" }
+    verify:
+      - { kind: resultContains, contains: "unique-{{run_id}}.log" }
+
+  - id: fs.list-allowed.v1
+    description: the server reports its sandbox root as the allowed directory
+    invoke:
+      tool: list_allowed_directories
+      args: {}
+    verify:
+      - { kind: resultContains, contains: "{{sandbox}}" }

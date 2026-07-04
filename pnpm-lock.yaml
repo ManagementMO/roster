@@ -29,6 +29,9 @@ importers:
       '@rosterhq/coach':
         specifier: workspace:*
         version: link:../coach
+      '@rosterhq/combine':
+        specifier: workspace:*
+        version: link:../combine
       '@rosterhq/playbook':
         specifier: workspace:*
         version: link:../playbook

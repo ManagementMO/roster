@@ -83,6 +83,39 @@ async function main(): Promise<number> {
       await serve(flags.has("--five") ? "five" : flags.has("--transparent") ? "transparent" : undefined);
       return -1; // long-running; keep the process alive on the transport
 
+    case "combine": {
+      const [sub, suitePath] = rest.filter((a) => !a.startsWith("--"));
+      const dashDash = process.argv.indexOf("--");
+      const serverCmd = dashDash >= 0 ? process.argv.slice(dashDash + 1) : [];
+      if (sub !== "run" || !suitePath || serverCmd.length === 0) {
+        process.stdout.write(
+          "usage: roster combine run <suite.yaml> --name <server-name> -- <command> [args…]\n" +
+            "       ({{sandbox}} in args is replaced with each task's sandbox dir)\n",
+        );
+        return 1;
+      }
+      const { parseSuite, runSuite, buildLabResults } = await import("@rosterhq/combine");
+      const fs = await import("node:fs");
+      const suite = parseSuite(fs.readFileSync(suitePath, "utf8"));
+      const name = flagValue("--name") ?? "server-under-test";
+      const run = await runSuite(suite, {
+        name,
+        command: serverCmd[0]!,
+        args: serverCmd.slice(1),
+      });
+      const lab = buildLabResults([run]);
+      const outPath = flagValue("--out") ?? "lab-results.json";
+      fs.writeFileSync(outPath, `${JSON.stringify(lab, null, 2)}\n`);
+      const summary = lab.runs[0]!.summary;
+      for (const r of run.results) {
+        process.stdout.write(`${r.pass ? "PASS" : "FAIL"}  ${r.taskId}${r.detail ? `  (${r.stage}: ${r.detail})` : ""}\n`);
+      }
+      process.stdout.write(
+        `\n${name}: ${summary.passes}/${summary.n} passed · Wilson LB ${summary.wilsonLb.toFixed(3)} · signed ${summary.signedN} (unsigned results never feed named scores)\n→ ${outPath}\n`,
+      );
+      return summary.passes === summary.n ? 0 : 1;
+    }
+
     case "telemetry": {
       const action = (rest[0] ?? "status") as "status" | "on" | "off";
       telemetry(["status", "on", "off"].includes(action) ? action : "status");
