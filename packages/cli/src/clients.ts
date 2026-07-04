@@ -74,6 +74,16 @@ function fromMcpServersObject(
 
 const home = homeDir;
 
+/**
+ * Windows configs live under %APPDATA%. Under ROSTER_TEST_HOME we derive it
+ * from the fixture home instead, so discovery stays hermetic on every
+ * platform (a real APPDATA env would escape the fixture).
+ */
+function appDataDir(): string {
+  if (process.env.ROSTER_TEST_HOME) return path.join(home(), "AppData", "Roaming");
+  return process.env.APPDATA ?? path.join(home(), "AppData", "Roaming");
+}
+
 export const CLIENTS: ClientSpec[] = [
   {
     id: "claude-code",
@@ -96,7 +106,7 @@ export const CLIENTS: ClientSpec[] = [
     nativeToolSearch: false,
     configPaths: () => {
       if (process.platform === "win32") {
-        return [path.join(process.env.APPDATA ?? path.join(home(), "AppData", "Roaming"), "Claude", "claude_desktop_config.json")];
+        return [path.join(appDataDir(), "Claude", "claude_desktop_config.json")];
       }
       return [path.join(home(), "Library", "Application Support", "Claude", "claude_desktop_config.json")];
     },
@@ -168,7 +178,7 @@ export const CLIENTS: ClientSpec[] = [
     configPaths: () => {
       const base =
         process.platform === "win32"
-          ? path.join(process.env.APPDATA ?? path.join(home(), "AppData", "Roaming"), "Code", "User")
+          ? path.join(appDataDir(), "Code", "User")
           : process.platform === "darwin"
             ? path.join(home(), "Library", "Application Support", "Code", "User")
             : path.join(home(), ".config", "Code", "User");

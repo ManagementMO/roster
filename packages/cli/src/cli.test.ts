@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "@rosterhq/coach";
-import { discoverClients } from "./clients.js";
+import { CLIENTS, discoverClients, type ClientId } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
 import { buildReceipt } from "./receipt.js";
 import { defaultConfig, mergeServers } from "./rosterfile.js";
@@ -31,21 +31,28 @@ afterEach(() => {
   fs.rmSync(home, { recursive: true, force: true });
 });
 
-const FIXTURES: Record<string, string> = {
-  ".claude.json": JSON.stringify({
+/**
+ * Fixture CONTENT is keyed by client id; the PATH each file lands at comes
+ * from the client registry itself (configPaths()[0]) — so this test exercises
+ * the real per-platform path logic on macOS, Linux, and Windows alike. A
+ * literal-path table once green-on-mac/red-on-linux'd CI (VS Code's config
+ * lives under Library/… vs ~/.config/… vs %APPDATA%).
+ */
+const FIXTURE_CONTENT: Record<ClientId, string> = {
+  "claude-code": JSON.stringify({
     theme: "dark",
     mcpServers: { github: { command: "npx", args: ["-y", "@modelcontextprotocol/server-github"] } },
   }),
-  "Library/Application Support/Claude/claude_desktop_config.json": JSON.stringify({
+  "claude-desktop": JSON.stringify({
     mcpServers: { fs: { command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"] } },
   }),
-  ".cursor/mcp.json": `{
+  cursor: `{
     // cursor allows comments
     "mcpServers": {
       "browser": { "command": "npx", "args": ["-y", "browser-mcp"], },
     },
   }`,
-  ".codex/config.toml": `model = "gpt-5"
+  codex: `model = "gpt-5"
 
 [mcp_servers.context7]
 command = "npx"
@@ -54,35 +61,47 @@ args = ["-y", "@upstash/context7-mcp"]
 [mcp_servers.context7.env]
 API_STYLE = "camel"
 `,
-  ".gemini/settings.json": JSON.stringify({
+  "gemini-cli": JSON.stringify({
     mcpServers: { notion: { httpUrl: "https://mcp.notion.example/sse" } },
   }),
-  ".hermes/config.yaml": `mcp_servers:
+  hermes: `mcp_servers:
   slack:
     command: npx
     args: ["-y", "slack-mcp"]
     env:
       SLACK_TOKEN: "test-token"
 `,
-  ".openclaw/openclaw.json": JSON.stringify({
+  openclaw: JSON.stringify({
     agents: { list: [] },
     mcpServers: { memory: { command: "npx", args: ["-y", "@modelcontextprotocol/server-memory"] } },
   }),
-  "Library/Application Support/Code/User/mcp.json": `{
+  vscode: `{
     /* vscode block comment */
     "servers": { "sentry": { "url": "https://mcp.sentry.example" } }
   }`,
-  ".codeium/windsurf/mcp_config.json": JSON.stringify({
+  windsurf: JSON.stringify({
     mcpServers: { search: { serverUrl: "https://mcp.search.example" } },
   }),
-  ".config/zed/settings.json": `{
+  zed: `{
     "context_servers": { "db": { "command": "pg-mcp" } }, // zed
   }`,
 };
 
+function clientFixturePath(id: ClientId): string {
+  return CLIENTS.find((c) => c.id === id)!.configPaths()[0]!;
+}
+
+function writeClientFixtures(): void {
+  for (const [id, content] of Object.entries(FIXTURE_CONTENT)) {
+    const abs = clientFixturePath(id as ClientId);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, content);
+  }
+}
+
 describe("read-import across all client formats", () => {
   beforeEach(() => {
-    for (const [rel, content] of Object.entries(FIXTURES)) write(rel, content);
+    writeClientFixtures();
   });
 
   it("discovers and parses every configured client", () => {
@@ -121,7 +140,7 @@ describe("read-import across all client formats", () => {
   });
 
   it("a broken config reports a parseError without killing discovery", () => {
-    write(".cursor/mcp.json", "{ not json at all");
+    fs.writeFileSync(clientFixturePath("cursor"), "{ not json at all");
     const discoveries = discoverClients();
     const cursor = discoveries.find((d) => d.client.id === "cursor");
     expect(cursor?.parseError).toBeDefined();
@@ -139,7 +158,7 @@ describe("jsonc", () => {
 
 describe("receipt truthfulness", () => {
   it("Claude Code line says deferred-not-loaded; OpenClaw skills chars are exact", () => {
-    for (const [rel, content] of Object.entries(FIXTURES)) write(rel, content);
+    writeClientFixtures();
     // one skill in the default claude skills dir
     write(
       ".claude/skills/demo/SKILL.md",
