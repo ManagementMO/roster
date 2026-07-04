@@ -29,17 +29,18 @@ Every claim here has evidence in `docs/verification/`:
 
 ## How it was reviewed (per the velocity-discipline law)
 
-Three independent Fable 5 agents, adversarial:
-1. **Code review round 1** → found 4 CRITICAL + 9 MAJOR. All fixed (commit `e2f1759`). The standouts: the Claude Code config path was wrong (`~/.claude.json`, not `settings.json` — verified on a live machine, handoff §8 amended); an FTS normalization bug that promoted the *worst* match to rank 1; and a sync-eats-servers eject flaw.
-2. **Code review round 2 + functional QA** → verified the fixes, found 2 MAJOR regressions (eject era-crossing data loss; prune-on-outage deleting learned state) + the flagship "empty draft in offline mode" bug. All fixed (wave 2).
-3. **Clean-code sweep** → running now; results will be in the repo by morning if it surfaced anything worth acting on.
+Four independent Fable 5 agents, adversarial — every finding fixed with a regression test:
+1. **Code review round 1** → 4 CRITICAL + 9 MAJOR (commit `e2f1759`). Standouts: the Claude Code config path was wrong (`~/.claude.json`, not `settings.json` — verified on a live machine, handoff §8 amended); an FTS bug that promoted the *worst* match to rank 1; a sync-eats-servers eject flaw.
+2. **Code review round 2 + functional QA** → 2 MAJOR regressions (eject era-crossing data loss; prune-on-outage deleting learned state) + the flagship "empty draft in offline mode" bug. All fixed (wave 2).
+3. **Clean-code sweep** → verdict: *"clean, professional, public-ready code."* One substantive item — the learning loop was implemented but never invoked — plus polish. All actioned (wave 3): **the Coach's nightly job is now wired into `serve` boot**, so ratings + OATS actually run on your outcomes; dead code deleted; `roster unquarantine` added; config-parsing hardened; docs de-overclaimed.
 
 Every fix has a regression test. The reviews' transcripts informed the commit messages so the history is auditable.
 
 ## What is deliberately NOT done yet (honest gaps)
 
 These are M1–M2 scope or documented deferrals — none are silent:
-- **Dense retrieval end-to-end at runtime:** the provider and ladder are wired and unit-tested, but a full first-run model-fetch → backfill → hybrid-draft cycle hasn't been driven end-to-end (offline lexical mode is fully working and is the honest launch default).
+- **Dense retrieval end-to-end at runtime:** the provider and ladder are wired and unit-tested, but a full first-run model-fetch → backfill → hybrid-draft cycle hasn't been driven end-to-end (offline lexical mode is fully working and is the honest launch default). *This is the single integration not yet exercised live — it's the first thing to do tomorrow.*
+- **Ratings surfacing:** the nightly job now runs and populates the ratings table, but nothing user-facing reads it yet (the dashboard and League site are M2).
 - **Combine breadth:** one real suite (filesystem, 8 tasks, **unsigned**). The verifier-certification protocol (agent-draft → adversarial-attack → mutation-test → **your** signature) is specced but no tasks are human-signed yet — so nothing may feed a named public score. Scaling toward ~100 servers is the big founder-hours item.
 - **League site, badges, box-score generator, weekly-rerun CI:** not built (M2).
 - **Not built (as planned):** roster-cache TTL, adaptive ~10K-token engagement rule, backend health-checks/lazy-connect, OpenClaw allowlist writer, per-serve schema-token measurement on the receipt, dashboard.
