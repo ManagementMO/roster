@@ -411,6 +411,29 @@ describe("fix-wave regressions (lab swarm)", () => {
 });
 
 describe("fix-wave round 2 — drift + robustness", () => {
+  it("remove + re-add with a CHANGED definition raises drift (no evasion via prune)", () => {
+    const t0 = 1_000_000;
+    store.upsertCapabilities([tool("s__t", "t", "original description")], t0);
+    store.pruneMissing(new Set(), new Set(), { now: t0 + 1000 }); // server dropped the tool
+    expect(store.getCapability("s__t")).toBeNull();
+    // Comes back later, definition CHANGED → must be drift + quarantined, not "new".
+    const res = store.upsertCapabilities([tool("s__t", "t", "COMPLETELY different now")], t0 + 2000);
+    expect(res.driftEvents).toBe(1);
+    expect(store.driftEvents()).toHaveLength(1);
+    expect(store.listCapabilities().find((c) => c.id === "s__t")).toBeUndefined(); // quarantined
+  });
+
+  it("remove + re-add UNCHANGED is a clean re-add (no false drift)", () => {
+    const t0 = 1_000_000;
+    const cap = tool("s__t", "t", "stable description");
+    store.upsertCapabilities([cap], t0);
+    store.pruneMissing(new Set(), new Set(), { now: t0 + 1000 });
+    const res = store.upsertCapabilities([cap], t0 + 2000);
+    expect(res.driftEvents).toBe(0);
+    expect(res.added).toEqual(["s__t"]);
+    expect(store.listCapabilities().find((c) => c.id === "s__t")).toBeDefined(); // active
+  });
+
   it("treats an outputSchema change as drift (was invisible to both detectors)", () => {
     const base: CapabilityEntry = {
       id: "a__t", kind: "tool", source: "a", name: "t", description: "d",

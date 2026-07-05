@@ -292,3 +292,14 @@ describe("backend connect timeout (fix wave round 2)", () => {
     await manager.close();
   });
 });
+
+describe("errorToEvidence — mid-call error classification (fix wave round 2)", () => {
+  it("classifies ConnectionClosed as transport (server died), not protocol", async () => {
+    const { errorToEvidence } = await import("./backends.js");
+    const { McpError, ErrorCode } = await import("@modelcontextprotocol/sdk/types.js");
+    expect(errorToEvidence(new McpError(ErrorCode.ConnectionClosed, "Connection closed"))).toMatchObject({ transportError: true });
+    expect(errorToEvidence(new McpError(ErrorCode.RequestTimeout, "timed out"))).toEqual({ timedOut: true });
+    expect(errorToEvidence(new McpError(ErrorCode.InvalidParams, "bad params"))).toMatchObject({ protocolError: true });
+    expect(errorToEvidence(new Error("socket hang up"))).toMatchObject({ transportError: true });
+  });
+});

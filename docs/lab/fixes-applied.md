@@ -55,12 +55,19 @@ A 7-lens meta-review (independent agents, then per-finding skeptic verification)
 | **Verifier parent-fold** (`combine/runner.ts`) | `entryExistsExact` byte-checked only the final basename; parent dirs still folded on macOS. | Walks every path component byte-exact; case-variant regression test added. |
 | **Three vacuous tests** | Worst-hit-floor, eject-wrong-restore, and atomic-write tests passed even with their fixes reverted. | All three rebuilt to genuinely discriminate — **mutation-tested**: each now fails when its fix is reverted. |
 
-### Still deliberately deferred / disclosed (meta-review confirmed, not silently dropped)
+## Round 3 — finishing the deferred list
 
-- **Remove/re-add drift bypass** (medium): pruning deletes a capability's `def_hash`, so a tool removed then re-added with a changed definition is treated as new (no drift event, no quarantine). Partial mitigation: `drift_event` history survives pruning. A tombstone table is the v1.1 fix; deferred (requires a removed-then-changed-then-readded sequence to exploit).
-- **Sequential divergent-boot prune** (medium): the `keepSeenSince` window protects the transient overlap between two `roster serve` boots; a genuinely sequential race isn't covered. Low real risk because `roster.json` is a single shared file, so divergence is transient and a genuine config change *should* prune. Disclosed.
-- **Prune de-suffix over-protection** (low): protecting base `x` also shields a genuinely-removed `x-2` from pruning until `x` reappears — a stale-tool leak in the safe (never-wrongly-delete) direction.
-- **camelCase index on upgrade** (low): the split only re-indexes added/drifted tools, so an *existing* `coach.db` keeps the old index until a tool drifts. Moot pre-launch (no installs); the round-2 `defHash` change also forces a one-time reindex on upgrade.
-- **Manifest-less oldest backup bricks eject** (low): if the oldest backup's manifest is lost (e.g. a crash mid-sync between writing `original` and `manifest.json`), eject refuses with no `--force` escape. This is strictly safer than the pre-fix silent wrong-restore, but is an availability dead-end; an explicit recovery path is a follow-up.
-- **`schema_drift_suspect` runtime path** (low): effectively dead on the real wire (the SDK pre-validates). The connect-time `defHash` (now incl. `outputSchema`) is the real, working drift mechanism; the runtime path stays as harmless belt-and-suspenders.
-- **Transport-death classification**: the `ConnectionClosed(-32000) → transport` mapping is verified against the SDK's `ErrorCode` enum, not an isolated automated test (a mid-call transport death is hard to simulate deterministically through the SDK).
+Three of the round-2 disclosures were then actually fixed (the user asked to finalize everything), each with a mutation-verified test:
+
+| Fix | What was wrong | How it's fixed | Test |
+|---|---|---|---|
+| **Remove/re-add drift bypass** (`coach/db.ts`, `store.ts`) | Pruning deleted a capability's `def_hash`, so a tool removed then re-added with a *changed* definition slipped back in as "new" — no drift event, no quarantine. | A `removed_capability` tombstone carries the last-seen hash (+ quarantine state + last-drift ts) forward. On re-add: changed def → drift + quarantine; unchanged but mid-dwell → dwell preserved. | store.test (mutation-verified) |
+| **Manifest-less backup bricks eject** (`cli/sync.ts`) | A crash mid-sync (between writing `original` and `manifest.json`) could leave a manifest-less oldest backup that dead-ends eject. | The backup dir is assembled in a `.staging-` dir and **renamed into place atomically** — a crash leaves a complete backup or none. `listBackups` skips staging dirs. | cli.test still green |
+| **Transport-death untested** (`router/backends.ts`) | The `ConnectionClosed → transport` mapping had no isolated test (hard to simulate a mid-call death). | Extracted a pure `errorToEvidence(err)` and unit-tested every branch (ConnectionClosed→transport, RequestTimeout→timeout, other McpError→protocol, plain Error→transport). | router.test |
+
+### Genuinely deferred / disclosed (fixing would be over-engineering for the risk)
+
+- **Sequential divergent-boot prune** (medium): the `keepSeenSince` window protects the transient overlap between two `roster serve` boots; a fully sequential race isn't covered. Low real risk because `roster.json` is a single shared file, so divergence is transient and a genuine config change *should* prune. A correct fix needs cross-process liveness tracking (IPC) — disproportionate. Disclosed.
+- **Prune de-suffix over-protection** (low): protecting base `x` also shields a genuinely-removed `x-2` from pruning until `x` reappears — a stale-tool leak in the safe (never-wrongly-delete) direction. The ambiguity (collision-suffix vs literal `-2` name) is unresolvable from the stored key alone; over-protection is the correct bias.
+- **camelCase index on upgrade** (low): the split only re-indexes added/drifted tools, so an *existing* `coach.db` keeps the old index until a tool drifts. Moot pre-launch (no installs); the round-2 `defHash` change forces a one-time reindex on the first upgraded boot anyway.
+- **`schema_drift_suspect` runtime path** (low): effectively dead on the real wire (the SDK pre-validates output). The connect-time `defHash` (now incl. `outputSchema`) is the real, working drift mechanism; the runtime path stays as harmless belt-and-suspenders. Kept rather than churned out.

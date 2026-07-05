@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
@@ -67,11 +68,15 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     return { client: clientId, configPath, action: "already-synced", imported };
   }
 
-  // Step 2 — backup + manifest + pointer BEFORE touching the config.
+  // Step 2 — backup + manifest + pointer BEFORE touching the config. The
+  // backup dir is assembled in a STAGING dir and renamed into place atomically,
+  // so a crash mid-write can never leave a manifest-less backup (which would
+  // later brick eject). listBackups skips ".staging-" dirs.
   const timestamp = now.toISOString().replace(/[:.]/g, "-");
   const backupDir = backupDirFor(clientId, timestamp);
-  fs.mkdirSync(backupDir, { recursive: true });
-  fs.writeFileSync(path.join(backupDir, "original"), originalBytes);
+  const stagingDir = `${backupDir}.staging-${crypto.randomBytes(4).toString("hex")}`;
+  fs.mkdirSync(stagingDir, { recursive: true });
+  fs.writeFileSync(path.join(stagingDir, "original"), originalBytes);
   const manifest: BackupManifest = {
     client: clientId,
     sourcePath: configPath,
@@ -79,7 +84,8 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     writtenSha256: sha256Hex(rewritten),
     timestamp,
   };
-  fs.writeFileSync(path.join(backupDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  fs.writeFileSync(path.join(stagingDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  fs.renameSync(stagingDir, backupDir); // atomic publish: complete backup or none
   fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp);
 
   // Step 3 — atomic config replacement (private tmp + rename).
@@ -135,6 +141,7 @@ export function rawBackups(clientId: ClientId): RawBackup[] {
   if (!fs.existsSync(clientDir)) return [];
   const out: RawBackup[] = [];
   for (const name of fs.readdirSync(clientDir).sort()) {
+    if (name.includes(".staging-")) continue; // an interrupted, not-yet-published backup
     const dir = path.join(clientDir, name);
     try {
       if (!fs.statSync(dir).isDirectory()) continue;

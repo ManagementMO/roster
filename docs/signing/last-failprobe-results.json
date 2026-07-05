@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T00:42:10.404Z",
+  "generatedAt": "2026-07-05T01:05:29.856Z",
   "environment": {
     "node": "v22.22.3",
     "platform": "darwin",
@@ -19,7 +19,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "content mismatch in combine-{{run_id}}.txt",
-          "latencyMs": 415
+          "latencyMs": 439
         },
         {
           "taskId": "fs.read-text-file.v1.failprobe",
@@ -27,7 +27,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 407
+          "latencyMs": 415
         },
         {
           "taskId": "fs.create-directory.v1.failprobe",
@@ -35,7 +35,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "expected directory never-created-{{run_id}} to exist",
-          "latencyMs": 539
+          "latencyMs": 416
         },
         {
           "taskId": "fs.list-directory.v1.failprobe",
@@ -43,7 +43,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 435
+          "latencyMs": 412
         },
         {
           "taskId": "fs.move-file.v1.failprobe",
@@ -51,7 +51,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "expected dst-{{run_id}}.txt to be absent",
-          "latencyMs": 412
+          "latencyMs": 448
         },
         {
           "taskId": "fs.get-file-info.v1.failprobe",
@@ -59,7 +59,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 434
+          "latencyMs": 415
         },
         {
           "taskId": "fs.search-files.v1.failprobe",
@@ -67,7 +67,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 447
+          "latencyMs": 415
         },
         {
           "taskId": "fs.list-allowed.v1.failprobe",
@@ -75,7 +75,7 @@
           "pass": false,
           "stage": "verify",
           "detail": "result text missing expected content",
-          "latencyMs": 506
+          "latencyMs": 418
         }
       ],
       "summary": {

@@ -184,6 +184,11 @@ export class CoachStore {
     const ftsInsert = this.db.prepare(
       "INSERT INTO capability_fts(id, name, description, body) VALUES(?,?,?,?)",
     );
+    const getTombstone = this.db.prepare(
+      "SELECT def_hash, quarantined, last_drift_ts FROM removed_capability WHERE id = ?",
+    );
+    const deleteTombstone = this.db.prepare("DELETE FROM removed_capability WHERE id = ?");
+    const setQuarantined = this.db.prepare("UPDATE capability SET quarantined = 1 WHERE id = ?");
 
     const run = this.db.transaction(() => {
       for (const entry of entries) {
@@ -208,7 +213,33 @@ export class CoachStore {
           // memory__* tools even when descriptions never say the word; and
           // camelCase names are split so `print env` reaches `printEnv`.
           ftsInsert.run(entry.id, ftsNameText(entry.source, entry.name), entry.description, entry.body ?? "");
-          result.added.push(entry.id);
+          // Remove/re-add drift guard: if this id was pruned before, its
+          // tombstone carries the last-seen hash. A CHANGED definition on return
+          // is drift (quarantine + event) — it must not slip back in as "new".
+          // An UNCHANGED return that was still mid-dwell stays quarantined.
+          const tomb = getTombstone.get(entry.id) as
+            | { def_hash: string; quarantined: number; last_drift_ts: number | null }
+            | undefined;
+          if (tomb) {
+            deleteTombstone.run(entry.id);
+            if (tomb.def_hash !== hash) {
+              drift.run(now, entry.id, tomb.def_hash, hash);
+              setQuarantined.run(entry.id);
+              result.changed.push(entry.id);
+              result.driftEvents += 1;
+            } else {
+              if (
+                tomb.quarantined === 1 &&
+                tomb.last_drift_ts !== null &&
+                now - tomb.last_drift_ts < QUARANTINE_DWELL_MS
+              ) {
+                setQuarantined.run(entry.id); // preserve an interrupted dwell
+              }
+              result.added.push(entry.id);
+            }
+          } else {
+            result.added.push(entry.id);
+          }
         } else if (row.def_hash !== hash) {
           // Definition drifted: record the event and quarantine from default rosters.
           drift.run(now, entry.id, row.def_hash, hash);
@@ -299,12 +330,17 @@ export class CoachStore {
   pruneMissing(
     presentIds: ReadonlySet<string>,
     protectedSources: ReadonlySet<string> = new Set(),
-    opts: { keepSeenSince?: number } = {},
+    opts: { keepSeenSince?: number; now?: number } = {},
   ): string[] {
-    const all = this.db.prepare("SELECT id, source, last_seen FROM capability").all() as Array<{
+    const now = opts.now ?? Date.now();
+    const all = this.db
+      .prepare("SELECT id, source, last_seen, def_hash, quarantined FROM capability")
+      .all() as Array<{
       id: string;
       source: string;
       last_seen: number;
+      def_hash: string;
+      quarantined: number;
     }>;
     // protectedSources: backends CONFIGURED but unreachable this boot — a
     // transient outage must never delete learned vectors or the drift baseline.
@@ -318,27 +354,36 @@ export class CoachStore {
     // otherwise an unavailable backend's learned state is pruned despite being
     // protected (over-protection is the safe direction: keep, never wrongly delete).
     const deSuffix = (source: string): string => source.replace(/-\d+$/, "");
-    const gone = all
-      .filter(
-        (r) =>
-          !presentIds.has(r.id) &&
-          !protectedSources.has(r.source) &&
-          !protectedSources.has(deSuffix(r.source)) &&
-          r.last_seen < keepSince,
-      )
-      .map((r) => r.id);
+    const gone = all.filter(
+      (r) =>
+        !presentIds.has(r.id) &&
+        !protectedSources.has(r.source) &&
+        !protectedSources.has(deSuffix(r.source)) &&
+        r.last_seen < keepSince,
+    );
     const run = this.db.transaction(() => {
       const delCap = this.db.prepare("DELETE FROM capability WHERE id = ?");
       const delFts = this.db.prepare("DELETE FROM capability_fts WHERE id = ?");
       const delVec = this.db.prepare("DELETE FROM vec WHERE capability = ?");
-      for (const id of gone) {
-        delCap.run(id);
-        delFts.run(id);
-        delVec.run(id);
+      const lastDriftStmt = this.db.prepare(
+        "SELECT ts FROM drift_event WHERE capability = ? ORDER BY id DESC LIMIT 1",
+      );
+      // Tombstone the definition BEFORE deleting, so a later re-add with a
+      // changed def is recognized as drift (not a fresh tool).
+      const tombstone = this.db.prepare(
+        `INSERT OR REPLACE INTO removed_capability(id, def_hash, quarantined, last_drift_ts, removed_at)
+         VALUES(?,?,?,?,?)`,
+      );
+      for (const r of gone) {
+        const ld = lastDriftStmt.get(r.id) as { ts: number } | undefined;
+        tombstone.run(r.id, r.def_hash, r.quarantined, ld?.ts ?? null, now);
+        delCap.run(r.id);
+        delFts.run(r.id);
+        delVec.run(r.id);
       }
     });
     run();
-    return gone;
+    return gone.map((r) => r.id);
   }
 
   /** Sixth Man field data: every suggestion is logged; `taken` flips when the agent follows it. */

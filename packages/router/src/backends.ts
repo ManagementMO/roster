@@ -164,30 +164,7 @@ export class BackendManager {
         : { outputSchemaViolation: violatesOutputSchema(result, outputSchema) };
       return { result, evidence, latencyMs };
     } catch (err) {
-      const latencyMs = Date.now() - started;
-      if (err instanceof McpError) {
-        if (err.code === ErrorCode.RequestTimeout) {
-          return { result: null, evidence: { timedOut: true }, latencyMs };
-        }
-        // A server that dies mid-call surfaces as McpError ConnectionClosed
-        // (-32000), not a stream break — but it IS a transport death, not a
-        // protocol fault. Classifying it as transport also re-arms the Sixth
-        // Man, which keys on hard_fail:transport and would otherwise go silent
-        // exactly when a backend crashes and an alternate would help most.
-        if (err.code === ErrorCode.ConnectionClosed) {
-          return { result: null, evidence: { transportError: true, errorText: err.message }, latencyMs };
-        }
-        return {
-          result: null,
-          evidence: { protocolError: true, errorText: err.message },
-          latencyMs,
-        };
-      }
-      return {
-        result: null,
-        evidence: { transportError: true, errorText: err instanceof Error ? err.message : "" },
-        latencyMs,
-      };
+      return { result: null, evidence: errorToEvidence(err), latencyMs: Date.now() - started };
     }
   }
 
@@ -195,6 +172,24 @@ export class BackendManager {
     await Promise.allSettled([...this.backends.values()].map((b) => b.client.close()));
     this.backends.clear();
   }
+}
+
+/**
+ * Map a thrown call error to evidence. A server that dies mid-call surfaces as
+ * McpError ConnectionClosed (-32000) — that IS a transport death, not a
+ * protocol fault, and classifying it as transport also re-arms the Sixth Man
+ * (keyed on hard_fail:transport) exactly when a backend crashes. Exported so
+ * this mapping is unit-tested without simulating a mid-call transport death.
+ */
+export function errorToEvidence(err: unknown): CallEvidence {
+  if (err instanceof McpError) {
+    if (err.code === ErrorCode.RequestTimeout) return { timedOut: true };
+    if (err.code === ErrorCode.ConnectionClosed) {
+      return { transportError: true, errorText: err.message };
+    }
+    return { protocolError: true, errorText: err.message };
+  }
+  return { transportError: true, errorText: err instanceof Error ? err.message : "" };
 }
 
 function extractErrorText(result: Record<string, unknown>): string {

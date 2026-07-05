@@ -94,6 +94,18 @@ function migrate(db: CoachDb): void {
       new_hash TEXT NOT NULL
     );
 
+    -- Tombstone for pruned capabilities: carries the last-seen definition hash
+    -- (and quarantine state) forward so a tool that is REMOVED and later
+    -- RE-ADDED with a changed definition still raises a drift event instead of
+    -- slipping back in as "new" (drift-evasion via remove/re-add).
+    CREATE TABLE IF NOT EXISTS removed_capability(
+      id TEXT PRIMARY KEY,
+      def_hash TEXT NOT NULL,
+      quarantined INTEGER NOT NULL DEFAULT 0,
+      last_drift_ts INTEGER,
+      removed_at INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS vec(
       capability TEXT PRIMARY KEY,
       dims INTEGER NOT NULL,
