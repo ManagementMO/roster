@@ -51,7 +51,9 @@ Certification pipeline: (1) an agent drafts the task and its verifiers; (2) a se
 
 ## 6. Drift events
 
-Roster hashes each tool's (name, inputSchema, description) at every connect. A change raises a **drift event**: the affected tool/server is quarantined from default rosters pending a re-run of its Combine suite, and the event enters the server's public drift history. A dedicated drift column in League standings follows. **(implementation pending)**
+Roster hashes each tool's (name, description, inputSchema, **outputSchema**, body) at every connect. A change raises a **drift event**: the affected tool/server is quarantined from default rosters pending a re-run of its Combine suite, and the event enters the server's public drift history. A dedicated drift column in League standings follows. **(implementation pending)**
+
+Connect-time hashing is the reliable drift mechanism — including for output-schema changes, since the MCP SDK validates structured output itself and throws before Roster could observe a runtime mismatch. **Known v1 limitation:** a tool that is fully *removed* and later *re-added* with a changed definition is currently treated as new (no drift event, no quarantine), because pruning discards its stored hash; the tool's prior `drift_event` history still persists. A tombstone that carries the removed hash forward is planned.
 
 ## 7. Suite versioning & seasons
 

@@ -29,6 +29,25 @@ export interface CallOutcome {
 }
 
 const DEFAULT_CALL_TIMEOUT_MS = 30_000;
+// A backend that spawns but never completes the initialize handshake would
+// otherwise hang the whole `roster serve` boot for the SDK's default ~60s —
+// per backend, sequentially — stalling the client's entire launch. Bound it.
+const DEFAULT_CONNECT_TIMEOUT_MS = 15_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(label)), ms);
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 interface ConnectedBackend {
   name: string;
@@ -43,7 +62,10 @@ interface ConnectedBackend {
 export class BackendManager {
   private backends = new Map<string, ConnectedBackend>();
 
-  constructor(private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS) {}
+  constructor(
+    private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS,
+    private readonly connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS,
+  ) {}
 
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
     // normalizeBackendName = sanitize + reserved-namespace rename; serve reuses
@@ -65,10 +87,17 @@ export class BackendManager {
             env: config.env,
             stderr: "ignore",
           });
-    await client.connect(transport);
-    const tools = await this.fetchTools(name, client);
-    this.backends.set(name, { name, client, tools });
-    return tools;
+    // Bound the handshake AND close the spawned child on timeout, so a wedged
+    // backend neither hangs boot nor leaks a process.
+    try {
+      await withTimeout(client.connect(transport), this.connectTimeoutMs, "connect timeout");
+      const tools = await withTimeout(this.fetchTools(name, client), this.connectTimeoutMs, "listTools timeout");
+      this.backends.set(name, { name, client, tools });
+      return tools;
+    } catch (err) {
+      await client.close().catch(() => undefined);
+      throw err;
+    }
   }
 
   private async fetchTools(source: string, client: Client): Promise<CapabilityEntry[]> {

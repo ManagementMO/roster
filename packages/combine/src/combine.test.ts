@@ -115,6 +115,10 @@ tasks:
     invoke: { tool: write_file, args: { path: "e/f-{{run_id}}.txt", content: "x" } }
     verify:
       - { kind: fileExists, path: "e" }
+  - id: bad.case-variant-is-not-exact
+    invoke: { tool: write_file, args: { path: "Cased-{{run_id}}.txt", content: "x" } }
+    verify:
+      - { kind: fileExists, path: "cased-{{run_id}}.txt" }
 `);
     const run = await runSuite(typesSuite, {
       name: "fake-fs",
@@ -126,6 +130,9 @@ tasks:
     expect(byId["ok.dir-and-file"]).toMatchObject({ pass: true });
     expect(byId["bad.file-cannot-satisfy-dir"]).toMatchObject({ pass: false, stage: "verify" });
     expect(byId["bad.dir-cannot-satisfy-file"]).toMatchObject({ pass: false, stage: "verify" });
+    // A case-variant name must NOT satisfy the verifier — on macOS/APFS
+    // fs.existsSync would false-pass; the byte-exact readdir check catches it.
+    expect(byId["bad.case-variant-is-not-exact"]).toMatchObject({ pass: false, stage: "verify" });
   }, 30_000);
 
   it("summarizes into lab-results with Wilson and signed separation", async () => {

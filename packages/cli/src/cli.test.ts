@@ -6,7 +6,7 @@ import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, discoverClients, type ClientId } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
 import { buildReceipt } from "./receipt.js";
-import { defaultConfig, mergeServers } from "./rosterfile.js";
+import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
 import { ejectClient } from "./eject.js";
 import { syncClient } from "./sync.js";
 
@@ -322,22 +322,44 @@ args = ["-y", "late-mcp"]
 
   it("refuses loudly when the pristine manifest is corrupt (never silently restores a different backup)", () => {
     const configPath = path.join(home, ".codex/config.toml");
-    syncClient("codex", new Date("2026-07-05T01:00:00Z")); // pristine backup
-    // A second era backup exists (user edited, re-synced) — the wrong-restore target.
-    fs.writeFileSync(configPath, `model = "gpt-5"\n\n[mcp_servers.roster]\ncommand = "roster"\nargs = ["serve"]\n`);
-    syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    syncClient("codex", new Date("2026-07-05T01:00:00Z")); // backup #1 = pristine (context7)
+    // A genuine SECOND backup: the user re-adds a NON-roster server, so the next
+    // sync does NOT short-circuit to already-synced and captures distinct bytes.
+    // (Without a non-roster server the 2nd sync no-ops and no wrong-restore
+    // target exists — the vacuity a reviewer caught.)
+    fs.writeFileSync(
+      configPath,
+      `model = "gpt-5"\n\n[mcp_servers.roster]\ncommand = "roster"\nargs = ["serve"]\n\n[mcp_servers.evil]\ncommand = "npx"\nargs = ["-y", "evil-mcp"]\n`,
+    );
+    const second = syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    expect(second.action).toBe("synced"); // proves a real 2nd backup was created
+    const clientDir = path.join(home, ".roster/backups/codex");
+    expect(fs.readdirSync(clientDir).filter((d) => d !== "latest")).toHaveLength(2);
     const configBefore = fs.readFileSync(configPath);
 
     // Corrupt ONLY the OLDEST (pristine) backup's manifest.
-    const clientDir = path.join(home, ".roster/backups/codex");
     const oldest = fs.readdirSync(clientDir).filter((d) => d !== "latest").sort()[0]!;
     fs.writeFileSync(path.join(clientDir, oldest, "manifest.json"), "{ not valid json");
 
     const result = ejectClient("codex");
     expect(result.action).toBe("no-backup");
     expect(result.detail).toContain("INTEGRITY");
-    // The rosterized config was NOT overwritten with the wrong backup's bytes.
+    // Crucially: config was NOT overwritten with backup #2's (evil-bearing) bytes.
     expect(Buffer.compare(fs.readFileSync(configPath), configBefore)).toBe(0);
+    expect(fs.readFileSync(configPath, "utf8")).not.toContain("evil");
+  });
+
+  it("atomicWriteFileSync uses a PRIVATE tmp (not the shared <target>.tmp) and leaves no litter", () => {
+    const target = path.join(home, "cfg.json");
+    // Occupy the OLD shared tmp name as a directory: the pre-fix shared-tmp code
+    // would writeFileSync into it and throw here. The private-tmp code is immune.
+    fs.mkdirSync(`${target}.tmp`);
+    atomicWriteFileSync(target, '{"ok":true}\n');
+    expect(fs.readFileSync(target, "utf8")).toBe('{"ok":true}\n');
+    const litter = fs
+      .readdirSync(home)
+      .filter((f) => f.startsWith("cfg.json.") && f.endsWith(".tmp") && fs.statSync(path.join(home, f)).isFile());
+    expect(litter).toEqual([]); // private tmp cleaned up on success
   });
 
   it("does not report 'synced' (or clobber the client config) when the import step genuinely fails", () => {

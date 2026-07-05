@@ -1,0 +1,169 @@
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { Client } from "/Users/mo/Downloads/roster/node_modules/.pnpm/@modelcontextprotocol+sdk@1.29.0_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/cjs/client/index.js";
+import { StdioClientTransport } from "/Users/mo/Downloads/roster/node_modules/.pnpm/@modelcontextprotocol+sdk@1.29.0_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/cjs/client/stdio.js";
+import { template } from "/Users/mo/Downloads/roster/packages/combine/dist/task.js";
+const CONNECT_TIMEOUT_MS = 15_000;
+async function withTimeout(promise, ms, label) {
+    let timer;
+    try {
+        return await Promise.race([
+            promise,
+            new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(label)), ms);
+                timer.unref?.();
+            }),
+        ]);
+    }
+    finally {
+        if (timer)
+            clearTimeout(timer);
+    }
+}
+/** Contributed suites are untrusted: every sandbox-relative path must stay inside it. */
+function containedPath(sandbox, rel) {
+    const resolved = path.resolve(sandbox, rel);
+    if (resolved !== sandbox && !resolved.startsWith(sandbox + path.sep)) {
+        throw new Error(`path escapes sandbox: ${rel}`);
+    }
+    return resolved;
+}
+/**
+ * One fresh server process per task: no state bleed, deterministic reruns.
+ * The runner never interprets content beyond the declared verifiers.
+ */
+export async function runSuite(suite, server) {
+    const results = [];
+    for (const task of suite.tasks) {
+        results.push(await runTask(task, server));
+    }
+    return {
+        server: server.name,
+        suite: suite.suite,
+        suiteVersion: suite.version,
+        category: suite.category,
+        results,
+    };
+}
+async function runTask(task, server) {
+    // realpath matters: servers commonly resolve symlinks when validating
+    // allowed roots (macOS /var → /private/var). An unresolved sandbox path
+    // here produced 7 FALSE failures against the official filesystem server —
+    // the exact misattribution class the signing protocol exists to catch.
+    const sandbox = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "roster-combine-")));
+    const vars = { sandbox, runId: randomUUID().slice(0, 8) };
+    const started = Date.now();
+    let client = null;
+    try {
+        for (const [rel, content] of Object.entries(task.setup?.files ?? {})) {
+            // Both the file name and its content are templated — a literal
+            // "seeded-{{run_id}}.txt" on disk caused false ENOENT failures.
+            const abs = containedPath(sandbox, template(rel, vars));
+            fs.mkdirSync(path.dirname(abs), { recursive: true });
+            fs.writeFileSync(abs, template(content, vars));
+        }
+        client = new Client({ name: "roster-combine", version: "0.0.1" });
+        const transport = new StdioClientTransport({
+            command: server.command,
+            args: (server.args ?? []).map((a) => template(a, vars)),
+            env: server.env,
+            stderr: "ignore",
+        });
+        // A server that spawns but never completes initialize must not hang the
+        // suite — the Combine's whole job is probing servers that misbehave.
+        await withTimeout(client.connect(transport), CONNECT_TIMEOUT_MS, "connect timeout");
+        const args = template(task.invoke.args, vars);
+        let result;
+        try {
+            result = (await client.callTool({ name: task.invoke.tool, arguments: args }, undefined, {
+                timeout: task.timeoutMs,
+            }));
+        }
+        catch (err) {
+            return finish(task, started, false, "invoke", err instanceof Error ? err.message : String(err));
+        }
+        if (result.isError === true) {
+            return finish(task, started, false, "invoke", extractText(result).slice(0, 200));
+        }
+        for (const verifier of task.verify) {
+            const failure = checkVerifier(verifier, sandbox, result, vars);
+            if (failure)
+                return finish(task, started, false, "verify", failure);
+        }
+        return finish(task, started, true, null, null);
+    }
+    catch (err) {
+        return finish(task, started, false, "transport", err instanceof Error ? err.message : String(err));
+    }
+    finally {
+        await client?.close().catch(() => undefined);
+        fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+}
+function checkVerifier(verifier, sandbox, result, vars) {
+    const resolvePath = (rel) => containedPath(sandbox, template(rel, vars));
+    switch (verifier.kind) {
+        case "fileExists": {
+            const p = resolvePath(verifier.path);
+            if (!entryExistsExact(p))
+                return `expected ${verifier.path} to exist`;
+            return fs.statSync(p).isFile() ? null : `expected ${verifier.path} to be a regular file`;
+        }
+        case "dirExists": {
+            const p = resolvePath(verifier.path);
+            if (!entryExistsExact(p))
+                return `expected directory ${verifier.path} to exist`;
+            return fs.statSync(p).isDirectory() ? null : `expected ${verifier.path} to be a directory`;
+        }
+        case "fileAbsent":
+            return fs.existsSync(resolvePath(verifier.path)) ? `expected ${verifier.path} to be absent` : null;
+        case "fileEquals": {
+            const p = resolvePath(verifier.path);
+            if (!entryExistsExact(p))
+                return `expected ${verifier.path} to exist`;
+            const actual = fs.readFileSync(p, "utf8");
+            const expected = template(verifier.equals, vars);
+            return actual === expected ? null : `content mismatch in ${verifier.path}`;
+        }
+        case "fileContains": {
+            const p = resolvePath(verifier.path);
+            if (!entryExistsExact(p))
+                return `expected ${verifier.path} to exist`;
+            return fs.readFileSync(p, "utf8").includes(template(verifier.contains, vars))
+                ? null
+                : `missing expected content in ${verifier.path}`;
+        }
+        case "resultContains": {
+            const expected = template(verifier.contains, vars);
+            return extractText(result).includes(expected)
+                ? null
+                : `result text missing expected content`;
+        }
+    }
+}
+/**
+ * Host-FS-agnostic existence: the exact basename (byte-for-byte, so
+ * case- AND unicode-normalization-sensitive) must appear in the parent
+ * directory listing. fs.existsSync alone false-passes on macOS/APFS
+ * (case-insensitive, NFD-normalizing) for a case-flipped or NFD-variant
+ * name — a certification hole invisible to case-sensitive Linux CI. readdir
+ * returns the real on-disk name; Array.includes compares by code unit, so
+ * "Combine" ≠ "combine" and NFC ≠ NFD.
+ */
+function entryExistsExact(abs) {
+    return fs.existsSync(abs); // REVERTED to pre-fix behavior
+}
+function extractText(result) {
+    const content = result.content;
+    if (!Array.isArray(content))
+        return "";
+    return content
+        .map((c) => (c && typeof c === "object" && "text" in c ? String(c.text) : ""))
+        .join("\n");
+}
+function finish(task, started, pass, stage, detail) {
+    return { taskId: task.id, signed: task.signed, pass, stage, detail, latencyMs: Date.now() - started };
+}
+//# sourceMappingURL=runner.js.map

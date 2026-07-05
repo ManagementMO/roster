@@ -3,10 +3,10 @@ import type {
   OutcomeClass,
 } from "@rosterhq/shared";
 import { percentile, wilsonLowerBound } from "@rosterhq/shared";
-import type { CoachDb } from "./db.js";
-import { isAttributable } from "./classifier.js";
-import { cosine, normalize, oatsAdjust } from "./oats.js";
-import { blobToVec, sha256Hex, vecToBlob } from "./util.js";
+import type { CoachDb } from "../../../packages/coach/src/db.js";
+import { isAttributable } from "../../../packages/coach/src/classifier.js";
+import { cosine, normalize, oatsAdjust } from "../../../packages/coach/src/oats.js";
+import { blobToVec, sha256Hex, vecToBlob } from "../../../packages/coach/src/util.js";
 
 export interface UpsertResult {
   added: string[];
@@ -554,7 +554,7 @@ export class CoachStore {
       // is still a real match and must survive the `score > 0` draft filter.
       return rows.map((r) => ({
         id: r.id,
-        lexScore: span === 0 ? 1 : LEX_SCORE_FLOOR + (1 - LEX_SCORE_FLOOR) * ((worst - r.rank) / span),
+        lexScore: span === 0 ? 1 : (worst - r.rank) / span, // PRE-FIX: no floor (reverted only this line)
       }));
     } catch {
       return []; // malformed MATCH input must never break a draft

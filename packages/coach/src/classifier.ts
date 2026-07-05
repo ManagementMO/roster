@@ -32,7 +32,13 @@ export function classifyOutcome(e: CallEvidence): OutcomeClass {
   return "success";
 }
 
-/** Heuristic taxonomy aligned with MCP-Atlas categories; auth checked before schema on purpose ("invalid token" is auth, not schema). */
+/**
+ * Heuristic taxonomy aligned with MCP-Atlas categories. Order encodes precedence:
+ * auth before schema ("invalid token" is auth, not schema); and INTERNAL before
+ * schema, because `tool_fail:schema` is non-attributable — a genuine 500/panic
+ * whose text merely contains a schema-ish word ("internal validation error")
+ * must classify as the tool's internal fault, not be excused as a caller error.
+ */
 export function classifyToolFailKind(errorText: string): ToolFailKind {
   const t = errorText.toLowerCase();
   if (/unauthori[sz]ed|forbidden|permission denied|credential|api.?key|token|\b401\b|\b403\b|\bauth/.test(t)) {
@@ -40,10 +46,10 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
   }
   if (/quota|rate.?limit|too many requests|\b429\b/.test(t)) return "quota";
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
+  if (/internal (server )?error|\b500\b|panic|crashed|segfault/.test(t)) return "internal";
   if (/schema|invalid (argument|param|input|request)|validation|required (field|property|parameter)|must be of type/.test(t)) {
     return "schema";
   }
-  if (/internal (server )?error|\b500\b|panic|crashed|segfault/.test(t)) return "internal";
   return "other";
 }
 

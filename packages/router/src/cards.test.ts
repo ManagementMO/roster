@@ -48,4 +48,16 @@ describe("argsMatchSchema — no cross-call $id poisoning", () => {
     expect(argsMatchSchema(schema, bad)).toBe(false); // genuine mismatch still fails
     expect(argsMatchSchema(schema, good)).toBe(true);
   });
+
+  it("still resolves a $ref that targets a $id (keeping $id must not break refs)", () => {
+    const withRef = {
+      $id: "https://ex.com/root.json",
+      type: "object",
+      properties: { child: { $ref: "https://ex.com/child.json" } },
+      required: ["child"],
+      $defs: { c: { $id: "https://ex.com/child.json", type: "object", properties: { n: { type: "number" } }, required: ["n"] } },
+    };
+    expect(argsMatchSchema(withRef, { child: { n: 1 } })).toBe(true);
+    expect(argsMatchSchema(withRef, { child: {} })).toBe(false); // ref actually enforced, not bypassed
+  });
 });

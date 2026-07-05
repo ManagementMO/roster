@@ -354,15 +354,25 @@ describe("OATS nightly", () => {
 });
 
 describe("fix-wave regressions (lab swarm)", () => {
-  it("keeps the worst genuine lexical hit in a draft (no min-max zeroing displacement)", () => {
-    // Two real matches for "write": the worst was scored 0 by min-max and then
-    // dropped by the score>0 filter, displaced by an unrelated rated tool.
+  it("keeps the worst genuine lexical hit in a draft — floor beats rated-fallback displacement", () => {
+    // Two real matches for "write": min-max scores the worst 0, score>0 drops
+    // it. Two UNRELATED tools carry real ratings, so the fallback prefers THEM
+    // over the (unrated) dropped hit — without the floor the worst write tool
+    // is absent. k=3 leaves no room for fallback to accidentally re-add it.
     store.upsertCapabilities([
       tool("fs__write_file", "write_file", "write text content to a file on disk"),
       tool("sqlite__write_query", "write_query", "write rows via an insert query"),
-      tool("x__unrelated", "unrelated", "totally different domain no overlap"),
+      tool("rated__alpha", "alpha", "completely unrelated capability alpha"),
+      tool("rated__beta", "beta", "completely unrelated capability beta"),
     ]);
-    const ids = store.draftCandidates("write", 5).map((c) => c.entry.id);
+    for (const cap of ["rated__alpha", "rated__beta"]) {
+      for (let i = 0; i < 5; i++) {
+        store.recordOutcome({ session: `${cap}${i}`, source: cap.split("__")[0]!, capability: cap, outcomeClass: "success", latencyMs: 10 });
+      }
+    }
+    store.recomputeRatings();
+    const ids = store.draftCandidates("write", 3).map((c) => c.entry.id);
+    // Both genuine lexical hits present; whichever min-max zeroes is kept only by the floor.
     expect(ids).toContain("fs__write_file");
     expect(ids).toContain("sqlite__write_query");
   });
@@ -397,5 +407,20 @@ describe("fix-wave regressions (lab swarm)", () => {
     const gone = store.pruneMissing(new Set(), new Set(["mail"]));
     expect(gone).toEqual([]);
     expect(store.getCapability("mail-2__send")).not.toBeNull();
+  });
+});
+
+describe("fix-wave round 2 — drift + robustness", () => {
+  it("treats an outputSchema change as drift (was invisible to both detectors)", () => {
+    const base: CapabilityEntry = {
+      id: "a__t", kind: "tool", source: "a", name: "t", description: "d",
+      inputSchema: { type: "object" },
+      outputSchema: { type: "object", properties: { a: { type: "string" } } },
+    };
+    store.upsertCapabilities([base]);
+    const changed: CapabilityEntry = { ...base, outputSchema: { type: "object", properties: { b: { type: "number" } } } };
+    const res = store.upsertCapabilities([changed]);
+    expect(res.driftEvents).toBe(1);
+    expect(res.changed).toEqual(["a__t"]);
   });
 });

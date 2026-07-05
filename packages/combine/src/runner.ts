@@ -142,26 +142,26 @@ function checkVerifier(
   switch (verifier.kind) {
     case "fileExists": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(p)) return `expected ${verifier.path} to exist`;
+      if (!entryExistsExact(sandbox, p)) return `expected ${verifier.path} to exist`;
       return fs.statSync(p).isFile() ? null : `expected ${verifier.path} to be a regular file`;
     }
     case "dirExists": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(p)) return `expected directory ${verifier.path} to exist`;
+      if (!entryExistsExact(sandbox, p)) return `expected directory ${verifier.path} to exist`;
       return fs.statSync(p).isDirectory() ? null : `expected ${verifier.path} to be a directory`;
     }
     case "fileAbsent":
       return fs.existsSync(resolvePath(verifier.path)) ? `expected ${verifier.path} to be absent` : null;
     case "fileEquals": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(p)) return `expected ${verifier.path} to exist`;
+      if (!entryExistsExact(sandbox, p)) return `expected ${verifier.path} to exist`;
       const actual = fs.readFileSync(p, "utf8");
       const expected = template(verifier.equals, vars);
       return actual === expected ? null : `content mismatch in ${verifier.path}`;
     }
     case "fileContains": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(p)) return `expected ${verifier.path} to exist`;
+      if (!entryExistsExact(sandbox, p)) return `expected ${verifier.path} to exist`;
       return fs.readFileSync(p, "utf8").includes(template(verifier.contains, vars))
         ? null
         : `missing expected content in ${verifier.path}`;
@@ -176,22 +176,30 @@ function checkVerifier(
 }
 
 /**
- * Host-FS-agnostic existence: the exact basename (byte-for-byte, so
- * case- AND unicode-normalization-sensitive) must appear in the parent
- * directory listing. fs.existsSync alone false-passes on macOS/APFS
- * (case-insensitive, NFD-normalizing) for a case-flipped or NFD-variant
- * name — a certification hole invisible to case-sensitive Linux CI. readdir
- * returns the real on-disk name; Array.includes compares by code unit, so
- * "Combine" ≠ "combine" and NFC ≠ NFD.
+ * Host-FS-agnostic existence: EVERY path component below the sandbox must
+ * appear byte-for-byte (so case- AND unicode-normalization-sensitive) in its
+ * parent directory listing. fs.existsSync alone false-passes on macOS/APFS
+ * (case-insensitive, NFD-normalizing) for a case-flipped or NFD-variant name —
+ * a certification hole invisible to case-sensitive Linux CI. Walking every
+ * component (not just the basename) closes it for nested paths too: readdir
+ * returns the real on-disk name and Array.includes compares by code unit, so
+ * "Out" ≠ "out" and NFC ≠ NFD at any depth.
  */
-function entryExistsExact(abs: string): boolean {
-  let entries: string[];
-  try {
-    entries = fs.readdirSync(path.dirname(abs));
-  } catch {
-    return false;
+function entryExistsExact(sandbox: string, abs: string): boolean {
+  const rel = path.relative(sandbox, abs);
+  if (rel === "" || rel === "." || rel.startsWith("..")) return fs.existsSync(abs);
+  let dir = sandbox;
+  for (const part of rel.split(path.sep)) {
+    let entries: string[];
+    try {
+      entries = fs.readdirSync(dir);
+    } catch {
+      return false;
+    }
+    if (!entries.includes(part)) return false;
+    dir = path.join(dir, part);
   }
-  return entries.includes(path.basename(abs));
+  return true;
 }
 
 function extractText(result: Record<string, unknown>): string {

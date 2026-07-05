@@ -360,26 +360,28 @@ export class RosterServer {
 
 /**
  * Structure-only arg validation for the (rare) suggest-only path. A FRESH Ajv
- * per call is deliberate: a single shared instance registered each schema's
- * `$id` into its permanent registry, so the second suggestion carrying any
- * `$id` threw "already exists" (caught → false) — args_compatible read `true`
- * once then `false` forever for identical args — and `_cache` grew one entry
- * per call, never hitting. Identity keys are stripped recursively so no `$id`
- * can register at all, and dialect `$schema` refs can't force a false negative.
+ * per call is what fixes the poisoning: a single shared instance registered
+ * each schema's `$id` permanently, so a second suggestion carrying any `$id`
+ * threw "already exists" (caught → false) — args_compatible read `true` once
+ * then `false` forever — and `_cache` grew unboundedly. A new instance per call
+ * has an empty registry, so a `$id` can't collide with itself. We therefore
+ * KEEP `$id`/`$anchor`/`$ref` (stripping them broke `$ref`-by-`$id` resolution
+ * → false negatives) and drop only the dialect `$schema`, which Ajv2020 can
+ * otherwise reject when a backend declares draft-07.
  */
 export function argsMatchSchema(schema: Record<string, unknown>, args: unknown): boolean {
   const ajv = new Ajv2020({ strict: false });
-  return ajv.validate(stripSchemaIdentity(schema) as Record<string, unknown>, args) as boolean;
+  return ajv.validate(stripDialect(schema) as Record<string, unknown>, args) as boolean;
 }
 
-/** Drop $id/$schema/$anchor everywhere (they only matter for a shared registry we don't use). */
-function stripSchemaIdentity(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripSchemaIdentity);
+/** Drop only `$schema` (the meta-dialect) everywhere; keep `$id`/`$anchor`/`$ref` so refs resolve. */
+function stripDialect(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripDialect);
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (k === "$id" || k === "$schema" || k === "$anchor") continue;
-      out[k] = stripSchemaIdentity(v);
+      if (k === "$schema") continue;
+      out[k] = stripDialect(v);
     }
     return out;
   }

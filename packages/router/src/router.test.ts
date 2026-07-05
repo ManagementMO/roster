@@ -272,3 +272,23 @@ describe("five mode", () => {
     expect(sugg[0]?.taken).toBe(0);
   });
 });
+
+describe("backend connect timeout (fix wave round 2)", () => {
+  it("bounds a wedged handshake instead of hanging boot, and registers nothing", async () => {
+    // A transport that starts but never delivers an initialize response.
+    const hanging = {
+      onclose: undefined,
+      onerror: undefined,
+      onmessage: undefined,
+      start: async () => undefined,
+      send: async () => undefined,
+      close: async () => undefined,
+    };
+    const manager = new BackendManager(2_000, 150); // 150ms connect timeout
+    await expect(
+      manager.connect({ name: "wedged", transport: hanging } as never),
+    ).rejects.toThrow(/timeout/);
+    expect(manager.allTools()).toHaveLength(0);
+    await manager.close();
+  });
+});

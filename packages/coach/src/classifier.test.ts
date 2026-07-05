@@ -68,4 +68,10 @@ describe("attribution fairness (methodology §8)", () => {
     expect(isAttributable("tool_fail:internal")).toBe(true);
     expect(isAttributable("schema_drift_suspect")).toBe(true); // OUTPUT drift = tool's fault
   });
+  it("an internal fault whose text mentions validation is NOT excused as schema", () => {
+    // internal precedence over schema keeps genuine tool crashes attributable.
+    expect(classifyToolFailKind("Internal server error during input validation")).toBe("internal");
+    expect(classifyOutcome({ isError: true, errorText: "panic: schema assertion failed" })).toBe("tool_fail:internal");
+    expect(isAttributable(classifyOutcome({ isError: true, errorText: "500 internal error: invalid state" }))).toBe(true);
+  });
 });

@@ -10,7 +10,7 @@ Every fix below was independently re-verified against the real code (the swarm's
 | **Sync error swallowing** (`cli/sync.ts`) | The whole import step was wrapped in `try/catch`, so a failed `saveConfig` was eaten — sync reported `synced` while the user's servers were never persisted (routed nowhere). | Only the *parse* is caught; a save failure now propagates and aborts before the client config is touched. | cli.test |
 | **Eject wrong-restore** (`cli/eject.ts`, `sync.ts`) | Pristine backup was chosen by mutable `manifest.timestamp` and corrupt manifests were silently skipped → a 1-byte manifest tamper made eject restore a **different** (user-edited) backup. | Selection keys off the immutable backup **directory name**; a missing/corrupt pristine manifest is refused loudly (INTEGRITY FAILURE), never advanced past. | cli.test |
 | **SKILL.md BOM** (`playbook/skill.ts`) | A leading UTF-8 BOM sat before `---`, so frontmatter never matched and was silently voided (name→slug, description→""). | Strip a leading BOM before parsing. | playbook.test |
-| **Trust-scan blind spots** (`playbook/trust.ts`) | Scanned only the body — never the `description` (the text OpenClaw injects into every prompt) or bundled-**script contents** (a path list hid `curl\|bash`). | Scans metadata + body + script file contents (size-capped; scripts skip the noisy base64 rule). | playbook.test |
+| **Trust-scan blind spots** (`playbook/trust.ts`) | Scanned only the body — never the `description` (the text OpenClaw injects into every prompt) or bundled-**script contents** (a path list hid `curl\|bash`). | Scans metadata + body + script file contents (bounded head-read, round 2). Scripts deliberately SKIP the base64 rule (too noisy on real minified code) — so a base64-decode-and-exec **inside a script remains a known gap**, not covered. | playbook.test |
 
 ## Identity & routing (HIGH)
 
@@ -35,8 +35,32 @@ Every fix below was independently re-verified against the real code (the swarm's
 
 ## Deliberately NOT changed (with reason)
 
-- **OATS single-centroid / 4-outcome floor / weak negatives** — intentional v1 design that the verified dense-live path depends on; the "poisoning" case needs mislabeled *successes* (an upstream attribution issue, now further guarded by the §8 input-validation exclusion). Documented honestly in methodology §9a rather than rewritten.
+- **OATS single-centroid / 4-outcome floor / weak negatives** — intentional v1 design that the verified dense-live path depends on. The "poisoning" case needs mislabeled *successes* (the implicit-feedback problem: a semantically-wrong result the classifier can't see is wrong). Correction (meta-review caught my earlier wording): the §8 input-validation change removes some NEGATIVE evidence and therefore does **not** help against success-driven poisoning — it is unrelated to this gap. Documented honestly in methodology §9a rather than rewritten.
 - **Embedding batch-shape nondeterminism** — inherent to ONNX matmul batching; effect is sub-top-1 jitter only. Not a correctness bug.
 - **Gemma RAM (~1.7–1.9 GB) / dispose reclaiming ~0 for MiniLM** — the model's cost and MiniLM's small footprint, not leaks; the dispose fix's real benefit (no cross-session accumulation) was confirmed.
 - **Stemming (plural/verb forms)** — the correct fix is a Porter FTS tokenizer, an index-schema change too risky to rush into this wave; noted as a follow-up.
 - **Trust-scan false positives (~33%)** — inherent to conservative regex heuristics; the scan is advisory ("review"), so over-flagging is the safe direction. Only the false-*negatives* (the dangerous direction) were fixed.
+
+## Round 2 — from an adversarial meta-review of round 1
+
+A 7-lens meta-review (independent agents, then per-finding skeptic verification) audited the round-1 diff. It confirmed the core fixes correct but found two bugs I'd *introduced*, two real gaps I'd missed, three vacuous tests, and a couple of overclaims. All addressed:
+
+| Fix | What the review found | Resolution |
+|---|---|---|
+| **`roster serve` connect hang** (`router/backends.ts`) | No timeout on connect → a wedged backend hangs boot ~60s each, sequentially (a real swarm finding I'd dropped). | Bounded handshake + child-process cleanup; hanging-transport regression test. |
+| **Output-schema drift invisible** (`coach/store.ts`) | `defHash` omitted `outputSchema`, and the runtime check is dead (the MCP SDK validates output itself and throws first — verified in SDK source). Caught by neither detector. | `outputSchema` added to the drift hash, with a test. |
+| **Bug I introduced: Ajv over-strip** (`router/rosterServer.ts`) | Recursively stripping `$id`/`$anchor` (redundant given fresh-Ajv-per-call) broke `$ref`-by-`$id` resolution → false negatives. | Strip only the `$schema` dialect; keep `$id`/`$ref`. `$ref` regression test added. |
+| **Bug I introduced: unbounded script read** (`playbook/trust.ts`) | Read the whole script file *then* capped → a huge script threw, and the swallowed throw left it UNSCANNED (re-opening the curl\|bash-in-script gap). | Bounded head-read (`readSync` ≤256KB), never loads the whole file. |
+| **Over-broad `tool_fail:schema`** (`coach/classifier.ts`) | `schema` matched before `internal`, so a genuine 500/panic containing a schema-ish word was wrongly excused. | Reordered: internal faults win; test added (mutation-verified to discriminate). |
+| **Verifier parent-fold** (`combine/runner.ts`) | `entryExistsExact` byte-checked only the final basename; parent dirs still folded on macOS. | Walks every path component byte-exact; case-variant regression test added. |
+| **Three vacuous tests** | Worst-hit-floor, eject-wrong-restore, and atomic-write tests passed even with their fixes reverted. | All three rebuilt to genuinely discriminate — **mutation-tested**: each now fails when its fix is reverted. |
+
+### Still deliberately deferred / disclosed (meta-review confirmed, not silently dropped)
+
+- **Remove/re-add drift bypass** (medium): pruning deletes a capability's `def_hash`, so a tool removed then re-added with a changed definition is treated as new (no drift event, no quarantine). Partial mitigation: `drift_event` history survives pruning. A tombstone table is the v1.1 fix; deferred (requires a removed-then-changed-then-readded sequence to exploit).
+- **Sequential divergent-boot prune** (medium): the `keepSeenSince` window protects the transient overlap between two `roster serve` boots; a genuinely sequential race isn't covered. Low real risk because `roster.json` is a single shared file, so divergence is transient and a genuine config change *should* prune. Disclosed.
+- **Prune de-suffix over-protection** (low): protecting base `x` also shields a genuinely-removed `x-2` from pruning until `x` reappears — a stale-tool leak in the safe (never-wrongly-delete) direction.
+- **camelCase index on upgrade** (low): the split only re-indexes added/drifted tools, so an *existing* `coach.db` keeps the old index until a tool drifts. Moot pre-launch (no installs); the round-2 `defHash` change also forces a one-time reindex on upgrade.
+- **Manifest-less oldest backup bricks eject** (low): if the oldest backup's manifest is lost (e.g. a crash mid-sync between writing `original` and `manifest.json`), eject refuses with no `--force` escape. This is strictly safer than the pre-fix silent wrong-restore, but is an availability dead-end; an explicit recovery path is a follow-up.
+- **`schema_drift_suspect` runtime path** (low): effectively dead on the real wire (the SDK pre-validates). The connect-time `defHash` (now incl. `outputSchema`) is the real, working drift mechanism; the runtime path stays as harmless belt-and-suspenders.
+- **Transport-death classification**: the `ConnectionClosed(-32000) → transport` mapping is verified against the SDK's `ErrorCode` enum, not an isolated automated test (a mid-call transport death is hard to simulate deterministically through the SDK).

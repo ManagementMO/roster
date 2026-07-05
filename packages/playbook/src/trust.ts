@@ -65,6 +65,24 @@ const BODY_RULES: Rule[] = [
 const MAX_SCRIPT_BYTES = 256 * 1024;
 
 /**
+ * Read at most `maxBytes` from the head of a file WITHOUT loading the whole
+ * thing. readFileSync(...).slice() reads the entire file first, so a huge
+ * bundled script would OOM/throw — and that throw, swallowed by the caller,
+ * silently left the script UNSCANNED (re-opening the curl|bash-in-a-script
+ * false-negative this scan exists to close).
+ */
+function readHead(file: string, maxBytes: number): string {
+  const fd = fs.openSync(file, "r");
+  try {
+    const buf = Buffer.allocUnsafe(maxBytes);
+    const n = fs.readSync(fd, buf, 0, maxBytes, 0);
+    return buf.subarray(0, n).toString("utf8");
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/**
  * Scans body AND the two blind spots the lab surfaced: the `description` (the
  * exact text OpenClaw injects into every prompt and retrieval indexes — the
  * highest-value injection surface) and the CONTENTS of bundled scripts (a path
@@ -99,8 +117,7 @@ export function trustScan(
   if (skill.dir) {
     for (const rel of skill.scripts) {
       try {
-        const content = fs.readFileSync(path.join(skill.dir, rel), "utf8").slice(0, MAX_SCRIPT_BYTES);
-        scan(content, `script:${rel}`, scriptRules);
+        scan(readHead(path.join(skill.dir, rel), MAX_SCRIPT_BYTES), `script:${rel}`, scriptRules);
       } catch {
         // Unreadable script: the bundled-scripts advisory below still fires.
       }
