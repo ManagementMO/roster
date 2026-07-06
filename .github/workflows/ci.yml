@@ -19,32 +19,29 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm lint
 
   build-test:
-    name: Build & test
+    name: Build & test · ${{ matrix.os }} node${{ matrix.node }}
     strategy:
-      # Report all three OSes even if one fails — don't cancel siblings.
+      # Report every combination even if one fails — don't cancel siblings.
       fail-fast: false
       matrix:
-        # macos pinned explicitly (macos-latest is mid-migration to macOS 26).
-        os: [ubuntu-latest, macos-26, windows-latest]
+        # Explicit combinations (add a line to cover another OS/Node pairing):
+        # every OS on the current Node, plus the engines floor (>=20) on Linux.
+        include:
+          - { os: ubuntu-latest, node: "24" }
+          - { os: ubuntu-latest, node: "20" } # validates the package.json engines floor
+          - { os: macos-26, node: "24" } # macos-latest is mid-migration to macOS 26
+          - { os: windows-latest, node: "24" }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          node-version: ${{ matrix.node }}
       # Build first: `tsc -b` is the REAL typecheck (vitest transpiles per-file
       # and would miss cross-package type errors). Fail fast on compile.
       - name: Build (tsc project references)
@@ -52,33 +49,22 @@ jobs:
       - name: Unit + integration tests
         run: pnpm test
 
-  real-servers:
-    name: Real-server E2E + Combine
+  integration:
+    name: Router E2E + certification probes
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm build
       # Drives the router in transparent + five mode through REAL filesystem and
       # memory MCP servers (the one integration the unit suite mocks).
       - name: End-to-end through real fs + memory servers
         run: |
           for i in 1 2 3; do node docs/verification/e2e.mjs && exit 0; echo "retry $i"; sleep 5; done; exit 1
-      # The Combine harness against the official filesystem server — must pass 8/8.
-      - name: Combine filesystem suite (expect 8/8)
-        run: >
-          node packages/cli/dist/bin.js combine run suites/filesystem/tasks.yaml
-          --name filesystem --out "$RUNNER_TEMP/lab.json"
-          -- npx -y @modelcontextprotocol/server-filesystem '{{sandbox}}'
       # The certification instruments: every fail-probe sabotages a task's end
       # state, so a correct verifier must CATCH all of them (0/8 passed). A
-      # single leak here would mean a verifier can bless a wrong outcome.
+      # single leak would mean a verifier can bless a wrong outcome.
       - name: Fail-probes (verifiers must catch wrongness — expect 0/8)
         run: |
           set +e
@@ -96,18 +82,43 @@ jobs:
       - name: League site generates from the run artifact
         run: pnpm league:build
 
+  combine:
+    name: Combine · ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Data-driven: signing a new division adds ONE entry here — no new
+        # steps. The server command may include the literal {{sandbox}} token,
+        # which the Combine CLI substitutes per task.
+        include:
+          - { suite: filesystem, server: "npx -y @modelcontextprotocol/server-filesystem {{sandbox}}" }
+          # - { suite: memory,  server: "npx -y @modelcontextprotocol/server-memory" }
+          # - { suite: git,     server: "npx -y @modelcontextprotocol/server-git --repository {{sandbox}}" }
+          # - { suite: sqlite,  server: "npx -y @modelcontextprotocol/server-sqlite --db-path {{sandbox}}/db.sqlite" }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm build
+      # The Combine CLI exits non-zero unless every task passes, so this step is
+      # its own assertion. SERVER_CMD is a trusted workflow value passed via env
+      # (word-splits into args under bash; no untrusted input reaches the shell).
+      - name: Run the ${{ matrix.suite }} suite (harness exits nonzero unless all pass)
+        env:
+          SUITE: ${{ matrix.suite }}
+          SERVER_CMD: ${{ matrix.server }}
+        run: |
+          node packages/cli/dist/bin.js combine run "suites/$SUITE/tasks.yaml" \
+            --name "$SUITE" --out "$RUNNER_TEMP/lab-$SUITE.json" -- $SERVER_CMD
+
   dense:
     name: Live embedding inference (real MiniLM)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm build
       # Real transformers.js inference: the dense rung + OATS refinement end to
       # end. gemma-live.mjs needs >=8GiB (Gemma-300M); hosted runners for a
@@ -131,11 +142,6 @@ jobs:
         run: |
           curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b "$RUNNER_TEMP/bin"
           "$RUNNER_TEMP/bin/trufflehog" filesystem . --only-verified --fail --no-update
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - name: Known-vulnerability audit
         run: pnpm audit --audit-level moderate

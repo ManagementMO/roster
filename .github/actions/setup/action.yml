@@ -1,0 +1,19 @@
+name: setup
+description: Toolchain setup — pnpm + Node + a frozen install. Single source of truth for every job.
+inputs:
+  node-version:
+    description: Node.js major to use.
+    default: "24"
+runs:
+  using: composite
+  steps:
+    # pnpm version comes from the root package.json `packageManager` field —
+    # nothing to pin here, and bumping it is a one-line change there.
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+    - name: Install (frozen lockfile)
+      shell: bash
+      run: pnpm install --frozen-lockfile
