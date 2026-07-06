@@ -4,6 +4,7 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: read-only by default; jobs opt into more only if needed.
 permissions:
   contents: read
 
@@ -12,12 +13,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        # macos pinned explicitly (macos-latest is mid-migration to macOS 26).
-        os: [ubuntu-latest, macos-26, windows-latest]
-    runs-on: ${{ matrix.os }}
+  lint:
+    name: Lint (Biome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -26,5 +25,117 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      - run: pnpm lint
+
+  build-test:
+    name: Build & test
+    strategy:
+      # Report all three OSes even if one fails — don't cancel siblings.
+      fail-fast: false
+      matrix:
+        # macos pinned explicitly (macos-latest is mid-migration to macOS 26).
+        os: [ubuntu-latest, macos-26, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Build first: `tsc -b` is the REAL typecheck (vitest transpiles per-file
+      # and would miss cross-package type errors). Fail fast on compile.
+      - name: Build (tsc project references)
+        run: pnpm build
+      - name: Unit + integration tests
+        run: pnpm test
+
+  real-servers:
+    name: Real-server E2E + Combine
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      # Drives the router in transparent + five mode through REAL filesystem and
+      # memory MCP servers (the one integration the unit suite mocks).
+      - name: End-to-end through real fs + memory servers
+        run: |
+          for i in 1 2 3; do node docs/verification/e2e.mjs && exit 0; echo "retry $i"; sleep 5; done; exit 1
+      # The Combine harness against the official filesystem server — must pass 8/8.
+      - name: Combine filesystem suite (expect 8/8)
+        run: >
+          node packages/cli/dist/bin.js combine run suites/filesystem/tasks.yaml
+          --name filesystem --out "$RUNNER_TEMP/lab.json"
+          -- npx -y @modelcontextprotocol/server-filesystem '{{sandbox}}'
+      # The certification instruments: every fail-probe sabotages a task's end
+      # state, so a correct verifier must CATCH all of them (0/8 passed). A
+      # single leak here would mean a verifier can bless a wrong outcome.
+      - name: Fail-probes (verifiers must catch wrongness — expect 0/8)
+        run: |
+          set +e
+          node packages/cli/dist/bin.js combine run docs/signing/fail-probes.yaml \
+            --name failprobe --out "$RUNNER_TEMP/fp.json" \
+            -- npx -y @modelcontextprotocol/server-filesystem '{{sandbox}}'
+          code=$?
+          set -e
+          passes=$(node -e "console.log(require('$RUNNER_TEMP/fp.json').runs[0].summary.passes)")
+          if [ "$code" -eq 0 ] || [ "$passes" != "0" ]; then
+            echo "::error::fail-probe LEAK — a verifier blessed a sabotaged end state ($passes/8 passed)"
+            exit 1
+          fi
+          echo "OK: all fail-probes correctly caught (0/8 passed)"
+      - name: League site generates from the run artifact
+        run: pnpm league:build
+
+  dense:
+    name: Live embedding inference (real MiniLM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # Real transformers.js inference: the dense rung + OATS refinement end to
+      # end. gemma-live.mjs needs >=8GiB (Gemma-300M); hosted runners for a
+      # private repo are ~7GiB, so CI exercises the MiniLM path and Gemma is
+      # verified locally.
+      - name: Dense rung + OATS (real model download + inference)
+        run: |
+          for i in 1 2 3; do node docs/verification/dense-live.mjs && exit 0; echo "retry $i"; sleep 10; done; exit 1
+
+  audit:
+    name: Dependency audit + secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      # Secret scan BEFORE install, so it walks only committed source (no
+      # vendored node_modules). Verified-only: fails only on secrets confirmed
+      # live against their API — no false positives on test fixtures — a fit for
+      # the privacy law (credentials are never persisted anywhere in this repo).
+      - name: Verified-secret scan (TruffleHog)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b "$RUNNER_TEMP/bin"
+          "$RUNNER_TEMP/bin/trufflehog" filesystem . --only-verified --fail --no-update
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Known-vulnerability audit
+        run: pnpm audit --audit-level moderate

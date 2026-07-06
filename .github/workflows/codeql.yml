@@ -1,0 +1,38 @@
+name: codeql
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "27 3 * * 1" # weekly, Monday 03:27 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: CodeQL (javascript-typescript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Code scanning upload needs GitHub Advanced Security, which private repos
+    # don't get for free — so this stays skipped until the repo goes public,
+    # then activates automatically. No action needed at launch.
+    if: ${{ github.event.repository.private == false }}
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to the code-scanning API
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # Broader than the default: security + maintainability queries.
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"

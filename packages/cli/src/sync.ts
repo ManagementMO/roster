@@ -175,5 +175,5 @@ export function pristineRawBackup(clientId: ClientId): RawBackup | null {
 /** Back-compat: the oldest backup only when its manifest is intact. */
 export function oldestBackup(clientId: ClientId): BackupRef | null {
   const p = pristineRawBackup(clientId);
-  return p && p.manifest ? { dir: p.dir, manifest: p.manifest } : null;
+  return p?.manifest ? { dir: p.dir, manifest: p.manifest } : null;
 }

@@ -10,9 +10,13 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "biome lint --error-on-warnings",
+    "lint:fix": "biome lint --write",
+    "format": "biome format --write .",
     "league:build": "node apps/league/dist/build.js"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.0",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.0",
     "typescript": "^6.0.3",
