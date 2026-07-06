@@ -16,9 +16,9 @@
     "league:build": "node apps/league/dist/build.js"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
-    "@types/node": "^22.10.0",
-    "tsx": "^4.19.0",
+    "@biomejs/biome": "2.5.2",
+    "@types/node": "^26.1.0",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   }
