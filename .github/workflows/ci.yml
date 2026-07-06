@@ -32,7 +32,7 @@ jobs:
         # every OS on the current Node, plus the engines floor (>=20) on Linux.
         include:
           - { os: ubuntu-latest, node: "24" }
-          - { os: ubuntu-latest, node: "20" } # validates the package.json engines floor
+          - { os: ubuntu-latest, node: "22" } # engines floor: pnpm 11.9 needs Node >=22.13
           - { os: macos-26, node: "24" } # macos-latest is mid-migration to macOS 26
           - { os: windows-latest, node: "24" }
     runs-on: ${{ matrix.os }}
