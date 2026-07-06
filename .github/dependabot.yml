@@ -1,14 +1,22 @@
 version: 2
 updates:
-  # npm dependencies — grouped into one PR per run to keep review light.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # @types/node tracks our supported Node FLOOR (engines >=22), not latest.
+      # A major ahead of runtime would typecheck against APIs absent on the
+      # versions we ship to — raise this deliberately when we raise the floor.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
+      # Group only minor + patch into one low-risk PR. MAJOR bumps come as their
+      # own PRs so each one gets a deliberate look (a major never rides in
+      # silently alongside safe updates).
       dependencies:
-        patterns: ["*"]
+        update-types: ["minor", "patch"]
     commit-message:
       prefix: "chore(deps)"
 
@@ -19,6 +27,6 @@ updates:
       interval: weekly
     groups:
       actions:
-        patterns: ["*"]
+        update-types: ["minor", "patch"]
     commit-message:
       prefix: "chore(ci)"
