@@ -7,3 +7,7 @@ coverage/
 .roster-tmp/
 docs/verification/tmp/
 dist-site/
+
+# accidental review/validation artifacts (never commit)
+actionlint
+docs/lab/tmp-*/
