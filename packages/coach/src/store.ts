@@ -448,24 +448,38 @@ export class CoachStore {
   }
 
   /**
-   * Handoff §6.2 rule 4: the same capability re-called within the session's last
-   * three calls with *different* args marks the prior attempt soft_fail — the
-   * agent judged that result unusable and voted with its next action.
+   * Handoff §6.2 rule 4 (amended 2026-07-07 after the deep-review audit): a
+   * re-call of the same capability with *different* args marks the PRIOR attempt
+   * soft_fail — BUT only when that prior attempt did NOT succeed. The original
+   * rule marked any prior call, which conflated the "retried because the result
+   * was unusable" signal with the DOMINANT agent pattern of iterating one tool
+   * over different inputs (read 5 files, list 5 dirs). Empirically that discarded
+   * ~4 of 5 legitimate successes and starved OATS's positive corpus. A genuine
+   * success is never retroactively downgraded; a prior FAILURE followed by an
+   * adjusted-args retry is still excluded (MCP-Atlas fairness: don't blame the
+   * tool for what may be the caller's first bad args). Distinguishing iteration
+   * from dissatisfaction on two successes needs an end-of-task signal we don't
+   * yet have (§6.2 item 5); until then, a success counts as a success.
    */
   private markSoftFailIfRetry(currentId: number, input: RecordOutcomeInput): void {
     if (!input.argsHash) return;
     const recent = this.db
       .prepare(
-        `SELECT id, capability, args_hash FROM outcome
+        `SELECT id, capability, args_hash, class FROM outcome
          WHERE session = ? AND id < ? ORDER BY id DESC LIMIT ?`,
       )
       .all(input.session, currentId, SOFT_FAIL_LOOKBACK) as Array<{
       id: number;
       capability: string;
       args_hash: string | null;
+      class: OutcomeClass;
     }>;
     const prior = recent.find(
-      (r) => r.capability === input.capability && r.args_hash !== null && r.args_hash !== input.argsHash,
+      (r) =>
+        r.capability === input.capability &&
+        r.args_hash !== null &&
+        r.args_hash !== input.argsHash &&
+        r.class !== "success",
     );
     if (prior) {
       this.db.prepare("UPDATE outcome SET soft_fail = 1 WHERE id = ?").run(prior.id);
@@ -712,6 +726,14 @@ export class CoachStore {
          ON CONFLICT(need_hash) DO UPDATE SET dims=excluded.dims, vec=excluded.vec, ts=excluded.ts`,
       )
       .run(needHash, normalized.length, vecToBlob(normalized), now);
+  }
+
+  /** Ids that already have a stored vector (same model, post model-switch guard) —
+   *  lets warm boots skip re-embedding what's already there instead of re-doing
+   *  the whole roster every serve process (audit D4). */
+  vecCapabilityIds(): Set<string> {
+    const rows = this.db.prepare("SELECT capability FROM vec").all() as Array<{ capability: string }>;
+    return new Set(rows.map((r) => r.capability));
   }
 
   /** adj if present, else base — the vector drafts actually use. */

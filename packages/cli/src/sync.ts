@@ -26,7 +26,35 @@ export interface SyncResult {
   imported?: number;
 }
 
-const ROSTER_ENTRY = { command: "roster", args: ["serve"] };
+/** P1: the package ships as `roster`. */
+const ROSTER_PKG = "roster";
+
+/**
+ * A global `roster` binary on PATH → `roster serve`; otherwise the npx form, so
+ * the `npx roster init` install path (no global install) produces a spawnable
+ * entry instead of pointing every synced client at a `roster` that isn't there
+ * (audit M5). Overridable via ROSTER_ASSUME_GLOBAL for tests/CI.
+ */
+export function hasGlobalRoster(): boolean {
+  if (process.env.ROSTER_ASSUME_GLOBAL === "1") return true;
+  if (process.env.ROSTER_ASSUME_GLOBAL === "0") return false;
+  const names = process.platform === "win32" ? ["roster.cmd", "roster.exe", "roster"] : ["roster"];
+  return (process.env.PATH ?? "")
+    .split(path.delimiter)
+    .some((dir) => names.some((n) => {
+      try {
+        return dir !== "" && fs.existsSync(path.join(dir, n));
+      } catch {
+        return false;
+      }
+    }));
+}
+
+function rosterEntry(): { command: string; args: string[] } {
+  return hasGlobalRoster()
+    ? { command: "roster", args: ["serve"] }
+    : { command: "npx", args: ["-y", ROSTER_PKG, "serve"] };
+}
 
 /**
  * Sync order is a trust invariant:
@@ -96,16 +124,25 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
 
 /** Returns the new file content, or null when the config already points solely at Roster. */
 function rewriteConfig(clientId: ClientId, content: string): string | null {
+  const entry = rosterEntry();
   if (clientId === "codex") {
     const data = parseToml(content) as Record<string, unknown>;
     if (isAlreadySynced(data.mcp_servers)) return null;
-    data.mcp_servers = { roster: ROSTER_ENTRY };
+    data.mcp_servers = { roster: entry };
     return `${stringifyToml(data)}\n`;
   }
-  const data = parseJsonc(content) as Record<string, unknown>;
-  if (isAlreadySynced(data.mcpServers)) return null;
-  data.mcpServers = { roster: ROSTER_ENTRY };
-  return `${JSON.stringify(data, null, 2)}\n`;
+  const data = parseJsonc(content);
+  // A top-level array or scalar isn't a servers map: setting a property on it
+  // silently vanishes (JSON.stringify drops array props → an eternal false
+  // "synced" loop) or throws — reject loudly so the fleet loop reports it and
+  // moves on, never half-installing (audit D8).
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(`config is not a JSON object (got ${Array.isArray(data) ? "array" : typeof data})`);
+  }
+  const obj = data as Record<string, unknown>;
+  if (isAlreadySynced(obj.mcpServers)) return null;
+  obj.mcpServers = { roster: entry };
+  return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
 function isAlreadySynced(servers: unknown): boolean {
@@ -113,7 +150,11 @@ function isAlreadySynced(servers: unknown): boolean {
   const entries = Object.entries(servers as Record<string, unknown>);
   if (entries.length !== 1 || entries[0]![0] !== "roster") return false;
   const entry = entries[0]![1] as Record<string, unknown> | null;
-  return entry !== null && typeof entry === "object" && entry.command === "roster";
+  if (entry === null || typeof entry !== "object") return false;
+  const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
+  // Recognize BOTH forms — `roster serve` and `npx -y roster serve` — so a
+  // re-sync from a machine that installs roster differently doesn't loop.
+  return entry.command === "roster" || (entry.command === "npx" && args.includes(ROSTER_PKG) && args.includes("serve"));
 }
 
 export interface BackupRef {

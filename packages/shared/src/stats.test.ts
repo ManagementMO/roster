@@ -30,7 +30,8 @@ describe("latencyBucket", () => {
     expect(latencyBucket(250)).toBe("250-1000");
     expect(latencyBucket(999)).toBe("250-1000");
     expect(latencyBucket(1000)).toBe("1000-4000");
-    expect(latencyBucket(4000)).toBe(">4000");
+    expect(latencyBucket(4000)).toBe("1000-4000"); // exactly 4000 is not ">4000"
+    expect(latencyBucket(4001)).toBe(">4000");
   });
 });
 

@@ -28,6 +28,8 @@ export function percentile(sortedAscending: readonly number[], p: number): numbe
 export function latencyBucket(ms: number): LatencyBucket {
   if (ms < 250) return "<250";
   if (ms < 1000) return "250-1000";
-  if (ms < 4000) return "1000-4000";
+  // `<= 4000` so exactly 4000ms lands in "1000-4000" and ">4000" is strictly
+  // greater, matching the labels (latency is always a finite Math.round, never NaN).
+  if (ms <= 4000) return "1000-4000";
   return ">4000";
 }

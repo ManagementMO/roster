@@ -234,19 +234,59 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(sha256Hex(restored.toString("utf8"))).toBe(sha256Hex(originalBytes.toString("utf8")));
   });
 
-  it("refuses to clobber post-sync manual edits without --force", () => {
-    const configPath = path.join(home, ".claude.json");
-    const original = fs.readFileSync(configPath);
+  it("state-file client: eject restores servers KEY-LEVEL, preserving live settings (M2)", () => {
+    const configPath = path.join(home, ".claude.json"); // Claude Code's live state file
     syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
-    fs.appendFileSync(configPath, "\n// user edited after sync\n");
+    // Claude Code rewrites its state file every session — add unrelated state
+    // AND a new mcp key the way a session would:
+    const synced = JSON.parse(fs.readFileSync(configPath, "utf8")) as Record<string, unknown>;
+    synced.numStartups = 42;
+    fs.writeFileSync(configPath, JSON.stringify(synced, null, 2));
 
-    const refused = ejectClient("claude-code");
+    const result = ejectClient("claude-code"); // no --force, no refusal
+    expect(result.action).toBe("restored");
+    const after = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+      numStartups?: number;
+      theme?: string;
+      mcpServers: Record<string, unknown>;
+    };
+    expect(after.numStartups).toBe(42); // live state preserved
+    expect(after.theme).toBe("dark"); // original non-mcp key preserved
+    expect(after.mcpServers).not.toHaveProperty("roster"); // roster removed
+    expect(after.mcpServers).toHaveProperty("github"); // pre-sync server restored
+  });
+
+  it("dedicated client: still refuses to clobber post-sync manual edits without --force", () => {
+    const configPath = path.join(home, ".codex/config.toml"); // codex = dedicated (not a state file)
+    const original = fs.readFileSync(configPath);
+    syncClient("codex", new Date("2026-07-05T01:00:00Z"));
+    fs.appendFileSync(configPath, "\n# user edited after sync\n");
+
+    const refused = ejectClient("codex");
     expect(refused.action).toBe("refused-modified");
     expect(fs.readFileSync(configPath, "utf8")).toContain("user edited after sync");
 
-    const forced = ejectClient("claude-code", { force: true });
+    const forced = ejectClient("codex", { force: true });
     expect(forced.action).toBe("restored");
     expect(Buffer.compare(fs.readFileSync(configPath), original)).toBe(0);
+  });
+
+  it("synced entry is npx-aware when no global `roster` is on PATH, and recognizes both forms (M5)", () => {
+    const prev = process.env.ROSTER_ASSUME_GLOBAL;
+    try {
+      process.env.ROSTER_ASSUME_GLOBAL = "0"; // npx-only install (the `npx roster init` path)
+      const first = syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      expect(first.action).toBe("synced");
+      const cfg = JSON.parse(fs.readFileSync(path.join(home, ".claude.json"), "utf8")) as {
+        mcpServers: Record<string, { command: string; args: string[] }>;
+      };
+      expect(cfg.mcpServers.roster).toEqual({ command: "npx", args: ["-y", "roster", "serve"] });
+      // A re-sync must recognize the npx form and not loop:
+      expect(syncClient("claude-code", new Date("2026-07-05T02:00:00Z")).action).toBe("already-synced");
+    } finally {
+      if (prev === undefined) delete process.env.ROSTER_ASSUME_GLOBAL;
+      else process.env.ROSTER_ASSUME_GLOBAL = prev;
+    }
   });
 
   it("handles deleted config with --force by recreating from backup", () => {

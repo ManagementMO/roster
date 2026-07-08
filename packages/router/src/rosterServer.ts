@@ -153,6 +153,9 @@ export class RosterServer {
     return this.manager.allTools().map((entry) => ({
       name: entry.id,
       description: entry.description,
+      // Faithful passthrough: title + annotations (incl. destructiveHint) survive (D1).
+      ...(entry.title ? { title: entry.title } : {}),
+      ...(entry.annotations ? { annotations: entry.annotations } : {}),
       inputSchema: entry.inputSchema ?? { type: "object" },
       ...(entry.outputSchema ? { outputSchema: entry.outputSchema } : {}),
     }));
@@ -176,11 +179,18 @@ export class RosterServer {
     );
     this.record(namespacedName, target.backend, outcome.evidence, outcome.latencyMs, args, null);
     if (outcome.result) return outcome.result;
-    // Transparent means transparent: protocol/transport failures surface as
-    // protocol errors, exactly as a direct connection would show them —
-    // never repackaged into a "successful" isError result.
+    // Transparent means transparent: backend faults surface as the SAME error a
+    // direct connection would show — never repackaged into a "successful"
+    // isError result. Preserve the original JSON-RPC code (D3), and route a raw
+    // -32602 as InvalidParams (M3).
+    if (outcome.evidence.inputValidationError) {
+      throw new McpError(ErrorCode.InvalidParams, outcome.evidence.errorText ?? "invalid params");
+    }
     if (outcome.evidence.protocolError) {
-      throw new McpError(ErrorCode.InternalError, outcome.evidence.errorText ?? "backend protocol error");
+      throw new McpError(
+        outcome.evidence.errorCode ?? ErrorCode.InternalError,
+        outcome.evidence.errorText ?? "backend protocol error",
+      );
     }
     throw new McpError(
       ErrorCode.InternalError,
@@ -225,17 +235,15 @@ export class RosterServer {
       content: [
         {
           type: "text",
-          text: JSON.stringify(
-            {
-              need,
-              draft_id: draftId,
-              starters,
-              usage:
-                "Invoke with call({tool: <id>, args: {…}, draft_id}). Re-draft when your need changes.",
-            },
-            null,
-            2,
-          ),
+          // Compact, not pretty-printed: indentation added +46–53% marginal token
+          // cost on BPE tokenizers (lab-measured) — an own-goal against the very
+          // token-savings pitch this draft exists to deliver (audit D9a).
+          text: JSON.stringify({
+            need,
+            draft_id: draftId,
+            starters,
+            usage: "Invoke with call({tool: <id>, args: {…}, draft_id}). Re-draft when your need changes.",
+          }),
         },
       ],
     };
@@ -258,7 +266,11 @@ export class RosterServer {
 
     const skill = id.startsWith("skill__") ? this.skills.get(id) : undefined;
     if (skill) {
-      this.record(id, "skill", {}, 0, callArgs, draft?.needHash ?? null);
+      // Recorded for attribution/need-linkage, but marked `explored` so it never
+      // feeds ratings: a skill "call" always succeeds by construction (it returns
+      // its text), which would otherwise mint a perfect Wilson score and dominate
+      // the rated fallback (audit minor).
+      this.record(id, "skill", {}, 0, callArgs, draft?.needHash ?? null, true);
       return {
         content: [
           { type: "text", text: JSON.stringify(skillInvocationResult(skill), null, 2) },
@@ -343,6 +355,7 @@ export class RosterServer {
     latencyMs: number,
     args: unknown,
     needHash: string | null,
+    explored = false,
   ): OutcomeClass {
     const outcomeClass = classifyOutcome(evidence);
     this.store.recordOutcome({
@@ -353,6 +366,7 @@ export class RosterServer {
       latencyMs,
       argsHash: hashArgs(args),
       needHash,
+      explored,
     });
     return outcomeClass;
   }

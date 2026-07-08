@@ -111,9 +111,15 @@ function makeLazyEmbedder(
     // Model-switch guard: stale OATS vectors from a different embedding space
     // are wiped before we backfill in this one.
     store.ensureEmbeddingModel(provider.modelId);
-    // Backfill base vectors for everything we front, chunked so a 200-tool
-    // roster can't spike RAM or starve the queue for the first live draft.
-    const entries = store.listCapabilities({ includeQuarantined: true });
+    // Backfill base vectors only for what's NOT already embedded in this model's
+    // space — a warm coach.db then re-embeds nothing (the model-switch guard
+    // above already wiped vecs if the model changed), instead of re-doing the
+    // whole roster every serve process (audit D4). Chunked so a big roster
+    // can't spike RAM or starve the queue for the first live draft.
+    const alreadyEmbedded = store.vecCapabilityIds();
+    const entries = store
+      .listCapabilities({ includeQuarantined: true })
+      .filter((e) => !alreadyEmbedded.has(e.id));
     const BATCH = 16;
     for (let i = 0; i < entries.length; i += BATCH) {
       const batch = entries.slice(i, i + BATCH);

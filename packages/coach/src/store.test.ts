@@ -173,27 +173,21 @@ describe("outcomes, soft-fail, ratings", () => {
     store.upsertCapabilities([tool("fs__read_file", "read_file", "Read a file")]);
   });
 
-  it("marks prior call soft_fail on retry with modified args", () => {
-    store.recordOutcome({
-      session: "s1",
-      source: "fs",
-      capability: "fs__read_file",
-      outcomeClass: "success",
-      latencyMs: 40,
-      argsHash: "hash-A",
-    });
-    store.recordOutcome({
-      session: "s1",
-      source: "fs",
-      capability: "fs__read_file",
-      outcomeClass: "success",
-      latencyMs: 45,
-      argsHash: "hash-B",
-    });
-    const rows = db.prepare("SELECT soft_fail FROM outcome ORDER BY id").all() as Array<{
-      soft_fail: number;
-    }>;
-    expect(rows.map((r) => r.soft_fail)).toEqual([1, 0]);
+  it("does NOT soft-fail a successful prior call — iterating a tool over inputs is not a retry (M1)", () => {
+    // 5 successful reads of 5 different files: the dominant agent pattern. None
+    // may be discarded, or OATS + ratings starve on the most-used tools.
+    for (let i = 0; i < 5; i++) {
+      store.recordOutcome({ session: "s1", source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 40, argsHash: `file-${i}` });
+    }
+    const rows = db.prepare("SELECT soft_fail FROM outcome ORDER BY id").all() as Array<{ soft_fail: number }>;
+    expect(rows.map((r) => r.soft_fail)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it("DOES soft-fail a prior FAILURE followed by an adjusted-args retry (fairness intent preserved)", () => {
+    store.recordOutcome({ session: "s1", source: "fs", capability: "fs__read_file", outcomeClass: "tool_fail:internal", latencyMs: 40, argsHash: "bad-args" });
+    store.recordOutcome({ session: "s1", source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 45, argsHash: "fixed-args" });
+    const rows = db.prepare("SELECT soft_fail FROM outcome ORDER BY id").all() as Array<{ soft_fail: number }>;
+    expect(rows.map((r) => r.soft_fail)).toEqual([1, 0]); // the failed first attempt is excluded, not counted against the tool
   });
 
   it("does not mark across sessions or identical args", () => {
@@ -211,16 +205,16 @@ describe("outcomes, soft-fail, ratings", () => {
     for (let i = 0; i < 2; i++) {
       store.recordOutcome({ session: `f${i}`, source: "fs", capability: "fs__read_file", outcomeClass: "tool_fail:internal", latencyMs: 50 });
     }
-    // Excluded rows: explored, and a soft-failed pair.
+    // Excluded row: explored. A soft-failed row: a FAILURE then an adjusted retry.
     store.recordOutcome({ session: "x", source: "fs", capability: "fs__read_file", outcomeClass: "tool_fail:internal", latencyMs: 5, explored: true });
-    store.recordOutcome({ session: "y", source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 5, argsHash: "p" });
+    store.recordOutcome({ session: "y", source: "fs", capability: "fs__read_file", outcomeClass: "tool_fail:timeout", latencyMs: 5, argsHash: "p" });
     store.recordOutcome({ session: "y", source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 5, argsHash: "q" });
-    // The "y" retry marks the first as soft_fail; the second remains counted.
+    // The "y" failure (p) is soft-failed by the adjusted retry (q); the success (q) counts.
 
     store.recomputeRatings();
     const rating = store.getRating("fs__read_file");
     expect(rating).not.toBeNull();
-    expect(rating!.n).toBe(11); // 8 + 2 + the counted retry success
+    expect(rating!.n).toBe(11); // 8 success + 2 fail + the counted retry success (the soft-failed timeout + explored are out)
     expect(rating!.successes).toBe(9);
     expect(rating!.wilsonLb).toBeCloseTo(wilsonLowerBound(9, 11), 6);
     expect(rating!.p50Ms).toBeGreaterThan(0);

@@ -22,6 +22,7 @@ function fakeBackend(sourceName: string): Server {
       {
         name: "echo",
         description: "Echo the provided text back to the caller",
+        annotations: { readOnlyHint: true, destructiveHint: false },
         inputSchema: {
           type: "object",
           properties: { text: { type: "string" } },
@@ -109,6 +110,12 @@ describe("transparent mode", () => {
     expect(names).toEqual(["alpha__echo", "alpha__flaky", "beta__echo", "beta__flaky"]);
   });
 
+  it("passthrough preserves annotations (readOnlyHint/destructiveHint) — not just cosmetics (D1)", async () => {
+    const { tools } = await rig.client.listTools();
+    const echo = tools.find((t) => t.name === "alpha__echo") as { annotations?: Record<string, unknown> };
+    expect(echo.annotations).toEqual({ readOnlyHint: true, destructiveHint: false });
+  });
+
   it("passes calls through byte-faithfully and records a success outcome", async () => {
     const result = await rig.client.callTool({
       name: "alpha__echo",
@@ -174,9 +181,9 @@ describe("five mode", () => {
       name: "draft",
       arguments: { need: "echo some text back", k: 5 },
     });
-    const payload = JSON.parse((result.content as Array<{ text: string }>)[0]!.text) as {
-      starters: Array<{ id: string; kind: string }>;
-    };
+    const draftText = (result.content as Array<{ text: string }>)[0]!.text;
+    expect(draftText).not.toContain("\n  "); // compact JSON, not pretty-printed (D9a: pretty-print is a token own-goal)
+    const payload = JSON.parse(draftText) as { starters: Array<{ id: string; kind: string }> };
     const ids = payload.starters.map((s) => s.id);
     expect(ids).toContain("alpha__echo");
 
@@ -299,7 +306,8 @@ describe("errorToEvidence — mid-call error classification (fix wave round 2)",
     const { McpError, ErrorCode } = await import("@modelcontextprotocol/sdk/types.js");
     expect(errorToEvidence(new McpError(ErrorCode.ConnectionClosed, "Connection closed"))).toMatchObject({ transportError: true });
     expect(errorToEvidence(new McpError(ErrorCode.RequestTimeout, "timed out"))).toEqual({ timedOut: true });
-    expect(errorToEvidence(new McpError(ErrorCode.InvalidParams, "bad params"))).toMatchObject({ protocolError: true });
+    expect(errorToEvidence(new McpError(ErrorCode.InvalidParams, "bad params"))).toMatchObject({ inputValidationError: true }); // caller-fault, non-attributable (M3)
+    expect(errorToEvidence(new McpError(ErrorCode.MethodNotFound, "no such tool"))).toMatchObject({ protocolError: true });
     expect(errorToEvidence(new Error("socket hang up"))).toMatchObject({ transportError: true });
   });
 });

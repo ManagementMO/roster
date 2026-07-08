@@ -16,7 +16,7 @@ Search-based tool loading is a proven fix — Anthropic measured [an 85% token c
 
 Four parts, one product:
 
-- **The router ("the Rotation").** An aggregating MCP proxy. Your client configs go from N `mcpServers` entries to one. Default mode is **transparent**: pure passthrough, identical behavior, with outcomes logged locally. Opt into **five mode** and the agent sees two meta-tools — `draft(need)` returns the best ≤5 tools for the stated task (K configurable 1–10), `call(tool, args)` proxies the invocation. When a drafted tool hard-fails, Roster attaches a structured suggestion for the next-ranked equivalent (the Sixth Man — suggest-only at launch; the agent decides).
+- **The router ("the Rotation").** An aggregating MCP proxy. Your client configs go from N `mcpServers` entries to one. Default mode is **transparent**: a faithful passthrough — every backend tool re-exported (namespaced), with titles, annotations, and error codes preserved — outcomes logged locally. Opt into **five mode** and the agent sees two meta-tools — `draft(need)` returns the best ≤5 tools for the stated task (K configurable 1–10), `call(tool, args)` proxies the invocation. When a drafted tool hard-fails, Roster attaches a structured suggestion for the next-ranked equivalent (the Sixth Man — suggest-only at launch; the agent decides).
 - **The Coach.** Local outcome learning. Every call's result — success, error class, latency, drift — is logged on-device, and a nightly CPU-only job refines routing toward the tools that actually work on *your* stack. No cloud, no GPU, no API key.
 - **The League.** Public performance rankings for MCP servers and skills, fed by an open-source probe harness (the Combine) running identical, human-signed task suites against every listed server — plus, later, opt-in k-anonymous field telemetry, clearly labeled observational. Ranked by Wilson lower bound with confidence intervals shown. See [docs/methodology.md](docs/methodology.md).
 - **The Playbook.** Skills (SKILL.md) are first-class alongside tools: one unified index, a bridge that serves skills as callable tools in any MCP client, per-agent skill allowlists where clients support them, and a trust scan before any skill is listed.
@@ -33,7 +33,7 @@ roster eject      # put every config back, byte-for-byte
 roster receipt    # re-print your audit  ·  roster unquarantine <id>  # re-admit a drift-benched tool
 ```
 
-`init` is designed to take under 60 seconds: no account, no API key, no cloud. It prints a Day-0 receipt of your setup — clients, servers, tools, and schema-token weight. Receipt numbers are **labeled estimates** (documented ±15% accuracy) and modeled truthfully per client: clients that already defer tool schemas natively, like Claude Code, are reported as such rather than credited with savings they don't need.
+`init` is designed to take under 60 seconds: no account, no API key, no cloud. It prints a Day-0 receipt of your setup — clients, servers, and skills discovered — modeled truthfully per client: clients that already defer tool schemas natively, like Claude Code, are reported as such rather than credited with savings they don't need. (Per-tool counts and a schema-token/$ estimate land with the receipt-depth work — `STATUS-FOR-MO.md` §4B; token estimates will carry a labeled tokenizer-dependent range, not a single ±% figure.)
 
 ## Seven day-one utilities
 

@@ -9,6 +9,10 @@ export interface CapabilityEntry {
   source: string;
   name: string;
   description: string;
+  /** Human-facing title, when the backend supplies one (MCP `tool.title`). */
+  title?: string;
+  /** Tool behavior hints (readOnlyHint/destructiveHint/…) — safety-relevant; passed through verbatim. */
+  annotations?: Record<string, unknown>;
   /** JSON Schema for tool inputs. Absent for skills. */
   inputSchema?: Record<string, unknown>;
   /** Declared output schema, when the backend provides one. */

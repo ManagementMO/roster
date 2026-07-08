@@ -112,6 +112,11 @@ export class BackendManager {
           source,
           name: tool.name,
           description: tool.description ?? "",
+          // Preserve title + annotations (incl. readOnlyHint/destructiveHint):
+          // transparent mode must be a faithful passthrough, and clients that
+          // gate confirmations on destructiveHint need it (audit D1).
+          title: typeof tool.title === "string" ? tool.title : undefined,
+          annotations: (tool.annotations as Record<string, unknown> | undefined) ?? undefined,
           inputSchema: (tool.inputSchema as Record<string, unknown> | undefined) ?? {
             type: "object",
           },
@@ -187,7 +192,12 @@ export function errorToEvidence(err: unknown): CallEvidence {
     if (err.code === ErrorCode.ConnectionClosed) {
       return { transportError: true, errorText: err.message };
     }
-    return { protocolError: true, errorText: err.message };
+    // A raw -32602 is the caller's malformed args (non-attributable, audit M3);
+    // other JSON-RPC errors keep their code so transparent mode re-throws it faithfully (D3).
+    if (err.code === ErrorCode.InvalidParams) {
+      return { inputValidationError: true, errorText: err.message };
+    }
+    return { protocolError: true, errorText: err.message, errorCode: err.code };
   }
   return { transportError: true, errorText: err instanceof Error ? err.message : "" };
 }

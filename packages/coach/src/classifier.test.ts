@@ -74,4 +74,30 @@ describe("attribution fairness (methodology §8)", () => {
     expect(classifyOutcome({ isError: true, errorText: "panic: schema assertion failed" })).toBe("tool_fail:internal");
     expect(isAttributable(classifyOutcome({ isError: true, errorText: "500 internal error: invalid state" }))).toBe(true);
   });
+
+  it("a raw-wire -32602 InvalidParams is non-attributable, like the isError-folded case (M3)", () => {
+    expect(classifyOutcome({ inputValidationError: true })).toBe("tool_fail:schema");
+    expect(isAttributable("tool_fail:schema")).toBe(false);
+  });
+});
+
+describe("classifyToolFailKind — realistic error texts (audit M4)", () => {
+  const cases: Array<[string, string]> = [
+    ["Limit of 30000 tokens per min exceeded", "quota"], // was auth via bare `token`
+    ["Authenticated requests get a higher rate limit", "quota"], // was auth via `Auth`
+    ["Invalid token format in 'path' argument", "schema"], // caller-fault → non-attributable (was auth)
+    ["Signature expired", "auth"],
+    ["invalid_auth", "auth"],
+    ["not_authed", "auth"],
+    ["invalid token provided", "auth"], // genuine credential error stays auth
+    ["Rate limit exceeded (429)", "quota"],
+    ["Internal Server Error", "internal"],
+    ["validation failed: required field 'path'", "schema"],
+  ];
+  for (const [text, kind] of cases) {
+    it(`"${text}" → ${kind}`, () => expect(classifyToolFailKind(text)).toBe(kind));
+  }
+  it("the fairness-critical one is non-attributable", () => {
+    expect(isAttributable(classifyOutcome({ isError: true, errorText: "Invalid token format in 'path' argument" }))).toBe(false);
+  });
 });

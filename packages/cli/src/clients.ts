@@ -36,6 +36,15 @@ export interface ClientSpec {
   parse(content: string, sourcePath: string): ImportedServer[];
   /** Claude Code auto-defers schemas past 10% of context (Jan 2026) — the receipt must say so. */
   nativeToolSearch: boolean;
+  /**
+   * The config file is a shared STATE file the client rewrites during normal use
+   * (e.g. ~/.claude.json holds projects/history/flags), not a dedicated MCP
+   * config. Eject restores it KEY-LEVEL (swap the servers map back, keep
+   * everything else) instead of byte-restoring — a byte-restore would revert
+   * every unrelated setting the client wrote since sync, and the modified-guard
+   * would refuse forever (audit M2). JSON-format clients only.
+   */
+  stateFile?: boolean;
 }
 
 type RawServer = Record<string, unknown>;
@@ -89,6 +98,7 @@ export const CLIENTS: ClientSpec[] = [
     id: "claude-code",
     displayName: "Claude Code",
     nativeToolSearch: true,
+    stateFile: true, // ~/.claude.json is Claude Code's live state file
     // Verified 2026-07-04 on a live machine: user-scope MCP servers live in
     // ~/.claude.json (NOT ~/.claude/settings.json — handoff §8 amended).
     configPaths: () => [
@@ -162,6 +172,7 @@ export const CLIENTS: ClientSpec[] = [
     id: "openclaw",
     displayName: "OpenClaw",
     nativeToolSearch: false,
+    stateFile: true, // openclaw.json holds broader client config beyond mcpServers
     configPaths: () => [
       path.join(home(), ".openclaw", "openclaw.json"),
       path.join(home(), "openclaw.json"),

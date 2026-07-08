@@ -88,11 +88,18 @@ ${body}
     })
     .join("\n");
 
+  // Banner tracks reality: once ANY run is ranked (>= the signed threshold) the
+  // page can't keep saying "Pre-season" next to a RANKED row (audit minor).
+  const anyRanked = entries.some((e) => isRankable(e.run));
+  const seasonline = anyRanked
+    ? `<b>SEASON 0</b> · Live standings — ranked by human-certified tasks.`
+    : `<b>SEASON 0</b> · Pre-season — standings unlock at the first human-certified task.`;
+
   const body = `<header>
 <div class="brandrow"><span class="wordmark">R<b>O</b>STER</span><span class="leaguetag">the mcp server leaderboard</span></div>
 <h1 class="masthead">The League<span class="dot">.</span></h1>
 <p class="tag">Real tasks, verified outcomes, humble statistics. Every number on this page traces to a reproducible run.</p>
-<p class="seasonline"><b>SEASON 0</b> · Pre-season — standings unlock at the first human-certified task.</p>
+<p class="seasonline">${seasonline}</p>
 </header>
 <ul class="how">
 <li><span class="step">01 · RUN</span><b>Same tasks, every server</b><p>Each server faces its division's identical task suite in a clean sandbox.</p></li>

@@ -3,7 +3,10 @@
  * and trailing commas. VS Code and Zed configs legitimately contain both.
  */
 export function parseJsonc(input: string): unknown {
-  return JSON.parse(stripTrailingCommas(stripComments(input)));
+  // Strip a leading UTF-8 BOM: editors write it, and JSON.parse chokes on it —
+  // one BOM'd client config otherwise aborted a whole sync fleet run (audit D2).
+  const cleaned = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
+  return JSON.parse(stripTrailingCommas(stripComments(cleaned)));
 }
 
 function stripComments(input: string): string {

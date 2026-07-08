@@ -2,7 +2,6 @@ export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 export const fmt3 = (n: number): string => n.toFixed(3);
-export const pct1 = (n: number): string => `${(n * 100).toFixed(1)}%`;
 
 /**
  * Self-contained, theme-aware, zero external requests — the generated pages

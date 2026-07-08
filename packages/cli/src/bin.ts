@@ -61,17 +61,25 @@ async function main(): Promise<number> {
     case "sync": {
       const only = assertWriteClient(flagValue("--client"));
       const targets = only ? [only] : WRITE_CLIENTS;
+      let syncFailures = 0;
       for (const client of targets) {
-        const result = syncClient(client);
-        if (result.action === "synced") {
-          process.stdout.write(`synced   ${client}  (${result.configPath}; backup: ${result.backupDir})\n`);
-        } else if (result.action === "already-synced") {
-          process.stdout.write(`ok       ${client}  already points at Roster\n`);
-        } else {
-          process.stdout.write(`skipped  ${client}  no config found\n`);
+        // Per-client isolation: one malformed/BOM'd config must not abort the
+        // whole fleet and leave the rest unsynced with an anonymous error (D2).
+        try {
+          const result = syncClient(client);
+          if (result.action === "synced") {
+            process.stdout.write(`synced   ${client}  (${result.configPath}; backup: ${result.backupDir})\n`);
+          } else if (result.action === "already-synced") {
+            process.stdout.write(`ok       ${client}  already points at Roster\n`);
+          } else {
+            process.stdout.write(`skipped  ${client}  no config found\n`);
+          }
+        } catch (err) {
+          syncFailures++;
+          process.stderr.write(`error    ${client}  ${err instanceof Error ? err.message : String(err)}\n`);
         }
       }
-      return 0;
+      return syncFailures > 0 ? 1 : 0;
     }
 
     case "eject": {

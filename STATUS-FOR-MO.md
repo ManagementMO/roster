@@ -12,14 +12,14 @@
 
 | Gate | Status |
 |---|---|
-| Unit/integration tests | **128 passing** (all mutation-checked where they lock a fix) |
+| Unit/integration tests | **144 passing** (mutation-checked where they lock a fix) |
 | CI/CD (9 jobs) | **green** — lint · build-test (ubuntu/macos-26/windows × Node 22+24) · real-server E2E + fail-probes · Combine (matrix) · live MiniLM inference · audit + secret scan · CodeQL (gated to public) |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
 | Combine vs real filesystem server | **8/8, deterministic** — and the fail-probes prove the verifiers *catch* wrongness (0/8) |
 | Dense rung — MiniLM + Gemma live (real inference) | **verified** end-to-end; hybrid fusion signal-adaptive; OATS moves rankings from real outcomes |
 | Trust laws (privacy/telemetry-off/suggest-only/eject) | **verified** by 3 independent reviewers + hostile QA + the swarm's trust charters |
 | Experiment swarm (16 charters — real models/servers/processes) | **15/16 reported · 100 findings** · digest: `docs/lab/campaign-digest.md` |
-| Fix waves (3 rounds) + meta-review | **DONE** — every real bug fixed + regression-tested; record: `docs/lab/fixes-applied.md` |
+| Fix waves (4 rounds) + meta-review + full-codebase audit | **DONE** — swarm bugs → my meta-review → deferred items → an independent Fable 5 audit of the whole tree (no CRITICAL; found + fixed one moat bug M1 + M2–M5/D1–D9); every real bug regression-tested; record: `docs/lab/fixes-applied.md` |
 
 The dense-embedding path is fully implemented and live-verified on both models. The trust surfaces (config writes, sync/eject, drift, identity/routing) were hammered by the swarm, then re-audited by an independent meta-review that caught two bugs I'd *introduced* and three vacuous tests — all fixed and mutation-verified. **⚠️ One reversible policy change awaits your nod: P7.**
 
@@ -64,6 +64,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 - **Weekly-rerun CI** — the League's "continuity is the product" promise: scheduled Combine reruns updating standings.
 - **More Combine suites** — memory, git, sqlite (drafted; each is one line in the CI matrix now — the harness is already data-driven). Each needs your signing to publish named scores.
 - **`combine self`** — first-class author self-run ("run yours, not ours").
+- **Draft-utilization harness (M6, handoff M1 milestone)** — measure whether agents actually cooperate with draft/call across the real clients (Claude Code / Codex / Cursor / OpenClaw); the five-mode UX bet and the launch GIF ride on this. Restored to the plan by the 2026-07-07 audit; needs real clients (some founder/tester involvement).
 
 **B. The day-one hook (§7.7 of ROSTER.md — makes install irresistible):**
 - **Flight-recorder dashboard** (`roster dashboard`) — local view of every tool call across all agents: what ran, failed, is slow, changed (the pi-hole pattern). *Utility #4 in the day-one stack; not built.*
@@ -122,7 +123,9 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 - Dead runtime `schema_drift_suspect` — harmless; connect-time `defHash` (now incl. outputSchema) is the real drift mechanism.
 - Trust-scan false positives (~33%, advisory-only) and base64-exec-inside-a-script (deliberately not scanned — too noisy on real code).
 
-**Minor known:** non-Latin lexical tokenizer · `need_vec`/tombstone growth unbounded (tiny) · symlinked skill dirs skipped · sync strips config comments while synced (eject restores them) · TruffleHog CI step installs latest (unpinned) rather than a tagged version.
+**Disclosed by the deep-review audit (2026-07-07; fixes + reasons in `docs/lab/fixes-applied.md` Round 4):** local quarantine lifts on a 24h dwell not a re-Combine, and a re-signatured tool inherits its predecessor's local rating/OATS state (methodology §6; published League scores unaffected — they re-verify) · praise-asymmetry is enforced by the human publishing gate, not code, and `signed:` is process-trust not cryptographic (v1, said out loud) · `trimSchema` depth-1 is a deliberate token/structure tradeoff · Ajv dialect false-negatives in `args_compatible` (suggest-only, advisory) · boot-order suffix identity for post-sanitization name collisions (exotic) · `markSuggestionTaken` overcounts P8 field-data on any later same-tool call · default-Gemma ~1.7–1.9 GB RSS per five-mode session · **M6: the draft-utilization harness (handoff M1 milestone) is unbuilt — restored to §4 tracking, needs real clients.**
+
+**Minor known:** non-Latin lexical tokenizer · `need_vec`/tombstone growth unbounded (tiny) · symlinked skill dirs skipped · sync strips config comments while synced (eject restores them) · `schema_version` written but no migration reader yet · TruffleHog CI step installs latest (unpinned) rather than a tagged version.
 
 ## 8. Evidence & repo map
 
