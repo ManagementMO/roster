@@ -42,24 +42,42 @@ export function classifyOutcome(e: CallEvidence): OutcomeClass {
 }
 
 /**
- * Heuristic taxonomy aligned with MCP-Atlas categories. Order encodes precedence:
- * auth before schema ("invalid token" is auth, not schema); and INTERNAL before
- * schema, because `tool_fail:schema` is non-attributable — a genuine 500/panic
- * whose text merely contains a schema-ish word ("internal validation error")
- * must classify as the tool's internal fault, not be excused as a caller error.
+ * Heuristic taxonomy aligned with MCP-Atlas categories, tuned against a 46-text
+ * real-wire corpus (docs/lab/notes-classifier-realworld.md — 11→0 misroutes, 0
+ * regressions). Precedence, top to bottom: timeout → quota → internal → schema →
+ * auth → other. The order encodes ATTRIBUTABILITY, not just accuracy:
+ *   • Quoted literals ('…'/"…") are stripped FIRST — an echoed file path or JSON
+ *     fragment must never classify. An ENOENT on 'auth-tokens.txt' is a missing
+ *     file, not an auth failure; "Unexpected token < in JSON" is not auth.
+ *   • quota BEFORE auth — "Authenticated requests get a higher rate limit" is a
+ *     429; the bare word "auth"/"token" would otherwise steal it (audit M4).
+ *   • internal BEFORE schema — an EXPLICIT server-fault signal (500/502/503,
+ *     "internal server error", panic/crash) wins even when the same text also
+ *     carries a schema-ish word, so a crashing tool ("500 … validation panic")
+ *     isn't excused as a caller error. A BARE "internal validation error" with
+ *     no such signal is ambiguous and stays schema (non-attributable) by §8.
+ *   • schema (caller-side, non-attributable) BEFORE auth — "invalid token format
+ *     in <arg>" is a caller arg fault (methodology §8), not the tool's attributable
+ *     auth failure. The precise fix is P7(c): validate args against inputSchema.
+ * The token rule is CONTEXTUAL (invalid/expired/… adjacent to "token"), never a
+ * bare `token`; auth is underscore-tolerant (invalid_auth, not_authed) and
+ * covers access-denied — the four under-matches the corpus exposed.
  */
 export function classifyToolFailKind(errorText: string): ToolFailKind {
-  const t = errorText.toLowerCase();
+  // Strip quoted literals so echoed paths/args/JSON can never trigger a kind.
+  const t = errorText.toLowerCase().replace(/'[^']*'|"[^"]*"/g, " ");
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
-  // higher rate limit" are quota messages that the bare `token`/`auth` word
-  // would otherwise misroute to auth (audit M4). Order encodes precedence.
+  // higher rate limit" are quota messages that a bare `token`/`auth` word would
+  // otherwise misroute to auth (audit M4). Order encodes precedence.
   if (/quota|rate.?limit|too many requests|\b429\b|tokens?\s+per\b|per\s+(minute|min|second|sec|hour|day)\b/.test(t)) {
     return "quota";
   }
-  if (/internal (server )?error|\b500\b|panic|crashed|segfault/.test(t)) return "internal";
+  // internal BEFORE schema, and 502/503 alongside 500 — a server 5xx/panic is
+  // the tool's fault even when its text happens to contain "validation".
+  if (/internal (server )?error|\b50[023]\b|panic|crashed|segfault/.test(t)) return "internal";
   // schema (caller-side, non-attributable) BEFORE auth so "invalid token format
-  // in 'path' argument" lands here, not on the `token` in auth. Best-effort by
+  // in <arg>" lands here, not on the `token` in auth. Best-effort by
   // construction; the precise fix is P7(c) — validate args against inputSchema.
   if (
     /schema|invalid (argument|param|input|request)|validation|required (field|property|parameter)|must be of type|invalid\b[\w\s'"()-]{0,40}\b(format|argument|parameter|value|type|field|property)\b/.test(
@@ -68,8 +86,11 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
   ) {
     return "schema";
   }
+  // auth: underscore-tolerant idioms (invalid_auth, not_authed), access-denied,
+  // and CONTEXTUAL token-credential patterns — never a bare `token`, which
+  // misrouted "Unexpected token"/"…128000 tokens"/quoted 'auth-tokens.txt'.
   if (
-    /unauthori[sz]ed|forbidden|permission denied|credential|api.?key|signature|invalid_auth|not_authed|authentication|token|\b401\b|\b403\b|\bauth/.test(
+    /unauthori[sz]ed|forbidden|permission denied|access denied|credential|api.?key|signature|(?:^|[^a-z])auth|\b40[13]\b|(?:invalid|expired|revoked|missing|bad)[^.;]{0,40}\btoken\b|\btoken\b[^.;]{0,40}(?:invalid|expired|revoked)/.test(
       t,
     )
   ) {

@@ -14,13 +14,16 @@ export interface EjectResult {
 }
 
 /**
- * The headline trust feature: restore the client's PRISTINE pre-Roster config
- * byte-for-byte — the OLDEST backup of the current era. The modified-since-
- * sync guard compares against the LATEST write to that same file: if the file
- * isn't what Roster last wrote, someone edited it and we refuse (without
- * --force) rather than clobber their work. All hashes are over raw bytes.
- * On success the era is CLOSED (backups archived) so the next sync snapshots
- * a fresh pristine — sync→eject cycles can never destroy in-between changes.
+ * The headline trust feature: put the client back exactly as Roster found it —
+ * from the OLDEST backup of the current era. Two restore modes by file kind:
+ * dedicated MCP configs restore BYTE-FOR-BYTE (comments/formatting included),
+ * guarded by modified-since-sync (refuse without --force if the file isn't
+ * what Roster last wrote); live STATE files the client itself rewrites (e.g.
+ * ~/.claude.json) restore KEY-LEVEL — original servers back, roster removed,
+ * every other live key and post-sync server preserved (--force = raw bytes).
+ * All hashes are over raw bytes. On success the era is CLOSED (backups
+ * archived) so the next sync snapshots a fresh pristine — sync→eject cycles
+ * can never destroy in-between changes.
  */
 export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}): EjectResult {
   const pristine = pristineRawBackup(clientId);
@@ -63,7 +66,8 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   }
 
   const currentExists = fs.existsSync(targetPath);
-  const isStateFile = CLIENTS.find((c) => c.id === clientId)?.stateFile === true && !targetPath.endsWith(".toml");
+  const isStateFile =
+    CLIENTS.find((c) => c.id === clientId)?.stateFileBasename === path.basename(targetPath);
 
   // State file (~/.claude.json &c.): the client rewrites it constantly, so a
   // byte-restore would revert every unrelated setting and the modified-guard

@@ -46,7 +46,7 @@ describe("artifact loading (honesty gate)", () => {
   it("rejects legacy artifacts missing signedWilsonLb instead of coercing", () => {
     const { data } = realArtifact();
     const legacy = structuredClone(data) as { runs: Array<{ summary: Record<string, unknown> }> };
-    delete legacy.runs[0]!.summary["signedWilsonLb"];
+    delete legacy.runs[0]!.summary.signedWilsonLb;
     expect(() => parseLabResults(JSON.stringify(legacy), "old.json")).toThrow(/legacy artifact/);
   });
 

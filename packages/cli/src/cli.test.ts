@@ -433,4 +433,34 @@ args = ["-y", "late-mcp"]
     // Trust invariant: the client config is untouched — servers still route to context7, not nowhere.
     expect(fs.readFileSync(configPath, "utf8")).toContain("context7");
   });
+
+  it("refuses loudly (never half-installs) when a config's top level is a JSON array, not an object (D8)", () => {
+    const configPath = path.join(home, ".claude.json");
+    fs.writeFileSync(configPath, "[]"); // an array is not a servers map
+    // Setting a property on an array silently vanishes through JSON.stringify →
+    // an eternal false 'synced' loop; rewriteConfig throws instead. bin.ts's
+    // per-client try/catch turns this into one `error <client>` line while the
+    // rest of the fleet still syncs (fleet isolation, D2/D8).
+    expect(() => syncClient("claude-code", new Date("2026-07-05T01:00:00Z"))).toThrow(/not a JSON object/i);
+    expect(fs.readFileSync(configPath, "utf8")).toBe("[]"); // left exactly as found
+  });
+
+  it("a UTF-8 BOM on a client config does not abort the sync — the server is still imported (D2)", () => {
+    const configPath = path.join(home, ".claude.json");
+    // Editors write a leading BOM; JSON.parse chokes on it. One BOM'd config
+    // once aborted a whole fleet run AND lost the import. Both must survive.
+    const bom = String.fromCharCode(0xfeff); // U+FEFF UTF-8 BOM
+    fs.writeFileSync(
+      configPath,
+      `${bom}{ "mcpServers": { "linear": { "command": "npx", "args": ["-y", "linear-mcp"] } } }`,
+    );
+    const result = syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    expect(result.action).toBe("synced");
+    expect(result.imported).toBe(1); // linear was imported, not lost to a parse abort
+    expect(fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8")).toContain("linear");
+    const rewritten = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+      mcpServers: Record<string, unknown>;
+    };
+    expect(Object.keys(rewritten.mcpServers)).toEqual(["roster"]); // clean roster-only rewrite
+  });
 });

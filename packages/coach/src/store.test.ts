@@ -257,19 +257,22 @@ describe("Sixth Man suggestion logging", () => {
 });
 
 describe("model-switch guards", () => {
-  it("ensureEmbeddingModel wipes adj + need vectors on model change, keeps them otherwise", () => {
+  it("ensureEmbeddingModel DELETES all vectors on model change so the backfill re-embeds (DEF-1)", () => {
     store.upsertCapabilities([tool("a__t", "t", "d")]);
     store.storeBaseVec("a__t", new Float32Array([1, 0]));
     db.prepare("UPDATE vec SET adj = base").run();
     store.storeNeedVec("nh", new Float32Array([0, 1]));
 
     expect(store.ensureEmbeddingModel("model-A")).toEqual({ switched: false }); // first set
-    expect(db.prepare("SELECT adj FROM vec").get()).toHaveProperty("adj"); // untouched
+    expect(store.vecCapabilityIds().has("a__t")).toBe(true); // untouched on same model
     expect(store.ensureEmbeddingModel("model-A").switched).toBe(false);
 
     const res = store.ensureEmbeddingModel("model-B");
     expect(res.switched).toBe(true);
-    expect((db.prepare("SELECT adj FROM vec").get() as { adj: Buffer | null }).adj).toBeNull();
+    // Rows GONE, not adj-nulled: the D4 warm-boot skip re-embeds only ids with
+    // no row — nulling adj alone pinned the old-space base forever.
+    expect(store.vecCapabilityIds().size).toBe(0);
+    expect(db.prepare("SELECT COUNT(*) c FROM vec").get()).toEqual({ c: 0 });
     expect(db.prepare("SELECT COUNT(*) c FROM need_vec").get()).toEqual({ c: 0 });
   });
 

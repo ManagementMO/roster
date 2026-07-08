@@ -28,34 +28,44 @@ export interface SyncResult {
 }
 
 /**
- * A global `roster` binary on PATH → `roster serve` (audit M5: the entry must
- * be spawnable for the install the user actually has). Overridable via
- * ROSTER_ASSUME_GLOBAL for tests/CI.
+ * Is there a global `roster` on PATH that is actually OURS? (audit M5 + DEF-5).
+ * `existsSync` alone was a smaller replay of the squatter hazard round 4b closed:
+ * a third-party `roster` on PATH — or a mere directory named `roster` — would
+ * have been written into every client as a spawn target. So we require an
+ * executable regular FILE and, until our own package is published, that it
+ * realpaths INTO this checkout (no global `roster` today is ours). Relax the
+ * realpath check post-publish (STATUS §4F). Overridable via ROSTER_ASSUME_GLOBAL.
  */
 export function hasGlobalRoster(): boolean {
   if (process.env.ROSTER_ASSUME_GLOBAL === "1") return true;
   if (process.env.ROSTER_ASSUME_GLOBAL === "0") return false;
   const names = process.platform === "win32" ? ["roster.cmd", "roster.exe", "roster"] : ["roster"];
-  return (process.env.PATH ?? "")
-    .split(path.delimiter)
-    .some((dir) => names.some((n) => {
+  const ourRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+  for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
+    if (dir === "") continue;
+    for (const n of names) {
+      const p = path.join(dir, n);
       try {
-        return dir !== "" && fs.existsSync(path.join(dir, n));
+        if (!fs.statSync(p).isFile()) continue; // not a spawnable file (dir/socket/…)
+        fs.accessSync(p, fs.constants.X_OK); // executable
+        if (fs.realpathSync(p).startsWith(ourRoot + path.sep)) return true; // provably ours
       } catch {
-        return false;
+        /* not a file / not accessible → keep looking */
       }
-    }));
+    }
+  }
+  return false;
 }
 
 /**
- * No global binary → point at THIS install's own entrypoint (node + absolute
- * dist/bin.js): spawnable today for repo checkouts, pnpm links, and npx-cache
- * installs. Deliberately NOT `npx -y roster`: the npm name `roster` is
- * currently a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so that
- * entry would download and execute a stranger's code on every client boot —
- * a squatter hazard until OUR package is published under whatever name P1's
- * clearance lands on. Flipping the no-global default to the npx form is a
- * one-line launch-day change (STATUS §4F).
+ * The entry sync writes. A global `roster` that is provably ours → `roster serve`.
+ * Otherwise THIS install's own entrypoint (node + absolute `dist/bin.js`):
+ * spawnable today for repo checkouts, pnpm links, and npx-cache installs, running
+ * only code that is provably ours. Deliberately NOT `npx -y roster` — the npm
+ * name `roster` is a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so
+ * that entry would fetch and run a stranger's code on every client boot. The npx
+ * form becomes the no-global default only at publish, under P1's cleared name
+ * (one-line change; STATUS §4F).
  */
 function rosterEntry(): { command: string; args: string[] } {
   if (hasGlobalRoster()) return { command: "roster", args: ["serve"] };
@@ -152,6 +162,16 @@ function rewriteConfig(clientId: ClientId, content: string): string | null {
   return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
+/**
+ * Is the servers map already a Roster-only install? Loose on FORM (global,
+ * execPath+bin.js, or post-publish npx all count) so a re-sync from a machine
+ * that installs differently doesn't loop — BUT it must actually BE our entry,
+ * not a user's own server that happens to be keyed "roster": the sole key is
+ * "roster" AND it launches `serve` AND (for the execPath form) `bin.js` is the
+ * script. A recognized-but-stale entry (moved install) is NOT treated as
+ * already-synced, so sync refreshes it instead of leaving a broken client
+ * claiming health (DEF-4).
+ */
 function isAlreadySynced(servers: unknown): boolean {
   if (servers === null || typeof servers !== "object") return false;
   const entries = Object.entries(servers as Record<string, unknown>);
@@ -159,10 +179,29 @@ function isAlreadySynced(servers: unknown): boolean {
   const entry = entries[0]![1] as Record<string, unknown> | null;
   if (entry === null || typeof entry !== "object") return false;
   const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
-  // Ours in ANY install form — global (`roster serve`), execPath+bin.js, or the
-  // post-publish npx form: the single server key is "roster" (checked above)
-  // and it launches `serve`. A machine that installs differently must not loop.
-  return entry.command === "roster" || args.includes("serve");
+  const want = rosterEntry();
+  // Exactly the entry we would write right now → truly current.
+  if (entry.command === want.command && JSON.stringify(args) === JSON.stringify(want.args)) return true;
+  // A recognizable Roster entry in another install form, still pointing at a
+  // bin.js that exists on disk → don't rewrite (avoid churn/loops). A stale one
+  // (script gone) falls through to a refresh.
+  if (entry.command === "roster" && args.includes("serve")) return true;
+  const script = typeof entry.command === "string" && path.basename(entry.command).startsWith("node") ? args[0] : undefined;
+  if (script && /(^|[\\/])bin\.js$/.test(script) && args.includes("serve")) {
+    // OUR OWN current entrypoint is authoritative even when the machine has
+    // since gained a global `roster` (don't churn a working execPath entry, M5)
+    // or the dist is mid-rebuild. A DIFFERENT bin.js counts only if it still
+    // exists on disk; a vanished one (moved/removed install) falls through to a
+    // refresh instead of a false "already-synced" (DEF-4).
+    const ourBin = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
+    if (script === ourBin) return true;
+    try {
+      return fs.existsSync(script);
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 export interface BackupRef {

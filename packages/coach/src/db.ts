@@ -2,6 +2,18 @@ import Database from "better-sqlite3";
 
 export type CoachDb = Database.Database;
 
+/**
+ * Schema version of the coach DB. Migrations here are deliberately v1-simple:
+ * additive and FORWARD-ONLY. Every statement below is `CREATE TABLE IF NOT
+ * EXISTS`, so opening an older DB only adds missing tables — there is, by design
+ * for now, NO column ALTER, NO down-migration, and NO version reconciliation
+ * (the stored `schema_version` is written once via INSERT OR IGNORE and never
+ * re-read). That is safe while this stays "1" (the only shipped schema). A
+ * BREAKING bump MUST add: a read-back of `meta.schema_version`, explicit
+ * per-version upgrade steps, and a guard that REFUSES (rather than silently
+ * corrupts) a DB written by a newer binary. Disclosed here rather than
+ * discovered in the field (DEF-7); tracked as a pre-scale P-item.
+ */
 const SCHEMA_VERSION = "1";
 
 /**
@@ -21,6 +33,7 @@ export function openCoachDb(path: string): CoachDb {
   return db;
 }
 
+/** Create the coach schema if absent — additive & idempotent (see SCHEMA_VERSION). */
 function migrate(db: CoachDb): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);

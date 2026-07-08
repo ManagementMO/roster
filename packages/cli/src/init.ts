@@ -35,7 +35,7 @@ export function init(): void {
     .filter((id) => (WRITE_CLIENTS as string[]).includes(id));
   if (syncable.length > 0) {
     process.stdout.write(
-      `\nNext: \`roster sync\` swaps ${[...new Set(syncable)].join(", ")} to a single Roster entry (originals backed up; \`roster eject\` restores byte-for-byte).\n`,
+      `\nNext: \`roster sync\` swaps ${[...new Set(syncable)].join(", ")} to a single Roster entry (originals backed up; \`roster eject\` puts everything back exactly as found).\n`,
     );
   }
   process.stdout.write(`Then point any agent at: roster serve\n`);

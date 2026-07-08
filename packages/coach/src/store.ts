@@ -291,7 +291,16 @@ export class CoachStore {
     if (prev === modelId) return { switched: false };
     const run = this.db.transaction(() => {
       if (prev !== null) {
-        this.db.prepare("UPDATE vec SET adj = NULL").run();
+        // DELETE the vec rows, don't just null adj: base vectors from the old
+        // space are equally meaningless in the new one, and the warm-boot
+        // backfill SKIPS ids that still have a row (D4) — nulling adj alone
+        // left the stale base pinned forever after a model switch, silently
+        // zeroing (dims change) or poisoning (same-dims swap) the dense
+        // channel — the exact scenario this guard exists to prevent
+        // (clean-room review DEF-1). Deleting is lossless: this same boot's
+        // backfill re-embeds every base, and adj regenerates from outcomes at
+        // the next nightly.
+        this.db.prepare("DELETE FROM vec").run();
         this.db.prepare("DELETE FROM need_vec").run();
       }
       this.setMeta("embedding_model", modelId);

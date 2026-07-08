@@ -101,3 +101,38 @@ describe("classifyToolFailKind — realistic error texts (audit M4)", () => {
     expect(isAttributable(classifyOutcome({ isError: true, errorText: "Invalid token format in 'path' argument" }))).toBe(false);
   });
 });
+
+// The real-wire hardening from docs/lab/notes-classifier-realworld.md (11→0 on a
+// 46-text corpus). These lock the ANTI-false-positive rules — the ones a future
+// "just add another keyword" edit is most likely to silently regress.
+describe("classifyToolFailKind — real-wire hardening (DEF-6)", () => {
+  const cases: Array<[string, string]> = [
+    // Quoted literals are stripped: an echoed file path must never classify.
+    ["ENOENT: no such file or directory, open '/data/auth-tokens.txt'", "other"], // was auth (path)
+    ['EACCES: permission denied, open "/root/auth/token.pem"', "auth"], // permission denied, not the quoted path
+    // Contextual token — bare `token` no longer steals non-credential text.
+    ["Unexpected token < in JSON at position 0", "other"], // was auth
+    ["This model's maximum context length is 128000 tokens", "other"], // was auth
+    // …but a real credential token still lands on auth.
+    ["token expired", "auth"],
+    ["the bearer token is invalid", "auth"],
+    // access-denied is auth (fs sandbox escape); underscore idioms too.
+    ["Access denied - path outside allowed directories: /etc", "auth"],
+    ["not_authed", "auth"],
+    // 5xx (502/503) is a server fault, like 500.
+    ["503 Service Unavailable", "internal"],
+    ["502 Bad Gateway", "internal"],
+    // Ambiguous bare "internal validation error" (no 500/panic) stays schema
+    // (non-attributable) by §8 — don't punish the tool for an ambiguous message.
+    ["internal validation error occurred", "schema"],
+    // …but an EXPLICIT server-fault signal that also says "validation" is internal.
+    ["500 Internal Server Error: validation subsystem panic", "internal"],
+  ];
+  for (const [text, kind] of cases) {
+    it(`"${text}" → ${kind}`, () => expect(classifyToolFailKind(text)).toBe(kind));
+  }
+  it("the ambiguous-internal call is non-attributable, the explicit-500 one is not", () => {
+    expect(isAttributable(classifyOutcome({ isError: true, errorText: "internal validation error occurred" }))).toBe(false);
+    expect(isAttributable(classifyOutcome({ isError: true, errorText: "500 Internal Server Error: validation panic" }))).toBe(true);
+  });
+});

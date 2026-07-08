@@ -16,7 +16,8 @@ const HELP = `roster — the tool router for AI agents
   roster receipt              re-print the receipt from current configs
   roster sync [--client id]   swap write-clients (${WRITE_CLIENTS.join(", ")}) to a single Roster entry (backs up originals)
   roster eject [--client id] [--force]
-                              restore original configs byte-for-byte from backup
+                              restore configs as found (byte-for-byte for dedicated files;
+                              key-level for live state files — post-sync changes preserved)
   roster serve [--five|--transparent]
                               run the router over stdio (default mode: transparent)
   roster unquarantine <id>    clear a drift-quarantined capability so it can be drafted again
@@ -88,15 +89,22 @@ async function main(): Promise<number> {
       let failures = 0;
       let restored = 0;
       for (const client of targets) {
-        const result = ejectClient(client, { force: flags.has("--force") });
-        if (result.action === "restored") {
-          restored++;
-          process.stdout.write(`restored ${client}  ${result.configPath}${result.detail ? `  ${result.detail}` : ""}\n`);
-        } else if (result.action === "no-backup") {
-          process.stdout.write(`skipped  ${client}  ${result.detail ?? "no backup recorded"}\n`);
-        } else {
+        // Same per-client isolation as the sync loop (D2): one client's bad
+        // state must not abort the other restores.
+        try {
+          const result = ejectClient(client, { force: flags.has("--force") });
+          if (result.action === "restored") {
+            restored++;
+            process.stdout.write(`restored ${client}  ${result.configPath}${result.detail ? `  ${result.detail}` : ""}\n`);
+          } else if (result.action === "no-backup") {
+            process.stdout.write(`skipped  ${client}  ${result.detail ?? "no backup recorded"}\n`);
+          } else {
+            failures++;
+            process.stdout.write(`REFUSED  ${client}  ${result.detail}\n`);
+          }
+        } catch (err) {
           failures++;
-          process.stdout.write(`REFUSED  ${client}  ${result.detail}\n`);
+          process.stderr.write(`error    ${client}  ${err instanceof Error ? err.message : String(err)}\n`);
         }
       }
       if (targets.length > 1) process.stdout.write(`\n${restored} restored, ${failures} refused\n`);

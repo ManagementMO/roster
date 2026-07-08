@@ -2,7 +2,7 @@
 
 > **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-07-06** (after: the 16-charter experiment swarm → three fix-wave rounds → an adversarial meta-review of my own fixes → League site build+redesign → `apps/` restructure → full CI/CD overhaul). Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
-> **What changed since the 2026-07-04 update:** 92→**128 tests**; the swarm ran (100 findings) and **all three fix rounds landed** (round 1 = swarm bugs, round 2 = bugs I'd introduced + gaps I'd missed, round 3 = the deferred items worth fixing) — each mutation-verified; the **League site** was built and redesigned (`apps/league`); the frontend moved to its own **`apps/` tier**; and CI went from "runs unit tests" to a **real 9-job validation pipeline**. Nothing published, registered, or public.
+> **What changed since the 2026-07-04 update:** 92→**161 tests**; the swarm ran (100 findings) and **all three fix rounds landed** (round 1 = swarm bugs, round 2 = bugs I'd introduced + gaps I'd missed, round 3 = the deferred items worth fixing) — each mutation-verified; the **League site** was built and redesigned (`apps/league`); the frontend moved to its own **`apps/` tier**; and CI went from "runs unit tests" to a **real 9-job validation pipeline**. **2026-07-07:** an independent clean-room re-review (Fable 5) of my own fix rounds surfaced 7 findings (DEF-1…7) — all fixed and locked; record in `docs/lab/fixes-applied.md` (Round 4c). Nothing published, registered, or public.
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Gate | Status |
 |---|---|
-| Unit/integration tests | **144 passing** (mutation-checked where they lock a fix) |
+| Unit/integration tests | **161 passing** (mutation-checked where they lock a fix) |
 | CI/CD (9 jobs) | **green** — lint · build-test (ubuntu/macos-26/windows × Node 22+24) · real-server E2E + fail-probes · Combine (matrix) · live MiniLM inference · audit + secret scan · CodeQL (gated to public) |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
 | Combine vs real filesystem server | **8/8, deterministic** — and the fail-probes prove the verifiers *catch* wrongness (0/8) |

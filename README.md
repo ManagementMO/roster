@@ -4,7 +4,7 @@
 
 Roster is a neutral, open-source, local-first **tool router** for AI agents. One MCP endpoint fronts every server and skill you use; your agent gets the best ≤5 tools for the task at hand — the starting five — instead of every schema at once. It learns from call outcomes, on your machine, and it works with any MCP client: Claude Code, Codex, Cursor, Gemini CLI, OpenClaw, Hermes, VS Code, and anything else that speaks the protocol.
 
-**The eject promise, up front: `roster eject` restores every client config byte-for-byte**, from backups taken before Roster touches anything. Trying Roster is built to be a no-risk decision — the uninstall story is a feature, not a footnote.
+**The eject promise, up front: `roster eject` puts every client back exactly as Roster found it**, from backups taken before Roster touches anything — byte-for-byte for dedicated MCP config files (comments and formatting included), and key-level for live state files the client itself rewrites (like `~/.claude.json`: your original servers come back, roster is removed, and every setting or server you changed since sync is preserved; `--force` does a raw byte restore instead). Trying Roster is built to be a no-risk decision — the uninstall story is a feature, not a footnote.
 
 ## Why
 
@@ -29,7 +29,7 @@ Four parts, one product:
 npx roster init   # detect clients, import every server, print your Day-0 receipt
 roster sync       # swap N config entries for one (originals backed up first)
 roster serve      # run the router
-roster eject      # put every config back, byte-for-byte
+roster eject      # put every config back exactly as found (byte-for-byte for dedicated files)
 roster receipt    # re-print your audit  ·  roster unquarantine <id>  # re-admit a drift-benched tool
 ```
 
