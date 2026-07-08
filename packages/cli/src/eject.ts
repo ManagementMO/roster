@@ -67,9 +67,11 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
 
   // State file (~/.claude.json &c.): the client rewrites it constantly, so a
   // byte-restore would revert every unrelated setting and the modified-guard
-  // would refuse forever. Restore KEY-LEVEL — swap the servers map back to the
-  // original's, preserve all other live keys — no --force, no refusal (M2).
-  if (isStateFile && currentExists) {
+  // would refuse forever. Restore KEY-LEVEL — put the ORIGINAL servers back,
+  // KEEP servers the user added after sync (never destroy in-between work),
+  // preserve all other live keys (M2). --force explicitly requests the raw
+  // byte-restore instead.
+  if (isStateFile && currentExists && !opts.force) {
     try {
       const restored = restoreServersKeyLevel(
         fs.readFileSync(targetPath, "utf8"),
@@ -82,15 +84,15 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
         client: clientId,
         action: "restored",
         configPath: targetPath,
-        detail: "key-level restore (state file — other settings preserved)",
+        detail: "key-level restore (state file — live settings and post-sync servers preserved)",
       };
     } catch {
-      // Current file unparseable → fall through to byte-restore below.
+      // Current file unparseable → fall through to the GUARDED byte path.
     }
   }
 
   // Byte-for-byte restore (dedicated MCP files — preserves comments/formatting;
-  // and the fallback for a state file whose current bytes went missing/corrupt).
+  // the --force override; and the fallback for an unparseable state file).
   if (!currentExists) {
     if (!opts.force) {
       return {
@@ -100,7 +102,7 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
         detail: "config file no longer exists; use --force to recreate it from backup",
       };
     }
-  } else if (!isStateFile) {
+  } else {
     const currentSha = sha256Hex(fs.readFileSync(targetPath));
     if (currentSha !== latest.manifest.writtenSha256 && !opts.force) {
       return {
@@ -120,9 +122,13 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
 }
 
 /**
- * Replace only the `mcpServers` key of the CURRENT config with the ORIGINAL's
- * (removing roster, restoring the pre-sync servers), preserving every other
- * current key. JSON-format state files only.
+ * Rebuild the CURRENT config's `mcpServers` as: the ORIGINAL (pre-sync) servers,
+ * PLUS any non-roster servers the user added while synced (current wins on a
+ * name collision — their latest intent), MINUS the roster entry. Every other
+ * current key is preserved. The sync→eject trust invariant — "cycles can never
+ * destroy in-between changes" — must hold for servers added post-sync too
+ * (round-4b self-review: the first version replaced the map wholesale and
+ * silently dropped them). JSON-format state files only.
  */
 function restoreServersKeyLevel(currentContent: string, originalContent: string): string {
   const current = parseJsonc(currentContent);
@@ -133,10 +139,19 @@ function restoreServersKeyLevel(currentContent: string, originalContent: string)
   const original = parseJsonc(originalContent);
   const origServers =
     original && typeof original === "object" && !Array.isArray(original)
-      ? (original as Record<string, unknown>).mcpServers
+      ? ((original as Record<string, unknown>).mcpServers as Record<string, unknown> | undefined)
       : undefined;
-  if (origServers === undefined) delete cur.mcpServers;
-  else cur.mcpServers = origServers;
+  const currentServers =
+    cur.mcpServers && typeof cur.mcpServers === "object" && !Array.isArray(cur.mcpServers)
+      ? { ...(cur.mcpServers as Record<string, unknown>) }
+      : {};
+  delete currentServers.roster;
+  const merged = { ...(origServers ?? {}), ...currentServers };
+  if (Object.keys(merged).length === 0 && origServers === undefined) {
+    delete cur.mcpServers; // original had no servers key and the user added none
+  } else {
+    cur.mcpServers = merged;
+  }
   return `${JSON.stringify(cur, null, 2)}\n`;
 }
 

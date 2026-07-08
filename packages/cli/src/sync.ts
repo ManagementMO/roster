@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
@@ -26,14 +27,10 @@ export interface SyncResult {
   imported?: number;
 }
 
-/** P1: the package ships as `roster`. */
-const ROSTER_PKG = "roster";
-
 /**
- * A global `roster` binary on PATH → `roster serve`; otherwise the npx form, so
- * the `npx roster init` install path (no global install) produces a spawnable
- * entry instead of pointing every synced client at a `roster` that isn't there
- * (audit M5). Overridable via ROSTER_ASSUME_GLOBAL for tests/CI.
+ * A global `roster` binary on PATH → `roster serve` (audit M5: the entry must
+ * be spawnable for the install the user actually has). Overridable via
+ * ROSTER_ASSUME_GLOBAL for tests/CI.
  */
 export function hasGlobalRoster(): boolean {
   if (process.env.ROSTER_ASSUME_GLOBAL === "1") return true;
@@ -50,10 +47,20 @@ export function hasGlobalRoster(): boolean {
     }));
 }
 
+/**
+ * No global binary → point at THIS install's own entrypoint (node + absolute
+ * dist/bin.js): spawnable today for repo checkouts, pnpm links, and npx-cache
+ * installs. Deliberately NOT `npx -y roster`: the npm name `roster` is
+ * currently a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so that
+ * entry would download and execute a stranger's code on every client boot —
+ * a squatter hazard until OUR package is published under whatever name P1's
+ * clearance lands on. Flipping the no-global default to the npx form is a
+ * one-line launch-day change (STATUS §4F).
+ */
 function rosterEntry(): { command: string; args: string[] } {
-  return hasGlobalRoster()
-    ? { command: "roster", args: ["serve"] }
-    : { command: "npx", args: ["-y", ROSTER_PKG, "serve"] };
+  if (hasGlobalRoster()) return { command: "roster", args: ["serve"] };
+  const bin = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
+  return { command: process.execPath, args: [bin, "serve"] };
 }
 
 /**
@@ -152,9 +159,10 @@ function isAlreadySynced(servers: unknown): boolean {
   const entry = entries[0]![1] as Record<string, unknown> | null;
   if (entry === null || typeof entry !== "object") return false;
   const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
-  // Recognize BOTH forms — `roster serve` and `npx -y roster serve` — so a
-  // re-sync from a machine that installs roster differently doesn't loop.
-  return entry.command === "roster" || (entry.command === "npx" && args.includes(ROSTER_PKG) && args.includes("serve"));
+  // Ours in ANY install form — global (`roster serve`), execPath+bin.js, or the
+  // post-publish npx form: the single server key is "roster" (checked above)
+  // and it launches `serve`. A machine that installs differently must not loop.
+  return entry.command === "roster" || args.includes("serve");
 }
 
 export interface BackupRef {

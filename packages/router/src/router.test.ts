@@ -182,7 +182,9 @@ describe("five mode", () => {
       arguments: { need: "echo some text back", k: 5 },
     });
     const draftText = (result.content as Array<{ text: string }>)[0]!.text;
-    expect(draftText).not.toContain("\n  "); // compact JSON, not pretty-printed (D9a: pretty-print is a token own-goal)
+    // Exactly compact JSON (D9a: pretty-print was a +46–53% BPE token own-goal).
+    // Round-trip equality is robust even if a tool description contains "\n  ".
+    expect(draftText).toBe(JSON.stringify(JSON.parse(draftText)));
     const payload = JSON.parse(draftText) as { starters: Array<{ id: string; kind: string }> };
     const ids = payload.starters.map((s) => s.id);
     expect(ids).toContain("alpha__echo");

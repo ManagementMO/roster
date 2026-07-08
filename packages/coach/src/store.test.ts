@@ -428,6 +428,16 @@ describe("fix-wave round 2 — drift + robustness", () => {
     expect(store.listCapabilities().find((c) => c.id === "s__t")).toBeDefined(); // active
   });
 
+  it("drift invalidates the stored vector — warm-boot skip must re-embed changed tools (round 4b)", () => {
+    const v1 = tool("s__t", "t", "OLD semantics entirely");
+    store.upsertCapabilities([v1]);
+    store.storeBaseVec("s__t", new Float32Array([1, 0, 0]));
+    expect(store.vecCapabilityIds().has("s__t")).toBe(true);
+    store.upsertCapabilities([{ ...v1, description: "COMPLETELY NEW semantics" }]); // drift
+    // Without this, serve's already-embedded skip (D4) pins the stale embedding forever.
+    expect(store.vecCapabilityIds().has("s__t")).toBe(false);
+  });
+
   it("treats an outputSchema change as drift (was invisible to both detectors)", () => {
     const base: CapabilityEntry = {
       id: "a__t", kind: "tool", source: "a", name: "t", description: "d",

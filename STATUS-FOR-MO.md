@@ -31,7 +31,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 
 | # | Decision | Status |
 |---|---|---|
-| **P1** | npm package name | ✅ **Resolved: ship as `roster`** — revisit only if your clearance sweep finds it taken (fallbacks stand: `rosterhq` · `getroster` · `roster-mcp`) |
+| **P1** | npm package name | ⚠️ **REOPENED — the trigger fired: npm `roster` is TAKEN** (verified 2026-07-07: `roster@0.0.3`, third-party). Your resolution said revisit if taken → the fallback choice is now live: `rosterhq` · `getroster` · `roster-mcp` (my rec stands: `rosterhq`; CLI command stays `roster` regardless). Also affects the launch-day npx entry (§4F) and README install lines |
 | **P2** | Strategy docs & public repo | ✅ **Resolved: everything goes public at flip time** — gated on a personal/work-info sweep first (I'll run the sweep and show you its report before any flip) |
 | **P3** | When the repo flips public | ⏳ **OPEN** — you decide with me later; repo stays private until then. (No blocker on my side; the name sweep §3.2 is the gate.) |
 | **P4** | Combine signing | 🔶 **Partial — awaits you.** ~15–20 min, fully prepped: `docs/signing/session-1-checklist.md` (one pass run 8/8, one fail-probe run 0/8, flip `signed:true`, log PROVENANCE). I cannot flip it myself — human-signed-only is a law; agent-signing would falsify the provenance the League sells. **THE unlock** for any named League score. |
@@ -84,6 +84,8 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 - **Router niceties** — roster-cache TTL (`ttlMs`/`cacheScope`), backend health checks, document expansion (synthetic per-tool queries for retrieval lift).
 
 **E. By explicit decision (see §2):** P8 Sixth Man auto-save; P7 precise-attribution (option c).
+
+**F. Launch mechanics (day-of checklist, small but must not be forgotten):** launch assets (GIFs, exposé, posts) · at publish, flip the no-global sync entry from the execPath form to `npx -y <published-name> serve` (one line in `sync.ts`; blocked on P1's name) · update README install lines to the published name · pin the TruffleHog CI step to a tagged version · flip repo public (P3) → CodeQL auto-activates.
 
 ---
 

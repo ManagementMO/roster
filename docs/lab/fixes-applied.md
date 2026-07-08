@@ -98,3 +98,17 @@ An independent principal-level audit read every file, ran the whole stack, and p
 - **D7 — praise asymmetry** is enforced by the human publishing gate, not code (the review's "process-trust, not cryptographic" — accepted for v1, said out loud); `signed:` is a plain YAML boolean by the same reasoning.
 - **D9b/c/d** — `trimSchema` depth-1 is a deliberate token/structure tradeoff; Ajv dialect false-negatives in `args_compatible` (suggest-only, advisory); boot-order suffix identity for post-sanitization name collisions (exotic). All noted in STATUS §7.
 - **Perf/RAM** — default-Gemma ~1.7–1.9 GB RSS per five-mode session (the model's cost; mitigated by transparent-default + idle unload); sequential backend connects at boot (bounded by the 15s connect timeout). Disclosed.
+
+## Round 4b — self-meta-review of Round 4 (2026-07-07, same day)
+
+Asked "was Round 4 done the best way possible?", the honest answer was NO — I audited my own wave before trusting it and found three defects, each confirmed empirically before fixing:
+
+| Defect (mine, from Round 4) | Confirmed how | Fix |
+|---|---|---|
+| **D4 fix regressed drift freshness** (bug-in-fix): the warm-boot skip pins a DRIFTED tool's stale embedding forever (drift never invalidated the vec row; pre-D4 every boot re-embedded and masked this). | `:memory:` probe: vec row survives drift → skip would never re-embed. | Drift now deletes the vec row (base re-embeds at next warmup; `adj` is derived and regenerates from outcomes at the next nightly — also drops the old-semantics adj ghost). Regression test. |
+| **M2 fix destroyed post-sync additions** (incomplete-fix): key-level eject replaced the servers map wholesale, silently deleting servers the user added via the client after syncing — violating "cycles can never destroy in-between changes". | Live repro: `linear` added post-sync → gone after eject, present nowhere. | Merge semantics: original servers + current non-roster entries (current wins on collision). Also: `--force` = explicit byte-restore override; an unparseable state file falls through to the GUARDED byte path. Regression test. |
+| **M5 fix was a squatter hazard** (bug-in-fix): the no-global entry `npx -y roster serve` would fetch and execute the npm package `roster` — which is a THIRD-PARTY package (verified: roster@0.0.3 exists). | `npm view roster` → taken. | No-global entries now point at THIS install's own entrypoint (node + absolute `dist/bin.js`) — spawnable today, zero third-party risk. The npx form becomes the no-global default only at publish, under whatever name P1's clearance lands on (one-line launch-day change). `isAlreadySynced` recognizes all forms. **Escalated to P1: the npm name `roster` is confirmed taken.** |
+
+Also hardened: the D9a compact-JSON test now asserts exact round-trip equality (robust to descriptions containing newlines).
+
+Lesson recorded: a fix wave's own diff needs the same adversarial pass as the code it fixes — "did the fix regress an interaction" (D4×drift) is exactly the class self-review misses on the day of writing.

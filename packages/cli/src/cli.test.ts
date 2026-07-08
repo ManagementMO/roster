@@ -271,22 +271,43 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(Buffer.compare(fs.readFileSync(configPath), original)).toBe(0);
   });
 
-  it("synced entry is npx-aware when no global `roster` is on PATH, and recognizes both forms (M5)", () => {
+  it("no-global install: synced entry points at THIS install's entrypoint, never the npm `roster` (a third-party package) (M5)", () => {
     const prev = process.env.ROSTER_ASSUME_GLOBAL;
     try {
-      process.env.ROSTER_ASSUME_GLOBAL = "0"; // npx-only install (the `npx roster init` path)
+      process.env.ROSTER_ASSUME_GLOBAL = "0"; // no global binary on PATH
       const first = syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
       expect(first.action).toBe("synced");
       const cfg = JSON.parse(fs.readFileSync(path.join(home, ".claude.json"), "utf8")) as {
         mcpServers: Record<string, { command: string; args: string[] }>;
       };
-      expect(cfg.mcpServers.roster).toEqual({ command: "npx", args: ["-y", "roster", "serve"] });
-      // A re-sync must recognize the npx form and not loop:
+      const entry = cfg.mcpServers.roster!;
+      expect(entry.command).toBe(process.execPath); // spawnable node, not `npx -y roster` (squatter hazard)
+      expect(entry.args[0]).toMatch(/bin\.js$/);
+      expect(entry.args[1]).toBe("serve");
+      expect(entry.command).not.toBe("npx");
+      // Re-sync must recognize the entry regardless of install form and not loop:
       expect(syncClient("claude-code", new Date("2026-07-05T02:00:00Z")).action).toBe("already-synced");
+      process.env.ROSTER_ASSUME_GLOBAL = "1"; // same machine later gains a global install
+      expect(syncClient("claude-code", new Date("2026-07-05T03:00:00Z")).action).toBe("already-synced");
     } finally {
       if (prev === undefined) delete process.env.ROSTER_ASSUME_GLOBAL;
       else process.env.ROSTER_ASSUME_GLOBAL = prev;
     }
+  });
+
+  it("state-file eject KEEPS servers the user added after sync (never destroys in-between work)", () => {
+    const configPath = path.join(home, ".claude.json");
+    syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    // User runs `claude mcp add linear ...` while synced:
+    const cur = JSON.parse(fs.readFileSync(configPath, "utf8")) as { mcpServers: Record<string, unknown> };
+    cur.mcpServers.linear = { command: "npx", args: ["-y", "linear-mcp"] };
+    fs.writeFileSync(configPath, JSON.stringify(cur, null, 2));
+
+    expect(ejectClient("claude-code").action).toBe("restored");
+    const after = JSON.parse(fs.readFileSync(configPath, "utf8")) as { mcpServers: Record<string, unknown> };
+    expect(after.mcpServers).toHaveProperty("github"); // pre-sync server restored
+    expect(after.mcpServers).toHaveProperty("linear"); // post-sync addition SURVIVES
+    expect(after.mcpServers).not.toHaveProperty("roster");
   });
 
   it("handles deleted config with --force by recreating from backup", () => {

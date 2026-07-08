@@ -184,6 +184,14 @@ export class CoachStore {
     const ftsInsert = this.db.prepare(
       "INSERT INTO capability_fts(id, name, description, body) VALUES(?,?,?,?)",
     );
+    // Drift invalidates the stored vector: the embedding derives from the def
+    // text, so a changed def means a stale base — and the warm-boot backfill
+    // now SKIPS ids that still have a vec row (D4), which would otherwise pin
+    // the stale embedding forever (round-4b self-review). Deleting the row is
+    // lossless: base re-embeds at the next warmup, and adj is fully derived —
+    // the next nightly OATS regenerates it from the outcome history (this also
+    // drops the old-semantics "adj ghost" the drift-sim charter flagged).
+    const vecDelete = this.db.prepare("DELETE FROM vec WHERE capability = ?");
     const getTombstone = this.db.prepare(
       "SELECT def_hash, quarantined, last_drift_ts FROM removed_capability WHERE id = ?",
     );
@@ -246,6 +254,7 @@ export class CoachStore {
           update.run({ ...params, quarantined: 1 });
           ftsDelete.run(entry.id);
           ftsInsert.run(entry.id, ftsNameText(entry.source, entry.name), entry.description, entry.body ?? "");
+          vecDelete.run(entry.id);
           result.changed.push(entry.id);
           result.driftEvents += 1;
         } else {
