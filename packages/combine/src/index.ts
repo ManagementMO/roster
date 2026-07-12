@@ -6,4 +6,4 @@ export {
   type TargetServer,
   type TaskResult,
 } from "./runner.js";
-export { buildLabResults, type LabResults } from "./results.js";
+export { buildLabResults, summarizeResults, type LabResults, type RunSummary } from "./results.js";

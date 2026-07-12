@@ -7,6 +7,30 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { template, type CombineTask, type Suite, type Verifier } from "./task.js";
 
 const CONNECT_TIMEOUT_MS = 15_000;
+const CONNECT_TIMEOUT_LABEL = "connect timeout";
+
+/**
+ * A failure reduced to a STRUCTURAL code — never an error MESSAGE.
+ *
+ * `detail` is persisted into the published run artifact and printed to the
+ * terminal, so anything that reaches it must be free of tool results, call
+ * arguments, and local paths. An SDK error message fails that test: a -32602
+ * routinely quotes the offending argument back, and a spawn failure carries the
+ * full command path. The error's CODE carries the diagnosis without the content:
+ * a JSON-RPC code (-32001 timed out, -32602 invalid params) or a Node errno
+ * (ENOENT — the server command doesn't exist). Anything we can't classify
+ * degrades to an opaque code rather than leaking the message (R5-04).
+ *
+ * The message is still available to whoever RUNS the suite — they can reproduce
+ * it locally. It just never gets written down or published.
+ */
+function failureCode(err: unknown): string {
+  if (err instanceof Error && err.message === CONNECT_TIMEOUT_LABEL) return "connect-timeout";
+  const code: unknown = (err as { code?: unknown } | null | undefined)?.code;
+  if (typeof code === "number" && Number.isInteger(code)) return `mcp-error:${code}`;
+  if (typeof code === "string" && /^[A-Z][A-Z0-9_]*$/.test(code)) return `system-error:${code}`;
+  return "unknown-error";
+}
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
@@ -104,7 +128,7 @@ async function runTask(task: CombineTask, server: TargetServer): Promise<TaskRes
     });
     // A server that spawns but never completes initialize must not hang the
     // suite — the Combine's whole job is probing servers that misbehave.
-    await withTimeout(client.connect(transport), CONNECT_TIMEOUT_MS, "connect timeout");
+    await withTimeout(client.connect(transport), CONNECT_TIMEOUT_MS, CONNECT_TIMEOUT_LABEL);
 
     const args = template(task.invoke.args, vars);
     let result: Record<string, unknown>;
@@ -113,19 +137,29 @@ async function runTask(task: CombineTask, server: TargetServer): Promise<TaskRes
         timeout: task.timeoutMs,
       })) as Record<string, unknown>;
     } catch (err) {
-      return finish(task, started, false, "invoke", err instanceof Error ? err.message : String(err));
+      return finish(task, started, false, "invoke", failureCode(err));
     }
     if (result.isError === true) {
-      return finish(task, started, false, "invoke", extractText(result).slice(0, 200));
+      // NOT the result text. `detail` is persisted into lab-results.json and
+      // printed to the terminal, and a tool's error content routinely echoes the
+      // caller's arguments, file paths, or the very secret the call carried —
+      // Round 5 (R5-04) walked a synthetic marker straight from a backend's
+      // isError result into a published artifact. The binding law is absolute:
+      // tool results are never persisted and never logged. What a run may record
+      // is the STRUCTURAL fact that the tool reported failure.
+      return finish(task, started, false, "invoke", "tool-returned-isError");
     }
 
     for (const verifier of task.verify) {
+      // Verifier messages are built only from the task's own declared paths and
+      // fixed strings (see checkVerifier) — suite-derived and already public, so
+      // they carry no result text. They stay: they are the diagnosis.
       const failure = checkVerifier(verifier, sandbox, result, vars);
       if (failure) return finish(task, started, false, "verify", failure);
     }
     return finish(task, started, true, null, null);
   } catch (err) {
-    return finish(task, started, false, "transport", err instanceof Error ? err.message : String(err));
+    return finish(task, started, false, "transport", failureCode(err));
   } finally {
     await client?.close().catch(() => undefined);
     fs.rmSync(sandbox, { recursive: true, force: true });

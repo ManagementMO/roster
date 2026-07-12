@@ -50,7 +50,18 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     }
     return { content: [{ type: "text", text: fs.readFileSync(target, "utf8") }] };
   }
-  return { isError: true, content: [{ type: "text", text: "Internal error: always_fails" }] };
+  // The error text deliberately carries the three things a real backend error
+  // leaks — a credential, an absolute path, and the caller's own argument — so
+  // the privacy test proves a CLASS of leak, not one lucky string (R5-04).
+  return {
+    isError: true,
+    content: [
+      {
+        type: "text",
+        text: "Internal error: always_fails COMBINE_SECRET_MUST_NOT_PERSIST_a1b2c3 (api_key=sk-live-9f7a, path=/Users/private/vault.txt)",
+      },
+    ],
+  };
 });
 
 await server.connect(new StdioServerTransport());

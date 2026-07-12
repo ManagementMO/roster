@@ -151,3 +151,80 @@ tasks:
     expect(summary.wilsonLb).toBeLessThan(0.5 + 0.001);
   }, 30_000);
 });
+
+/**
+ * BINDING LAW: tool results are never persisted and never logged.
+ *
+ * `detail` is written into the published lab-results.json AND printed to the
+ * terminal. Round 5 (R5-04) walked a synthetic marker out of a backend's isError
+ * result and into both. A failing tool's own words are the single most likely
+ * place for a credential, a private path, or the caller's arguments to appear —
+ * so what a run may record is the STRUCTURAL fact of failure, never its text.
+ */
+describe("privacy law: a tool's result text never reaches an artifact or a log (R5-04)", () => {
+  const failSuite = parseSuite(`
+suite: privacy
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: leaks.isError
+    invoke: { tool: always_fails, args: {} }
+    verify:
+      - { kind: resultContains, contains: "never-reached" }
+`);
+
+  it("an isError result's text reaches neither detail nor the serialized artifact", async () => {
+    const run = await runSuite(failSuite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+    });
+    const r = run.results[0]!;
+    expect(r.pass).toBe(false);
+    expect(r.stage).toBe("invoke");
+    // Structural fact only — the tool failed. Not WHAT it said.
+    expect(r.detail).toBe("tool-returned-isError");
+
+    // The whole published artifact must be free of the result's content.
+    const artifact = JSON.stringify(buildLabResults([run], new Date("2026-07-05T00:00:00Z")));
+    expect(artifact).not.toContain("COMBINE_SECRET_MUST_NOT_PERSIST_a1b2c3");
+    expect(artifact).not.toContain("sk-live-9f7a");
+    expect(artifact).not.toContain("/Users/private/vault.txt");
+    expect(artifact).not.toContain("always_fails"); // not even the echoed tool text
+  }, 30_000);
+
+  it("a transport failure records an errno, not the command path it tried to spawn", async () => {
+    const run = await runSuite(failSuite, {
+      name: "missing-binary",
+      command: "/definitely/not/a/real/binary-xyz",
+      args: [],
+    });
+    const r = run.results[0]!;
+    expect(r.stage).toBe("transport");
+    expect(r.detail).toBe("system-error:ENOENT");
+    expect(JSON.stringify(run)).not.toContain("/definitely/not/a/real/binary-xyz");
+  }, 30_000);
+
+  it("verifier failures still say something useful (they are suite-derived, not result text)", async () => {
+    // The diagnosis must not be thrown away with the leak: a verifier message is
+    // built from the task's own declared paths, which are already public.
+    const suite = parseSuite(`
+suite: privacy
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: verify.fails
+    invoke: { tool: write_file, args: { path: "a.txt", content: "actual" } }
+    verify:
+      - { kind: fileEquals, path: "a.txt", equals: "expected-something-else" }
+`);
+    const run = await runSuite(suite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+    });
+    const r = run.results[0]!;
+    expect(r.stage).toBe("verify");
+    expect(r.detail).toBe("content mismatch in a.txt"); // task-derived, safe, and diagnostic
+  }, 30_000);
+});

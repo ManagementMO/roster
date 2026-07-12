@@ -123,7 +123,7 @@ export function renderBoxScore(entry: StandingsEntry, taskDescriptions: Readonly
 <td class="rk num">${i + 1}</td>
 <td class="taskdesc">${desc ? esc(desc) : esc(r.taskId)}<span class="taskid">${esc(r.taskId)}</span>${r.detail ? `<span class="taskfail">${esc(r.stage ?? "")}: ${esc(r.detail)}</span>` : ""}</td>
 <td><span class="chip ${r.pass ? "win" : "loss"}">${r.pass ? "W" : "L"}</span></td>
-<td class="r num">${r.latencyMs} ms</td>
+<td class="r num">${esc(String(r.latencyMs))} ms</td>
 </tr>`;
     })
     .join("\n");
