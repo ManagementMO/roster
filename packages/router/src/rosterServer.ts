@@ -9,7 +9,7 @@ import {
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { CoachStore } from "@rosterhq/coach";
 import { classifyOutcome, hashArgs, hashNeed } from "@rosterhq/coach";
-import type { ParsedSkill } from "@rosterhq/playbook";
+import { trustScan, type ParsedSkill } from "@rosterhq/playbook";
 import { skillInvocationResult, skillToCapabilityEntry } from "@rosterhq/playbook";
 import type { CapabilityEntry, OutcomeClass } from "@rosterhq/shared";
 import { parseNamespacedId } from "@rosterhq/shared";
@@ -23,6 +23,14 @@ export interface RosterServerOptions {
   manager: BackendManager;
   store: CoachStore;
   skills?: ParsedSkill[];
+  /**
+   * Serve skills the trust scan flagged `review` (default false). "A trust scan
+   * before any skill is listed" is a P0 promise, and this is the boundary that
+   * lists them — so enforcement lives HERE, not only in the CLI caller that
+   * happens to build this. A review skill can be a prompt-injection body; it is
+   * withheld unless the operator opts in (R5-09).
+   */
+  allowReviewSkills?: boolean;
   /** Optional dense rung: resolves a need to a vector when the embedder is ready. */
   embedNeed?: (need: string) => Promise<Float32Array | null>;
   defaultK?: number;
@@ -97,9 +105,14 @@ export class RosterServer {
     this.embedNeed = opts.embedNeed;
     this.defaultK = opts.defaultK ?? 5;
     this.sessionId = opts.sessionId ?? randomUUID();
-    this.skills = new Map(
-      (opts.skills ?? []).map((s) => [skillToCapabilityEntry(s).id, s] as const),
+    // The trust gate, at the boundary that lists skills. `review`-flagged skills
+    // (injection bodies, curl|bash scripts, …) are withheld unless the caller
+    // explicitly opts in — so no route into this server can surface one by
+    // default, whoever constructed it (R5-09).
+    const servableSkills = (opts.skills ?? []).filter(
+      (s) => opts.allowReviewSkills || trustScan(s).status === "ok",
     );
+    this.skills = new Map(servableSkills.map((s) => [skillToCapabilityEntry(s).id, s] as const));
 
     this.server = new Server(
       { name: "roster", version: "0.0.1" },
@@ -153,11 +166,14 @@ export class RosterServer {
     return this.manager.allTools().map((entry) => ({
       name: entry.id,
       description: entry.description,
-      // Faithful passthrough: title + annotations (incl. destructiveHint) survive (D1).
+      // Faithful passthrough: title + annotations (incl. destructiveHint, D1) and
+      // execution hints (R5-08) all survive — a proxied tool must be
+      // indistinguishable from the direct one.
       ...(entry.title ? { title: entry.title } : {}),
       ...(entry.annotations ? { annotations: entry.annotations } : {}),
       inputSchema: entry.inputSchema ?? { type: "object" },
       ...(entry.outputSchema ? { outputSchema: entry.outputSchema } : {}),
+      ...(entry.execution ? { execution: entry.execution } : {}),
     }));
   }
 
@@ -192,8 +208,12 @@ export class RosterServer {
         outcome.evidence.errorText ?? "backend protocol error",
       );
     }
+    // Timeout (-32001) and ConnectionClosed (-32000) reach here as timedOut /
+    // transportError evidence. Re-throw with the ORIGINAL code so a proxied
+    // failure is byte-for-byte the error a direct connection raised (R5-08);
+    // only a genuinely code-less fault falls back to InternalError.
     throw new McpError(
-      ErrorCode.InternalError,
+      outcome.evidence.errorCode ?? ErrorCode.InternalError,
       describeFailure(outcome.evidence),
     );
   }

@@ -102,12 +102,31 @@ export class BackendManager {
 
   private async fetchTools(source: string, client: Client): Promise<CapabilityEntry[]> {
     const entries: CapabilityEntry[] = [];
+    // Two RAW tool names on one backend can sanitize to the same public id
+    // ("safe.tool" and "safe tool" → "…__safe-tool"). Left alone, the id→tool
+    // lookup (a `.find`) silently reaches whichever came first, so an agent could
+    // invoke a DIFFERENT physical tool than the definition it saw (R5-07). We keep
+    // every physical tool addressable by giving each later collider a distinct id
+    // — probed against a used-set so the disambiguating suffix can't itself land
+    // on a real tool's id. Order is the backend's own listTools order, stable
+    // within a session (the client-compat "list never changes" rule). `id` is the
+    // routing key; `name` stays the true raw tool name that gets called.
+    const usedIds = new Set<string>();
+    const uniqueId = (baseId: string): string => {
+      if (!usedIds.has(baseId)) return baseId;
+      let n = 2;
+      let candidate = `${baseId}__dup-${n}`;
+      while (usedIds.has(candidate)) candidate = `${baseId}__dup-${++n}`;
+      return candidate;
+    };
     let cursor: string | undefined;
     do {
       const page = await client.listTools({ cursor });
       for (const tool of page.tools) {
+        const id = uniqueId(namespacedId(source, tool.name));
+        usedIds.add(id);
         entries.push({
-          id: namespacedId(source, tool.name),
+          id,
           kind: "tool",
           source,
           name: tool.name,
@@ -121,6 +140,10 @@ export class BackendManager {
             type: "object",
           },
           outputSchema: tool.outputSchema as Record<string, unknown> | undefined,
+          // `execution` (task-support hints) is part of the tool's declared
+          // contract; a client that reads it to decide sync-vs-async must see it
+          // through the proxy exactly as it would direct (R5-08).
+          execution: (tool as { execution?: Record<string, unknown> }).execution ?? undefined,
         });
       }
       cursor = page.nextCursor;
@@ -188,14 +211,19 @@ export class BackendManager {
  */
 export function errorToEvidence(err: unknown): CallEvidence {
   if (err instanceof McpError) {
-    if (err.code === ErrorCode.RequestTimeout) return { timedOut: true };
+    // Keep the ORIGINAL JSON-RPC code on every branch. Transparent mode's promise
+    // is that a proxied error is indistinguishable from a direct one, and a client
+    // that branches on `-32001 RequestTimeout` must still see it — the round-4c D3
+    // fix preserved the code only for `protocolError`, so timeout and
+    // ConnectionClosed were silently rewritten to `-32603 InternalError` (R5-08).
+    if (err.code === ErrorCode.RequestTimeout) return { timedOut: true, errorCode: err.code };
     if (err.code === ErrorCode.ConnectionClosed) {
-      return { transportError: true, errorText: err.message };
+      return { transportError: true, errorText: err.message, errorCode: err.code };
     }
     // A raw -32602 is the caller's malformed args (non-attributable, audit M3);
     // other JSON-RPC errors keep their code so transparent mode re-throws it faithfully (D3).
     if (err.code === ErrorCode.InvalidParams) {
-      return { inputValidationError: true, errorText: err.message };
+      return { inputValidationError: true, errorText: err.message, errorCode: err.code };
     }
     return { protocolError: true, errorText: err.message, errorCode: err.code };
   }

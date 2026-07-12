@@ -17,6 +17,8 @@ export interface CapabilityEntry {
   inputSchema?: Record<string, unknown>;
   /** Declared output schema, when the backend provides one. */
   outputSchema?: Record<string, unknown>;
+  /** MCP `tool.execution` capability hints — passed through verbatim in transparent mode. */
+  execution?: Record<string, unknown>;
   /** Full SKILL.md body (frontmatter stripped). Present for skills only — indexed whole, per SkillRouter. */
   body?: string;
   /** Absolute path to the skill directory. Skills only. */
