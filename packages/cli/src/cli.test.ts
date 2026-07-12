@@ -596,6 +596,39 @@ args = ["-y", "late-mcp"]
     });
   });
 
+  /**
+   * roster.json and the backups hold whatever API keys sat in the imported
+   * `env` blocks. They were created 0644 (and the backups dir 0755) under a
+   * normal umask — world-readable — and sync REPLACED a user's own 0600 client
+   * config with a fresh 0644 one, silently undoing their hardening (R5-06).
+   */
+  describe.skipIf(process.platform === "win32")("secrets are owner-only on disk (R5-06)", () => {
+    const mode = (p: string) => (fs.statSync(p).mode & 0o777).toString(8);
+
+    it("never loosens an existing config, and creates its own files 0600 / dirs 0700", () => {
+      const prevUmask = process.umask(0o022); // the permissive default that exposed this
+      try {
+        const configPath = path.join(home, ".cursor/mcp.json");
+        fs.mkdirSync(path.dirname(configPath), { recursive: true });
+        fs.writeFileSync(
+          configPath,
+          JSON.stringify({ mcpServers: { gh: { command: "npx", env: { TOKEN: "s3cret" } } } }),
+          { mode: 0o600 }, // the user hardened this themselves
+        );
+
+        const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+
+        expect(mode(configPath)).toBe("600"); // preserved, not downgraded to 644
+        expect(mode(path.join(home, ".roster/roster.json"))).toBe("600"); // holds the imported TOKEN
+        expect(mode(path.join(result.backupDir!, "original"))).toBe("600"); // verbatim copy of their config
+        expect(mode(path.join(result.backupDir!, "manifest.json"))).toBe("600");
+        expect(mode(path.dirname(result.backupDir!))).toBe("700"); // dir listing leaks which clients they run
+      } finally {
+        process.umask(prevUmask);
+      }
+    });
+  });
+
   it("a UTF-8 BOM on a client config does not abort the sync — the server is still imported (D2)", () => {
     const configPath = path.join(home, ".claude.json");
     // Editors write a leading BOM; JSON.parse chokes on it. One BOM'd config

@@ -59,7 +59,7 @@ export function buildReceipt(discoveries: Discovery[], skills: ParsedSkill[], tr
       openclaw: hasOpenclaw ? { chars, estTokens: estimateTokensFromChars(chars) } : null,
     },
     methodology:
-      "Counts are read from your configs. Token figures are estimates (~4 chars/token, ±15%). OpenClaw skill-injection chars follow its deterministic <available_skills> formula.",
+      "Counts are read from your configs. Token figures are estimates (~4 chars/token); our own measurement puts the error at −37%…+27% depending on tokenizer family and payload type (docs/lab/notes-token-economics.md), so read them as ballpark, never exact. OpenClaw skill-injection chars follow its deterministic <available_skills> formula.",
   };
 }
 

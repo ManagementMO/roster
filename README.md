@@ -44,7 +44,7 @@ The League is the show; these earn the install without it:
 3. **The Sixth Man** — failover *suggestions* when a tool hard-fails, so one bad server doesn't kill the task. Suggest-only at launch; automatic substitution returns later, if field data earns it.
 4. **The flight recorder** — a local dashboard of every tool call across all your agents: what ran, what failed, what's slow, what changed.
 5. **Drift alarms** — a local heads-up when a server changes its tool schemas overnight, before it silently breaks your workflow.
-6. **Secrets hygiene** — API keys live in one place and are passed through to backends only; Roster never persists or logs them.
+6. **Secrets hygiene** — API keys live in **one place** (`~/.roster/roster.json`, owner-only `0600`, alongside the config backups that hold your original files) and are passed through to backends only. They are never sent anywhere, never written to the outcome database, and never logged — but be clear-eyed: importing a server copies its `env` block, so those keys are on disk, exactly as they already were in each client's own config.
 7. **A Coach that knows your team** — reliability-aware defaults seeded from public Lab data, then nightly learning on your own traffic. It gets smart on *your* stack, and it all stays on your machine.
 
 ## Privacy

@@ -7,17 +7,45 @@ import { isRosterProxyEntry } from "./entry.js";
 import { rosterConfigPath, rosterHome } from "./paths.js";
 
 /**
+ * Files Roster creates can hold imported credentials (a server's `env` block), so
+ * they are owner-only. Directories likewise: a 0755 backups dir lists every
+ * client whose config we hold.
+ */
+export const PRIVATE_FILE = 0o600;
+export const PRIVATE_DIR = 0o700;
+
+/** The target's current permissions, or undefined if it doesn't exist yet. */
+function existingMode(target: string): number | undefined {
+  try {
+    return fs.statSync(target).mode & 0o777;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Atomic write via a PRIVATE tmp + rename. The tmp name must be unique per
  * writer: a shared "<target>.tmp" let two concurrent writers truncate each
  * other's file (torn/corrupt output) and race the rename to ENOENT — measured
  * at 56.8% crash / occasional permanent corruption. pid + random makes the tmp
  * this write's alone; the rename is the only publish. Cross-process
  * last-writer-wins on the target is expected; a half-written target is not.
+ *
+ * Permissions are part of the contract, not an afterthought (R5-06). The tmp is
+ * created owner-only so the content never exists — not even for the microseconds
+ * before the rename — at a mode the final file wouldn't have. Then:
+ *   - an EXISTING target keeps its mode: replacing a user's 0600 client config
+ *     with a fresh 0644 one silently downgraded their own hardening;
+ *   - a file we create fresh (roster.json, backups) defaults to 0600, because it
+ *     may carry credentials imported from a client config.
+ * (On Windows these modes are largely inert; the rename semantics still hold.)
  */
-export function atomicWriteFileSync(target: string, data: string | Buffer): void {
+export function atomicWriteFileSync(target: string, data: string | Buffer, mode?: number): void {
   const tmp = `${target}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
   try {
-    fs.writeFileSync(tmp, data);
+    fs.writeFileSync(tmp, data, { mode: PRIVATE_FILE });
+    const finalMode = mode ?? existingMode(target) ?? PRIVATE_FILE;
+    fs.chmodSync(tmp, finalMode); // writeFileSync's mode is masked by umask; set it exactly
     fs.renameSync(tmp, target);
   } catch (err) {
     try {
@@ -82,10 +110,10 @@ export function loadConfig(): RosterConfig {
 }
 
 export function saveConfig(config: RosterConfig): void {
-  fs.mkdirSync(rosterHome(), { recursive: true });
-  // Private-tmp + rename: a serve booting mid-write, or a sibling writer, must
-  // never read truncated JSON or clobber the tmp mid-flight.
-  atomicWriteFileSync(rosterConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
+  fs.mkdirSync(rosterHome(), { recursive: true, mode: PRIVATE_DIR });
+  // roster.json holds every imported server's `env` — i.e. the user's API keys.
+  // It is the "one place" the README promises they live, so it is owner-only.
+  atomicWriteFileSync(rosterConfigPath(), `${JSON.stringify(config, null, 2)}\n`, PRIVATE_FILE);
 }
 
 /**

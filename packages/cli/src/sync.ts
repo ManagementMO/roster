@@ -6,7 +6,15 @@ import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
 import { hasGlobalRoster, ourBinPath, rosterEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
-import { atomicWriteFileSync, backupDirFor, loadConfig, mergeServers, saveConfig } from "./rosterfile.js";
+import {
+  atomicWriteFileSync,
+  backupDirFor,
+  loadConfig,
+  mergeServers,
+  PRIVATE_DIR,
+  PRIVATE_FILE,
+  saveConfig,
+} from "./rosterfile.js";
 
 /** The four write clients (handoff §6.3). Read-import covers everything; writes stay narrow. */
 export const WRITE_CLIENTS: ClientId[] = ["claude-code", "cursor", "codex", "openclaw"];
@@ -83,8 +91,11 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
   const timestamp = now.toISOString().replace(/[:.]/g, "-");
   const backupDir = backupDirFor(clientId, timestamp);
   const stagingDir = `${backupDir}.staging-${crypto.randomBytes(4).toString("hex")}`;
-  fs.mkdirSync(stagingDir, { recursive: true });
-  fs.writeFileSync(path.join(stagingDir, "original"), originalBytes);
+  // A backup is a verbatim copy of the client's config — including whatever API
+  // keys sat in its `env` blocks. Owner-only, dirs included: a 0755 backups tree
+  // also leaks WHICH clients the user runs (R5-06).
+  fs.mkdirSync(stagingDir, { recursive: true, mode: PRIVATE_DIR });
+  fs.writeFileSync(path.join(stagingDir, "original"), originalBytes, { mode: PRIVATE_FILE });
   const manifest: BackupManifest = {
     client: clientId,
     sourcePath: configPath,
@@ -93,9 +104,11 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     timestamp,
     injectedEntry, // exact identity for eject — never the key name (R5-01)
   };
-  fs.writeFileSync(path.join(stagingDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  fs.writeFileSync(path.join(stagingDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, {
+    mode: PRIVATE_FILE,
+  });
   fs.renameSync(stagingDir, backupDir); // atomic publish: complete backup or none
-  fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp);
+  fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp, { mode: PRIVATE_FILE });
 
   // Step 3 — atomic config replacement (private tmp + rename).
   atomicWriteFileSync(configPath, rewritten);
