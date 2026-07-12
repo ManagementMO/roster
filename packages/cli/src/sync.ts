@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
+import { hasGlobalRoster, ourBinPath, rosterEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
 import { atomicWriteFileSync, backupDirFor, loadConfig, mergeServers, saveConfig } from "./rosterfile.js";
 
@@ -17,6 +17,12 @@ export interface BackupManifest {
   originalSha256: string;
   writtenSha256: string;
   timestamp: string;
+  /**
+   * The EXACT entry this sync installed. Eject removes only this — never
+   * "whatever is called roster" — so a server the user adds under that name
+   * after syncing is theirs and survives (R5-01). Absent on pre-R5 backups.
+   */
+  injectedEntry?: SpawnEntry;
 }
 
 export interface SyncResult {
@@ -27,51 +33,7 @@ export interface SyncResult {
   imported?: number;
 }
 
-/**
- * Is there a global `roster` on PATH that is actually OURS? (audit M5 + DEF-5).
- * `existsSync` alone was a smaller replay of the squatter hazard round 4b closed:
- * a third-party `roster` on PATH — or a mere directory named `roster` — would
- * have been written into every client as a spawn target. So we require an
- * executable regular FILE and, until our own package is published, that it
- * realpaths INTO this checkout (no global `roster` today is ours). Relax the
- * realpath check post-publish (STATUS §4F). Overridable via ROSTER_ASSUME_GLOBAL.
- */
-export function hasGlobalRoster(): boolean {
-  if (process.env.ROSTER_ASSUME_GLOBAL === "1") return true;
-  if (process.env.ROSTER_ASSUME_GLOBAL === "0") return false;
-  const names = process.platform === "win32" ? ["roster.cmd", "roster.exe", "roster"] : ["roster"];
-  const ourRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-  for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
-    if (dir === "") continue;
-    for (const n of names) {
-      const p = path.join(dir, n);
-      try {
-        if (!fs.statSync(p).isFile()) continue; // not a spawnable file (dir/socket/…)
-        fs.accessSync(p, fs.constants.X_OK); // executable
-        if (fs.realpathSync(p).startsWith(ourRoot + path.sep)) return true; // provably ours
-      } catch {
-        /* not a file / not accessible → keep looking */
-      }
-    }
-  }
-  return false;
-}
-
-/**
- * The entry sync writes. A global `roster` that is provably ours → `roster serve`.
- * Otherwise THIS install's own entrypoint (node + absolute `dist/bin.js`):
- * spawnable today for repo checkouts, pnpm links, and npx-cache installs, running
- * only code that is provably ours. Deliberately NOT `npx -y roster` — the npm
- * name `roster` is a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so
- * that entry would fetch and run a stranger's code on every client boot. The npx
- * form becomes the no-global default only at publish, under P1's cleared name
- * (one-line change; STATUS §4F).
- */
-function rosterEntry(): { command: string; args: string[] } {
-  if (hasGlobalRoster()) return { command: "roster", args: ["serve"] };
-  const bin = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
-  return { command: process.execPath, args: [bin, "serve"] };
-}
+export { hasGlobalRoster } from "./entry.js";
 
 /**
  * Sync order is a trust invariant:
@@ -108,7 +70,8 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     imported = added.length;
   }
 
-  const rewritten = rewriteConfig(clientId, originalBytes.toString("utf8"));
+  const injectedEntry = rosterEntry();
+  const rewritten = rewriteConfig(clientId, originalBytes.toString("utf8"), injectedEntry);
   if (rewritten === null) {
     return { client: clientId, configPath, action: "already-synced", imported };
   }
@@ -128,6 +91,7 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     originalSha256: sha256Hex(originalBytes),
     writtenSha256: sha256Hex(rewritten),
     timestamp,
+    injectedEntry, // exact identity for eject — never the key name (R5-01)
   };
   fs.writeFileSync(path.join(stagingDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   fs.renameSync(stagingDir, backupDir); // atomic publish: complete backup or none
@@ -140,11 +104,10 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
 }
 
 /** Returns the new file content, or null when the config already points solely at Roster. */
-function rewriteConfig(clientId: ClientId, content: string): string | null {
-  const entry = rosterEntry();
+function rewriteConfig(clientId: ClientId, content: string, entry: SpawnEntry): string | null {
   if (clientId === "codex") {
     const data = parseToml(content) as Record<string, unknown>;
-    if (isAlreadySynced(data.mcp_servers)) return null;
+    if (isAlreadySynced(data.mcp_servers, entry)) return null;
     data.mcp_servers = { roster: entry };
     return `${stringifyToml(data)}\n`;
   }
@@ -157,44 +120,46 @@ function rewriteConfig(clientId: ClientId, content: string): string | null {
     throw new Error(`config is not a JSON object (got ${Array.isArray(data) ? "array" : typeof data})`);
   }
   const obj = data as Record<string, unknown>;
-  if (isAlreadySynced(obj.mcpServers)) return null;
+  if (isAlreadySynced(obj.mcpServers, entry)) return null;
   obj.mcpServers = { roster: entry };
   return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
 /**
- * Is the servers map already a Roster-only install? Loose on FORM (global,
- * execPath+bin.js, or post-publish npx all count) so a re-sync from a machine
- * that installs differently doesn't loop — BUT it must actually BE our entry,
- * not a user's own server that happens to be keyed "roster": the sole key is
- * "roster" AND it launches `serve` AND (for the execPath form) `bin.js` is the
- * script. A recognized-but-stale entry (moved install) is NOT treated as
- * already-synced, so sync refreshes it instead of leaving a broken client
- * claiming health (DEF-4).
+ * Is the servers map already a HEALTHY Roster-only install? Loose on FORM (global,
+ * execPath+bin.js, or post-publish npx) so a re-sync from a machine that installs
+ * differently doesn't loop — but "already synced" is a claim that the client will
+ * actually reach US, so every form must be one we can stand behind:
+ *
+ *  - the exact entry we'd write now → current, leave it;
+ *  - a bare `roster` → healthy ONLY if a trusted global roster actually exists.
+ *    Round 5 (R5-01) found this branch returning true unconditionally: a config
+ *    naming a `roster` binary that is a stranger's, or absent entirely, was
+ *    reported healthy and left in place — the same squatter hazard DEF-5 closed
+ *    for WRITES, still wide open for the health CHECK. `hasGlobalRoster()` is the
+ *    one authority on whether that command is ours;
+ *  - the execPath form → our own bin path is authoritative even after the machine
+ *    gains a global (don't churn a working entry, M5); a DIFFERENT bin.js counts
+ *    only while it still exists on disk, so a moved/removed install refreshes
+ *    instead of claiming false health (DEF-4).
+ *
+ * A user's own server merely NAMED "roster" matches none of these and is left for
+ * sync to import and preserve (R5-01).
  */
-function isAlreadySynced(servers: unknown): boolean {
+function isAlreadySynced(servers: unknown, want: SpawnEntry): boolean {
   if (servers === null || typeof servers !== "object") return false;
   const entries = Object.entries(servers as Record<string, unknown>);
   if (entries.length !== 1 || entries[0]![0] !== "roster") return false;
   const entry = entries[0]![1] as Record<string, unknown> | null;
   if (entry === null || typeof entry !== "object") return false;
   const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
-  const want = rosterEntry();
-  // Exactly the entry we would write right now → truly current.
-  if (entry.command === want.command && JSON.stringify(args) === JSON.stringify(want.args)) return true;
-  // A recognizable Roster entry in another install form, still pointing at a
-  // bin.js that exists on disk → don't rewrite (avoid churn/loops). A stale one
-  // (script gone) falls through to a refresh.
-  if (entry.command === "roster" && args.includes("serve")) return true;
+
+  if (sameEntry(entry, want)) return true; // exactly what we'd write now
+  if (entry.command === "roster" && args.includes("serve")) return hasGlobalRoster();
+
   const script = typeof entry.command === "string" && path.basename(entry.command).startsWith("node") ? args[0] : undefined;
   if (script && /(^|[\\/])bin\.js$/.test(script) && args.includes("serve")) {
-    // OUR OWN current entrypoint is authoritative even when the machine has
-    // since gained a global `roster` (don't churn a working execPath entry, M5)
-    // or the dist is mid-rebuild. A DIFFERENT bin.js counts only if it still
-    // exists on disk; a vanished one (moved/removed install) falls through to a
-    // refresh instead of a false "already-synced" (DEF-4).
-    const ourBin = path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
-    if (script === ourBin) return true;
+    if (script === ourBinPath()) return true;
     try {
       return fs.existsSync(script);
     } catch {
@@ -217,19 +182,78 @@ export interface RawBackup {
   manifest: BackupManifest | null;
 }
 
+/** Client backup root, e.g. ~/.roster/backups/cursor. */
+function clientBackupDir(clientId: ClientId): string {
+  return path.dirname(backupDirFor(clientId, "x"));
+}
+
 /**
- * Every backup dir for a client, OLDEST FIRST by DIRECTORY NAME. Ordering must
- * key off the immutable, timestamp-derived directory name — never a mutable
+ * The era boundary, recorded DURABLY: the newest backup timestamp that has
+ * already been ejected. Backups at or before it belong to a closed era and are
+ * no longer candidates for restore.
+ *
+ * Era closure used to be implied by `archiveEra`'s directory rename — a
+ * BEST-EFFORT operation that swallowed its own failures. When that rename failed
+ * (read-only backups root, locked dir, permissions), the ejected era stayed
+ * "active", the next sync appended a second backup beside it, and the following
+ * eject picked the OLDEST dir — restoring the previous era's config OVER the
+ * user's current one and reporting "restored". A silent wrong restore: the one
+ * outcome eject exists to make impossible (R5-02).
+ *
+ * A marker rather than an inferred boundary, because the boundary CANNOT be
+ * inferred: "ejected, then re-synced" and "user broke the entry by hand, then
+ * re-synced" leave byte-identical manifests but require different pristines. Only
+ * an explicit record of the eject can tell them apart.
+ */
+function closedThroughPath(clientId: ClientId): string {
+  return path.join(clientBackupDir(clientId), ".closed-through");
+}
+
+export function readClosedThrough(clientId: ClientId): string | null {
+  try {
+    return fs.readFileSync(closedThroughPath(clientId), "utf8").trim() || null;
+  } catch {
+    return null; // no marker → nothing has been ejected yet
+  }
+}
+
+/**
+ * Close the current era durably. Called by eject AFTER the config is restored.
+ * Returns false when the closure could not be persisted — the caller must then
+ * refuse to report a clean success, because a future eject could otherwise reach
+ * back into this era.
+ */
+export function closeEra(clientId: ClientId): boolean {
+  const active = rawBackups(clientId);
+  const newest = active.at(-1);
+  if (!newest) return true; // nothing open to close
+  try {
+    atomicWriteFileSync(closedThroughPath(clientId), `${newest.name}\n`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Every ACTIVE backup dir for a client, OLDEST FIRST by DIRECTORY NAME. Ordering
+ * must key off the immutable, timestamp-derived directory name — never a mutable
  * manifest field — so editing a manifest can't reorder or hide a backup. A
  * corrupt/missing manifest is returned as null (not silently dropped) so eject
  * can refuse rather than advance to a different backup (a silent wrong-restore).
+ *
+ * Backups belonging to a CLOSED era are excluded: they have already been ejected
+ * and must never be restored again (R5-02).
  */
 export function rawBackups(clientId: ClientId): RawBackup[] {
-  const clientDir = path.dirname(backupDirFor(clientId, "x"));
+  const clientDir = clientBackupDir(clientId);
   if (!fs.existsSync(clientDir)) return [];
+  const closedThrough = readClosedThrough(clientId);
   const out: RawBackup[] = [];
   for (const name of fs.readdirSync(clientDir).sort()) {
     if (name.includes(".staging-")) continue; // an interrupted, not-yet-published backup
+    // Timestamped names sort chronologically, so <= is "at or before the boundary".
+    if (closedThrough !== null && name <= closedThrough) continue; // already ejected
     const dir = path.join(clientDir, name);
     try {
       if (!fs.statSync(dir).isDirectory()) continue;

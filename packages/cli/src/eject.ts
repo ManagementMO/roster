@@ -2,9 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId } from "./clients.js";
+import { isRosterProxyEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
 import { atomicWriteFileSync, backupDirFor } from "./rosterfile.js";
-import { listBackups, pristineRawBackup } from "./sync.js";
+import { closeEra, listBackups, pristineRawBackup } from "./sync.js";
 
 export interface EjectResult {
   client: ClientId;
@@ -80,16 +81,13 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
       const restored = restoreServersKeyLevel(
         fs.readFileSync(targetPath, "utf8"),
         originalBytes.toString("utf8"),
+        manifest.injectedEntry,
       );
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
       atomicWriteFileSync(targetPath, restored);
-      archiveEra(clientId);
-      return {
-        client: clientId,
-        action: "restored",
-        configPath: targetPath,
+      return finishEject(clientId, targetPath, {
         detail: "key-level restore (state file — live settings and post-sync servers preserved)",
-      };
+      });
     } catch {
       // Current file unparseable → fall through to the GUARDED byte path.
     }
@@ -121,20 +119,57 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
 
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
   atomicWriteFileSync(targetPath, originalBytes);
-  archiveEra(clientId);
-  return { client: clientId, action: "restored", configPath: targetPath };
+  return finishEject(clientId, targetPath, {});
+}
+
+/**
+ * The config is restored — now CLOSE THE ERA, durably, before we call this a
+ * success. Archiving (the directory rename) is only tidy-up and is allowed to
+ * fail; the closed-through marker is what actually prevents a later eject from
+ * reaching back into this era and restoring stale bytes over the user's config
+ * (R5-02). If even the marker cannot be written we say so loudly rather than
+ * returning a clean "restored" that quietly leaves the trap armed.
+ */
+function finishEject(clientId: ClientId, targetPath: string, opts: { detail?: string }): EjectResult {
+  // Two independent ways to close an era: record the boundary, or move the whole
+  // era's backups out of reach. EITHER is sufficient; only if BOTH fail is a later
+  // eject still able to restore this era's stale bytes.
+  const marked = closeEra(clientId);
+  const archived = archiveEra(clientId);
+  if (!marked && !archived) {
+    return {
+      client: clientId,
+      action: "restored",
+      configPath: targetPath,
+      detail:
+        "restored, BUT the backup era could not be closed (backups dir not writable) — " +
+        "fix permissions on ~/.roster/backups and re-run `roster eject`, or a later eject could restore these stale bytes",
+    };
+  }
+  return { client: clientId, action: "restored", configPath: targetPath, ...opts };
 }
 
 /**
  * Rebuild the CURRENT config's `mcpServers` as: the ORIGINAL (pre-sync) servers,
- * PLUS any non-roster servers the user added while synced (current wins on a
- * name collision — their latest intent), MINUS the roster entry. Every other
+ * PLUS any servers the user added while synced (current wins on a name collision
+ * — their latest intent), MINUS the entry Roster itself installed. Every other
  * current key is preserved. The sync→eject trust invariant — "cycles can never
  * destroy in-between changes" — must hold for servers added post-sync too
  * (round-4b self-review: the first version replaced the map wholesale and
  * silently dropped them). JSON-format state files only.
+ *
+ * What we remove is identified by the EXACT entry recorded in the backup manifest
+ * — never by the key name. `delete servers.roster` destroyed a server the user
+ * added under that name after syncing (R5-01): eject's one promise is that it
+ * never loses your work, and a name is not an identity. Backups written before
+ * this fix carry no recorded entry; those fall back to the structural test, which
+ * still refuses to delete anything that isn't shaped like a Roster proxy entry.
  */
-function restoreServersKeyLevel(currentContent: string, originalContent: string): string {
+function restoreServersKeyLevel(
+  currentContent: string,
+  originalContent: string,
+  injected: SpawnEntry | undefined,
+): string {
   const current = parseJsonc(currentContent);
   if (current === null || typeof current !== "object" || Array.isArray(current)) {
     throw new Error("current config is not a JSON object");
@@ -149,7 +184,10 @@ function restoreServersKeyLevel(currentContent: string, originalContent: string)
     cur.mcpServers && typeof cur.mcpServers === "object" && !Array.isArray(cur.mcpServers)
       ? { ...(cur.mcpServers as Record<string, unknown>) }
       : {};
-  delete currentServers.roster;
+  for (const [name, entry] of Object.entries(currentServers)) {
+    const isOurs = injected ? sameEntry(entry, injected) : isRosterProxyEntry(entry);
+    if (isOurs) delete currentServers[name];
+  }
   const merged = { ...(origServers ?? {}), ...currentServers };
   if (Object.keys(merged).length === 0 && origServers === undefined) {
     delete cur.mcpServers; // original had no servers key and the user added none
@@ -159,14 +197,21 @@ function restoreServersKeyLevel(currentContent: string, originalContent: string)
   return `${JSON.stringify(cur, null, 2)}\n`;
 }
 
-/** Best-effort era close: a failed archive must never fail the restore. */
-function archiveEra(clientId: ClientId): void {
+/**
+ * Move the whole era's backups aside. Tidy-up, and a SECOND way to close the era:
+ * if the directory is gone, no later eject can reach its backups either. Still
+ * best-effort — a failed archive must never fail the restore — but its success or
+ * failure is now reported, because correctness depends on at least one of the two
+ * closures landing (see finishEject).
+ */
+function archiveEra(clientId: ClientId): boolean {
   const clientDir = path.dirname(backupDirFor(clientId, "x"));
-  if (!fs.existsSync(clientDir)) return;
+  if (!fs.existsSync(clientDir)) return true; // nothing left to archive
   const archived = `${clientDir}-ejected-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   try {
     fs.renameSync(clientDir, archived);
+    return true;
   } catch {
-    /* keep the restore result */
+    return false; // keep the restore result; the marker is the durable guarantee
   }
 }

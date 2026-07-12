@@ -445,6 +445,157 @@ args = ["-y", "late-mcp"]
     expect(fs.readFileSync(configPath, "utf8")).toBe("[]"); // left exactly as found
   });
 
+  /**
+   * A NAME is not an IDENTITY. All three of these keyed off the string "roster"
+   * and so confused Roster's own proxy entry with a server the user happens to
+   * have called that — silently dropping it on import, calling an untrusted
+   * binary healthy, and DELETING it on eject (R5-01).
+   */
+  describe("a user's own server named `roster` is theirs (R5-01)", () => {
+    const mine = { command: "node", args: ["/opt/my-own-roster-server.js"] };
+
+    it("is imported and stays routable — not mistaken for our proxy entry", () => {
+      write(
+        ".cursor/mcp.json",
+        JSON.stringify({ mcpServers: { roster: mine, github: { command: "npx", args: ["-y", "gh"] } } }),
+      );
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.action).toBe("synced");
+      expect(result.imported).toBe(2); // BOTH — theirs was silently dropped before
+
+      const roster = JSON.parse(fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8")) as {
+        servers: Record<string, { command?: string; args?: string[] }>;
+      };
+      expect(Object.keys(roster.servers).sort()).toEqual(["github", "roster"]);
+      expect(roster.servers.roster).toMatchObject(mine); // their definition, intact
+    });
+
+    it("our OWN proxy entry is still never imported (identity, not name)", () => {
+      // A config already pointing at us must not re-import the proxy as a server.
+      const ours = { command: process.execPath, args: [path.join("/somewhere", "bin.js"), "serve"] };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { roster: ours } }));
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.imported).toBe(0);
+      // Nothing was imported, so roster.json is never even written; if it does
+      // exist it must not contain us.
+      const rosterPath = path.join(home, ".roster/roster.json");
+      if (fs.existsSync(rosterPath)) {
+        const roster = JSON.parse(fs.readFileSync(rosterPath, "utf8")) as { servers: Record<string, unknown> };
+        expect(roster.servers.roster).toBeUndefined();
+      }
+    });
+
+    it("a bare `roster` command is NOT healthy without a trusted global on PATH", () => {
+      const prev = process.env.ROSTER_ASSUME_GLOBAL;
+      try {
+        process.env.ROSTER_ASSUME_GLOBAL = "0"; // no global roster is ours
+        write(".cursor/mcp.json", JSON.stringify({ mcpServers: { roster: { command: "roster", args: ["serve"] } } }));
+        // Previously reported "already-synced": a stranger's (or absent) `roster`
+        // binary left in place while the client believed it was installed.
+        expect(syncClient("cursor", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+        const cfg = JSON.parse(fs.readFileSync(path.join(home, ".cursor/mcp.json"), "utf8")) as {
+          mcpServers: { roster: { command: string } };
+        };
+        expect(cfg.mcpServers.roster.command).toBe(process.execPath); // healed to our own entrypoint
+      } finally {
+        if (prev === undefined) delete process.env.ROSTER_ASSUME_GLOBAL;
+        else process.env.ROSTER_ASSUME_GLOBAL = prev;
+      }
+    });
+
+    it("eject does NOT delete a server the user added under the name `roster` after syncing", () => {
+      const configPath = path.join(home, ".claude.json"); // state file → key-level restore
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+
+      // User runs `claude mcp add roster …` pointing at their OWN server:
+      const cur = JSON.parse(fs.readFileSync(configPath, "utf8")) as { mcpServers: Record<string, unknown> };
+      cur.mcpServers.roster = mine; // same key we occupy — but not our entry
+      cur.mcpServers.other = { command: "npx", args: ["-y", "other"] };
+      fs.writeFileSync(configPath, JSON.stringify(cur, null, 2));
+
+      expect(ejectClient("claude-code").action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+        mcpServers: Record<string, { command?: string; args?: string[] }>;
+      };
+      expect(after.mcpServers.roster).toMatchObject(mine); // THEIRS — survives
+      expect(after.mcpServers.other).toBeDefined(); // ordinary post-sync addition survives
+      expect(after.mcpServers.github).toBeDefined(); // pre-sync original restored
+    });
+
+    it("eject still removes the entry WE installed", () => {
+      const configPath = path.join(home, ".claude.json");
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      const synced = JSON.parse(fs.readFileSync(configPath, "utf8")) as { mcpServers: Record<string, unknown> };
+      expect(synced.mcpServers.roster).toBeDefined(); // we are installed
+
+      expect(ejectClient("claude-code").action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+        mcpServers: Record<string, { command?: string }>;
+      };
+      expect(after.mcpServers.roster).toBeUndefined(); // our proxy is gone
+      expect(after.mcpServers.github).toBeDefined(); // their original is back
+    });
+  });
+
+  /**
+   * Eject's one promise is that it never loses your work and never restores the
+   * wrong thing. Era closure used to be implied by a best-effort directory rename
+   * that swallowed its failures — so when the rename failed, the next sync/eject
+   * pair silently restored the PREVIOUS era's config over the user's current one
+   * and reported success (R5-02).
+   */
+  describe("backup era closure is durable (R5-02)", () => {
+    const configPath = () => path.join(home, ".cursor/mcp.json");
+    const era = (marker: string) =>
+      `${JSON.stringify({ marker, mcpServers: { [marker]: { command: marker } } }, null, 2)}\n`;
+
+    it("a FAILED archive must not let a later eject restore the previous era", () => {
+      const backupsRoot = path.join(home, ".roster", "backups");
+
+      // Era 0: sync, then eject with archiving BLOCKED (backups root not writable).
+      write(".cursor/mcp.json", era("ERA0"));
+      syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
+      fs.chmodSync(backupsRoot, 0o500);
+      expect(ejectClient("cursor").action).toBe("restored");
+      fs.chmodSync(backupsRoot, 0o700);
+      expect(fs.existsSync(path.join(backupsRoot, "cursor"))).toBe(true); // archive really did fail
+
+      // Era 1: a genuinely new pristine, synced and then ejected normally.
+      fs.writeFileSync(configPath(), era("ERA1"));
+      syncClient("cursor", new Date("2026-07-12T12:00:01Z"));
+      expect(ejectClient("cursor").action).toBe("restored");
+
+      // It must be ERA1 that comes back — not the stale ERA0 sitting in the
+      // un-archived backup directory.
+      expect(fs.readFileSync(configPath(), "utf8")).toBe(era("ERA1"));
+    });
+
+    it("says so loudly when the era cannot be closed at all", () => {
+      write(".cursor/mcp.json", era("ERA0"));
+      syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
+      const backupsRoot = path.join(home, ".roster", "backups");
+      const clientDir = path.join(backupsRoot, "cursor");
+      // Neither the marker (inside clientDir) nor the archive (rename inside
+      // backupsRoot) can be written.
+      fs.chmodSync(clientDir, 0o500);
+      fs.chmodSync(backupsRoot, 0o500);
+      const result = ejectClient("cursor");
+      fs.chmodSync(backupsRoot, 0o700);
+      fs.chmodSync(clientDir, 0o700);
+
+      expect(result.action).toBe("restored"); // the restore itself did happen
+      expect(result.detail).toMatch(/could not be closed/); // …but never silently
+    });
+
+    it("a normal eject still archives the era away", () => {
+      write(".cursor/mcp.json", era("ERA0"));
+      syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
+      expect(ejectClient("cursor").action).toBe("restored");
+      expect(fs.existsSync(path.join(home, ".roster", "backups", "cursor"))).toBe(false);
+      expect(ejectClient("cursor").action).toBe("no-backup"); // era is closed
+    });
+  });
+
   it("a UTF-8 BOM on a client config does not abort the sync — the server is still imported (D2)", () => {
     const configPath = path.join(home, ".claude.json");
     // Editors write a leading BOM; JSON.parse chokes on it. One BOM'd config

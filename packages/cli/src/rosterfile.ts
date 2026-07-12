@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import type { ImportedServer } from "./clients.js";
+import { isRosterProxyEntry } from "./entry.js";
 import { rosterConfigPath, rosterHome } from "./paths.js";
 
 /**
@@ -120,8 +121,12 @@ export function mergeServers(config: RosterConfig, imported: readonly ImportedSe
   const added: string[] = [];
   const merged: string[] = [];
   for (const server of imported) {
-    // Roster never imports itself (post-sync configs point at us).
-    if (server.command === "roster" || server.name === "roster") continue;
+    // Roster never imports ITSELF — but "itself" is an ENTRY, not a NAME. Keying
+    // this off `name === "roster"` silently dropped a user's own server that
+    // happened to be called that: it was skipped here AND overwritten in the
+    // client config by the sync, so it vanished from both (R5-01). A name is a
+    // label the user chose; only the entry says what a thing actually is.
+    if (isRosterProxyEntry({ command: server.command, args: server.args })) continue;
     const identity = serverIdentity(server);
     const existingName = byIdentity.get(identity);
     if (existingName) {
