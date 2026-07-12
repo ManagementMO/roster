@@ -51,7 +51,12 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
     skills.push({
       ...parsed,
       resources,
-      scripts: resources.filter(isScriptPath),
+      // Scripts are a SECURITY input, not a display list, so they get their own
+      // COMPLETE bounded walk — never `resources.filter(isScriptPath)`. Deriving
+      // them from the 200-capped display list let a skill hide a malicious script
+      // behind 200 benign files: it was neither listed nor scanned, so the skill
+      // scanned "ok" and (with the R5-09 gate) was served (R5-15).
+      scripts: listScripts(dir),
     });
   }
   return skills;
@@ -85,6 +90,39 @@ function listResources(dir: string): string[] {
       const childRel = rel === "" ? entry.name : `${rel}/${entry.name}`;
       if (entry.isDirectory()) walk(childRel);
       else if (childRel !== "SKILL.md") out.push(childRel);
+    }
+  };
+  walk("");
+  return out.sort();
+}
+
+/** Hard cap on scripts DISCOVERED (not displayed) — generous, but a runaway tree still terminates. */
+const MAX_SCRIPTS_SCANNED = 5_000;
+
+/**
+ * A COMPLETE, independent walk for scripts — the trust scanner's actual input.
+ * Unlike listResources (a capped DISPLAY list), this is not bounded by resource
+ * position, so a malicious script cannot be pushed out of view behind a wall of
+ * benign files (R5-15). Its own large cap prevents a pathological tree from
+ * hanging the scan; reaching it would itself warrant review, but 5,000 scripts in
+ * one skill is far beyond anything legitimate.
+ */
+function listScripts(dir: string): string[] {
+  const out: string[] = [];
+  const walk = (rel: string): void => {
+    if (out.length >= MAX_SCRIPTS_SCANNED) return;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(path.join(dir, rel), { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (out.length >= MAX_SCRIPTS_SCANNED) return;
+      if (entry.name.startsWith(".")) continue;
+      const childRel = rel === "" ? entry.name : `${rel}/${entry.name}`;
+      if (entry.isDirectory()) walk(childRel);
+      else if (childRel !== "SKILL.md" && isScriptPath(childRel)) out.push(childRel);
     }
   };
   walk("");

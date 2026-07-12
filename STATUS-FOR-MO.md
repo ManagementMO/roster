@@ -12,7 +12,7 @@
 
 | Gate | Status |
 |---|---|
-| Unit/integration tests | **161 passing** (mutation-checked where they lock a fix) |
+| Unit/integration tests | **191 passing** (mutation-checked where they lock a fix; +30 from the Round 5 remediation) |
 | CI/CD (9 jobs) | **green** — lint · build-test (ubuntu/macos-26/windows × Node 22+24) · real-server E2E + fail-probes · Combine (matrix) · live MiniLM inference · audit + secret scan · CodeQL (gated to public) |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
 | Combine vs real filesystem server | **8/8, deterministic** — and the fail-probes prove the verifiers *catch* wrongness (0/8) |
@@ -141,4 +141,4 @@ packages/{shared,coach,playbook,router,cli,combine} · apps/league · suites/fil
 docs/{verification,lab,signing} · .github/{workflows/{ci,codeql}.yml, actions/setup, dependabot.yml}
 ```
 
-Run it: `pnpm install && pnpm test` (**128 green**) · `pnpm lint` · `node docs/verification/e2e.mjs` · `node docs/verification/dense-live.mjs` · `pnpm league:build`.
+Run it: `pnpm install && pnpm test` (the suite reports its own count; a hard-coded number here only goes stale) · `pnpm lint` · `node docs/verification/e2e.mjs` · `node docs/verification/dense-live.mjs` · `pnpm league:build`.
