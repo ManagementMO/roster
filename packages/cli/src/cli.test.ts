@@ -549,7 +549,11 @@ args = ["-y", "late-mcp"]
     const era = (marker: string) =>
       `${JSON.stringify({ marker, mcpServers: { [marker]: { command: marker } } }, null, 2)}\n`;
 
-    it("a FAILED archive must not let a later eject restore the previous era", () => {
+    // These two force an archive/close FAILURE via chmod, which only bites on
+    // POSIX — Windows ignores mode bits for the owner, so the rename would succeed
+    // and there'd be no failure to test. The fix itself (a durable marker) is
+    // platform-independent fs+string logic, verified on macOS + Linux in CI.
+    it.skipIf(process.platform === "win32")("a FAILED archive must not let a later eject restore the previous era", () => {
       const backupsRoot = path.join(home, ".roster", "backups");
 
       // Era 0: sync, then eject with archiving BLOCKED (backups root not writable).
@@ -570,7 +574,7 @@ args = ["-y", "late-mcp"]
       expect(fs.readFileSync(configPath(), "utf8")).toBe(era("ERA1"));
     });
 
-    it("says so loudly when the era cannot be closed at all", () => {
+    it.skipIf(process.platform === "win32")("says so loudly when the era cannot be closed at all", () => {
       write(".cursor/mcp.json", era("ERA0"));
       syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
       const backupsRoot = path.join(home, ".roster", "backups");

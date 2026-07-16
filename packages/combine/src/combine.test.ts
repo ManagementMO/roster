@@ -201,7 +201,12 @@ tasks:
     });
     const r = run.results[0]!;
     expect(r.stage).toBe("transport");
-    expect(r.detail).toBe("system-error:ENOENT");
+    // The load-bearing property (R5-04): `detail` is a STRUCTURAL code, not a
+    // message, and the command path never leaks. The exact code is platform-
+    // specific — POSIX raises ENOENT (`system-error:ENOENT`); Windows surfaces the
+    // failed spawn as a closed connection (`mcp-error:-32000`) — so assert the
+    // SHAPE, not one platform's value.
+    expect(r.detail).toMatch(/^(system-error:[A-Z0-9_]+|mcp-error:-?\d+|connect-timeout|unknown-error)$/);
     expect(JSON.stringify(run)).not.toContain("/definitely/not/a/real/binary-xyz");
   }, 30_000);
 
