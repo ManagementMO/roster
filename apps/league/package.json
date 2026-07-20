@@ -19,6 +19,6 @@
     "@rosterhq/combine": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.20.0"
+    "@types/node": "^22.20.1"
   }
 }
