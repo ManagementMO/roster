@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -416,6 +417,82 @@ describe("tool-name collisions keep every physical tool addressable (R5-07)", ()
     }
     // All three physical tools were reachable — none shadowed by a collision.
     expect(reached).toEqual(new Set(["ran:safe.tool", "ran:safe tool", "ran:safe/tool"]));
+  });
+});
+
+describe("stable capability identities (production hardening task 1)", () => {
+  let skillsDir: string;
+
+  beforeEach(() => {
+    skillsDir = fs.mkdtempSync(path.join(os.tmpdir(), "roster-stable-skills-"));
+    for (const [slug, body] of [
+      ["safe.tool", "FIRST SKILL BODY"],
+      ["safe tool", "SECOND SKILL BODY"],
+    ]) {
+      const dir = path.join(skillsDir, slug);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, "SKILL.md"),
+        `---\nname: ${slug}\ndescription: stable collision skill\n---\n\n${body}\n`,
+      );
+    }
+  });
+
+  afterEach(() => fs.rmSync(skillsDir, { recursive: true, force: true }));
+
+  it("lists colliding skills separately and invokes each skill's own body", async () => {
+    rig = await buildRig("five", { skillsDir });
+    const draft = await rig.client.callTool({
+      name: "draft",
+      arguments: { need: "stable collision skill", k: 10 },
+    });
+    const payload = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text) as {
+      starters: Array<{ id: string; kind: string }>;
+    };
+    const skillIds = payload.starters
+      .filter((starter) => starter.kind === "skill")
+      .map((starter) => starter.id);
+    expect(skillIds).toHaveLength(2);
+    expect(new Set(skillIds).size).toBe(2);
+
+    const bodies = await Promise.all(
+      skillIds.map(async (tool) => {
+        const result = await rig.client.callTool({ name: "call", arguments: { tool } });
+        return JSON.parse((result.content as Array<{ text: string }>)[0]!.text).instructions;
+      }),
+    );
+    expect(new Set(bodies)).toEqual(new Set(["FIRST SKILL BODY", "SECOND SKILL BODY"]));
+  });
+
+  it("keeps a backend's stable id when a sanitized-colliding peer fails", async () => {
+    const manager = new BackendManager(2_000);
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await fakeBackend("mail!").connect(serverTransport);
+    await manager.connect({ name: "mail!", transport: clientTransport });
+    const expectedSource = `mail-${createHash("sha256").update("mail!", "utf8").digest("hex").slice(0, 10)}`;
+    const before = manager.allTools().map((tool) => tool.id);
+
+    await expect(
+      manager.connect({
+        name: "mail?",
+        transport: {
+          onclose: undefined,
+          onerror: undefined,
+          onmessage: undefined,
+          start: async () => { throw new Error("colliding peer failed"); },
+          send: async () => undefined,
+          close: async () => undefined,
+        } as never,
+      }),
+    ).rejects.toThrow("colliding peer failed");
+
+    expect(manager.allTools().map((tool) => tool.id)).toEqual(before);
+    expect(before).toEqual([
+      `${expectedSource}__echo`,
+      `${expectedSource}__flaky`,
+      `${expectedSource}__slow`,
+    ]);
+    await manager.close();
   });
 });
 

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 const INVALID = /[^a-zA-Z0-9_-]+/g;
 
 /** Sanitize any identifier segment to MCP-safe [a-zA-Z0-9_-]. */
@@ -22,21 +24,45 @@ export function sanitizeSource(raw: string): string {
   return s.length > 0 ? s : "x";
 }
 
+function sha256PublicName(raw: string): string {
+  return createHash("sha256").update(raw, "utf8").digest("hex");
+}
+
 /**
- * The deterministic part of a backend's source key: sanitize + the Playbook's
- * reserved-namespace rename. BackendManager may append a "-N" collision suffix
- * at connect time; callers needing the historical key of an UNAVAILABLE backend
- * (prune protection) use this base and tolerate the suffix separately.
+ * Make a public capability segment safe without conflating distinct raw names.
+ * Already-safe names retain their compact historical public identity.
  */
-export function normalizeBackendName(raw: string): string {
-  const name = sanitizeSource(raw);
+export function stableSegment(raw: string): string {
+  const safe = sanitizeSegment(raw);
+  return raw === safe ? safe : `${safe}-${sha256PublicName(raw).slice(0, 10)}`;
+}
+
+/**
+ * The deterministic, boundary-safe part of a backend source key. The source is
+ * encoded again in stableNamespacedId, so names sanitizeSource would change get
+ * their own raw-name hash before that second boundary can collapse them.
+ */
+export function stableBackendName(raw: string): string {
+  const segment = stableSegment(raw);
+  const source = sanitizeSource(segment);
+  const name = segment === source ? segment : `${source}-${sha256PublicName(raw).slice(0, 10)}`;
   return name === "skill" ? "skill-server" : name;
+}
+
+/** @deprecated Use stableBackendName for all public backend identities. */
+export function normalizeBackendName(raw: string): string {
+  return stableBackendName(raw);
 }
 
 export const NAMESPACE_SEP = "__";
 
 export function namespacedId(source: string, name: string): string {
   return `${sanitizeSource(source)}${NAMESPACE_SEP}${sanitizeSegment(name)}`;
+}
+
+/** Public capability id that remains unique across sanitizer collisions. */
+export function stableNamespacedId(source: string, rawName: string): string {
+  return `${sanitizeSource(source)}${NAMESPACE_SEP}${stableSegment(rawName)}`;
 }
 
 export function parseNamespacedId(id: string): { source: string; name: string } | null {

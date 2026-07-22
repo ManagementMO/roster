@@ -151,7 +151,7 @@ export class RosterServer {
   ): void {
     const entries: CapabilityEntry[] = [
       ...this.manager.allTools(),
-      ...[...this.skills.values()].map(skillToCapabilityEntry),
+      ...[...this.skills.entries()].map(([id, skill]) => skillToCapabilityEntry(skill, id)),
     ];
     this.store.upsertCapabilities(entries);
     this.store.pruneMissing(new Set(entries.map((e) => e.id)), unavailableSources, {

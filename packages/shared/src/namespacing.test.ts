@@ -5,6 +5,9 @@ import {
   parseNamespacedId,
   sanitizeSegment,
   sanitizeSource,
+  stableBackendName,
+  stableNamespacedId,
+  stableSegment,
 } from "./namespacing.js";
 
 describe("namespacing", () => {
@@ -15,6 +18,14 @@ describe("namespacing", () => {
   it("sanitizes hostile characters", () => {
     expect(sanitizeSegment("we!rd name/©")).toBe("we-rd-name");
     expect(namespacedId("my server (local)", "read/file")).toBe("my-server-local__read-file");
+  });
+
+  it("makes a sanitized public segment stable without collapsing distinct raw names", () => {
+    expect(stableSegment("safe.tool")).toMatch(/^safe-tool-[a-f0-9]{10}$/);
+    expect(stableSegment("safe tool")).not.toBe(stableSegment("safe.tool"));
+    expect(stableNamespacedId("my server (local)", "read/file")).toMatch(
+      /^my-server-local__read-file-[a-f0-9]{10}$/,
+    );
   });
 
   it("never leaves the separator inside the source segment", () => {
@@ -34,10 +45,19 @@ describe("namespacing", () => {
     expect(parseNamespacedId(leading)).toEqual({ source: "a", name: "_b" });
   });
 
-  it("normalizeBackendName applies the reserved-namespace rename deterministically", () => {
+  it("normalizeBackendName delegates to the stable reserved-namespace identity", () => {
     expect(normalizeBackendName("skill")).toBe("skill-server");
-    expect(normalizeBackendName("my server")).toBe("my-server");
+    expect(normalizeBackendName("my server")).toBe(stableBackendName("my server"));
     expect(normalizeBackendName("memory")).toBe("memory");
+  });
+
+  it("keeps backend identities stable across sanitized collisions", () => {
+    expect(stableBackendName("mail!")).toBe(stableBackendName("mail!"));
+    expect(stableBackendName("mail!")).not.toBe(stableBackendName("mail?"));
+    expect(
+      stableNamespacedId(stableBackendName("a__b"), "tool"),
+    ).not.toBe(stableNamespacedId(stableBackendName("a_b"), "tool"));
+    expect(stableBackendName("skill")).toBe("skill-server");
   });
 
   it("round-trips parse", () => {
