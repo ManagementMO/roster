@@ -28,6 +28,12 @@ describe("namespacing", () => {
     );
   });
 
+  it("rehash-qualifies safe raw names that impersonate generated suffixes", () => {
+    const generated = stableSegment("safe.tool");
+    expect(stableSegment(generated)).not.toBe(generated);
+    expect(stableSegment(generated)).toMatch(new RegExp(`^${generated}-[a-f0-9]{10}$`));
+  });
+
   it("never leaves the separator inside the source segment", () => {
     expect(sanitizeSource("a__b__c")).toBe("a_b_c");
     const id = namespacedId("a__b", "tool__name");
@@ -58,6 +64,8 @@ describe("namespacing", () => {
       stableNamespacedId(stableBackendName("a__b"), "tool"),
     ).not.toBe(stableNamespacedId(stableBackendName("a_b"), "tool"));
     expect(stableBackendName("skill")).toBe("skill-server");
+    expect(stableBackendName("skill-server")).not.toBe(stableBackendName("skill"));
+    expect(stableBackendName("skill-server")).toMatch(/^skill-server-[a-f0-9]{10}$/);
   });
 
   it("round-trips parse", () => {

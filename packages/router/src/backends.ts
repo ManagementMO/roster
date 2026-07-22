@@ -61,6 +61,7 @@ interface ConnectedBackend {
  */
 export class BackendManager {
   private backends = new Map<string, ConnectedBackend>();
+  private connecting = new Set<string>();
 
   constructor(
     private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS,
@@ -70,31 +71,35 @@ export class BackendManager {
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
     // The source id is derived from the raw configured name before connecting,
     // so a failed peer cannot change an already-public backend identity.
-    let name = stableBackendName(config.name);
-    let suffix = 2;
-    const base = name;
-    while (this.backends.has(name)) name = `${base}-${suffix++}`;
-    const client = new Client({ name: "roster-router", version: "0.0.1" });
-    const transport: Transport =
-      "transport" in config
-        ? config.transport
-        : new StdioClientTransport({
-            command: config.command,
-            args: config.args ?? [],
-            // Only explicitly-configured env vars flow through; nothing is persisted or logged.
-            env: config.env,
-            stderr: "ignore",
-          });
+    const name = stableBackendName(config.name);
+    if (this.backends.has(name) || this.connecting.has(name)) {
+      throw new Error(`duplicate backend identity: ${name}`);
+    }
+    this.connecting.add(name);
     // Bound the handshake AND close the spawned child on timeout, so a wedged
     // backend neither hangs boot nor leaks a process.
+    let client: Client | undefined;
     try {
+      client = new Client({ name: "roster-router", version: "0.0.1" });
+      const transport: Transport =
+        "transport" in config
+          ? config.transport
+          : new StdioClientTransport({
+              command: config.command,
+              args: config.args ?? [],
+              // Only explicitly-configured env vars flow through; nothing is persisted or logged.
+              env: config.env,
+              stderr: "ignore",
+            });
       await withTimeout(client.connect(transport), this.connectTimeoutMs, "connect timeout");
       const tools = await withTimeout(this.fetchTools(name, client), this.connectTimeoutMs, "listTools timeout");
       this.backends.set(name, { name, client, tools });
       return tools;
     } catch (err) {
-      await client.close().catch(() => undefined);
+      await client?.close().catch(() => undefined);
       throw err;
+    } finally {
+      this.connecting.delete(name);
     }
   }
 

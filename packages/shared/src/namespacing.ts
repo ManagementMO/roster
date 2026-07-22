@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 const INVALID = /[^a-zA-Z0-9_-]+/g;
+const GENERATED_SUFFIX = /-[a-f0-9]{10}$/;
 
 /** Sanitize any identifier segment to MCP-safe [a-zA-Z0-9_-]. */
 export function sanitizeSegment(raw: string): string {
@@ -34,7 +35,9 @@ function sha256PublicName(raw: string): string {
  */
 export function stableSegment(raw: string): string {
   const safe = sanitizeSegment(raw);
-  return raw === safe ? safe : `${safe}-${sha256PublicName(raw).slice(0, 10)}`;
+  return raw === safe && !GENERATED_SUFFIX.test(raw)
+    ? safe
+    : `${safe}-${sha256PublicName(raw).slice(0, 10)}`;
 }
 
 /**
@@ -45,7 +48,9 @@ export function stableSegment(raw: string): string {
 export function stableBackendName(raw: string): string {
   const segment = stableSegment(raw);
   const source = sanitizeSource(segment);
-  const name = segment === source ? segment : `${source}-${sha256PublicName(raw).slice(0, 10)}`;
+  const name = segment === source && source !== "skill-server"
+    ? segment
+    : `${source}-${sha256PublicName(raw).slice(0, 10)}`;
   return name === "skill" ? "skill-server" : name;
 }
 

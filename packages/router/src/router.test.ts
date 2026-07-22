@@ -12,6 +12,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { CoachStore, openCoachDb, type CoachDb } from "@rosterhq/coach";
 import { scanSkillLibrary } from "@rosterhq/playbook";
+import { stableNamespacedId } from "@rosterhq/shared";
 import { BackendManager } from "./backends.js";
 import { RosterServer, type RouterMode } from "./rosterServer.js";
 
@@ -449,19 +450,19 @@ describe("stable capability identities (production hardening task 1)", () => {
     const payload = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text) as {
       starters: Array<{ id: string; kind: string }>;
     };
+    const expectedBodies = new Map([
+      [stableNamespacedId("skill", "safe.tool"), "FIRST SKILL BODY"],
+      [stableNamespacedId("skill", "safe tool"), "SECOND SKILL BODY"],
+    ]);
     const skillIds = payload.starters
       .filter((starter) => starter.kind === "skill")
       .map((starter) => starter.id);
-    expect(skillIds).toHaveLength(2);
-    expect(new Set(skillIds).size).toBe(2);
+    expect(new Set(skillIds)).toEqual(new Set(expectedBodies.keys()));
 
-    const bodies = await Promise.all(
-      skillIds.map(async (tool) => {
-        const result = await rig.client.callTool({ name: "call", arguments: { tool } });
-        return JSON.parse((result.content as Array<{ text: string }>)[0]!.text).instructions;
-      }),
-    );
-    expect(new Set(bodies)).toEqual(new Set(["FIRST SKILL BODY", "SECOND SKILL BODY"]));
+    for (const [tool, body] of expectedBodies) {
+      const result = await rig.client.callTool({ name: "call", arguments: { tool } });
+      expect(JSON.parse((result.content as Array<{ text: string }>)[0]!.text).instructions).toBe(body);
+    }
   });
 
   it("keeps a backend's stable id when a sanitized-colliding peer fails", async () => {
@@ -492,6 +493,51 @@ describe("stable capability identities (production hardening task 1)", () => {
       `${expectedSource}__flaky`,
       `${expectedSource}__slow`,
     ]);
+    await manager.close();
+  });
+
+  it("rejects a duplicate stable backend identity instead of allocating an order-dependent suffix", async () => {
+    const manager = new BackendManager(2_000);
+    const [firstClient, firstServer] = InMemoryTransport.createLinkedPair();
+    await fakeBackend("duplicate").connect(firstServer);
+    await manager.connect({ name: "duplicate", transport: firstClient });
+    const before = manager.allTools().map((tool) => tool.id);
+
+    await expect(
+      manager.connect({
+        name: "duplicate",
+        transport: {
+          onclose: undefined,
+          onerror: undefined,
+          onmessage: undefined,
+          start: async () => undefined,
+          send: async () => undefined,
+          close: async () => undefined,
+        } as never,
+      }),
+    ).rejects.toThrow(/^duplicate backend identity: duplicate$/);
+
+    expect(manager.allTools().map((tool) => tool.id)).toEqual(before);
+    expect(before.some((id) => id.includes("-2__"))).toBe(false);
+    await manager.close();
+  });
+
+  it("reserves a stable backend identity while its first connection is in flight", async () => {
+    const manager = new BackendManager(2_000);
+    const [firstClient, firstServer] = InMemoryTransport.createLinkedPair();
+    const [secondClient, secondServer] = InMemoryTransport.createLinkedPair();
+    await Promise.all([fakeBackend("parallel").connect(firstServer), fakeBackend("parallel").connect(secondServer)]);
+
+    const results = await Promise.allSettled([
+      manager.connect({ name: "parallel", transport: firstClient }),
+      manager.connect({ name: "parallel", transport: secondClient }),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((result) => result.status === "rejected")[0]).toMatchObject({
+      reason: new Error("duplicate backend identity: parallel"),
+    });
+    expect(manager.allTools().every((tool) => tool.id.startsWith("parallel__"))).toBe(true);
     await manager.close();
   });
 });
