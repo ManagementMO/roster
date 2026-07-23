@@ -126,7 +126,21 @@ function hasUnescapedQuote(text: string, quote: string): boolean {
 }
 
 function isPathOrFilenameLiteral(text: string): boolean {
-  return /[\\/]/.test(text) || /^[a-z0-9_-]{1,64}\.[a-z0-9_-]{1,16}$/.test(text);
+  if (
+    text.startsWith("/") ||
+    text.startsWith("./") ||
+    text.startsWith("../") ||
+    text.startsWith(".\\") ||
+    text.startsWith("..\\") ||
+    text.startsWith("\\\\") ||
+    /^[a-z]:[\\/]/.test(text)
+  ) {
+    return true;
+  }
+  return (
+    /^[a-z0-9_-]{1,64}\.[a-z0-9_-]{1,16}$/.test(text) ||
+    /^[a-z0-9._-]{1,64}(?:[\\/][a-z0-9._-]{1,64}){1,8}$/.test(text)
+  );
 }
 
 /**

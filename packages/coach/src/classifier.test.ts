@@ -150,6 +150,18 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
     expect(classifyToolFailKind('"401 Unauthorized"')).toBe("auth");
   });
 
+  it("classifies a fully quoted timeout diagnostic that names a path", () => {
+    expect(classifyToolFailKind('"request timed out at /v1/tools"')).toBe("timeout");
+  });
+
+  it("classifies a fully quoted internal diagnostic that names a path", () => {
+    expect(classifyToolFailKind('"500 Internal Server Error at /v1/tools"')).toBe("internal");
+  });
+
+  it("classifies a fully quoted auth diagnostic that names a path", () => {
+    expect(classifyToolFailKind('"401 Unauthorized for /v1/tools"')).toBe("auth");
+  });
+
   it("does not revive a quoted auth-token file path", () => {
     expect(classifyToolFailKind("ENOENT open 'auth-token.txt'")).toBe("other");
   });
@@ -160,6 +172,18 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
 
   it("does not classify a fully quoted auth-token filename", () => {
     expect(classifyToolFailKind('"auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted relative auth-token path", () => {
+    expect(classifyToolFailKind('"./auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows drive path", () => {
+    expect(classifyToolFailKind('"C:\\data\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows UNC path", () => {
+    expect(classifyToolFailKind('"\\\\server\\share\\auth-token.txt"')).toBe("other");
   });
 
   it("does not classify a message composed of multiple quoted literals", () => {
