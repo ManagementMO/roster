@@ -364,9 +364,20 @@ describe("pruneMissing grace window", () => {
       const t0 = 1_000_000;
       const refreshedAt = t0 + 2_000;
       pruneStore.upsertCapabilities([tool("race__tool", "tool", "race target")], t0);
+      refreshDb.pragma("busy_timeout = 0");
 
-      let selectRanInsideTransaction: boolean | undefined;
-      let refreshRan = false;
+      const sqliteErrorCode = (error: unknown): string | undefined => {
+        if (
+          typeof error !== "object" ||
+          error === null ||
+          !("code" in error) ||
+          typeof error.code !== "string"
+        ) {
+          return undefined;
+        }
+        return error.code;
+      };
+      let refreshErrorCode: string | undefined;
       const originalPrepare = pruneDb.prepare.bind(pruneDb);
       pruneDb.prepare = ((source: string) => {
         const statement = originalPrepare(source);
@@ -374,12 +385,12 @@ describe("pruneMissing grace window", () => {
           const originalAll = statement.all.bind(statement);
           statement.all = (() => {
             const rows = originalAll();
-            selectRanInsideTransaction = pruneDb.inTransaction;
-            if (!selectRanInsideTransaction) {
+            try {
               refreshDb
                 .prepare("UPDATE capability SET last_seen = ? WHERE id = ?")
                 .run(refreshedAt, "race__tool");
-              refreshRan = true;
+            } catch (error) {
+              refreshErrorCode = sqliteErrorCode(error);
             }
             return rows;
           }) as typeof statement.all;
@@ -387,16 +398,20 @@ describe("pruneMissing grace window", () => {
         return statement;
       }) as CoachDb["prepare"];
 
-      pruneStore.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
-
-      // The old implementation reaches this branch: connection two refreshes
-      // after the stale SELECT, then connection one wrongly deletes that row.
-      if (refreshRan) {
-        expect(
-          refreshDb.prepare("SELECT last_seen FROM capability WHERE id = ?").get("race__tool"),
-        ).toEqual({ last_seen: refreshedAt });
+      let pruneErrorCode: string | undefined;
+      try {
+        pruneStore.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
+      } catch (error) {
+        pruneErrorCode = sqliteErrorCode(error);
       }
-      expect(selectRanInsideTransaction).toBe(true);
+
+      // IMMEDIATE must reserve the writer lock before the SELECT. A merely
+      // deferred transaction still reports `inTransaction`, but lets this
+      // sibling UPDATE commit after the stale snapshot.
+      expect(refreshErrorCode).toBe("SQLITE_BUSY");
+      expect(pruneErrorCode).toBeUndefined();
+      expect(refreshDb.prepare("SELECT 1 FROM capability WHERE id = ?").get("race__tool"))
+        .toBeUndefined();
     } finally {
       pruneDb.close();
       refreshDb.close();
