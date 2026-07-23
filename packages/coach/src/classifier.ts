@@ -71,11 +71,14 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
   const redacted = normalized.replace(/'[^']*'|"[^"]*"/g, " ");
   const wholeMessage = normalized.trim();
   const quote = wholeMessage.at(0);
+  const isQuote = quote === "'" || quote === '"';
+  const interior = isQuote ? wholeMessage.slice(1, -1) : "";
   const unwrappedWholeMessage =
-    wholeMessage.length >= 2 && (quote === "'" || quote === '"') && wholeMessage.at(-1) === quote
-      ? wholeMessage.slice(1, -1)
-      : wholeMessage;
-  const t = redacted.trim() || unwrappedWholeMessage;
+    wholeMessage.length >= 2 && isQuote && wholeMessage.at(-1) === quote && !hasUnescapedQuote(interior, quote)
+      ? interior
+      : "";
+  const fallback = isPathOrFilenameLiteral(unwrappedWholeMessage) ? "" : unwrappedWholeMessage;
+  const t = redacted.trim() || fallback;
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
   // higher rate limit" are quota messages that a bare `token`/`auth` word would
@@ -107,6 +110,23 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
     return "auth";
   }
   return "other";
+}
+
+function hasUnescapedQuote(text: string, quote: string): boolean {
+  let precedingBackslashes = 0;
+  for (const character of text) {
+    if (character === "\\") {
+      precedingBackslashes += 1;
+      continue;
+    }
+    if (character === quote && precedingBackslashes % 2 === 0) return true;
+    precedingBackslashes = 0;
+  }
+  return false;
+}
+
+function isPathOrFilenameLiteral(text: string): boolean {
+  return /[\\/]/.test(text) || /^[a-z0-9_-]{1,64}\.[a-z0-9_-]{1,16}$/.test(text);
 }
 
 /**

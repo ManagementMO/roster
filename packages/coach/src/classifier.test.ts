@@ -154,6 +154,18 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
     expect(classifyToolFailKind("ENOENT open 'auth-token.txt'")).toBe("other");
   });
 
+  it("does not classify a fully quoted auth-token path", () => {
+    expect(classifyToolFailKind('"/data/auth-tokens.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted auth-token filename", () => {
+    expect(classifyToolFailKind('"auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a message composed of multiple quoted literals", () => {
+    expect(classifyToolFailKind("'auth-token.txt' 'ignored'")).toBe("other");
+  });
+
   it("does not treat a literal token as an auth credential", () => {
     expect(classifyToolFailKind("Unexpected token < in JSON")).toBe("other");
   });
