@@ -66,7 +66,7 @@ export function classifyOutcome(e: CallEvidence): OutcomeClass {
 export function classifyToolFailKind(errorText: string): ToolFailKind {
   // Strip quoted literals so echoed paths/args/JSON can never trigger a kind.
   // A fully quoted diagnostic is the narrow exception: stripping it would erase
-  // the only diagnostic, so classify its unwrapped whole-message text instead.
+  // the only diagnostic, so classify only its non-path diagnostic context.
   const normalized = errorText.toLowerCase();
   const redacted = normalized.replace(/'[^']*'|"[^"]*"/g, " ");
   const wholeMessage = normalized.trim();
@@ -77,7 +77,7 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
     wholeMessage.length >= 2 && isQuote && wholeMessage.at(-1) === quote && !hasUnescapedQuote(interior, quote)
       ? interior
       : "";
-  const fallback = isPathOrFilenameLiteral(unwrappedWholeMessage) ? "" : unwrappedWholeMessage;
+  const fallback = stripPathLiteralTokens(unwrappedWholeMessage);
   const t = redacted.trim() || fallback;
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
@@ -125,31 +125,18 @@ function hasUnescapedQuote(text: string, quote: string): boolean {
   return false;
 }
 
-function isPathOrFilenameLiteral(text: string): boolean {
-  const hasNoWhitespace = !/\s/.test(text);
-  if (
-    text.startsWith("/") ||
-    text.startsWith("./") ||
-    text.startsWith("../") ||
-    text.startsWith(".\\") ||
-    text.startsWith("..\\") ||
-    text.startsWith("~/") ||
-    text.startsWith("~\\") ||
-    text.startsWith("\\\\") ||
-    /^[a-z]:[\\/]/.test(text) ||
-    /^~[a-z0-9_-]{1,64}[\\/]/.test(text)
-  ) {
-    return true;
-  }
-  if (
-    hasNoWhitespace &&
-    (/[\\/]/.test(text) || /^[a-z][a-z0-9+.-]{0,31}:(?:\/\/)?[^\s]{1,512}$/.test(text))
-  ) {
-    return true;
-  }
+function stripPathLiteralTokens(text: string): string {
+  return text
+    .split(/\s+/)
+    .filter((token) => !isPathUriOrFilenameToken(token))
+    .join(" ");
+}
+
+function isPathUriOrFilenameToken(token: string): boolean {
   return (
-    /^[a-z0-9_-]{1,64}\.[a-z0-9_-]{1,16}$/.test(text) ||
-    /^[a-z0-9._-]{1,64}(?:[\\/][a-z0-9._-]{1,64}){1,8}$/.test(text)
+    /[\\/]/.test(token) ||
+    /^[a-z][a-z0-9+.-]{0,31}:(?:\/\/)?[^\s]{1,512}$/.test(token) ||
+    /^[a-z0-9_-]{1,64}\.[a-z0-9_-]{1,16}$/.test(token)
   );
 }
 

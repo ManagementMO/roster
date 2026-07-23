@@ -210,6 +210,26 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
     expect(classifyToolFailKind('"~alice/Private Config/auth-token.txt"')).toBe("other");
   });
 
+  it("does not classify a fully quoted POSIX environment path with spaces", () => {
+    expect(classifyToolFailKind('"$HOME/Private Config/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted braced POSIX environment path with spaces", () => {
+    expect(classifyToolFailKind(`"\${HOME}/Private Config/auth-token.txt"`)).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows environment path with spaces", () => {
+    expect(classifyToolFailKind('"%USERPROFILE%\\Private Config\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted PowerShell environment path with spaces", () => {
+    expect(classifyToolFailKind('"$env:USERPROFILE\\Private Config\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted relative path with spaces", () => {
+    expect(classifyToolFailKind('"Private Config/auth-token.txt"')).toBe("other");
+  });
+
   it("does not classify a message composed of multiple quoted literals", () => {
     expect(classifyToolFailKind("'auth-token.txt' 'ignored'")).toBe("other");
   });
