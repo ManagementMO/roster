@@ -65,7 +65,17 @@ export function classifyOutcome(e: CallEvidence): OutcomeClass {
  */
 export function classifyToolFailKind(errorText: string): ToolFailKind {
   // Strip quoted literals so echoed paths/args/JSON can never trigger a kind.
-  const t = errorText.toLowerCase().replace(/'[^']*'|"[^"]*"/g, " ");
+  // A fully quoted diagnostic is the narrow exception: stripping it would erase
+  // the only diagnostic, so classify its unwrapped whole-message text instead.
+  const normalized = errorText.toLowerCase();
+  const redacted = normalized.replace(/'[^']*'|"[^"]*"/g, " ");
+  const wholeMessage = normalized.trim();
+  const quote = wholeMessage.at(0);
+  const unwrappedWholeMessage =
+    wholeMessage.length >= 2 && (quote === "'" || quote === '"') && wholeMessage.at(-1) === quote
+      ? wholeMessage.slice(1, -1)
+      : wholeMessage;
+  const t = redacted.trim() || unwrappedWholeMessage;
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
   // higher rate limit" are quota messages that a bare `token`/`auth` word would

@@ -136,3 +136,25 @@ describe("classifyToolFailKind — real-wire hardening (DEF-6)", () => {
     expect(isAttributable(classifyOutcome({ isError: true, errorText: "500 Internal Server Error: validation panic" }))).toBe(true);
   });
 });
+
+describe("classifyToolFailKind — fully quoted diagnostics", () => {
+  it("classifies a fully quoted timeout diagnostic", () => {
+    expect(classifyToolFailKind('"request timed out"')).toBe("timeout");
+  });
+
+  it("classifies a fully quoted internal diagnostic", () => {
+    expect(classifyToolFailKind('"Internal Server Error"')).toBe("internal");
+  });
+
+  it("classifies a fully quoted auth diagnostic", () => {
+    expect(classifyToolFailKind('"401 Unauthorized"')).toBe("auth");
+  });
+
+  it("does not revive a quoted auth-token file path", () => {
+    expect(classifyToolFailKind("ENOENT open 'auth-token.txt'")).toBe("other");
+  });
+
+  it("does not treat a literal token as an auth credential", () => {
+    expect(classifyToolFailKind("Unexpected token < in JSON")).toBe("other");
+  });
+});
