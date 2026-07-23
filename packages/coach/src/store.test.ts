@@ -1,4 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
 import { CoachStore } from "./store.js";
@@ -198,6 +201,41 @@ describe("outcomes, soft-fail, ratings", () => {
     expect(rows.every((r) => r.soft_fail === 0)).toBe(true);
   });
 
+  it("recordOutcome rolls back its insert and soft-fail update when suggestion marking fails", () => {
+    store.recordOutcome({
+      session: "rollback-session",
+      source: "fs",
+      capability: "fs__read_file",
+      outcomeClass: "tool_fail:internal",
+      latencyMs: 10,
+      argsHash: "first-args-hash",
+    });
+    store.recordSuggestion("rollback-session", "failed__tool", "fs__read_file");
+    db.exec(`
+      CREATE TRIGGER fail_suggestion_update
+      BEFORE UPDATE OF taken ON suggestion
+      BEGIN
+        SELECT RAISE(ABORT, 'forced suggestion update failure');
+      END
+    `);
+
+    expect(() =>
+      store.recordOutcome({
+        session: "rollback-session",
+        source: "fs",
+        capability: "fs__read_file",
+        outcomeClass: "success",
+        latencyMs: 11,
+        argsHash: "retry-args-hash",
+      }),
+    ).toThrow("forced suggestion update failure");
+
+    expect(db.prepare("SELECT id, soft_fail FROM outcome ORDER BY id").all()).toEqual([
+      { id: 1, soft_fail: 0 },
+    ]);
+    expect(db.prepare("SELECT taken FROM suggestion").get()).toEqual({ taken: 0 });
+  });
+
   it("computes Wilson ratings excluding soft-fail and explored rows", () => {
     for (let i = 0; i < 8; i++) {
       store.recordOutcome({ session: `s${i}`, source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 100 + i });
@@ -314,6 +352,56 @@ describe("pruneMissing grace window", () => {
     const gone = store.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
     expect(gone).toEqual(["x__old"]);
     expect(store.listCapabilities().map((c) => c.id)).toEqual(["y__fresh"]);
+  });
+
+  it("pruneMissing selects and deletes under one immediate transaction", () => {
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-prune-"));
+    const path = join(directory, "coach.db");
+    const pruneDb = openCoachDb(path);
+    const refreshDb = openCoachDb(path);
+    try {
+      const pruneStore = new CoachStore(pruneDb);
+      const t0 = 1_000_000;
+      const refreshedAt = t0 + 2_000;
+      pruneStore.upsertCapabilities([tool("race__tool", "tool", "race target")], t0);
+
+      let selectRanInsideTransaction: boolean | undefined;
+      let refreshRan = false;
+      const originalPrepare = pruneDb.prepare.bind(pruneDb);
+      pruneDb.prepare = ((source: string) => {
+        const statement = originalPrepare(source);
+        if (source === "SELECT id, source, last_seen, def_hash, quarantined FROM capability") {
+          const originalAll = statement.all.bind(statement);
+          statement.all = (() => {
+            const rows = originalAll();
+            selectRanInsideTransaction = pruneDb.inTransaction;
+            if (!selectRanInsideTransaction) {
+              refreshDb
+                .prepare("UPDATE capability SET last_seen = ? WHERE id = ?")
+                .run(refreshedAt, "race__tool");
+              refreshRan = true;
+            }
+            return rows;
+          }) as typeof statement.all;
+        }
+        return statement;
+      }) as CoachDb["prepare"];
+
+      pruneStore.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
+
+      // The old implementation reaches this branch: connection two refreshes
+      // after the stale SELECT, then connection one wrongly deletes that row.
+      if (refreshRan) {
+        expect(
+          refreshDb.prepare("SELECT last_seen FROM capability WHERE id = ?").get("race__tool"),
+        ).toEqual({ last_seen: refreshedAt });
+      }
+      expect(selectRanInsideTransaction).toBe(true);
+    } finally {
+      pruneDb.close();
+      refreshDb.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 

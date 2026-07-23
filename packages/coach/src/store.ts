@@ -351,15 +351,16 @@ export class CoachStore {
     opts: { keepSeenSince?: number; now?: number } = {},
   ): string[] {
     const now = opts.now ?? Date.now();
-    const all = this.db
-      .prepare("SELECT id, source, last_seen, def_hash, quarantined FROM capability")
-      .all() as Array<{
+    const selectAll = this.db.prepare(
+      "SELECT id, source, last_seen, def_hash, quarantined FROM capability",
+    );
+    let gone: Array<{
       id: string;
       source: string;
       last_seen: number;
       def_hash: string;
       quarantined: number;
-    }>;
+    }> = [];
     // protectedSources: backends CONFIGURED but unreachable this boot — a
     // transient outage must never delete learned vectors or the drift baseline.
     // keepSeenSince: rows another process upserted while WE were booting (its
@@ -372,14 +373,21 @@ export class CoachStore {
     // otherwise an unavailable backend's learned state is pruned despite being
     // protected (over-protection is the safe direction: keep, never wrongly delete).
     const deSuffix = (source: string): string => source.replace(/-\d+$/, "");
-    const gone = all.filter(
-      (r) =>
-        !presentIds.has(r.id) &&
-        !protectedSources.has(r.source) &&
-        !protectedSources.has(deSuffix(r.source)) &&
-        r.last_seen < keepSince,
-    );
     const run = this.db.transaction(() => {
+      const all = selectAll.all() as Array<{
+        id: string;
+        source: string;
+        last_seen: number;
+        def_hash: string;
+        quarantined: number;
+      }>;
+      gone = all.filter(
+        (r) =>
+          !presentIds.has(r.id) &&
+          !protectedSources.has(r.source) &&
+          !protectedSources.has(deSuffix(r.source)) &&
+          r.last_seen < keepSince,
+      );
       const delCap = this.db.prepare("DELETE FROM capability WHERE id = ?");
       const delFts = this.db.prepare("DELETE FROM capability_fts WHERE id = ?");
       const delVec = this.db.prepare("DELETE FROM vec WHERE capability = ?");
@@ -400,7 +408,7 @@ export class CoachStore {
         delVec.run(r.id);
       }
     });
-    run();
+    run.immediate();
     return gone.map((r) => r.id);
   }
 
@@ -439,30 +447,33 @@ export class CoachStore {
 
   recordOutcome(input: RecordOutcomeInput): number {
     const ts = input.ts ?? Date.now();
-    const insert = this.db.prepare(`
-      INSERT INTO outcome(ts, session, source, capability, need_hash, args_hash, intent_cat,
-        class, latency_ms, soft_fail, substituted, explored, spec_ver)
-      VALUES(@ts, @session, @source, @capability, @need_hash, @args_hash, @intent_cat,
-        @class, @latency_ms, 0, @substituted, @explored, @spec_ver)
-    `);
-    const info = insert.run({
-      ts,
-      session: input.session,
-      source: input.source,
-      capability: input.capability,
-      need_hash: input.needHash ?? null,
-      args_hash: input.argsHash ?? null,
-      intent_cat: input.intentCategory ?? null,
-      class: input.outcomeClass,
-      latency_ms: Math.max(0, Math.round(input.latencyMs)),
-      substituted: input.substituted ? 1 : 0,
-      explored: input.explored ? 1 : 0,
-      spec_ver: input.specVersion ?? null,
+    const run = this.db.transaction(() => {
+      const insert = this.db.prepare(`
+        INSERT INTO outcome(ts, session, source, capability, need_hash, args_hash, intent_cat,
+          class, latency_ms, soft_fail, substituted, explored, spec_ver)
+        VALUES(@ts, @session, @source, @capability, @need_hash, @args_hash, @intent_cat,
+          @class, @latency_ms, 0, @substituted, @explored, @spec_ver)
+      `);
+      const info = insert.run({
+        ts,
+        session: input.session,
+        source: input.source,
+        capability: input.capability,
+        need_hash: input.needHash ?? null,
+        args_hash: input.argsHash ?? null,
+        intent_cat: input.intentCategory ?? null,
+        class: input.outcomeClass,
+        latency_ms: Math.max(0, Math.round(input.latencyMs)),
+        substituted: input.substituted ? 1 : 0,
+        explored: input.explored ? 1 : 0,
+        spec_ver: input.specVersion ?? null,
+      });
+      const id = Number(info.lastInsertRowid);
+      this.markSoftFailIfRetry(id, input);
+      this.markSuggestionTaken(input.session, input.capability);
+      return id;
     });
-    const id = Number(info.lastInsertRowid);
-    this.markSoftFailIfRetry(id, input);
-    this.markSuggestionTaken(input.session, input.capability);
-    return id;
+    return run.immediate();
   }
 
   /**
