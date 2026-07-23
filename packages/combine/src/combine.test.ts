@@ -68,6 +68,85 @@ describe("suite parsing", () => {
     ).toThrow(/duplicate/);
   });
 
+  it("rejects non-object task records with stable task locations", () => {
+    for (const task of ["null", "[]", "a string", "42"]) {
+      expect(() =>
+        parseSuite(`suite: s\nversion: "1"\ncategory: c\ntasks:\n  - ${task}\n`),
+      ).toThrow(/tasks\[0\]: task must be an object/);
+    }
+  });
+
+  it("rejects missing or invalid task identifiers and descriptions", () => {
+    for (const task of [
+      "invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]",
+      "id: 42\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]",
+      "id: a\n    description: 42\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]",
+    ]) {
+      expect(() =>
+        parseSuite(`suite: s\nversion: "1"\ncategory: c\ntasks:\n  - ${task}\n`),
+      ).toThrow(/tasks\[0\]: (id required|description must be a string)/);
+    }
+  });
+
+  it("rejects malformed invoke arguments without echoing them", () => {
+    for (const args of ["null", "[]", '"not-an-object"']) {
+      const attempt = () =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: { tool: t, args: ${args} }\n    verify: [{ kind: fileExists, path: x }]\n`,
+        );
+      expect(attempt).toThrow(/tasks\[0\]\.invoke: args must be an object/);
+      expect(attempt).not.toThrow(/DO-NOT-LEAK/);
+    }
+    expect(() =>
+      parseSuite(
+        `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: []\n    verify: [{ kind: fileExists, path: x }]\n`,
+      ),
+    ).toThrow(/tasks\[0\]: invoke required/);
+  });
+
+  it("rejects malformed setup files", () => {
+    for (const setup of [
+      "[]",
+      '"not-an-object"',
+      "{ files: [] }",
+      '{ files: { seed: 42 } }',
+    ]) {
+      expect(() =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    setup: ${setup}\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]\n`,
+        ),
+      ).toThrow(/tasks\[0\]\.setup/);
+    }
+  });
+
+  it("rejects malformed verifier records and required verifier fields", () => {
+    for (const verifier of [
+      "null",
+      "[]",
+      '"not-an-object"',
+      "{ kind: 42 }",
+      "{ kind: fileEquals, path: x }",
+      "{ kind: resultContains, contains: 42 }",
+    ]) {
+      const attempt = () =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: { tool: t, args: { credential: DO-NOT-LEAK } }\n    verify: [${verifier}]\n`,
+        );
+      expect(attempt).toThrow(/tasks\[0\]\.verify\[0\]/);
+      expect(attempt).not.toThrow(/DO-NOT-LEAK/);
+    }
+  });
+
+  it("rejects non-positive and non-finite timeouts", () => {
+    for (const timeoutMs of ["0", "-1", ".nan", ".inf", "-.inf"]) {
+      expect(() =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    timeoutMs: ${timeoutMs}\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]\n`,
+        ),
+      ).toThrow(/tasks\[0\]: timeoutMs must be a finite positive number/);
+    }
+  });
+
   it("templates {{sandbox}} and {{run_id}} recursively", () => {
     const out = template(
       { a: "{{sandbox}}/x", b: ["{{run_id}}"], c: 3 },
