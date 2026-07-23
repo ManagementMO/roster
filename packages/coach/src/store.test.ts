@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
-import { CoachStore } from "./store.js";
+import { CoachStore, defHash } from "./store.js";
 import { normalize } from "./oats.js";
 
 const tool = (id: string, name: string, description: string): CapabilityEntry => ({
@@ -321,10 +321,74 @@ describe("model-switch guards", () => {
     expect((db.prepare("SELECT adj, dims FROM vec").get() as { adj: Buffer | null; dims: number })).toMatchObject({ adj: null, dims: 2 });
   });
 
-  it("loadVecs drops length-mismatched blobs instead of reading garbage", () => {
+  it.each([
+    {
+      corruption: "zero dimensions",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 0 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "fractional dimensions",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 1.5 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "a length-mismatched blob",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 7 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "a non-finite base vector",
+      corrupt: () => db
+        .prepare("UPDATE vec SET base = ? WHERE capability = ?")
+        .run(Buffer.from(new Float32Array([Number.NaN, 0, 0]).buffer), "a__t"),
+    },
+  ])("repairs a vector row with $corruption", ({ corrupt }) => {
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
-    db.prepare("UPDATE vec SET dims = 7").run(); // corrupt: blob is 12B, dims says 28B
+    corrupt();
+
     expect(store.loadVecs().has("a__t")).toBe(false);
+    expect(store.vecCapabilityIds().has("a__t")).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
+  });
+
+  it.each([
+    ["a length-mismatched adjustment", Buffer.alloc(5)],
+    [
+      "a non-finite adjustment",
+      Buffer.from(new Float32Array([1, Number.POSITIVE_INFINITY, 0]).buffer),
+    ],
+  ])("clears %s while retaining the valid base vector", (_corruption, adj) => {
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    db.prepare("UPDATE vec SET adj = ? WHERE capability = ?").run(adj, "a__t");
+
+    expect(Array.from(store.loadVecs().get("a__t") ?? [])).toEqual([1, 0, 0]);
+    expect(store.vecCapabilityIds().has("a__t")).toBe(true);
+    expect(db.prepare("SELECT adj FROM vec WHERE capability = ?").get("a__t")).toEqual({
+      adj: null,
+    });
+  });
+
+  it("rejects a stale backfill after capability drift", () => {
+    const original = tool("a__t", "t", "original definition");
+    store.upsertCapabilities([original]);
+    store.ensureEmbeddingModel("model-A");
+    const expected = { defHash: defHash(original), modelId: "model-A" };
+
+    store.upsertCapabilities([{ ...original, description: "drifted definition" }]);
+
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 123, expected)).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
+  });
+
+  it("rejects a stale backfill after an embedding-model switch", () => {
+    const entry = tool("a__t", "t", "stable definition");
+    store.upsertCapabilities([entry]);
+    store.ensureEmbeddingModel("model-A");
+    const expected = { defHash: defHash(entry), modelId: "model-A" };
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 122, expected)).toBe(true);
+
+    store.ensureEmbeddingModel("model-B");
+
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 123, expected)).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
   });
 });
 
@@ -450,6 +514,31 @@ describe("OATS nightly", () => {
     store.upsertCapabilities([tool("a__t", "t", "d")]);
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
     expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+  });
+
+  it("discards a non-finite need vector without aborting OATS", () => {
+    store.upsertCapabilities([tool("a__t", "t", "d")]);
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    for (let i = 0; i < 4; i++) {
+      const needHash = `need-${i}`;
+      store.storeNeedVec(needHash, new Float32Array([0, 1, 0]));
+      store.recordOutcome({
+        session: `s${i}`,
+        source: "a",
+        capability: "a__t",
+        outcomeClass: "success",
+        latencyMs: 10,
+        needHash,
+      });
+    }
+    db.prepare("UPDATE need_vec SET vec = ? WHERE need_hash = ?").run(
+      Buffer.from(new Float32Array([0, Number.NaN, 0]).buffer),
+      "need-0",
+    );
+
+    expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+    expect(db.prepare("SELECT 1 FROM need_vec WHERE need_hash = ?").get("need-0"))
+      .toBeUndefined();
   });
 });
 

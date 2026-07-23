@@ -1,5 +1,5 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CoachStore, openCoachDb, TransformersEmbeddings } from "@rosterhq/coach";
+import { CoachStore, defHash, openCoachDb, TransformersEmbeddings } from "@rosterhq/coach";
 import { normalizeBackendName } from "@rosterhq/shared";
 import { defaultSkillSources, scanSkillSources, trustScan } from "@rosterhq/playbook";
 import { BackendManager, RosterServer, type RouterMode } from "@rosterhq/router";
@@ -127,9 +127,10 @@ function makeLazyEmbedder(
     }
     provider ??= new TransformersEmbeddings();
     await provider.embed(["roster warmup"]);
+    const modelId = provider.modelId;
     // Model-switch guard: stale OATS vectors from a different embedding space
     // are wiped before we backfill in this one.
-    store.ensureEmbeddingModel(provider.modelId);
+    store.ensureEmbeddingModel(modelId);
     // Backfill base vectors only for what's NOT already embedded in this
     // model's space — a warm coach.db re-embeds nothing (audit D4). This skip
     // is only sound because BOTH invalidators delete vec rows outright: the
@@ -147,7 +148,12 @@ function makeLazyEmbedder(
       const vecs = await provider.embed(texts, "document");
       batch.forEach((entry, j) => {
         const vec = vecs[j];
-        if (vec) store.storeBaseVec(entry.id, vec);
+        if (vec) {
+          store.storeBaseVec(entry.id, vec, Date.now(), {
+            defHash: defHash(entry),
+            modelId,
+          });
+        }
       });
     }
     warm = true;

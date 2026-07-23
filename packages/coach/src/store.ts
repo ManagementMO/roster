@@ -49,6 +49,13 @@ interface CapabilityRow {
   quarantined: number;
 }
 
+interface VecRow {
+  capability: string;
+  dims: number;
+  base: Buffer;
+  adj: Buffer | null;
+}
+
 const SOFT_FAIL_LOOKBACK = 3;
 const QUARANTINE_DWELL_MS = 24 * 3600 * 1000;
 // Lab weight sweep (real MiniLM, 133-tool corpus, 66 ground-truthed needs):
@@ -733,21 +740,48 @@ export class CoachStore {
 
   // ── vectors & OATS ──────────────────────────────────────────────────────
 
-  storeBaseVec(capability: string, vec: Float32Array, now = Date.now()): void {
+  storeBaseVec(
+    capability: string,
+    vec: Float32Array,
+    now = Date.now(),
+    expected?: { defHash: string; modelId: string },
+  ): boolean {
+    if (vec.length === 0 || vec.some((value) => !Number.isFinite(value))) return false;
     const normalized = normalize(vec);
-    this.db
+    const result = this.db
       .prepare(
-        `INSERT INTO vec(capability, dims, base, adj, updated_at) VALUES(?,?,?,NULL,?)
+        `INSERT INTO vec(capability, dims, base, adj, updated_at)
+         SELECT @capability, @dims, @base, NULL, @updatedAt
+         WHERE @guarded = 0 OR (
+           EXISTS (
+             SELECT 1 FROM capability
+             WHERE id = @capability AND def_hash = @expectedDefHash
+           )
+           AND EXISTS (
+             SELECT 1 FROM meta
+             WHERE key = 'embedding_model' AND value = @expectedModelId
+           )
+         )
          ON CONFLICT(capability) DO UPDATE SET
            -- a dims change means a different embedding space: the old adj is
            -- meaningless there and must not survive the base rewrite
            adj = CASE WHEN vec.dims != excluded.dims THEN NULL ELSE vec.adj END,
            dims = excluded.dims, base = excluded.base, updated_at = excluded.updated_at`,
       )
-      .run(capability, normalized.length, vecToBlob(normalized), now);
+      .run({
+        capability,
+        dims: normalized.length,
+        base: vecToBlob(normalized),
+        updatedAt: now,
+        guarded: expected ? 1 : 0,
+        expectedDefHash: expected?.defHash ?? null,
+        expectedModelId: expected?.modelId ?? null,
+      });
+    return result.changes === 1;
   }
 
   storeNeedVec(needHash: string, vec: Float32Array, now = Date.now()): void {
+    if (vec.length === 0 || vec.some((value) => !Number.isFinite(value))) return;
     const normalized = normalize(vec);
     this.db
       .prepare(
@@ -761,25 +795,52 @@ export class CoachStore {
    *  lets warm boots skip re-embedding what's already there instead of re-doing
    *  the whole roster every serve process (audit D4). */
   vecCapabilityIds(): Set<string> {
-    const rows = this.db.prepare("SELECT capability FROM vec").all() as Array<{ capability: string }>;
+    const rows = this.validVecRows();
     return new Set(rows.map((r) => r.capability));
   }
 
   /** adj if present, else base — the vector drafts actually use. */
   loadVecs(): Map<string, Float32Array> {
-    const rows = this.db
-      .prepare("SELECT capability, dims, base, adj FROM vec")
-      .all() as Array<{ capability: string; dims: number; base: Buffer; adj: Buffer | null }>;
+    const rows = this.validVecRows();
     const map = new Map<string, Float32Array>();
     for (const row of rows) {
-      try {
-        map.set(row.capability, blobToVec(row.adj ?? row.base, row.dims));
-      } catch {
-        // Length-mismatched blob (pre-guard data): drop from dense; the next
-        // warmup backfill rewrites it in the active model's space.
-      }
+      map.set(row.capability, blobToVec(row.adj ?? row.base, row.dims));
     }
     return map;
+  }
+
+  /**
+   * Validate and repair stored base/adjustment vectors under one writer lock.
+   * A corrupt base makes the row backfill-eligible; a corrupt derived
+   * adjustment is losslessly cleared so routing falls back to the valid base.
+   */
+  private validVecRows(): VecRow[] {
+    const read = this.db.prepare("SELECT capability, dims, base, adj FROM vec");
+    const deleteBase = this.db.prepare("DELETE FROM vec WHERE capability = ?");
+    const clearAdj = this.db.prepare("UPDATE vec SET adj = NULL WHERE capability = ?");
+    const repair = this.db.transaction(() => {
+      const rows = read.all() as VecRow[];
+      const valid: VecRow[] = [];
+      for (const row of rows) {
+        try {
+          blobToVec(row.base, row.dims);
+        } catch {
+          deleteBase.run(row.capability);
+          continue;
+        }
+        if (row.adj !== null) {
+          try {
+            blobToVec(row.adj, row.dims);
+          } catch {
+            clearAdj.run(row.capability);
+            row.adj = null;
+          }
+        }
+        valid.push(row);
+      }
+      return valid;
+    });
+    return repair.immediate();
   }
 
   /**
@@ -790,12 +851,11 @@ export class CoachStore {
    */
   runOats(now = Date.now()): { adjusted: number; skipped: number } {
     const since = now - 90 * 24 * 3600 * 1000;
-    const caps = this.db.prepare("SELECT capability, dims, base FROM vec").all() as Array<{
-      capability: string;
-      dims: number;
-      base: Buffer;
-    }>;
+    const caps = this.validVecRows();
     const needVecStmt = this.db.prepare("SELECT dims, vec FROM need_vec WHERE need_hash = ?");
+    const deleteNeedVecStmt = this.db.prepare(
+      "DELETE FROM need_vec WHERE need_hash = ? AND dims = ? AND vec = ?",
+    );
     // Caps are PER SIDE: one shared limit let a chatty failing tool fill the
     // whole window and starve positives, freezing its adjustment forever.
     const positivesStmt = this.db.prepare(
@@ -824,8 +884,17 @@ export class CoachStore {
       const negatives: Float32Array[] = [];
       for (const row of rows) {
         const nv = needVecStmt.get(row.need_hash) as { dims: number; vec: Buffer } | undefined;
-        if (!nv || nv.dims !== cap.dims) continue;
-        const vec = blobToVec(nv.vec, nv.dims);
+        if (!nv) continue;
+        let vec: Float32Array;
+        try {
+          vec = blobToVec(nv.vec, nv.dims);
+        } catch {
+          // Compare-and-delete avoids removing a valid row repaired by another
+          // process after this read.
+          deleteNeedVecStmt.run(row.need_hash, nv.dims, nv.vec);
+          continue;
+        }
+        if (nv.dims !== cap.dims) continue;
         if (row.class === "success") positives.push(vec);
         else if (isAttributable(row.class)) negatives.push(vec);
       }
