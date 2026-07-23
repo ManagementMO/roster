@@ -126,14 +126,24 @@ function hasUnescapedQuote(text: string, quote: string): boolean {
 }
 
 function isPathOrFilenameLiteral(text: string): boolean {
+  const hasNoWhitespace = !/\s/.test(text);
   if (
     text.startsWith("/") ||
     text.startsWith("./") ||
     text.startsWith("../") ||
     text.startsWith(".\\") ||
     text.startsWith("..\\") ||
+    text.startsWith("~/") ||
+    text.startsWith("~\\") ||
     text.startsWith("\\\\") ||
-    /^[a-z]:[\\/]/.test(text)
+    /^[a-z]:[\\/]/.test(text) ||
+    /^~[a-z0-9_-]{1,64}[\\/]/.test(text)
+  ) {
+    return true;
+  }
+  if (
+    hasNoWhitespace &&
+    (/[\\/]/.test(text) || /^[a-z][a-z0-9+.-]{0,31}:(?:\/\/)?[^\s]{1,512}$/.test(text))
   ) {
     return true;
   }

@@ -186,6 +186,30 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
     expect(classifyToolFailKind('"\\\\server\\share\\auth-token.txt"')).toBe("other");
   });
 
+  it("does not classify a fully quoted home-relative path", () => {
+    expect(classifyToolFailKind('"~/.config/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted file URI", () => {
+    expect(classifyToolFailKind('"file:///data/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted no-slash URI scheme", () => {
+    expect(classifyToolFailKind('"vault:auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted POSIX environment path", () => {
+    expect(classifyToolFailKind('"$HOME/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows environment path", () => {
+    expect(classifyToolFailKind('"%USERPROFILE%\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted named home path with spaces", () => {
+    expect(classifyToolFailKind('"~alice/Private Config/auth-token.txt"')).toBe("other");
+  });
+
   it("does not classify a message composed of multiple quoted literals", () => {
     expect(classifyToolFailKind("'auth-token.txt' 'ignored'")).toBe("other");
   });
