@@ -77,7 +77,7 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
     wholeMessage.length >= 2 && isQuote && wholeMessage.at(-1) === quote && !hasUnescapedQuote(interior, quote)
       ? interior
       : "";
-  const fallback = stripPathLiteralTokens(unwrappedWholeMessage);
+  const fallback = isBoundedFilenameLiteral(unwrappedWholeMessage) ? "" : stripPathLiteralTokens(unwrappedWholeMessage);
   const t = redacted.trim() || fallback;
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
@@ -136,8 +136,12 @@ function isPathUriOrFilenameToken(token: string): boolean {
   return (
     /[\\/]/.test(token) ||
     /^[a-z][a-z0-9+.-]{0,31}:(?:\/\/)?[^\s]{1,512}$/.test(token) ||
-    /^[a-z0-9_-]{1,64}\.[a-z0-9_-]{1,16}$/.test(token)
+    isBoundedFilenameLiteral(token)
   );
+}
+
+function isBoundedFilenameLiteral(text: string): boolean {
+  return !/[\\/]/.test(text) && /^[a-z0-9][a-z0-9 ._-]{0,127}\.[a-z0-9_-]{1,16}$/.test(text);
 }
 
 /**

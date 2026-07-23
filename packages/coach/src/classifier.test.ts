@@ -230,6 +230,14 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
     expect(classifyToolFailKind('"Private Config/auth-token.txt"')).toBe("other");
   });
 
+  it("does not classify a fully quoted filename with a spaced basename", () => {
+    expect(classifyToolFailKind('"auth token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted multi-dot filename with a spaced basename", () => {
+    expect(classifyToolFailKind('"auth token.backup.txt"')).toBe("other");
+  });
+
   it("does not classify a message composed of multiple quoted literals", () => {
     expect(classifyToolFailKind("'auth-token.txt' 'ignored'")).toBe("other");
   });
