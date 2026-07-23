@@ -95,7 +95,6 @@ export class RosterServer {
   private readonly sessionId: string;
   /** Recent drafts by id — parallel draft/call pairs must not cross-attribute. */
   private readonly drafts = new Map<string, DraftCache>();
-  private lastDraftId: string | null = null;
   private draftCounter = 0;
 
   constructor(opts: RosterServerOptions) {
@@ -243,7 +242,6 @@ export class RosterServer {
     const candidates = this.store.draftCandidates(need, k, needVec);
     const draftId = `d${++this.draftCounter}`;
     this.drafts.set(draftId, { need, needHash, rankedIds: candidates.map((c) => c.entry.id) });
-    this.lastDraftId = draftId;
     // Keep only the most recent drafts so a long-lived connection doesn't grow
     // unbounded; 16 comfortably covers an agent's parallel in-flight drafts.
     if (this.drafts.size > 16) {
@@ -275,14 +273,9 @@ export class RosterServer {
     const id = args?.tool ?? "";
     const callArgs = args?.args;
     if (id === "") throw new McpError(ErrorCode.InvalidParams, "call requires `tool`");
-    // Strict attribution: an explicitly-provided-but-unknown draft_id must
-    // NEVER fall back to someone else's draft (that was the cross-attribution
-    // bug this map exists to close). Fallback applies only when omitted.
-    const draft = args?.draft_id
-      ? (this.drafts.get(args.draft_id) ?? null)
-      : this.lastDraftId
-        ? (this.drafts.get(this.lastDraftId) ?? null)
-        : null;
+    // Strict attribution: omitted and unknown draft ids execute without
+    // borrowing another request's need or Sixth Man candidates.
+    const draft = args?.draft_id ? (this.drafts.get(args.draft_id) ?? null) : null;
 
     const skill = id.startsWith("skill__") ? this.skills.get(id) : undefined;
     if (skill) {
@@ -316,7 +309,11 @@ export class RosterServer {
       if (suggestion) {
         // Field data gating post-launch auto-substitution: every suggestion is
         // logged; the store flips `taken` if the agent follows it.
-        this.store.recordSuggestion(this.sessionId, id, suggestion.tool);
+        try {
+          this.store.recordSuggestion(this.sessionId, id, suggestion.tool);
+        } catch {
+          // Learning is best-effort; never turn the backend response into a router error.
+        }
         const content = Array.isArray(base.content) ? [...base.content] : [];
         content.push({
           type: "text",
@@ -378,16 +375,21 @@ export class RosterServer {
     explored = false,
   ): OutcomeClass {
     const outcomeClass = classifyOutcome(evidence);
-    this.store.recordOutcome({
-      session: this.sessionId,
-      source,
-      capability,
-      outcomeClass,
-      latencyMs,
-      argsHash: hashArgs(args),
-      needHash,
-      explored,
-    });
+    const argsHash = hashArgs(args);
+    try {
+      this.store.recordOutcome({
+        session: this.sessionId,
+        source,
+        capability,
+        outcomeClass,
+        latencyMs,
+        argsHash,
+        needHash,
+        explored,
+      });
+    } catch {
+      // Learning is best-effort; never turn the backend response into a router error.
+    }
     return outcomeClass;
   }
 }

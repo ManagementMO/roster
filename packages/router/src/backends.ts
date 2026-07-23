@@ -33,6 +33,8 @@ const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 // otherwise hang the whole `roster serve` boot for the SDK's default ~60s —
 // per backend, sequentially — stalling the client's entire launch. Bound it.
 const DEFAULT_CONNECT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_TOOLS = 10_000;
+const DEFAULT_CLOSE_TIMEOUT_MS = 2_000;
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
@@ -62,11 +64,17 @@ interface ConnectedBackend {
 export class BackendManager {
   private backends = new Map<string, ConnectedBackend>();
   private connecting = new Set<string>();
+  private readonly maxTools: number;
+  private readonly closeTimeoutMs: number;
 
   constructor(
     private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS,
     private readonly connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS,
-  ) {}
+    options: { maxTools?: number; closeTimeoutMs?: number } = {},
+  ) {
+    this.maxTools = options.maxTools ?? DEFAULT_MAX_TOOLS;
+    this.closeTimeoutMs = options.closeTimeoutMs ?? DEFAULT_CLOSE_TIMEOUT_MS;
+  }
 
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
     // The source id is derived from the raw configured name before connecting,
@@ -96,7 +104,11 @@ export class BackendManager {
       this.backends.set(name, { name, client, tools });
       return tools;
     } catch (err) {
-      await client?.close().catch(() => undefined);
+      if (client) {
+        await withTimeout(client.close(), this.closeTimeoutMs, "close timeout").catch(
+          () => undefined,
+        );
+      }
       throw err;
     } finally {
       this.connecting.delete(name);
@@ -105,6 +117,7 @@ export class BackendManager {
 
   private async fetchTools(source: string, client: Client): Promise<CapabilityEntry[]> {
     const entries: CapabilityEntry[] = [];
+    const seenCursors = new Set<string>();
     // Stable raw-name hashing makes sanitizer collisions independently
     // addressable without assigning order-dependent duplicate suffixes.
     let cursor: string | undefined;
@@ -132,8 +145,16 @@ export class BackendManager {
           // through the proxy exactly as it would direct (R5-08).
           execution: (tool as { execution?: Record<string, unknown> }).execution ?? undefined,
         });
+        if (entries.length > this.maxTools) {
+          throw new Error(`backend exposes more than ${this.maxTools} tools`);
+        }
       }
       cursor = page.nextCursor;
+      if (cursor) {
+        if (seenCursors.has(cursor)) throw new Error("tools pagination cursor repeated");
+        seenCursors.add(cursor);
+        await new Promise<void>((resolve) => setImmediate(resolve));
+      }
     } while (cursor);
     return entries;
   }
@@ -184,7 +205,11 @@ export class BackendManager {
   }
 
   async close(): Promise<void> {
-    await Promise.allSettled([...this.backends.values()].map((b) => b.client.close()));
+    await Promise.allSettled(
+      [...this.backends.values()].map((backend) =>
+        withTimeout(backend.client.close(), this.closeTimeoutMs, "close timeout"),
+      ),
+    );
     this.backends.clear();
   }
 }
@@ -203,6 +228,13 @@ export function errorToEvidence(err: unknown): CallEvidence {
     // that branches on `-32001 RequestTimeout` must still see it — the round-4c D3
     // fix preserved the code only for `protocolError`, so timeout and
     // ConnectionClosed were silently rewritten to `-32603 InternalError` (R5-08).
+    if (isSdkOutputValidationError(err)) {
+      return {
+        outputSchemaViolation: true,
+        errorText: err.message,
+        errorCode: err.code,
+      };
+    }
     if (err.code === ErrorCode.RequestTimeout) return { timedOut: true, errorCode: err.code };
     if (err.code === ErrorCode.ConnectionClosed) {
       return { transportError: true, errorText: err.message, errorCode: err.code };
@@ -215,6 +247,15 @@ export function errorToEvidence(err: unknown): CallEvidence {
     return { protocolError: true, errorText: err.message, errorCode: err.code };
   }
   return { transportError: true, errorText: err instanceof Error ? err.message : "" };
+}
+
+function isSdkOutputValidationError(err: McpError): boolean {
+  const detail = err.message.replace(/^MCP error -?\d+: /, "");
+  return (
+    detail.startsWith("Structured content does not match the tool's output schema") ||
+    detail.startsWith("Failed to validate structured content") ||
+    detail.includes(" has an output schema but did not return structured content")
+  );
 }
 
 function extractErrorText(result: Record<string, unknown>): string {
