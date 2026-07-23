@@ -176,26 +176,26 @@ function checkVerifier(
   switch (verifier.kind) {
     case "fileExists": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(sandbox, p)) return `expected ${verifier.path} to exist`;
-      return fs.statSync(p).isFile() ? null : `expected ${verifier.path} to be a regular file`;
+      if (!entryIsSafeExact(sandbox, p)) return `expected ${verifier.path} to exist`;
+      return fs.lstatSync(p).isFile() ? null : `expected ${verifier.path} to be a regular file`;
     }
     case "dirExists": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(sandbox, p)) return `expected directory ${verifier.path} to exist`;
-      return fs.statSync(p).isDirectory() ? null : `expected ${verifier.path} to be a directory`;
+      if (!entryIsSafeExact(sandbox, p)) return `expected directory ${verifier.path} to exist`;
+      return fs.lstatSync(p).isDirectory() ? null : `expected ${verifier.path} to be a directory`;
     }
     case "fileAbsent":
-      return fs.existsSync(resolvePath(verifier.path)) ? `expected ${verifier.path} to be absent` : null;
+      return entryIsAbsentExact(sandbox, resolvePath(verifier.path)) ? null : `expected ${verifier.path} to be absent`;
     case "fileEquals": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(sandbox, p)) return `expected ${verifier.path} to exist`;
+      if (!entryIsSafeExact(sandbox, p)) return `expected ${verifier.path} to exist`;
       const actual = fs.readFileSync(p, "utf8");
       const expected = template(verifier.equals, vars);
       return actual === expected ? null : `content mismatch in ${verifier.path}`;
     }
     case "fileContains": {
       const p = resolvePath(verifier.path);
-      if (!entryExistsExact(sandbox, p)) return `expected ${verifier.path} to exist`;
+      if (!entryIsSafeExact(sandbox, p)) return `expected ${verifier.path} to exist`;
       return fs.readFileSync(p, "utf8").includes(template(verifier.contains, vars))
         ? null
         : `missing expected content in ${verifier.path}`;
@@ -210,30 +210,71 @@ function checkVerifier(
 }
 
 /**
- * Host-FS-agnostic existence: EVERY path component below the sandbox must
- * appear byte-for-byte (so case- AND unicode-normalization-sensitive) in its
- * parent directory listing. fs.existsSync alone false-passes on macOS/APFS
- * (case-insensitive, NFD-normalizing) for a case-flipped or NFD-variant name —
- * a certification hole invisible to case-sensitive Linux CI. Walking every
- * component (not just the basename) closes it for nested paths too: readdir
- * returns the real on-disk name and Array.includes compares by code unit, so
- * "Out" ≠ "out" and NFC ≠ NFD at any depth.
+ * Host-FS-agnostic, no-follow existence: EVERY path component below the real
+ * sandbox root must appear byte-for-byte in its parent directory listing and
+ * must not be a symlink. readdir catches case- and unicode-normalization
+ * variants on macOS/APFS; lstat rejects both dangling links and links that
+ * resolve outside the sandbox before a verifier can read through one.
  */
-function entryExistsExact(sandbox: string, abs: string): boolean {
-  const rel = path.relative(sandbox, abs);
-  if (rel === "" || rel === "." || rel.startsWith("..")) return fs.existsSync(abs);
-  let dir = sandbox;
-  for (const part of rel.split(path.sep)) {
+function entryIsSafeExact(sandbox: string, abs: string): boolean {
+  const sandboxRoot = fs.realpathSync(sandbox);
+  const rel = path.relative(sandboxRoot, abs);
+  if (rel.startsWith("..")) return false;
+  if (rel === "" || rel === ".") return true;
+
+  const parts = rel.split(path.sep);
+  let candidate = sandboxRoot;
+  for (const part of parts) {
     let entries: string[];
     try {
-      entries = fs.readdirSync(dir);
+      entries = fs.readdirSync(candidate);
     } catch {
       return false;
     }
     if (!entries.includes(part)) return false;
-    dir = path.join(dir, part);
+    candidate = path.join(candidate, part);
+    try {
+      if (fs.lstatSync(candidate).isSymbolicLink()) return false;
+    } catch {
+      return false;
+    }
   }
-  return true;
+
+  try {
+    const realCandidate = fs.realpathSync(candidate);
+    return realCandidate === sandboxRoot || realCandidate.startsWith(sandboxRoot + path.sep);
+  } catch {
+    return false;
+  }
+}
+
+/** fileAbsent succeeds only when no exact directory entry exists at the path. */
+function entryIsAbsentExact(sandbox: string, abs: string): boolean {
+  const sandboxRoot = fs.realpathSync(sandbox);
+  const rel = path.relative(sandboxRoot, abs);
+  if (rel === "" || rel === "." || rel.startsWith("..")) return false;
+
+  const parts = rel.split(path.sep);
+  let directory = sandboxRoot;
+  for (const [index, part] of parts.entries()) {
+    let entries: string[];
+    try {
+      entries = fs.readdirSync(directory);
+    } catch {
+      return false;
+    }
+    if (!entries.includes(part)) return true;
+    const candidate = path.join(directory, part);
+    try {
+      const stat = fs.lstatSync(candidate);
+      if (stat.isSymbolicLink()) return false;
+      if (!stat.isDirectory() && index !== parts.length - 1) return true;
+    } catch {
+      return true;
+    }
+    directory = candidate;
+  }
+  return false;
 }
 
 function extractText(result: Record<string, unknown>): string {

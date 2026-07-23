@@ -135,6 +135,57 @@ tasks:
     expect(byId["bad.case-variant-is-not-exact"]).toMatchObject({ pass: false, stage: "verify" });
   }, 30_000);
 
+  it("does not certify symlinks for file verifiers", async () => {
+    const symlinkSuite = parseSuite(`
+suite: symlink-verifiers
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: external.file-equals
+    invoke: { tool: create_external_symlink, args: { path: "external-equals" } }
+    verify:
+      - { kind: fileEquals, path: "external-equals", equals: "external target" }
+  - id: dangling.file-equals
+    invoke: { tool: create_dangling_symlink, args: { path: "dangling-equals" } }
+    verify:
+      - { kind: fileEquals, path: "dangling-equals", equals: "external target" }
+  - id: external.file-exists
+    invoke: { tool: create_external_symlink, args: { path: "external-exists" } }
+    verify:
+      - { kind: fileExists, path: "external-exists" }
+  - id: dangling.file-exists
+    invoke: { tool: create_dangling_symlink, args: { path: "dangling-exists" } }
+    verify:
+      - { kind: fileExists, path: "dangling-exists" }
+  - id: external.file-absent
+    invoke: { tool: create_external_symlink, args: { path: "external-absent" } }
+    verify:
+      - { kind: fileAbsent, path: "external-absent" }
+  - id: dangling.file-absent
+    invoke: { tool: create_dangling_symlink, args: { path: "dangling-absent" } }
+    verify:
+      - { kind: fileAbsent, path: "dangling-absent" }
+`);
+    const run = await runSuite(symlinkSuite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+
+    const byId = Object.fromEntries(run.results.map((r) => [r.taskId, r]));
+    for (const taskId of [
+      "external.file-equals",
+      "dangling.file-equals",
+      "external.file-exists",
+      "dangling.file-exists",
+      "external.file-absent",
+      "dangling.file-absent",
+    ]) {
+      expect(byId[taskId]).toMatchObject({ pass: false, stage: "verify" });
+    }
+  }, 30_000);
+
   it("summarizes into lab-results with Wilson and signed separation", async () => {
     const suite = parseSuite(SUITE_YAML);
     const run = await runSuite(suite, {
