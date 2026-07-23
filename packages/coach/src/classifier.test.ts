@@ -238,6 +238,22 @@ describe("classifyToolFailKind — fully quoted diagnostics", () => {
     expect(classifyToolFailKind('"auth token.backup.txt"')).toBe("other");
   });
 
+  it("classifies a fully quoted timeout diagnostic before a filename", () => {
+    expect(classifyToolFailKind('"request timed out in report.txt"')).toBe("timeout");
+  });
+
+  it("classifies a fully quoted internal diagnostic before a filename", () => {
+    expect(classifyToolFailKind('"500 internal server error report.txt"')).toBe("internal");
+  });
+
+  it("classifies a fully quoted auth diagnostic before a filename", () => {
+    expect(classifyToolFailKind('"401 unauthorized report.txt"')).toBe("auth");
+  });
+
+  it("does not treat a bare auth word before a filename as a diagnostic", () => {
+    expect(classifyToolFailKind('"my auth token.txt"')).toBe("other");
+  });
+
   it("does not classify a message composed of multiple quoted literals", () => {
     expect(classifyToolFailKind("'auth-token.txt' 'ignored'")).toBe("other");
   });

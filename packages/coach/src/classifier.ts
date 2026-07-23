@@ -77,7 +77,10 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
     wholeMessage.length >= 2 && isQuote && wholeMessage.at(-1) === quote && !hasUnescapedQuote(interior, quote)
       ? interior
       : "";
-  const fallback = isBoundedFilenameLiteral(unwrappedWholeMessage) ? "" : stripPathLiteralTokens(unwrappedWholeMessage);
+  const fallback =
+    isBoundedFilenameLiteral(unwrappedWholeMessage) && !hasHighConfidenceFilenamePrefix(unwrappedWholeMessage)
+      ? ""
+      : stripPathLiteralTokens(unwrappedWholeMessage);
   const t = redacted.trim() || fallback;
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
@@ -142,6 +145,15 @@ function isPathUriOrFilenameToken(token: string): boolean {
 
 function isBoundedFilenameLiteral(text: string): boolean {
   return !/[\\/]/.test(text) && /^[a-z0-9][a-z0-9 ._-]{0,127}\.[a-z0-9_-]{1,16}$/.test(text);
+}
+
+function hasHighConfidenceFilenamePrefix(text: string): boolean {
+  const finalSpace = text.lastIndexOf(" ");
+  if (finalSpace <= 0) return false;
+  const prefix = text.slice(0, finalSpace).trim();
+  return /time.?out|timed out|deadline|etimedout|quota|rate.?limit|too many requests|\b429\b|tokens?\s+per\b|per\s+(minute|min|second|sec|hour|day)\b|internal (server )?error|\b50[023]\b|panic|crashed|segfault|schema|invalid (argument|param|input|request)|validation|required (field|property|parameter)|must be of type|invalid\b[\w\s'"()-]{0,40}\b(format|argument|parameter|value|type|field|property)\b|\b40[13]\b|unauthori[sz]ed|forbidden|permission denied|access denied|(?:invalid|expired)\b[^.;]{0,40}\btoken\b|\btoken\b[^.;]{0,40}(?:invalid|expired)|authentication failure/.test(
+    prefix,
+  );
 }
 
 /**
