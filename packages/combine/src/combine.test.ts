@@ -89,7 +89,7 @@ describe("suite parsing", () => {
   });
 
   it("rejects malformed invoke arguments without echoing them", () => {
-    for (const args of ["null", "[]", '"not-an-object"']) {
+    for (const args of ["null", "[DO-NOT-LEAK]", '"not-an-object"']) {
       const attempt = () =>
         parseSuite(
           `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: { tool: t, args: ${args} }\n    verify: [{ kind: fileExists, path: x }]\n`,
@@ -102,6 +102,23 @@ describe("suite parsing", () => {
         `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: []\n    verify: [{ kind: fileExists, path: x }]\n`,
       ),
     ).toThrow(/tasks\[0\]: invoke required/);
+  });
+
+  it("rejects YAML collection tags where plain mappings are required", () => {
+    for (const fragment of [
+      "invoke: { tool: t, args: !!set { DO-NOT-LEAK: null } }",
+      "invoke: { tool: t, args: !!omap [ { DO-NOT-LEAK: value } ] }",
+      "setup: !!set { seed: null }\n    invoke: { tool: t, args: {} }",
+      "setup: !!omap [ { files: { seed: value } } ]\n    invoke: { tool: t, args: {} }",
+      "setup: { files: !!omap [ { seed: value } ] }\n    invoke: { tool: t, args: {} }",
+    ]) {
+      const attempt = () =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    ${fragment}\n    verify: [{ kind: fileExists, path: x }]\n`,
+        );
+      expect(attempt).toThrow(/tasks\[0\](?:\.invoke|\.setup)/);
+      expect(attempt).not.toThrow(/DO-NOT-LEAK/);
+    }
   });
 
   it("rejects malformed setup files", () => {
@@ -117,6 +134,22 @@ describe("suite parsing", () => {
         ),
       ).toThrow(/tasks\[0\]\.setup/);
     }
+  });
+
+  it("preserves a setup file literally named __proto__", () => {
+    const suite = parseSuite(`
+suite: s
+version: "1"
+category: c
+tasks:
+  - id: a
+    setup: { files: { "__proto__": seeded } }
+    invoke: { tool: t, args: {} }
+    verify: [{ kind: fileExists, path: "__proto__" }]
+`);
+    const files = suite.tasks[0]?.setup?.files;
+    expect(Object.hasOwn(files ?? {}, "__proto__")).toBe(true);
+    expect(files?.__proto__).toBe("seeded");
   });
 
   it("rejects malformed verifier records and required verifier fields", () => {
@@ -263,6 +296,49 @@ tasks:
     ]) {
       expect(byId[taskId]).toMatchObject({ pass: false, stage: "verify" });
     }
+  }, 30_000);
+
+  it("accepts contained filenames that merely begin with two dots", async () => {
+    const suite = parseSuite(`
+suite: dot-prefix
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: dot-prefix.ordinary
+    invoke: { tool: write_file, args: { path: "..ordinary.txt", content: "ordinary" } }
+    verify:
+      - { kind: fileExists, path: "..ordinary.txt" }
+      - { kind: fileEquals, path: "..ordinary.txt", equals: "ordinary" }
+`);
+    const run = await runSuite(suite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+
+    expect(run.results[0]).toMatchObject({ pass: true, stage: null });
+  }, 30_000);
+
+  it("does not certify absence after observing an entry that cannot be stated", async () => {
+    const suite = parseSuite(`
+suite: inaccessible-entry
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: inaccessible-entry.absent
+    invoke: { tool: create_restricted_entry, args: { path: "restricted" } }
+    verify:
+      - { kind: fileAbsent, path: "restricted/observed" }
+`);
+    const run = await runSuite(suite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+
+    expect(run.results[0]).toMatchObject({ pass: false, stage: "verify" });
   }, 30_000);
 
   it("summarizes into lab-results with Wilson and signed separation", async () => {

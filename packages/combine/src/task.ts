@@ -94,14 +94,14 @@ function parseSetup(raw: unknown, taskWhere: string): CombineTask["setup"] {
   const files = raw.files;
   if (files === undefined) return {};
   if (!isRecord(files)) throw new Error(`${taskWhere}.setup.files: must be an object`);
-  const parsedFiles: Record<string, string> = {};
+  const parsedFiles: Array<[string, string]> = [];
   for (const [path, contents] of Object.entries(files)) {
     if (typeof contents !== "string") {
       throw new Error(`${taskWhere}.setup.files: ${path} must have string contents`);
     }
-    parsedFiles[path] = contents;
+    parsedFiles.push([path, contents]);
   }
-  return { files: parsedFiles };
+  return { files: Object.fromEntries(parsedFiles) };
 }
 
 function parseVerifier(raw: unknown, where: string): Verifier {
@@ -129,7 +129,9 @@ function requireString(obj: Record<string, unknown>, key: string, where = "suite
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function isVerifierKind(value: unknown): value is Verifier["kind"] {

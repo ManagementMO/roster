@@ -219,7 +219,7 @@ function checkVerifier(
 function entryIsSafeExact(sandbox: string, abs: string): boolean {
   const sandboxRoot = fs.realpathSync(sandbox);
   const rel = path.relative(sandboxRoot, abs);
-  if (rel.startsWith("..")) return false;
+  if (leavesSandbox(rel)) return false;
   if (rel === "" || rel === ".") return true;
 
   const parts = rel.split(path.sep);
@@ -252,7 +252,7 @@ function entryIsSafeExact(sandbox: string, abs: string): boolean {
 function entryIsAbsentExact(sandbox: string, abs: string): boolean {
   const sandboxRoot = fs.realpathSync(sandbox);
   const rel = path.relative(sandboxRoot, abs);
-  if (rel === "" || rel === "." || rel.startsWith("..")) return false;
+  if (rel === "" || rel === "." || leavesSandbox(rel)) return false;
 
   const parts = rel.split(path.sep);
   let directory = sandboxRoot;
@@ -270,11 +270,21 @@ function entryIsAbsentExact(sandbox: string, abs: string): boolean {
       if (stat.isSymbolicLink()) return false;
       if (!stat.isDirectory() && index !== parts.length - 1) return true;
     } catch {
-      return true;
+      // Exact membership was already observed. An inability to inspect that
+      // entry is not evidence of absence, so fail closed.
+      return false;
     }
     directory = candidate;
   }
   return false;
+}
+
+function leavesSandbox(relativePath: string): boolean {
+  return (
+    path.isAbsolute(relativePath) ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`)
+  );
 }
 
 function extractText(result: Record<string, unknown>): string {

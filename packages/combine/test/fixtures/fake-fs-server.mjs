@@ -10,9 +10,17 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 
 const root = process.argv[2];
 const externalDirectories = new Set();
+const restrictedDirectories = new Set();
 const server = new Server({ name: "fake-fs", version: "0.0.0" }, { capabilities: { tools: {} } });
 
 process.on("exit", () => {
+  for (const directory of restrictedDirectories) {
+    try {
+      fs.chmodSync(directory, 0o700);
+    } catch {
+      // Best-effort test-fixture cleanup; the runner removes the sandbox.
+    }
+  }
   for (const directory of externalDirectories) fs.rmSync(directory, { recursive: true, force: true });
 });
 
@@ -45,6 +53,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "create_dangling_symlink",
       description: "Create a dangling sandbox symlink",
+      inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+    },
+    {
+      name: "create_restricted_entry",
+      description: "Create a visible entry in a non-searchable directory",
       inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
     },
   ],
@@ -81,6 +94,14 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.symlinkSync(path.join(root, "missing-target"), target);
     return { content: [{ type: "text", text: `linked ${args.path}` }] };
+  }
+  if (req.params.name === "create_restricted_entry") {
+    const directory = resolve(args.path);
+    fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+    fs.writeFileSync(path.join(directory, "observed"), "present");
+    fs.chmodSync(directory, 0o400);
+    restrictedDirectories.add(directory);
+    return { content: [{ type: "text", text: "created restricted entry" }] };
   }
   // The error text deliberately carries the three things a real backend error
   // leaks — a credential, an absolute path, and the caller's own argument — so
