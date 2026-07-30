@@ -113,8 +113,11 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
       `
       import fs from "node:fs";
       import { createRequire } from "node:module";
+      import { pathToFileURL } from "node:url";
       const require_ = createRequire(${JSON.stringify(req)});
-      const { withFileLockSync } = await import(require_.resolve("./dist/lock.js"));
+      // require.resolve returns an absolute path; ESM import() needs a file://
+      // URL on Windows (a bare "D:\\..." path throws ERR_UNSUPPORTED_ESM_URL_SCHEME).
+      const { withFileLockSync } = await import(pathToFileURL(require_.resolve("./dist/lock.js")).href);
       const counter = ${JSON.stringify(counter)};
       while (!fs.existsSync(${JSON.stringify(go)})) {}
       let maxSeen = 0;
