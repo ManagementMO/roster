@@ -105,7 +105,12 @@ async function startServe(): Promise<{ roster: ChildProcess; backendPidFile: str
   return { roster, backendPidFile };
 }
 
-describe("roster serve shuts down cleanly and never orphans a backend", () => {
+// POSIX-only: these spawn a real MCP backend over stdio and drive shutdown with
+// stdin EOF + SIGINT/SIGTERM. On Windows the stdio-spawned backend and Unix
+// signal semantics differ (there are no orphaned process-group children to
+// reap the same way), and the production shutdown there rides libuv rather than
+// this signal orchestration — so the harness is not meaningful on win32.
+describe.skipIf(process.platform === "win32")("roster serve shuts down cleanly and never orphans a backend", () => {
   it("exits and reaps the backend on stdin EOF (client disconnect)", async () => {
     const { roster, backendPidFile } = await startServe();
     const backendPid = Number(fs.readFileSync(backendPidFile, "utf8"));

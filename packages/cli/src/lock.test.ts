@@ -221,4 +221,23 @@ describe("PID reuse and platform reductions (L14)", () => {
     expect(killPids.every((p) => p > 0)).toBe(true); // -1 never reached process.kill
     expect(fs.existsSync(dir)).toBe(true); // fail-closed: unreclaimable, preserved
   });
+
+  it("treats a claim-rename failure (e.g. Windows EPERM) as occupied, never a crash", () => {
+    // On Windows a losing racer's directory rename throws EPERM/EACCES/EBUSY
+    // instead of POSIX's ENOENT. reclaimStaleLock must decline (return
+    // "occupied") — not throw — so the contender falls through to the mutex.
+    const dir = lockDir();
+    const owner = { pid: deadPid(), token: "T1" };
+    writeLock(dir, owner);
+    const realRename = fs.renameSync;
+    fs.renameSync = (() => {
+      throw Object.assign(new Error("simulated Windows lock-dir busy"), { code: "EPERM" });
+    }) as typeof fs.renameSync;
+    try {
+      expect(reclaimStaleLock(dir, owner)).toBe("occupied");
+    } finally {
+      fs.renameSync = realRename;
+    }
+    expect(fs.existsSync(dir)).toBe(true); // never destroyed by a failed claim
+  });
 });

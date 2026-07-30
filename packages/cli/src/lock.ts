@@ -99,9 +99,15 @@ export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" 
   const claim = `${dir}.reclaim-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
   try {
     fs.renameSync(dir, claim);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "occupied"; // lost the race
-    throw error;
+  } catch {
+    // Failing to rename-claim means we did NOT win the claim, and declining is
+    // always safe: the caller falls through to the mkdir mutex + deadline, so a
+    // lost claim can only cost a bounded wait, never two owners. POSIX racers
+    // lose with ENOENT (a competitor already moved the dir); Windows instead
+    // throws EPERM/EACCES/EBUSY when another process holds the directory open.
+    // Both mean the same thing here, so treat ANY rename failure as "occupied"
+    // rather than crashing the contender.
+    return "occupied";
   }
   const moved = readOwner(claim);
   const isExactlyTheDeadLock =

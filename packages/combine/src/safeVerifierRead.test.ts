@@ -40,7 +40,10 @@ describe("readVerifierFile: safe, bounded, no-follow verifier read", () => {
     expect(read.text.length).toBeLessThanOrEqual(16);
   });
 
-  it("refuses a FIFO instead of blocking forever on the open (liveness)", () => {
+  // POSIX-only: `mkfifo` is not available on Windows (and O_NONBLOCK is absent).
+  // The Windows-safe fallback in readVerifierFile (flags → 0, fstat regular-file
+  // guard) is still exercised by the regular-file / directory / huge-file cases.
+  it.skipIf(process.platform === "win32")("refuses a FIFO instead of blocking forever on the open (liveness)", () => {
     const d = tmp();
     const fifo = path.join(d, "pipe");
     execFileSync("mkfifo", [fifo]);
@@ -56,7 +59,10 @@ describe("readVerifierFile: safe, bounded, no-follow verifier read", () => {
     expect(() => readVerifierFile(sub)).toThrow(/non-regular file/);
   });
 
-  it("does not follow a symlink at the final component (no-follow / TOCTOU)", () => {
+  // POSIX-only: O_NOFOLLOW does not exist on Windows (the flag degrades to 0),
+  // and creating a symlink there needs elevated privilege. On POSIX this proves
+  // the descriptor-pinned read refuses a final-component symlink.
+  it.skipIf(process.platform === "win32")("does not follow a symlink at the final component (no-follow / TOCTOU)", () => {
     const d = tmp();
     const real = path.join(d, "real.txt");
     fs.writeFileSync(real, "SECRET_TARGET_CONTENT");
