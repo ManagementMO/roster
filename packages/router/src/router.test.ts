@@ -11,7 +11,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { CoachStore, openCoachDb, type CoachDb } from "@rosterhq/coach";
-import { scanSkillLibrary } from "@rosterhq/playbook";
+import { MAX_SKILL_MD_BYTES, scanSkillLibrary } from "@rosterhq/playbook";
 import { stableNamespacedId } from "@rosterhq/shared";
 import { BackendManager } from "./backends.js";
 import { RosterServer, type RouterMode } from "./rosterServer.js";
@@ -785,5 +785,41 @@ describe("trust gate: review-flagged skills are withheld from serving (R5-09)", 
     const parsed = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text);
     const ids = parsed.starters.map((s: { id: string }) => s.id);
     expect(ids.some((id: string) => id.startsWith("skill__") && id.includes("attack"))).toBe(true);
+  });
+
+  /**
+   * A SKILL.md past the read cap is only partially scanned, so the bytes beyond
+   * it were never examined. Warning about that is not enough — the skill must be
+   * WITHHELD at this boundary, or the cap would become a way to smuggle an
+   * unscanned payload into an agent's context.
+   */
+  it("a SKILL.md past the read cap is withheld, not served on a partial scan", async () => {
+    const big = path.join(dir, "oversized");
+    fs.mkdirSync(big, { recursive: true });
+    // Deliberately BENIGN all the way through: nothing in this body trips a trust
+    // rule, so the ONLY thing that can withhold it is the partial-scan warning.
+    // (An injection payload here would make the test pass for the wrong reason —
+    // it would be withheld because the payload was read.)
+    fs.writeFileSync(
+      path.join(big, "SKILL.md"),
+      `---\nname: Oversized\ndescription: oversized boundary helper\n---\n${"filler line\n".repeat(
+        Math.ceil(MAX_SKILL_MD_BYTES / 12),
+      )}`,
+    );
+
+    rig = await buildRig("five", { skillsDir: dir });
+    expect(rig.roster.servedSkillCount()).toBe(1); // only the benign "helper"
+    const draft = await rig.client.callTool({
+      name: "draft",
+      arguments: { need: "oversized boundary helper", k: 10 },
+    });
+    const parsed = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text);
+    expect(parsed.starters.map((s: { id: string }) => s.id)).not.toContain("skill__oversized");
+    await expect(
+      rig.client.callTool({
+        name: "call",
+        arguments: { tool: "skill__oversized", args: {}, draft_id: parsed.draft_id },
+      }),
+    ).rejects.toThrow(/Unknown capability/);
   });
 });

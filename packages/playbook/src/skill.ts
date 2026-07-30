@@ -6,7 +6,12 @@ export interface ParsedSkill {
   slug: string;
   name: string;
   description: string;
-  /** Markdown body with frontmatter stripped — indexed WHOLE (SkillRouter finding). */
+  /**
+   * Markdown body with frontmatter stripped — indexed WHOLE up to the
+   * MAX_SKILL_MD_BYTES read cap (SkillRouter finding). A file past the cap is
+   * truncated here AND carries a `skill-md-truncated:` scanWarning, so it can
+   * never pass as fully scanned; it is never silently truncated-and-trusted.
+   */
   body: string;
   /** Absolute path to the skill directory. */
   dir: string;
