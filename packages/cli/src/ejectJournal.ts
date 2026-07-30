@@ -5,6 +5,7 @@ import { sha256Hex } from "@rosterhq/coach";
 import type { ClientId } from "./clients.js";
 import { atomicWriteFileSync, PRIVATE_DIR, PRIVATE_FILE } from "./rosterfile.js";
 import { rosterHome } from "./paths.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 
 export interface EjectJournalTarget {
   sourcePath: string;
@@ -132,7 +133,9 @@ export function loadEjectJournal(clientId: ClientId): LoadedEjectJournal | null 
   }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(fs.readFileSync(path.join(dir, "plan.json"), "utf8"));
+    parsed = JSON.parse(
+      readRegularFileNoFollow(path.join(dir, "plan.json")).toString("utf8"),
+    );
   } catch (error) {
     throw new Error(
       `pending eject plan is missing or corrupt: ${error instanceof Error ? error.message : String(error)}`,
@@ -208,11 +211,7 @@ export function readDesiredBytes(
   if (path.dirname(resolved) !== path.resolve(journal.dir)) {
     throw new Error("pending eject desired-file path escapes its journal");
   }
-  const stat = fs.lstatSync(resolved);
-  if (stat.isSymbolicLink() || !stat.isFile()) {
-    throw new Error("pending eject desired bytes are not a regular file");
-  }
-  const bytes = fs.readFileSync(resolved);
+  const bytes = readRegularFileNoFollow(resolved);
   if (sha256Hex(bytes) !== target.desiredSha256) {
     throw new Error("pending eject desired bytes do not match their recorded hash");
   }

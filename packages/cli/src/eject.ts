@@ -27,6 +27,7 @@ import {
   rawBackups,
   readClosedThrough,
 } from "./sync.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 
 export interface EjectResult {
   client: ClientId;
@@ -168,11 +169,7 @@ function planRestore(
   let originalBytes: Buffer;
   try {
     const originalPath = path.join(pristine.dir, "original");
-    const stat = fs.lstatSync(originalPath);
-    if (stat.isSymbolicLink() || !stat.isFile()) {
-      throw new Error("stored pristine bytes are not a regular file");
-    }
-    originalBytes = fs.readFileSync(originalPath);
+    originalBytes = readRegularFileNoFollow(originalPath);
     if (sha256Hex(originalBytes) !== pristine.manifest.originalSha256) {
       throw new Error("stored pristine bytes do not match their recorded hash");
     }
@@ -184,8 +181,7 @@ function planRestore(
     );
   }
 
-  const currentExists = fs.existsSync(writePath);
-  const currentBytes = currentExists ? fs.readFileSync(writePath) : null;
+  const currentBytes = readRegularFileIfPresent(writePath, 4);
   const stateFile =
     CLIENTS.find((client) => client.id === clientId)?.stateFileBasename ===
     path.basename(sourcePath);
@@ -279,11 +275,7 @@ function validateManifest(clientId: ClientId, backup: ValidBackup): void {
     );
   }
   const originalPath = path.join(backup.dir, "original");
-  const originalStat = fs.lstatSync(originalPath);
-  if (originalStat.isSymbolicLink() || !originalStat.isFile()) {
-    throw new Error(`backup ${backup.name} original is not a regular file`);
-  }
-  if (sha256Hex(fs.readFileSync(originalPath)) !== manifest.originalSha256) {
+  if (sha256Hex(readRegularFileNoFollow(originalPath)) !== manifest.originalSha256) {
     throw new Error(`backup ${backup.name} original bytes failed their hash check`);
   }
 }
@@ -465,8 +457,16 @@ function restoredResult(
 }
 
 function hashIfPresent(target: string): string | null {
+  const bytes = readRegularFileIfPresent(target, 4);
+  return bytes === null ? null : sha256Hex(bytes);
+}
+
+function readRegularFileIfPresent(
+  target: string,
+  attempts = 1,
+): Buffer | null {
   try {
-    return sha256Hex(fs.readFileSync(target));
+    return readRegularFileNoFollow(target, { attempts });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
@@ -518,7 +518,8 @@ function stabilizeStateTargets(
           detail: `config topology changed while planning eject: ${errorMessage(error)}`,
         };
       }
-      if (!fs.existsSync(writePath)) {
+      const currentBytes = readRegularFileIfPresent(writePath, 4);
+      if (currentBytes === null) {
         return {
           client: clientId,
           action: "refused-modified",
@@ -526,7 +527,6 @@ function stabilizeStateTargets(
           detail: "state file disappeared while planning eject",
         };
       }
-      const currentBytes = fs.readFileSync(writePath);
       const currentSha256 = sha256Hex(currentBytes);
       if (currentSha256 === target.beforeSha256) continue;
       try {

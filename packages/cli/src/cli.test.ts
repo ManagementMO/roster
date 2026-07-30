@@ -12,6 +12,7 @@ import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
 import { ejectClient } from "./eject.js";
 import { rosterEntry } from "./entry.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 import { syncClient } from "./sync.js";
 
 let home: string;
@@ -610,13 +611,21 @@ args = ["-y", "@upstash/context7-mcp"]
     const configPath = path.join(home, ".claude.json");
     syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
     const canonicalConfigPath = fs.realpathSync(configPath);
+    const configStat = fs.statSync(canonicalConfigPath, { bigint: true });
     const originalRead = fs.readFileSync;
     let changed = false;
     fs.readFileSync = ((file: fs.PathOrFileDescriptor, ...args: unknown[]) => {
       const value = Reflect.apply(originalRead, fs, [file, ...args]) as Buffer | string;
+      const readsConfig =
+        typeof file === "number"
+          ? (() => {
+              const stat = fs.fstatSync(file, { bigint: true });
+              return stat.dev === configStat.dev && stat.ino === configStat.ino;
+            })()
+          : fs.realpathSync(String(file)) === canonicalConfigPath;
       if (
         !changed &&
-        fs.realpathSync(String(file)) === canonicalConfigPath
+        readsConfig
       ) {
         changed = true;
         const live = JSON.parse(Buffer.isBuffer(value) ? value.toString("utf8") : value) as Record<
@@ -740,6 +749,49 @@ args = ["-y", "late-mcp"]
       .readdirSync(home)
       .filter((f) => f.startsWith("cfg.json.") && f.endsWith(".tmp") && fs.statSync(path.join(home, f)).isFile());
     expect(litter).toEqual([]); // private tmp cleaned up on success
+  });
+
+  describe("descriptor-pinned integrity reads", () => {
+    it("reads through the validated descriptor instead of reopening the path", () => {
+      const target = write("integrity/original.bin", "trusted");
+      const originalRead = fs.readFileSync;
+      let descriptorRead = false;
+      fs.readFileSync = ((file, ...args) => {
+        if (typeof file === "number") {
+          descriptorRead = true;
+        } else if (path.resolve(String(file)) === path.resolve(target)) {
+          throw new Error("integrity path was reopened");
+        }
+        return Reflect.apply(originalRead, fs, [file, ...args]);
+      }) as typeof fs.readFileSync;
+      try {
+        expect(readRegularFileNoFollow(target).toString("utf8")).toBe("trusted");
+      } finally {
+        fs.readFileSync = originalRead;
+      }
+      expect(descriptorRead).toBe(true);
+    });
+
+    it("rejects a different file installed at the path after open", () => {
+      const target = write("integrity/swap.bin", "trusted");
+      const displaced = path.join(home, "integrity/swap-displaced.bin");
+      const originalOpen = fs.openSync;
+      let replaced = false;
+      fs.openSync = ((file, ...args) => {
+        const fd = Reflect.apply(originalOpen, fs, [file, ...args]);
+        if (!replaced && path.resolve(String(file)) === path.resolve(target)) {
+          replaced = true;
+          fs.renameSync(target, displaced);
+          fs.writeFileSync(target, "attacker-controlled");
+        }
+        return fd;
+      }) as typeof fs.openSync;
+      try {
+        expect(() => readRegularFileNoFollow(target)).toThrow(/changed while being opened/i);
+      } finally {
+        fs.openSync = originalOpen;
+      }
+    });
   });
 
   it("a file lock preserves an undefined thrown value instead of treating it as success", () => {

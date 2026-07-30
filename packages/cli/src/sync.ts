@@ -23,6 +23,7 @@ import {
   updateConfig,
   validateWriteTopology,
 } from "./rosterfile.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 
 /** The four write clients (handoff §6.3). Read-import covers everything; writes stay narrow. */
 export const WRITE_CLIENTS: ClientId[] = ["claude-code", "cursor", "codex", "openclaw"];
@@ -80,7 +81,9 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   if (!configPath) return { client: clientId, configPath: "", action: "not-found" };
 
   const topology = resolveWriteTopology(configPath);
-  const originalBytes = fs.readFileSync(topology.writePath);
+  const originalBytes = readRegularFileNoFollow(topology.writePath, {
+    attempts: 4,
+  });
 
   // Step 1 — import before we overwrite anything. ONLY the parse may fail
   // benignly (unparseable config = nothing to import). A failure of the import
@@ -219,7 +222,9 @@ export function ownedRosterEntries(
       const injected = normalizeSpawnEntry(backup.manifest?.injectedEntry);
       if (!injected || !backup.manifest) continue;
       try {
-        const original = fs.readFileSync(path.join(backup.dir, "original"));
+        const original = readRegularFileNoFollow(
+          path.join(backup.dir, "original"),
+        );
         if (sha256Hex(original) !== backup.manifest.originalSha256) continue;
       } catch {
         continue;
@@ -261,7 +266,9 @@ function closedThroughPath(clientId: ClientId): string {
 
 export function readClosedThrough(clientId: ClientId): string | null {
   try {
-    const value = fs.readFileSync(closedThroughPath(clientId), "utf8").trim();
+    const value = readRegularFileNoFollow(closedThroughPath(clientId))
+      .toString("utf8")
+      .trim();
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/.test(value)) {
       throw new Error(`backup era marker for ${clientId} is corrupt`);
     }
@@ -321,7 +328,11 @@ export function rawBackups(clientId: ClientId): RawBackup[] {
     }
     let manifest: BackupManifest | null = null;
     try {
-      manifest = JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"), "utf8")) as BackupManifest;
+      manifest = JSON.parse(
+        readRegularFileNoFollow(path.join(dir, "manifest.json")).toString(
+          "utf8",
+        ),
+      ) as BackupManifest;
     } catch {
       manifest = null; // missing or corrupt — kept as a null slot, not skipped
     }
