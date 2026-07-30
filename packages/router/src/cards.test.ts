@@ -9,9 +9,9 @@ describe("trimSchema width guards", () => {
       type: "object",
       properties: { mode: { type: "string", enum: enumValues } },
     });
-    const mode = (trimmed.properties as Record<string, { enum?: unknown[] }>).mode;
+    const mode = (trimmed.properties as Record<string, { enum?: unknown[] }>).mode!;
     expect(mode.enum).toHaveLength(16);
-    expect((trimmed.properties as Record<string, Record<string, unknown>>).mode["x-enum-truncated"]).toBe(984);
+    expect((trimmed.properties as Record<string, Record<string, unknown>>).mode!["x-enum-truncated"]).toBe(984);
   });
 
   it("caps property width, keeping required props first, and flags the elision", () => {

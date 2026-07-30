@@ -595,7 +595,7 @@ describe("stable capability identities (production hardening task 1)", () => {
     for (const [slug, body] of [
       ["safe.tool", "FIRST SKILL BODY"],
       ["safe tool", "SECOND SKILL BODY"],
-    ]) {
+    ] as const) {
       const dir = path.join(skillsDir, slug);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(

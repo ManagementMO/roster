@@ -111,7 +111,7 @@ describe("artifact loading (honesty gate)", () => {
 
   it("rejects legacy artifacts missing signedWilsonLb instead of coercing", () => {
     const { data } = realArtifact();
-    const legacy = structuredClone(data) as { runs: Array<{ summary: Record<string, unknown> }> };
+    const legacy = structuredClone(data) as unknown as { runs: Array<{ summary: Record<string, unknown> }> };
     delete legacy.runs[0]!.summary.signedWilsonLb;
     expect(() => parseLabResults(JSON.stringify(legacy), "old.json")).toThrow(/legacy artifact/);
   });
@@ -602,7 +602,7 @@ describe("strict atomic site publication", () => {
           digest() {
             return "0".repeat(64);
           },
-        }) as crypto.Hash) as typeof crypto.createHash;
+        }) as unknown as crypto.Hash) as typeof crypto.createHash;
 
       expect(() =>
         buildSite({
