@@ -249,6 +249,29 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(realBackups.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("an UNDELETABLE staging orphan does not fail the sync (sweep is best-effort)", () => {
+    expect(syncClient("codex", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+    const orphan = path.join(home, ".roster/backups/codex/2026-07-05T09-09-09-999Z.staging-locked");
+    fs.mkdirSync(orphan, { recursive: true });
+
+    // Simulate Windows holding the directory open (EPERM even with force+retries).
+    // GC of an already-inert orphan must never break the operation the user asked
+    // for: rawBackups skips `.staging-` entries, so leaving it is harmless.
+    const realRm = fs.rmSync;
+    fs.rmSync = ((target: fs.PathLike, opts?: fs.RmOptions) => {
+      if (String(target).includes(".staging-locked")) {
+        throw Object.assign(new Error("simulated locked staging dir"), { code: "EPERM" });
+      }
+      return Reflect.apply(realRm, fs, [target, opts]);
+    }) as typeof fs.rmSync;
+    try {
+      expect(syncClient("codex", new Date("2026-07-05T02:00:00Z")).action).toBe("already-synced");
+    } finally {
+      fs.rmSync = realRm;
+    }
+    expect(fs.existsSync(orphan)).toBe(true); // left for the next sweep, not fatal
+  });
+
   it("eject restores byte-for-byte, comments and all", () => {
     const configPath = path.join(home, ".codex/config.toml");
     const originalBytes = fs.readFileSync(configPath);

@@ -269,7 +269,16 @@ function sweepOrphanStaging(clientId: ClientId): void {
   }
   for (const name of entries) {
     if (!name.includes(".staging-")) continue;
-    fs.rmSync(path.join(dir, name), { recursive: true, force: true });
+    try {
+      // maxRetries absorbs the transient EPERM/EBUSY Windows throws while another
+      // process (or a scanner/indexer) briefly holds a directory handle open.
+      fs.rmSync(path.join(dir, name), { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    } catch {
+      // BEST EFFORT, deliberately: this is opportunistic garbage collection of an
+      // orphan that is already inert (rawBackups skips `.staging-` entries, so it
+      // can never be restored). Failing to delete it must NEVER fail the sync the
+      // user actually asked for — the orphan is simply retried next sync.
+    }
   }
 }
 
