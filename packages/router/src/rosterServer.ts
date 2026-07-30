@@ -158,6 +158,11 @@ export class RosterServer {
     });
   }
 
+  /** Skills that survived trust filtering and identity de-duplication. */
+  servedSkillCount(): number {
+    return this.skills.size;
+  }
+
   private listTools(): Array<Record<string, unknown>> {
     if (this.mode === "five") {
       return [DRAFT_TOOL as unknown as Record<string, unknown>, CALL_TOOL as unknown as Record<string, unknown>];

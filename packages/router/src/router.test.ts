@@ -752,6 +752,7 @@ describe("trust gate: review-flagged skills are withheld from serving (R5-09)", 
 
   it("a benign skill in the same library is still served", async () => {
     rig = await buildRig("five", { skillsDir: dir });
+    expect(rig.roster.servedSkillCount()).toBe(1);
     const draft = await rig.client.callTool({ name: "draft", arguments: { need: "format text tidily", k: 5 } });
     const parsed = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text);
     const ids = parsed.starters.map((s: { id: string }) => s.id);

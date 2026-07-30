@@ -97,7 +97,7 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   const transport = new StdioServerTransport();
   await roster.server.connect(transport);
   process.stderr.write(
-    `roster: serving ${manager.allTools().length} tool(s) + ${skills.length} skill(s) in ${mode} mode\n`,
+    `roster: serving ${manager.allTools().length} tool(s) + ${roster.servedSkillCount()} skill(s) in ${mode} mode\n`,
   );
 }
 

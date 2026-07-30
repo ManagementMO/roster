@@ -1,6 +1,6 @@
 # League methodology — v0.1 (DRAFT)
 
-> **Status: draft skeleton, pre-launch.** This document describes the methodology the League will launch with. It is versioned; published standings will always cite the methodology version that produced them. Sections marked **(implementation pending)** are committed design, not yet running code. No results exist yet, and no number in this document is a measurement — the constants here (z, thresholds, windows) are policy choices, stated so they can be argued with.
+> **Status: draft, pre-launch.** This document describes the methodology the League will launch with. It is versioned; published standings will always cite the methodology version that produced them. Sections marked **(implementation pending)** are committed design, not yet running code. One unsigned local verification artifact exists, but there are no human-signed or ranked results. Policy constants (z, thresholds, windows) are labeled as choices; measured retrieval claims cite the committed lab artifacts in §9a.
 
 ## 0. Principles
 
@@ -11,7 +11,7 @@
 
 ## 1. Ranking key: Wilson score lower bound
 
-Within a category, servers (and skills) rank by the **lower bound of the Wilson score interval** on task success rate, with z = 1.96 (95%):
+Within an exact **(category, suite, suite version)** comparison set, servers (and skills) rank by the **lower bound of the Wilson score interval** on task success rate, with z = 1.96 (95%):
 
 ```
 wilson_lb = ( p̂ + z²/2n − z·√( p̂(1−p̂)/n + z²/4n² ) ) / ( 1 + z²/n )
@@ -21,7 +21,7 @@ where p̂ = successes / n over the category's signed task set. (Run artifacts al
 
 Reference: Evan Miller, *How Not to Sort by Average Rating* — <https://www.evanmiller.org/how-not-to-sort-by-average-rating.html>
 
-Why this key: it is humble with small samples by construction — a perfect score on a handful of tasks cannot outrank a near-perfect score on many. Standings additionally require a minimum of **n ≥ 30 tasks** per (server, category) before a ranked placement appears; below that, profiles show raw results without a rank. Badge tiers key off Wilson LB; tier cutoffs will be published in this document when set. **(implementation pending)**
+Why this key: it is humble with small samples by construction — a perfect score on a handful of tasks cannot outrank a near-perfect score on many. Standings additionally require a minimum of **n ≥ 30 tasks** per (server, category, suite, suite version) before a ranked placement appears; below that, profiles show raw results without a rank. Different suite versions render in separate tables and each table starts its own rank sequence. Badge tiers key off Wilson LB; tier cutoffs will be published in this document when set. **(implementation pending)**
 
 ## 2. What *n* counts
 
@@ -31,7 +31,7 @@ Why this key: it is humble with small samples by construction — a perfect scor
 
 Every published number carries its tier.
 
-- **Lab (controlled).** Results from the Combine: standardized, category-specific task suites, identical for every server in the category. Write-capable suites run **only** against sandboxed self-hosted instances (per-server docker-compose environments, seeded to a known state). Read-only live suites (search/fetch/list) may probe live endpoints at most once per server per week, with an identifiable User-Agent and opt-out honored. Verification is programmatic state checking — declarative end-state verifiers (file-equals/contains/exists/absent, result-contains) evaluated by the open-source runner; no LLM judge. Script-based verifiers may be added later behind review. Every result pins its suite version and environment digest, and the harness is open source, so third parties can reproduce runs (a first-class `roster combine self` for authors is planned).
+- **Lab (controlled).** Results from the Combine: standardized, category-specific task suites, identical for every server **within the same suite version**. Write-capable suites run **only** against sandboxed self-hosted instances (per-server docker-compose environments, seeded to a known state). Read-only live suites (search/fetch/list) may probe live endpoints at most once per server per week, with an identifiable User-Agent and opt-out honored. Verification is programmatic state checking — declarative end-state verifiers (file-equals/contains/exists/absent, result-contains) evaluated by the open-source runner; no LLM judge. Script-based verifiers may be added later behind review. Every result pins its suite version and environment digest, and the harness is open source, so third parties can reproduce runs (a first-class `roster combine self` for authors is planned).
 - **Street (observational).** Opt-in, k-anonymous field telemetry (schema: [telemetry-schema.md](telemetry-schema.md)): in-the-wild outcome classes, latency buckets, drift incidents, usage share. Always labeled observational; never mixed into Lab standings. Publishes only past **≥5 distinct installs and ≥200 calls per (server, category)**. The pipeline ships before the table: the public Street table activates only when real data crosses those thresholds. **(implementation pending)**
 - **Universal protocol checks.** Baseline conformance checks every listed server runs regardless of category: transport behavior, handshake, schema validity, error semantics. **(implementation pending)**
 
@@ -42,6 +42,8 @@ Every task carries a public provenance flag.
 Certification pipeline: (1) an agent drafts the task and its verifiers; (2) a second, adversarial agent attacks it — wrong-field checks, false-pass and false-fail hunting; (3) the verifier is mutation-tested against seeded known-bad sandbox states and must catch them all; (4) a human certifies it — runs the pass case, forces a fail case, confirms the check matches the server's real semantics — and the task becomes `signed: true`.
 
 **Only human-signed tasks feed named public scores.** Unsigned tasks may run for internal or anonymized aggregate statistics only. Coverage never outruns signing: if signing lags, the League is smaller, not looser.
+
+The site builder treats every artifact field as a claim. It validates canonical timestamps, environment identity, SHA-256 digest syntax, task rows, and a summary re-derived from those rows. Certification then binds the run's category, task set, signing flags, and task descriptions to the reviewed suite file keyed by the exact `(suite, version)` tuple. A contradiction is dropped as tampering; an unavailable authority strips all signed credit. The complete site is rendered before publication and swapped into place as one directory, so a failed render cannot leave a mixed or partial standings tree.
 
 ## 5. Praise asymmetry at launch
 
@@ -60,6 +62,7 @@ Connect-time hashing is the reliable drift mechanism — including for output-sc
 ## 7. Suite versioning & seasons
 
 - Suites are versioned; every published result pins (suite version, environment digest). Changing a suite bumps its version.
+- Latest-run selection and comparison partitions use structured tuple identities, not separator-joined strings. Box-score filenames include a SHA-256 suffix over the full public identity (including the run timestamp when built), so lossy slugs cannot overwrite one another.
 - **Seasons** are quarterly rating epochs. Each season rotates in a **held-out task set** — tasks not previously published — to resist teaching-to-the-test; rotated-out tasks are published after retirement. **(implementation pending)**
 - Standings state which methodology version and suite versions produced them.
 
@@ -71,7 +74,7 @@ Ratings use only tool-attributable outcome classes: transport/protocol failures,
 
 ## 9. Skills Division
 
-Skills rank with the same math — Wilson LB over distinct signed tasks — in their own division. No skill is listed before passing the Trust scan (description-poisoning heuristics, script static-scan, provenance flags). Launch-depth verification is structural + safety + behavioral; task-depth suites grow weekly under the same signing rule. **(implementation pending)**
+Skills rank with the same math — Wilson LB over distinct signed tasks — in their own division. By default, no skill is served before the Trust scan passes it. Discovery is bounded and no-follow; hidden files are included, executable extensionless scripts are scanned, and unreadable entries, symlinks, unsupported file types, or an exhausted scan cap fail closed into `review`. An operator may deliberately serve reviewed skills only with `ROSTER_ALLOW_REVIEW_SKILLS=1`. Launch-depth behavioral certification and task-depth suites remain pending under the same signing rule. **(implementation pending)**
 
 ## 9a. Retrieval & learning — measured limits (honest scope)
 
