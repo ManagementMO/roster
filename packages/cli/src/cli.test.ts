@@ -235,14 +235,19 @@ args = ["-y", "@upstash/context7-mcp"]
     // rename into place: a `<ts>.staging-<hex>` dir carrying a partial, private
     // copy of the config. Nothing ever removed these, so they leaked forever.
     const orphan = path.join(backupsDir, "2026-07-05T09-09-09-999Z.staging-deadbeef");
+    const lookalike = path.join(backupsDir, "user-notes.staging-do-not-delete");
     fs.mkdirSync(orphan, { recursive: true });
+    fs.mkdirSync(lookalike, { recursive: true });
     fs.writeFileSync(path.join(orphan, "original"), "PARTIAL — never published");
+    fs.writeFileSync(path.join(lookalike, "keep"), "NOT CREATED BY ROSTER");
     expect(fs.existsSync(orphan)).toBe(true);
+    expect(fs.existsSync(lookalike)).toBe(true);
 
     // The next sync (already-synced here) runs under the client lock and must
     // garbage-collect the orphan while leaving real, published backups intact.
     syncClient("codex", new Date("2026-07-05T02:00:00Z"));
     expect(fs.existsSync(orphan)).toBe(false);
+    expect(fs.existsSync(lookalike)).toBe(true);
     const realBackups = fs
       .readdirSync(backupsDir)
       .filter((n) => !n.startsWith(".") && !n.includes(".staging-") && n !== "latest");

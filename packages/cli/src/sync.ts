@@ -246,6 +246,9 @@ function clientBackupDir(clientId: ClientId): string {
   return path.dirname(backupDirFor(clientId, "x"));
 }
 
+const ORPHAN_STAGING_NAME =
+  /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\.staging-[0-9a-f]{8}$/;
+
 /**
  * Remove staging dirs left by a PRIOR interrupted sync. Each backup is assembled
  * in a `<timestamp>.staging-<hex>` dir and renamed into place atomically, so a
@@ -268,7 +271,10 @@ function sweepOrphanStaging(clientId: ClientId): void {
     return; // no backups dir yet — nothing to sweep
   }
   for (const name of entries) {
-    if (!name.includes(".staging-")) continue;
+    // Delete only the exact name shape produced above. The backup root is
+    // Roster-owned, but a tampered or manually-added lookalike must not turn a
+    // best-effort cleanup into an overbroad recursive delete.
+    if (!ORPHAN_STAGING_NAME.test(name)) continue;
     try {
       // maxRetries absorbs the transient EPERM/EBUSY Windows throws while another
       // process (or a scanner/indexer) briefly holds a directory handle open.
