@@ -649,6 +649,17 @@ export class CoachStore {
       .prepare("SELECT capability FROM rating WHERE category = ?")
       .all(category) as Array<{ capability: string }>;
     const deleteRating = this.db.prepare("DELETE FROM rating WHERE capability = ? AND category = ?");
+    // Concurrency (several `roster serve` processes share this WAL file): the
+    // outcome scan and the aggregation above run OUTSIDE this transaction on
+    // purpose — the write lock is held only for the DELETE/UPSERT writes, never
+    // for the (potentially large) read+compute, so a maintenance recompute never
+    // stalls the hot `recordOutcome` path for longer than the writes take. The
+    // transaction body is WRITE-ONLY, so the BEGIN DEFERRED → first-write path
+    // takes the write lock immediately and cannot hit SQLITE_BUSY_SNAPSHOT (the
+    // deferred read-then-write upgrade hazard); busy_timeout absorbs the wait if
+    // a sibling holds the lock. Ratings are a full recompute, so an outcome
+    // written by a sibling between our scan and our write is simply reflected by
+    // the next maintenance cycle — eventual consistency, never corruption.
     const run = this.db.transaction(() => {
       for (const { capability } of existing) {
         if (!byCap.has(capability)) deleteRating.run(capability, category);

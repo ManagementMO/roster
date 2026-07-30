@@ -1,7 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
+import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
 import { CoachStore, defHash } from "./store.js";
@@ -790,4 +792,56 @@ describe("fix-wave round 2 — drift + robustness", () => {
     expect(res.driftEvents).toBe(1);
     expect(res.changed).toEqual(["a__t"]);
   });
+});
+
+describe("recomputeRatings is safe under cross-process contention (L11)", () => {
+  it("many processes log outcomes and recompute at once without crashing or corrupting", async () => {
+    // Several `roster serve` processes share one coach.db. This spawns real
+    // separate node processes that concurrently recordOutcome (IMMEDIATE write
+    // txn) AND recomputeRatings (write-only txn) against ONE file-backed WAL DB.
+    // A clean exit(0) from every worker proves no writer crashed with
+    // SQLITE_BUSY or corrupted the file; the final aggregate proves durability.
+    const dir = mkdtempSync(join(tmpdir(), "coach-contention-"));
+    const dbPath = join(dir, "coach.db");
+    try {
+      new CoachStore(openCoachDb(dbPath)).close(); // migrate once, then release
+
+      const worker = fileURLToPath(new URL("../test/fixtures/recompute-worker.mjs", import.meta.url));
+      const CAP = "cap__contended";
+      const N = 4;
+      const COUNT = 25;
+      const ITERS = 6;
+
+      const codes = await Promise.all(
+        Array.from({ length: N }, (_, i) =>
+          new Promise<number | null>((resolve) => {
+            const child = spawn(
+              process.execPath,
+              [worker, dbPath, CAP, `w${i}`, String(COUNT), String(ITERS)],
+              { stdio: ["ignore", "ignore", "pipe"] },
+            );
+            let err = "";
+            child.stderr?.on("data", (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on("exit", (code) => {
+              if (code !== 0) console.error(`contention worker ${i} failed:\n${err}`);
+              resolve(code);
+            });
+          }),
+        ),
+      );
+      expect(codes.every((c) => c === 0)).toBe(true);
+
+      // The file survived and a final recompute reflects EVERY logged outcome.
+      const store = new CoachStore(openCoachDb(dbPath));
+      store.recomputeRatings();
+      const rating = store.getRating(CAP);
+      expect(rating?.n).toBe(N * COUNT);
+      expect(rating?.successes).toBe(N * COUNT);
+      store.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
