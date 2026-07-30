@@ -205,6 +205,21 @@ function planRestore(
         originalBytes.toString("utf8"),
         injectedEntries,
       );
+      // Defense in depth: the era must NEVER be closed while an owned proxy still
+      // sits in the config we are about to bless as "restored". If key-level
+      // removal failed to recognize a form (e.g. a future client annotation),
+      // refuse — recoverable, era untouched — instead of a false success that
+      // strands the client rosterized (the NEW-1 failure mode). Returning an
+      // `action` result short-circuits before the journal/era close (see caller).
+      if (ownedProxyRemains(desired, injectedEntries)) {
+        return {
+          client: clientId,
+          action: "refused-modified",
+          configPath: sourcePath,
+          detail:
+            "an owned Roster proxy entry is still present after key-level restore; refusing to close the era so `roster eject` can be re-run (recovery retained)",
+        };
+      }
       return {
         sourcePath,
         ...(topology.writePath !== undefined
@@ -573,6 +588,26 @@ function stabilizeStateTargets(
  * backup without that identity refuses key-level deletion; `--force` is the
  * explicit byte-for-byte recovery path.
  */
+/**
+ * Does the restored config still contain a server Roster OWNS (by the exact
+ * ownership predicate `restoreServersKeyLevel` deletes by)? This is the
+ * era-closure safety net: if the removal LOOP ever fails to delete an entry the
+ * ownership check recognizes, eject refuses (recoverable) rather than closing
+ * the era on a false success — encoding the invariant "the era is never closed
+ * while an owned proxy remains." It uses the SAME predicate as removal, so it
+ * never fires on a user lookalike (env-bearing / conflicting transport), which
+ * removal correctly leaves; over-matching would wrongly block a clean eject.
+ */
+function ownedProxyRemains(content: string, injectedEntries: readonly SpawnEntry[]): boolean {
+  const parsed = parseJsonc(content);
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
+  const servers = (parsed as Record<string, unknown>).mcpServers;
+  if (servers === null || typeof servers !== "object" || Array.isArray(servers)) return false;
+  return Object.values(servers as Record<string, unknown>).some((entry) =>
+    injectedEntries.some((injected) => sameEntry(entry, injected)),
+  );
+}
+
 function restoreServersKeyLevel(
   currentContent: string,
   originalContent: string,

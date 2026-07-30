@@ -262,6 +262,67 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(after.mcpServers).toHaveProperty("github"); // pre-sync server restored
   });
 
+  /**
+   * NEW-1 regression. Claude Code rewrites its state file and annotates every
+   * MCP entry with `type: "stdio"`. On the reviewed base, `normalizeSpawnEntry`
+   * required EXACTLY {command,args}, so the annotated proxy no longer matched;
+   * eject reported "restored" while leaving Roster's proxy installed, then
+   * closed the era so a retry found no backup — the flagship client left
+   * permanently rosterized. Ownership must tolerate the known-inert client
+   * transport annotation while still requiring exact command/args and rejecting
+   * meaningful env / conflicting transport.
+   */
+  describe("eject recognizes a client-annotated owned proxy (NEW-1)", () => {
+    const configPath = () => path.join(home, ".claude.json");
+    const annotateRosterEntry = (extra: Record<string, unknown>): void => {
+      const cfg = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, Record<string, unknown>>;
+      };
+      expect(cfg.mcpServers.roster, "roster proxy present after sync").toBeDefined();
+      cfg.mcpServers.roster = { ...cfg.mcpServers.roster, ...extra }; // client re-serializes with extra keys
+      fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2));
+    };
+
+    it('removes the proxy when the client added type:"stdio", and closes the era', () => {
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      annotateRosterEntry({ type: "stdio" });
+
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, unknown>;
+      };
+      expect(after.mcpServers).not.toHaveProperty("roster"); // proxy actually removed
+      expect(after.mcpServers).toHaveProperty("github"); // user's server restored
+      // Era closed on genuine success: a retry finds nothing to restore.
+      expect(ejectClient("claude-code").action).toBe("no-backup");
+    });
+
+    it("NEVER removes a lookalike: user server named roster / env / different command survive", () => {
+      // A user's OWN server, merely sharing the name and even the command+args
+      // but carrying a meaningful env (a token) — a hardened lookalike.
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      const injected = rosterEntry();
+      const cfg = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, Record<string, unknown>>;
+      };
+      cfg.mcpServers.roster = { ...injected, env: { TOKEN: "sk-secret" } }; // meaningful env
+      cfg.mcpServers.mine = { command: injected.command, args: injected.args, type: "http" }; // conflicting transport
+      cfg.mcpServers.other = { command: "some-other", args: ["serve"] }; // different command
+      fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2));
+
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, Record<string, unknown>>;
+      };
+      // The env-bearing lookalike is the user's; it MUST survive (data-loss guard).
+      expect(after.mcpServers.roster).toEqual({ ...injected, env: { TOKEN: "sk-secret" } });
+      expect(after.mcpServers.mine).toBeDefined(); // conflicting transport → not ours
+      expect(after.mcpServers.other).toBeDefined(); // different command → not ours
+    });
+  });
+
   it("dedicated client: still refuses to clobber post-sync manual edits without --force", () => {
     const configPath = path.join(home, ".codex/config.toml"); // codex = dedicated (not a state file)
     const original = fs.readFileSync(configPath);
