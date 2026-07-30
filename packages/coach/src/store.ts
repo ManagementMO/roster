@@ -275,11 +275,13 @@ export class CoachStore {
     const run = this.db.transaction(() => {
       // A defHash FORMULA change would otherwise make every stored hash mismatch
       // and quarantine the whole roster on the first boot after an upgrade. Blank
-      // the stored hashes (capability AND tombstones) so the next sight of each
-      // capability ADOPTS the new fingerprint silently. Cost: a genuine backend
-      // change landing in the very same boot as the upgrade is folded into the
-      // new baseline rather than reported — strictly better than quarantining
-      // every tool. Runs once (guarded by the stored version).
+      // stored hashes (capability AND tombstones) so the next sight of each id
+      // ADOPTS the new fingerprint silently. A tombstone contains only the old
+      // hash, not the definition needed to recompute it, so its blank value is
+      // handled as an incomparable baseline below. Cost: a genuine backend
+      // change landing in the same upgrade window is folded into the new baseline
+      // rather than reported — strictly better than fabricated fleet-wide drift.
+      // Runs once (guarded by the stored version).
       if (this.getMeta(DEF_HASH_VERSION_KEY) !== DEF_HASH_VERSION) {
         this.db.prepare("UPDATE capability SET def_hash = ''").run();
         this.db.prepare("UPDATE removed_capability SET def_hash = ''").run();
@@ -312,12 +314,15 @@ export class CoachStore {
             | undefined;
           if (tomb) {
             deleteTombstone.run(entry.id);
-            if (tomb.def_hash !== hash) {
+            if (tomb.def_hash !== "" && tomb.def_hash !== hash) {
               drift.run(now, entry.id, tomb.def_hash, hash);
               setQuarantined.run(entry.id);
               result.changed.push(entry.id);
               result.driftEvents += 1;
             } else {
+              // Empty means our hash FORMULA changed while this capability was
+              // absent. The old digest is deliberately incomparable; re-adopt
+              // silently while preserving any still-active quarantine dwell.
               if (
                 tomb.quarantined === 1 &&
                 tomb.last_drift_ts !== null &&

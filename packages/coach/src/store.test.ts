@@ -189,6 +189,24 @@ describe("drift identity covers safety and contract metadata", () => {
     expect(res.changed).toEqual([]);
     expect(store2.listCapabilities()).toHaveLength(2);
   });
+
+  it("does not fabricate drift when an unchanged tombstoned capability returns after a hash-formula upgrade", () => {
+    seed();
+    store.pruneMissing(new Set(), new Set(), { now: 2 });
+    expect(store.listCapabilities({ includeQuarantined: true })).toHaveLength(0);
+
+    // Trigger the one-time formula re-baseline while the removed capability is
+    // still only a tombstone. Its old hash cannot be recomputed from that row.
+    db.prepare("UPDATE meta SET value = 'v-ancient' WHERE key = 'def_hash_version'").run();
+    const store2 = new CoachStore(db);
+    store2.upsertCapabilities([tool("fs__read", "read", "Read a file")], 3);
+
+    const returned = store2.upsertCapabilities([base, tool("fs__read", "read", "Read a file")], 4);
+    expect(returned.driftEvents, "our hash-formula change is not backend drift").toBe(0);
+    expect(returned.changed).toEqual([]);
+    expect(returned.added).toContain("fs__delete");
+    expect(store2.getCapability("fs__delete")).not.toBeNull();
+  });
 });
 
 describe("lexical search", () => {
