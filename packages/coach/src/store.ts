@@ -182,6 +182,13 @@ export class CoachStore {
     );
   }
 
+  /** Close the underlying database handle. Idempotent — a second call is a
+   *  no-op — so it is safe to call from a shutdown path that may fire more than
+   *  once (stdin EOF racing SIGTERM). */
+  close(): void {
+    if (this.db.open) this.db.close();
+  }
+
   // ── maintenance (the nightly job) ─────────────────────────────────────────
 
   private getMeta(key: string): string | null {
