@@ -137,4 +137,20 @@ function migrate(db: CoachDb): void {
   db.prepare("INSERT OR IGNORE INTO meta(key, value) VALUES('schema_version', ?)").run(
     SCHEMA_VERSION,
   );
+  // Additive column migration (forward-only, idempotent). The capability table
+  // predates safety/contract metadata; a change to `annotations`
+  // (destructiveHint/readOnlyHint/…), `execution`, or `title` is drift a client
+  // acts on, so it must be persisted and hashed. ADD COLUMN is cheap and only
+  // appends; a DB written by a newer binary already has these, and one written
+  // by an older binary gains them here with NULL defaults (== "absent").
+  addColumnIfMissing(db, "capability", "title", "TEXT");
+  addColumnIfMissing(db, "capability", "annotations", "TEXT");
+  addColumnIfMissing(db, "capability", "execution", "TEXT");
+}
+
+/** Idempotent `ALTER TABLE ADD COLUMN` — a no-op when the column already exists. */
+function addColumnIfMissing(db: CoachDb, table: string, column: string, decl: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (cols.some((c) => c.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
 }

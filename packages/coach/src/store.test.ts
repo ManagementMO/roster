@@ -44,6 +44,151 @@ describe("capability upsert + drift", () => {
   });
 });
 
+/**
+ * Drift identity must cover the fields a CLIENT or agent ACTS on, not only the
+ * ones the retrieval index reads. On the reviewed base `defHash` hashed only
+ * name/description/inputSchema/outputSchema/body, so a backend could flip
+ * `annotations.destructiveHint` true->false — the exact hint clients gate
+ * confirmations on — with a byte-identical hash: no drift event, no quarantine
+ * (reproduced). Safety annotations and the execution contract must participate
+ * in stable definition identity; volatile runtime state must not.
+ */
+describe("drift identity covers safety and contract metadata", () => {
+  const base: CapabilityEntry = {
+    id: "fs__delete",
+    kind: "tool",
+    source: "fs",
+    name: "delete",
+    description: "Delete a file",
+    title: "Delete a file",
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    execution: { taskSupport: "optional" },
+    inputSchema: { type: "object", properties: { path: { type: "string" } } },
+  };
+  const seed = (now = 1) => expect(store.upsertCapabilities([base], now).added).toEqual(["fs__delete"]);
+  const expectDrift = (next: CapabilityEntry, why: string) => {
+    const res = store.upsertCapabilities([next], 2);
+    expect(res.changed, why).toEqual(["fs__delete"]);
+    expect(res.driftEvents, why).toBe(1);
+    expect(store.driftEvents().length, why).toBeGreaterThanOrEqual(1);
+    expect(store.listCapabilities(), why).toHaveLength(0); // quarantined => withheld
+  };
+  const expectStable = (next: CapabilityEntry, why: string) => {
+    const res = store.upsertCapabilities([next], 2);
+    expect(res, why).toMatchObject({ changed: [], driftEvents: 0 });
+    expect(store.listCapabilities(), why).toHaveLength(1); // never quarantined
+  };
+
+  it("drifts on each safety annotation independently", () => {
+    for (const [k, v] of [
+      ["destructiveHint", false],
+      ["readOnlyHint", true],
+      ["idempotentHint", true],
+      ["openWorldHint", true],
+    ] as const) {
+      db = openCoachDb(":memory:");
+      store = new CoachStore(db);
+      seed();
+      expectDrift({ ...base, annotations: { ...base.annotations, [k]: v } }, `annotations.${k}`);
+    }
+  });
+
+  it("drifts on an execution/task-support contract change", () => {
+    seed();
+    expectDrift({ ...base, execution: { taskSupport: "required" } }, "taskSupport optional->required");
+  });
+
+  it("drifts on a title change (definition text the agent is shown)", () => {
+    seed();
+    expectDrift({ ...base, title: "Delete EVERYTHING" }, "title rewritten");
+  });
+
+  it("drifts on an outputSchema change (positive control)", () => {
+    seed();
+    expectDrift(
+      { ...base, outputSchema: { type: "object", properties: { ok: { type: "boolean" } } } },
+      "outputSchema added",
+    );
+  });
+
+  it("does NOT drift on pure JSON key-order changes (negative control)", () => {
+    seed();
+    expectStable(
+      {
+        ...base,
+        annotations: { openWorldHint: false, idempotentHint: false, destructiveHint: true, readOnlyHint: false },
+        inputSchema: { properties: { path: { type: "string" } }, type: "object" },
+      },
+      "reordered keys",
+    );
+  });
+
+  it("treats an absent field and an explicit undefined as equivalent (no false drift)", () => {
+    const bare: CapabilityEntry = {
+      id: "fs__plain",
+      kind: "tool",
+      source: "fs",
+      name: "plain",
+      description: "no metadata",
+      inputSchema: { type: "object" },
+    };
+    store.upsertCapabilities([bare], 1); // fields absent
+    // Same definition, but with the optional fields present as explicit undefined.
+    const res = store.upsertCapabilities(
+      [{ ...bare, title: undefined, annotations: undefined, execution: undefined }],
+      2,
+    );
+    expect(res).toMatchObject({ changed: [], driftEvents: 0 });
+  });
+
+  it("persists safety metadata so a DB reload round-trips it and does not self-drift", () => {
+    seed();
+    // New store over the SAME db handle = a fresh process reading the same file.
+    const reopened = new CoachStore(db);
+    const got = reopened.getCapability("fs__delete");
+    expect(got?.annotations).toEqual(base.annotations);
+    expect(got?.execution).toEqual(base.execution);
+    expect(got?.title).toBe(base.title);
+    // Re-sighting the identical definition after reload must be a no-op.
+    expect(reopened.upsertCapabilities([base], 3)).toMatchObject({ changed: [], driftEvents: 0 });
+  });
+
+  it("carries the expanded identity through a remove/re-add tombstone", () => {
+    seed();
+    store.pruneMissing(new Set(), new Set(), { now: 2 });
+    const res = store.upsertCapabilities(
+      [{ ...base, annotations: { ...base.annotations, destructiveHint: false } }],
+      3,
+    );
+    expect(res.driftEvents).toBe(1); // metadata-only change cannot slip back in as "new"
+    expect(res.changed).toEqual(["fs__delete"]);
+    expect(store.listCapabilities()).toHaveLength(0);
+  });
+
+  it("deletes the stored vector on metadata-only drift and rejects a stale-hash backfill", () => {
+    seed();
+    store.storeBaseVec("fs__delete", new Float32Array([1, 0]), 1);
+    const staleHash = defHash(base);
+    expectDrift({ ...base, annotations: { ...base.annotations, destructiveHint: false } }, "vector-deletion drift");
+    // A warm-boot backfill still holding the PRE-drift hash must not land.
+    expect(
+      store.storeBaseVec("fs__delete", new Float32Array([0, 1]), 3, { defHash: staleHash, modelId: "m" }),
+    ).toBe(false);
+  });
+
+  it("re-baselines silently when the hash FORMULA changes (no whole-roster quarantine)", () => {
+    seed();
+    store.upsertCapabilities([tool("fs__read", "read", "Read a file")], 1);
+    expect(store.listCapabilities()).toHaveLength(2);
+    db.prepare("UPDATE meta SET value = 'v-ancient' WHERE key = 'def_hash_version'").run();
+    const store2 = new CoachStore(db);
+    const res = store2.upsertCapabilities([base, tool("fs__read", "read", "Read a file")], 5);
+    expect(res.driftEvents, "a formula change is our change, not backend drift").toBe(0);
+    expect(res.changed).toEqual([]);
+    expect(store2.listCapabilities()).toHaveLength(2);
+  });
+});
+
 describe("lexical search", () => {
   beforeEach(() => {
     store.upsertCapabilities([
