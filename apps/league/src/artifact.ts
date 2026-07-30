@@ -17,6 +17,8 @@ export const isPreSeason = (run: LeagueRun): boolean => run.summary.signedN === 
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const isNonEmptyString = (v: unknown): v is string =>
+  typeof v === "string" && v.trim().length > 0;
 const STAGES = new Set(["invoke", "verify", "transport"]);
 
 /** Counts must match exactly; the Wilson floats only within representation noise. */
@@ -56,14 +58,32 @@ export function parseLabResults(raw: string, path = "lab-results.json"): LabResu
     throw new Error(`${path}: ${why} — legacy artifact? regenerate with \`roster combine run\``);
   };
   if (!isRecord(json)) return fail("artifact is not an object");
-  if (typeof json.generatedAt !== "string") return fail("missing generatedAt");
-  if (typeof json.environmentDigest !== "string") return fail("missing environmentDigest");
-  if (!isRecord(json.environment) || typeof json.environment.node !== "string") return fail("missing environment");
+  if (
+    !isNonEmptyString(json.generatedAt) ||
+    !Number.isFinite(Date.parse(json.generatedAt)) ||
+    new Date(json.generatedAt).toISOString() !== json.generatedAt
+  ) {
+    return fail("generatedAt must be a canonical ISO-8601 UTC timestamp");
+  }
+  if (
+    typeof json.environmentDigest !== "string" ||
+    !/^[a-f0-9]{64}$/.test(json.environmentDigest)
+  ) {
+    return fail("environmentDigest must be a lowercase SHA-256 digest");
+  }
+  if (
+    !isRecord(json.environment) ||
+    !isNonEmptyString(json.environment.node) ||
+    !isNonEmptyString(json.environment.platform) ||
+    !isNonEmptyString(json.environment.arch)
+  ) {
+    return fail("environment must include non-empty node, platform, and arch");
+  }
   if (!Array.isArray(json.runs) || json.runs.length === 0) return fail("missing runs");
   for (const run of json.runs) {
     if (!isRecord(run)) return fail("run is not an object");
     for (const key of ["server", "suite", "suiteVersion", "category"] as const) {
-      if (typeof run[key] !== "string") return fail(`run missing ${key}`);
+      if (!isNonEmptyString(run[key])) return fail(`run missing ${key}`);
     }
     const where = `run "${String(run.server)}"`;
     if (!Array.isArray(run.results)) return fail(`${where} missing results`);
@@ -110,10 +130,20 @@ export function parseLabResults(raw: string, path = "lab-results.json"): LabResu
  * Certification: binding a run's `signed` flags to the authoritative suite
  * ------------------------------------------------------------------ */
 
-/** `${suite}@${version}` → taskId → the SUITE's authoritative `signed` flag. */
-export type SuiteSigning = ReadonlyMap<string, ReadonlyMap<string, boolean>>;
+export interface SuiteTaskAuthority {
+  signed: boolean;
+  description?: string;
+}
 
-export const suiteKey = (suite: string, version: string): string => `${suite}@${version}`;
+/** Authoritative identity and task facts loaded from one reviewed suite file. */
+export interface SuiteAuthority {
+  category: string;
+  tasks: ReadonlyMap<string, SuiteTaskAuthority>;
+}
+
+/** Collision-free tuple key for a suite and version. */
+export const suiteKey = (suite: string, version: string): string =>
+  JSON.stringify([suite, version]);
 
 export type Certification =
   | { status: "certified" }
@@ -134,28 +164,37 @@ export type Certification =
  *    promises "the identical task suite", and dropping a failing signed row is
  *    how you'd forge a score by OMISSION rather than by assertion.
  */
-export function certifyRun(run: LeagueRun, signing: SuiteSigning): Certification {
+export function certifyRun(
+  run: LeagueRun,
+  authorities: ReadonlyMap<string, SuiteAuthority>,
+): Certification {
   const key = suiteKey(run.suite, run.suiteVersion);
-  const suite = signing.get(key);
-  if (!suite) {
+  const authority = authorities.get(key);
+  if (!authority) {
     return { status: "unverifiable", reason: `no suite ${key} available to certify against` };
   }
+  if (run.category !== authority.category) {
+    return {
+      status: "tampered",
+      reason: `run category "${run.category}" contradicts suite ${key}'s authoritative category "${authority.category}"`,
+    };
+  }
   for (const r of run.results) {
-    const authoritative = suite.get(r.taskId);
+    const authoritative = authority.tasks.get(r.taskId);
     if (authoritative === undefined) {
       return { status: "tampered", reason: `task "${r.taskId}" is not in suite ${key}` };
     }
-    if (r.signed !== authoritative) {
+    if (r.signed !== authoritative.signed) {
       return {
         status: "tampered",
-        reason: `task "${r.taskId}" claims signed=${r.signed} but suite ${key} says signed=${authoritative}`,
+        reason: `task "${r.taskId}" claims signed=${r.signed} but suite ${key} says signed=${authoritative.signed}`,
       };
     }
   }
-  if (run.results.length !== suite.size) {
+  if (run.results.length !== authority.tasks.size) {
     return {
       status: "tampered",
-      reason: `ran ${run.results.length} of suite ${key}'s ${suite.size} tasks — a partial run cannot be scored`,
+      reason: `ran ${run.results.length} of suite ${key}'s ${authority.tasks.size} tasks — a partial run cannot be scored`,
     };
   }
   return { status: "certified" };
@@ -163,20 +202,27 @@ export function certifyRun(run: LeagueRun, signing: SuiteSigning): Certification
 
 /**
  * Strip signed credit from a run we cannot certify. It stays visible (the
- * results are still real and reproducible) but reads as PRE-SEASON/unofficial
- * and can never mint a named rank.
+ * artifact remains auditable) but reads as PRE-SEASON/unofficial and can never
+ * mint a named rank.
  */
 export function withoutSignedCredit(run: LeagueRun): LeagueRun {
   return { ...run, summary: { ...run.summary, signedN: 0, signedPasses: 0, signedWilsonLb: 0 } };
 }
 
-/** Newest artifact wins per (server, suite); the builder reports what it dropped. */
+/** Newest artifact wins per exact (server, suite, suiteVersion) tuple. */
 export function latestRuns(artifacts: LoadedArtifact[]): Array<{ artifact: LoadedArtifact; run: LeagueRun }> {
   const byKey = new Map<string, { artifact: LoadedArtifact; run: LeagueRun }>();
-  const sorted = [...artifacts].sort((a, b) => a.data.generatedAt.localeCompare(b.data.generatedAt));
+  const sorted = [...artifacts].sort(
+    (a, b) =>
+      Date.parse(a.data.generatedAt) - Date.parse(b.data.generatedAt) ||
+      a.path.localeCompare(b.path),
+  );
   for (const artifact of sorted) {
     for (const run of artifact.data.runs) {
-      byKey.set(`${run.server} ${run.suite}`, { artifact, run });
+      byKey.set(
+        JSON.stringify([run.server, run.suite, run.suiteVersion]),
+        { artifact, run },
+      );
     }
   }
   return [...byKey.values()];

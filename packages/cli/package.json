@@ -4,6 +4,7 @@
   "description": "Roster — the tool router for AI agents. One MCP endpoint, the right five tools per task.",
   "type": "module",
   "license": "MIT",
+  "engines": { "node": ">=22.13" },
   "bin": {
     "roster": "./dist/bin.js"
   },
@@ -20,7 +21,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@rosterhq/coach": "workspace:*",
     "@rosterhq/combine": "workspace:*",
     "@rosterhq/playbook": "workspace:*",

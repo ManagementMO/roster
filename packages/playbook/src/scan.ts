@@ -48,6 +48,7 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
     const parsed = parseSkillMd(content, entry.name, dir);
     if (!parsed) continue;
     const resources = listResources(dir);
+    const securityWalk = listScripts(dir);
     skills.push({
       ...parsed,
       resources,
@@ -56,7 +57,8 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
       // them from the 200-capped display list let a skill hide a malicious script
       // behind 200 benign files: it was neither listed nor scanned, so the skill
       // scanned "ok" and (with the R5-09 gate) was served (R5-15).
-      scripts: listScripts(dir),
+      scripts: securityWalk.scripts,
+      scanWarnings: securityWalk.warnings,
     });
   }
   return skills;
@@ -107,24 +109,61 @@ const MAX_SCRIPTS_SCANNED = 5_000;
  * hanging the scan; reaching it would itself warrant review, but 5,000 scripts in
  * one skill is far beyond anything legitimate.
  */
-function listScripts(dir: string): string[] {
+function listScripts(dir: string): { scripts: string[]; warnings: string[] } {
   const out: string[] = [];
+  const warnings = new Set<string>();
   const walk = (rel: string): void => {
-    if (out.length >= MAX_SCRIPTS_SCANNED) return;
+    if (out.length >= MAX_SCRIPTS_SCANNED) {
+      warnings.add(`script-scan-cap:${MAX_SCRIPTS_SCANNED}`);
+      return;
+    }
     let entries: fs.Dirent[];
     try {
       entries = fs.readdirSync(path.join(dir, rel), { withFileTypes: true });
     } catch {
+      warnings.add(`unreadable-directory:${rel || "."}`);
       return;
     }
     for (const entry of entries) {
-      if (out.length >= MAX_SCRIPTS_SCANNED) return;
-      if (entry.name.startsWith(".")) continue;
+      if (out.length >= MAX_SCRIPTS_SCANNED) {
+        warnings.add(`script-scan-cap:${MAX_SCRIPTS_SCANNED}`);
+        return;
+      }
       const childRel = rel === "" ? entry.name : `${rel}/${entry.name}`;
-      if (entry.isDirectory()) walk(childRel);
-      else if (childRel !== "SKILL.md" && isScriptPath(childRel)) out.push(childRel);
+      const childAbs = path.join(dir, childRel);
+      let stat: fs.Stats;
+      try {
+        stat = fs.lstatSync(childAbs);
+      } catch {
+        warnings.add(`unreadable-entry:${childRel}`);
+        continue;
+      }
+      if (stat.isSymbolicLink()) {
+        warnings.add(`symlink:${childRel}`);
+        continue;
+      }
+      if (stat.isDirectory()) {
+        walk(childRel);
+        continue;
+      }
+      if (!stat.isFile()) {
+        warnings.add(`unsupported-entry:${childRel}`);
+        continue;
+      }
+      if (childRel === "SKILL.md") continue;
+      const executable = (stat.mode & 0o111) !== 0;
+      if (!isScriptPath(childRel) && !executable) continue;
+      out.push(childRel);
+      try {
+        fs.accessSync(childAbs, fs.constants.R_OK);
+      } catch {
+        warnings.add(`unreadable-file:${childRel}`);
+      }
     }
   };
   walk("");
-  return out.sort();
+  if (out.length >= MAX_SCRIPTS_SCANNED) {
+    warnings.add(`script-scan-cap:${MAX_SCRIPTS_SCANNED}`);
+  }
+  return { scripts: out.sort(), warnings: [...warnings].sort() };
 }

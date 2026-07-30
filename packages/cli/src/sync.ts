@@ -4,17 +4,26 @@ import path from "node:path";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
-import { hasGlobalRoster, ourBinPath, rosterEntry, sameEntry, type SpawnEntry } from "./entry.js";
+import {
+  isOwnedRosterEntry,
+  normalizeSpawnEntry,
+  rosterEntry,
+  type SpawnEntry,
+} from "./entry.js";
+import { hasEjectJournal } from "./ejectJournal.js";
 import { parseJsonc } from "./jsonc.js";
+import { withFileLockSync } from "./lock.js";
 import {
   atomicWriteFileSync,
   backupDirFor,
-  loadConfig,
   mergeServers,
   PRIVATE_DIR,
   PRIVATE_FILE,
-  saveConfig,
+  resolveWriteTopology,
+  updateConfig,
+  validateWriteTopology,
 } from "./rosterfile.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 
 /** The four write clients (handoff §6.3). Read-import covers everything; writes stay narrow. */
 export const WRITE_CLIENTS: ClientId[] = ["claude-code", "cursor", "codex", "openclaw"];
@@ -31,6 +40,10 @@ export interface BackupManifest {
    * after syncing is theirs and survives (R5-01). Absent on pre-R5 backups.
    */
   injectedEntry?: SpawnEntry;
+  /** Resolved regular file atomically replaced while preserving sourcePath. */
+  writePath?: string;
+  /** Raw readlink value when sourcePath was a symlink. */
+  symlinkTarget?: string;
 }
 
 export interface SyncResult {
@@ -53,12 +66,24 @@ export { hasGlobalRoster } from "./entry.js";
  * referenced backup — never a clobbered config without a findable backup.
  */
 export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
+  return withFileLockSync(`client:${clientId}`, () => syncClientUnlocked(clientId, now));
+}
+
+function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   const spec = CLIENTS.find((c) => c.id === clientId);
   if (!spec) throw new Error(`unknown client: ${clientId}`);
+  if (hasEjectJournal(clientId)) {
+    throw new Error(
+      `a previous ${clientId} eject is pending recovery; run \`roster eject --client ${clientId}\` before syncing again`,
+    );
+  }
   const configPath = spec.configPaths().find((p) => fs.existsSync(p));
   if (!configPath) return { client: clientId, configPath: "", action: "not-found" };
 
-  const originalBytes = fs.readFileSync(configPath);
+  const topology = resolveWriteTopology(configPath);
+  const originalBytes = readRegularFileNoFollow(topology.writePath, {
+    attempts: 4,
+  });
 
   // Step 1 — import before we overwrite anything. ONLY the parse may fail
   // benignly (unparseable config = nothing to import). A failure of the import
@@ -71,15 +96,24 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
   } catch {
     servers = []; // unparseable: the backup still protects the original bytes
   }
+  if (servers.some((server) => server.url && !server.command)) {
+    throw new Error(
+      "URL-only MCP servers cannot be synced yet: Roster routing is stdio-only; the client was left untouched",
+    );
+  }
+  const injectedEntry = rosterEntry();
+  const ownedEntries = ownedRosterEntries(clientId, injectedEntry);
   if (servers.length > 0) {
-    const config = loadConfig();
-    const { added } = mergeServers(config, servers);
-    if (added.length > 0) saveConfig(config);
+    const { added } = updateConfig((config) => mergeServers(config, servers, ownedEntries));
     imported = added.length;
   }
 
-  const injectedEntry = rosterEntry();
-  const rewritten = rewriteConfig(clientId, originalBytes.toString("utf8"), injectedEntry);
+  const rewritten = rewriteConfig(
+    clientId,
+    originalBytes.toString("utf8"),
+    injectedEntry,
+    ownedEntries,
+  );
   if (rewritten === null) {
     return { client: clientId, configPath, action: "already-synced", imported };
   }
@@ -103,6 +137,10 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     writtenSha256: sha256Hex(rewritten),
     timestamp,
     injectedEntry, // exact identity for eject — never the key name (R5-01)
+    writePath: topology.writePath,
+    ...(topology.symlinkTarget !== undefined
+      ? { symlinkTarget: topology.symlinkTarget }
+      : {}),
   };
   fs.writeFileSync(path.join(stagingDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, {
     mode: PRIVATE_FILE,
@@ -111,16 +149,26 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
   fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp, { mode: PRIVATE_FILE });
 
   // Step 3 — atomic config replacement (private tmp + rename).
-  atomicWriteFileSync(configPath, rewritten);
+  const writePath = validateWriteTopology(
+    configPath,
+    manifest.writePath,
+    manifest.symlinkTarget,
+  );
+  atomicWriteFileSync(writePath, rewritten);
 
   return { client: clientId, configPath, action: "synced", backupDir, imported };
 }
 
 /** Returns the new file content, or null when the config already points solely at Roster. */
-function rewriteConfig(clientId: ClientId, content: string, entry: SpawnEntry): string | null {
+function rewriteConfig(
+  clientId: ClientId,
+  content: string,
+  entry: SpawnEntry,
+  ownedEntries: readonly SpawnEntry[],
+): string | null {
   if (clientId === "codex") {
     const data = parseToml(content) as Record<string, unknown>;
-    if (isAlreadySynced(data.mcp_servers, entry)) return null;
+    if (isAlreadySynced(data.mcp_servers, ownedEntries)) return null;
     data.mcp_servers = { roster: entry };
     return `${stringifyToml(data)}\n`;
   }
@@ -133,53 +181,20 @@ function rewriteConfig(clientId: ClientId, content: string, entry: SpawnEntry): 
     throw new Error(`config is not a JSON object (got ${Array.isArray(data) ? "array" : typeof data})`);
   }
   const obj = data as Record<string, unknown>;
-  if (isAlreadySynced(obj.mcpServers, entry)) return null;
+  if (isAlreadySynced(obj.mcpServers, ownedEntries)) return null;
   obj.mcpServers = { roster: entry };
   return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
 /**
- * Is the servers map already a HEALTHY Roster-only install? Loose on FORM (global,
- * execPath+bin.js, or post-publish npx) so a re-sync from a machine that installs
- * differently doesn't loop — but "already synced" is a claim that the client will
- * actually reach US, so every form must be one we can stand behind:
- *
- *  - the exact entry we'd write now → current, leave it;
- *  - a bare `roster` → healthy ONLY if a trusted global roster actually exists.
- *    Round 5 (R5-01) found this branch returning true unconditionally: a config
- *    naming a `roster` binary that is a stranger's, or absent entirely, was
- *    reported healthy and left in place — the same squatter hazard DEF-5 closed
- *    for WRITES, still wide open for the health CHECK. `hasGlobalRoster()` is the
- *    one authority on whether that command is ours;
- *  - the execPath form → our own bin path is authoritative even after the machine
- *    gains a global (don't churn a working entry, M5); a DIFFERENT bin.js counts
- *    only while it still exists on disk, so a moved/removed install refreshes
- *    instead of claiming false health (DEF-4).
- *
- * A user's own server merely NAMED "roster" matches none of these and is left for
- * sync to import and preserve (R5-01).
+ * A healthy Roster-only install has one entry whose full shape exactly matches
+ * either this install or an intact active manifest. Basenames, key names,
+ * executable existence, and a trailing "serve" are insufficient proof.
  */
-function isAlreadySynced(servers: unknown, want: SpawnEntry): boolean {
-  if (servers === null || typeof servers !== "object") return false;
+function isAlreadySynced(servers: unknown, ownedEntries: readonly SpawnEntry[]): boolean {
+  if (servers === null || typeof servers !== "object" || Array.isArray(servers)) return false;
   const entries = Object.entries(servers as Record<string, unknown>);
-  if (entries.length !== 1 || entries[0]![0] !== "roster") return false;
-  const entry = entries[0]![1] as Record<string, unknown> | null;
-  if (entry === null || typeof entry !== "object") return false;
-  const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
-
-  if (sameEntry(entry, want)) return true; // exactly what we'd write now
-  if (entry.command === "roster" && args.includes("serve")) return hasGlobalRoster();
-
-  const script = typeof entry.command === "string" && path.basename(entry.command).startsWith("node") ? args[0] : undefined;
-  if (script && /(^|[\\/])bin\.js$/.test(script) && args.includes("serve")) {
-    if (script === ourBinPath()) return true;
-    try {
-      return fs.existsSync(script);
-    } catch {
-      return false;
-    }
-  }
-  return false;
+  return entries.length === 1 && isOwnedRosterEntry(entries[0]![1], ownedEntries);
 }
 
 export interface BackupRef {
@@ -193,6 +208,33 @@ export interface RawBackup {
   name: string;
   /** null when the manifest is missing or unparseable — surfaced, never skipped. */
   manifest: BackupManifest | null;
+}
+
+/** Exact current and historical entries Roster can prove it installed. */
+export function ownedRosterEntries(
+  clientId?: ClientId,
+  current: SpawnEntry = rosterEntry(),
+): SpawnEntry[] {
+  const entries: SpawnEntry[] = [current];
+  const clients = clientId ? [clientId] : WRITE_CLIENTS;
+  for (const id of clients) {
+    for (const backup of rawBackups(id)) {
+      const injected = normalizeSpawnEntry(backup.manifest?.injectedEntry);
+      if (!injected || !backup.manifest) continue;
+      try {
+        const original = readRegularFileNoFollow(
+          path.join(backup.dir, "original"),
+        );
+        if (sha256Hex(original) !== backup.manifest.originalSha256) continue;
+      } catch {
+        continue;
+      }
+      if (!entries.some((entry) => isOwnedRosterEntry(injected, [entry]))) {
+        entries.push(injected);
+      }
+    }
+  }
+  return entries;
 }
 
 /** Client backup root, e.g. ~/.roster/backups/cursor. */
@@ -224,9 +266,16 @@ function closedThroughPath(clientId: ClientId): string {
 
 export function readClosedThrough(clientId: ClientId): string | null {
   try {
-    return fs.readFileSync(closedThroughPath(clientId), "utf8").trim() || null;
-  } catch {
-    return null; // no marker → nothing has been ejected yet
+    const value = readRegularFileNoFollow(closedThroughPath(clientId))
+      .toString("utf8")
+      .trim();
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/.test(value)) {
+      throw new Error(`backup era marker for ${clientId} is corrupt`);
+    }
+    return value;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
   }
 }
 
@@ -236,12 +285,11 @@ export function readClosedThrough(clientId: ClientId): string | null {
  * refuse to report a clean success, because a future eject could otherwise reach
  * back into this era.
  */
-export function closeEra(clientId: ClientId): boolean {
-  const active = rawBackups(clientId);
-  const newest = active.at(-1);
-  if (!newest) return true; // nothing open to close
+export function closeEraThrough(clientId: ClientId, backupName: string): boolean {
+  const current = readClosedThrough(clientId);
+  if (current !== null && current >= backupName) return true;
   try {
-    atomicWriteFileSync(closedThroughPath(clientId), `${newest.name}\n`);
+    atomicWriteFileSync(closedThroughPath(clientId), `${backupName}\n`);
     return true;
   } catch {
     return false;
@@ -269,13 +317,22 @@ export function rawBackups(clientId: ClientId): RawBackup[] {
     if (closedThrough !== null && name <= closedThrough) continue; // already ejected
     const dir = path.join(clientDir, name);
     try {
-      if (!fs.statSync(dir).isDirectory()) continue;
+      const stat = fs.lstatSync(dir);
+      if (stat.isSymbolicLink()) {
+        out.push({ dir, name, manifest: null });
+        continue;
+      }
+      if (!stat.isDirectory()) continue;
     } catch {
       continue;
     }
     let manifest: BackupManifest | null = null;
     try {
-      manifest = JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"), "utf8")) as BackupManifest;
+      manifest = JSON.parse(
+        readRegularFileNoFollow(path.join(dir, "manifest.json")).toString(
+          "utf8",
+        ),
+      ) as BackupManifest;
     } catch {
       manifest = null; // missing or corrupt — kept as a null slot, not skipped
     }

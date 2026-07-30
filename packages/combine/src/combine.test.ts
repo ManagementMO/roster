@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { assertFailProbeArtifact } from "./failProbes.js";
 import { parseSuite, template } from "./task.js";
 import { runSuite } from "./runner.js";
 import { buildLabResults } from "./results.js";
@@ -68,6 +69,118 @@ describe("suite parsing", () => {
     ).toThrow(/duplicate/);
   });
 
+  it("rejects non-object task records with stable task locations", () => {
+    for (const task of ["null", "[]", "a string", "42"]) {
+      expect(() =>
+        parseSuite(`suite: s\nversion: "1"\ncategory: c\ntasks:\n  - ${task}\n`),
+      ).toThrow(/tasks\[0\]: task must be an object/);
+    }
+  });
+
+  it("rejects missing or invalid task identifiers and descriptions", () => {
+    for (const task of [
+      "invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]",
+      "id: 42\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]",
+      "id: a\n    description: 42\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]",
+    ]) {
+      expect(() =>
+        parseSuite(`suite: s\nversion: "1"\ncategory: c\ntasks:\n  - ${task}\n`),
+      ).toThrow(/tasks\[0\]: (id required|description must be a string)/);
+    }
+  });
+
+  it("rejects malformed invoke arguments without echoing them", () => {
+    for (const args of ["null", "[DO-NOT-LEAK]", '"not-an-object"']) {
+      const attempt = () =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: { tool: t, args: ${args} }\n    verify: [{ kind: fileExists, path: x }]\n`,
+        );
+      expect(attempt).toThrow(/tasks\[0\]\.invoke: args must be an object/);
+      expect(attempt).not.toThrow(/DO-NOT-LEAK/);
+    }
+    expect(() =>
+      parseSuite(
+        `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: []\n    verify: [{ kind: fileExists, path: x }]\n`,
+      ),
+    ).toThrow(/tasks\[0\]: invoke required/);
+  });
+
+  it("rejects YAML collection tags where plain mappings are required", () => {
+    for (const fragment of [
+      "invoke: { tool: t, args: !!set { DO-NOT-LEAK: null } }",
+      "invoke: { tool: t, args: !!omap [ { DO-NOT-LEAK: value } ] }",
+      "setup: !!set { seed: null }\n    invoke: { tool: t, args: {} }",
+      "setup: !!omap [ { files: { seed: value } } ]\n    invoke: { tool: t, args: {} }",
+      "setup: { files: !!omap [ { seed: value } ] }\n    invoke: { tool: t, args: {} }",
+    ]) {
+      const attempt = () =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    ${fragment}\n    verify: [{ kind: fileExists, path: x }]\n`,
+        );
+      expect(attempt).toThrow(/tasks\[0\](?:\.invoke|\.setup)/);
+      expect(attempt).not.toThrow(/DO-NOT-LEAK/);
+    }
+  });
+
+  it("rejects malformed setup files", () => {
+    for (const setup of [
+      "[]",
+      '"not-an-object"',
+      "{ files: [] }",
+      '{ files: { seed: 42 } }',
+    ]) {
+      expect(() =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    setup: ${setup}\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]\n`,
+        ),
+      ).toThrow(/tasks\[0\]\.setup/);
+    }
+  });
+
+  it("preserves a setup file literally named __proto__", () => {
+    const suite = parseSuite(`
+suite: s
+version: "1"
+category: c
+tasks:
+  - id: a
+    setup: { files: { "__proto__": seeded } }
+    invoke: { tool: t, args: {} }
+    verify: [{ kind: fileExists, path: "__proto__" }]
+`);
+    const files = suite.tasks[0]?.setup?.files;
+    expect(Object.hasOwn(files ?? {}, "__proto__")).toBe(true);
+    expect(files?.__proto__).toBe("seeded");
+  });
+
+  it("rejects malformed verifier records and required verifier fields", () => {
+    for (const verifier of [
+      "null",
+      "[]",
+      '"not-an-object"',
+      "{ kind: 42 }",
+      "{ kind: fileEquals, path: x }",
+      "{ kind: resultContains, contains: 42 }",
+    ]) {
+      const attempt = () =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    invoke: { tool: t, args: { credential: DO-NOT-LEAK } }\n    verify: [${verifier}]\n`,
+        );
+      expect(attempt).toThrow(/tasks\[0\]\.verify\[0\]/);
+      expect(attempt).not.toThrow(/DO-NOT-LEAK/);
+    }
+  });
+
+  it("rejects non-positive and non-finite timeouts", () => {
+    for (const timeoutMs of ["0", "-1", ".nan", ".inf", "-.inf"]) {
+      expect(() =>
+        parseSuite(
+          `suite: s\nversion: "1"\ncategory: c\ntasks:\n  - id: a\n    timeoutMs: ${timeoutMs}\n    invoke: { tool: t, args: {} }\n    verify: [{ kind: fileExists, path: x }]\n`,
+        ),
+      ).toThrow(/tasks\[0\]: timeoutMs must be a finite positive number/);
+    }
+  });
+
   it("templates {{sandbox}} and {{run_id}} recursively", () => {
     const out = template(
       { a: "{{sandbox}}/x", b: ["{{run_id}}"], c: 3 },
@@ -133,6 +246,100 @@ tasks:
     // A case-variant name must NOT satisfy the verifier — on macOS/APFS
     // fs.existsSync would false-pass; the byte-exact readdir check catches it.
     expect(byId["bad.case-variant-is-not-exact"]).toMatchObject({ pass: false, stage: "verify" });
+  }, 30_000);
+
+  it("does not certify symlinks for file verifiers", async () => {
+    const symlinkSuite = parseSuite(`
+suite: symlink-verifiers
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: external.file-equals
+    invoke: { tool: create_external_symlink, args: { path: "external-equals" } }
+    verify:
+      - { kind: fileEquals, path: "external-equals", equals: "external target" }
+  - id: dangling.file-equals
+    invoke: { tool: create_dangling_symlink, args: { path: "dangling-equals" } }
+    verify:
+      - { kind: fileEquals, path: "dangling-equals", equals: "external target" }
+  - id: external.file-exists
+    invoke: { tool: create_external_symlink, args: { path: "external-exists" } }
+    verify:
+      - { kind: fileExists, path: "external-exists" }
+  - id: dangling.file-exists
+    invoke: { tool: create_dangling_symlink, args: { path: "dangling-exists" } }
+    verify:
+      - { kind: fileExists, path: "dangling-exists" }
+  - id: external.file-absent
+    invoke: { tool: create_external_symlink, args: { path: "external-absent" } }
+    verify:
+      - { kind: fileAbsent, path: "external-absent" }
+  - id: dangling.file-absent
+    invoke: { tool: create_dangling_symlink, args: { path: "dangling-absent" } }
+    verify:
+      - { kind: fileAbsent, path: "dangling-absent" }
+`);
+    const run = await runSuite(symlinkSuite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+
+    const byId = Object.fromEntries(run.results.map((r) => [r.taskId, r]));
+    for (const taskId of [
+      "external.file-equals",
+      "dangling.file-equals",
+      "external.file-exists",
+      "dangling.file-exists",
+      "external.file-absent",
+      "dangling.file-absent",
+    ]) {
+      expect(byId[taskId]).toMatchObject({ pass: false, stage: "verify" });
+    }
+  }, 30_000);
+
+  it("accepts contained filenames that merely begin with two dots", async () => {
+    const suite = parseSuite(`
+suite: dot-prefix
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: dot-prefix.ordinary
+    invoke: { tool: write_file, args: { path: "..ordinary.txt", content: "ordinary" } }
+    verify:
+      - { kind: fileExists, path: "..ordinary.txt" }
+      - { kind: fileEquals, path: "..ordinary.txt", equals: "ordinary" }
+`);
+    const run = await runSuite(suite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+
+    expect(run.results[0]).toMatchObject({ pass: true, stage: null });
+  }, 30_000);
+
+  it("does not certify absence after observing an entry that cannot be stated", async () => {
+    const suite = parseSuite(`
+suite: inaccessible-entry
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: inaccessible-entry.absent
+    invoke: { tool: create_restricted_entry, args: { path: "restricted" } }
+    verify:
+      - { kind: fileAbsent, path: "restricted/observed" }
+`);
+    const run = await runSuite(suite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+
+    expect(run.results[0]).toMatchObject({ pass: false, stage: "verify" });
   }, 30_000);
 
   it("summarizes into lab-results with Wilson and signed separation", async () => {
@@ -232,4 +439,72 @@ tasks:
     expect(r.stage).toBe("verify");
     expect(r.detail).toBe("content mismatch in a.txt"); // task-derived, safe, and diagnostic
   }, 30_000);
+});
+
+describe("fail-probe certification gate", () => {
+  const suite = parseSuite(`
+suite: verifier-fail-probes
+version: "1"
+category: filesystem
+tasks:
+  - id: probe.one
+    invoke: { tool: t, args: {} }
+    verify: [{ kind: fileExists, path: missing-one }]
+  - id: probe.two
+    invoke: { tool: t, args: {} }
+    verify: [{ kind: fileExists, path: missing-two }]
+`);
+  const validArtifact = () =>
+    buildLabResults(
+      [
+        {
+          server: "target",
+          suite: suite.suite,
+          suiteVersion: suite.version,
+          category: suite.category,
+          results: suite.tasks.map((task) => ({
+            taskId: task.id,
+            signed: false,
+            pass: false,
+            stage: "verify" as const,
+            detail: "suite-derived verifier failure",
+            latencyMs: 1,
+          })),
+        },
+      ],
+      new Date("2026-07-30T00:00:00Z"),
+    );
+
+  it("accepts complete unsigned probes only when every task reaches and fails verification", () => {
+    expect(assertFailProbeArtifact(suite, validArtifact())).toEqual({
+      taskCount: suite.tasks.length,
+    });
+  });
+
+  it("rejects false-green transport failures, passes, missing tasks, and signed probes", () => {
+    const transport = validArtifact();
+    transport.runs[0]!.results[0]!.stage = "transport";
+    expect(() => assertFailProbeArtifact(suite, transport)).toThrow(
+      /probe\.one.*verify.*transport/i,
+    );
+
+    const passed = validArtifact();
+    passed.runs[0]!.results[0]!.pass = true;
+    passed.runs[0]!.results[0]!.stage = null;
+    expect(() => assertFailProbeArtifact(suite, passed)).toThrow(
+      /probe\.one.*unexpectedly passed/i,
+    );
+
+    const incomplete = validArtifact();
+    incomplete.runs[0]!.results.pop();
+    expect(() => assertFailProbeArtifact(suite, incomplete)).toThrow(
+      /complete.*task coverage/i,
+    );
+
+    const signedSuite = structuredClone(suite);
+    signedSuite.tasks[0]!.signed = true;
+    expect(() => assertFailProbeArtifact(signedSuite, validArtifact())).toThrow(
+      /must be unsigned/i,
+    );
+  });
 });

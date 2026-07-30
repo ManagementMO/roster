@@ -136,3 +136,129 @@ describe("classifyToolFailKind — real-wire hardening (DEF-6)", () => {
     expect(isAttributable(classifyOutcome({ isError: true, errorText: "500 Internal Server Error: validation panic" }))).toBe(true);
   });
 });
+
+describe("classifyToolFailKind — fully quoted diagnostics", () => {
+  it("classifies a fully quoted timeout diagnostic", () => {
+    expect(classifyToolFailKind('"request timed out"')).toBe("timeout");
+  });
+
+  it("classifies a fully quoted internal diagnostic", () => {
+    expect(classifyToolFailKind('"Internal Server Error"')).toBe("internal");
+  });
+
+  it("classifies a fully quoted auth diagnostic", () => {
+    expect(classifyToolFailKind('"401 Unauthorized"')).toBe("auth");
+  });
+
+  it("classifies a fully quoted timeout diagnostic that names a path", () => {
+    expect(classifyToolFailKind('"request timed out at /v1/tools"')).toBe("timeout");
+  });
+
+  it("classifies a fully quoted internal diagnostic that names a path", () => {
+    expect(classifyToolFailKind('"500 Internal Server Error at /v1/tools"')).toBe("internal");
+  });
+
+  it("classifies a fully quoted auth diagnostic that names a path", () => {
+    expect(classifyToolFailKind('"401 Unauthorized for /v1/tools"')).toBe("auth");
+  });
+
+  it("does not revive a quoted auth-token file path", () => {
+    expect(classifyToolFailKind("ENOENT open 'auth-token.txt'")).toBe("other");
+  });
+
+  it("does not classify a fully quoted auth-token path", () => {
+    expect(classifyToolFailKind('"/data/auth-tokens.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted auth-token filename", () => {
+    expect(classifyToolFailKind('"auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted relative auth-token path", () => {
+    expect(classifyToolFailKind('"./auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows drive path", () => {
+    expect(classifyToolFailKind('"C:\\data\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows UNC path", () => {
+    expect(classifyToolFailKind('"\\\\server\\share\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted home-relative path", () => {
+    expect(classifyToolFailKind('"~/.config/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted file URI", () => {
+    expect(classifyToolFailKind('"file:///data/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted no-slash URI scheme", () => {
+    expect(classifyToolFailKind('"vault:auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted POSIX environment path", () => {
+    expect(classifyToolFailKind('"$HOME/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows environment path", () => {
+    expect(classifyToolFailKind('"%USERPROFILE%\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted named home path with spaces", () => {
+    expect(classifyToolFailKind('"~alice/Private Config/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted POSIX environment path with spaces", () => {
+    expect(classifyToolFailKind('"$HOME/Private Config/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted braced POSIX environment path with spaces", () => {
+    expect(classifyToolFailKind(`"\${HOME}/Private Config/auth-token.txt"`)).toBe("other");
+  });
+
+  it("does not classify a fully quoted Windows environment path with spaces", () => {
+    expect(classifyToolFailKind('"%USERPROFILE%\\Private Config\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted PowerShell environment path with spaces", () => {
+    expect(classifyToolFailKind('"$env:USERPROFILE\\Private Config\\auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted relative path with spaces", () => {
+    expect(classifyToolFailKind('"Private Config/auth-token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted filename with a spaced basename", () => {
+    expect(classifyToolFailKind('"auth token.txt"')).toBe("other");
+  });
+
+  it("does not classify a fully quoted multi-dot filename with a spaced basename", () => {
+    expect(classifyToolFailKind('"auth token.backup.txt"')).toBe("other");
+  });
+
+  it("classifies a fully quoted timeout diagnostic before a filename", () => {
+    expect(classifyToolFailKind('"request timed out in report.txt"')).toBe("timeout");
+  });
+
+  it("classifies a fully quoted internal diagnostic before a filename", () => {
+    expect(classifyToolFailKind('"500 internal server error report.txt"')).toBe("internal");
+  });
+
+  it("classifies a fully quoted auth diagnostic before a filename", () => {
+    expect(classifyToolFailKind('"401 unauthorized report.txt"')).toBe("auth");
+  });
+
+  it("does not treat a bare auth word before a filename as a diagnostic", () => {
+    expect(classifyToolFailKind('"my auth token.txt"')).toBe("other");
+  });
+
+  it("does not classify a message composed of multiple quoted literals", () => {
+    expect(classifyToolFailKind("'auth-token.txt' 'ignored'")).toBe("other");
+  });
+
+  it("does not treat a literal token as an auth credential", () => {
+    expect(classifyToolFailKind("Unexpected token < in JSON")).toBe("other");
+  });
+});

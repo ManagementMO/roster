@@ -1,25 +1,25 @@
 # Roster — status & decision board for Mo
 
-> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-07-06** (after: the 16-charter experiment swarm → three fix-wave rounds → an adversarial meta-review of my own fixes → League site build+redesign → `apps/` restructure → full CI/CD overhaul). Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
+> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-07-30**, after the objective production-hardening pass on `review/round5-hardening`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
-> **What changed since the 2026-07-04 update:** 92→**161 tests**; the swarm ran (100 findings) and **all three fix rounds landed** (round 1 = swarm bugs, round 2 = bugs I'd introduced + gaps I'd missed, round 3 = the deferred items worth fixing) — each mutation-verified; the **League site** was built and redesigned (`apps/league`); the frontend moved to its own **`apps/` tier**; and CI went from "runs unit tests" to a **real 9-job validation pipeline**. **2026-07-07:** an independent clean-room re-review (Fable 5) of my own fix rounds surfaced 7 findings (DEF-1…7) — all fixed and locked; record in `docs/lab/fixes-applied.md` (Round 4c). Nothing published, registered, or public.
+> **Current hardening delta:** cross-process config locks and strict config validation; exact proxy ownership and URL-sync refusal; symlink-preserving durable writes; multi-path, crash-recoverable eject; fail-closed Playbook discovery; strict authoritative League identities; complete atomic League publication; strict fail-probe stage proof; and descriptor-pinned trust-artifact reads. The 2026-07-30 local gate reports **303/303 tests**, build clean, lint clean, and no known dependency vulnerabilities at the configured audit threshold. The branch is pushed in PR #10 and all required checks are green; no package was published, registered, deployed, or made public.
 
 ---
 
 ## 1. TL;DR — where we are
 
-**The M0+ core is built, reviewed to a high bar (7 build waves + a 16-agent swarm + an adversarial meta-review + 3 fix rounds), live-verified, and green everywhere.**
+**The M0+ core is built and locally and remotely gate-green on PR #10. No package or site was published or deployed.**
 
 | Gate | Status |
 |---|---|
-| Unit/integration tests | **191 passing** (mutation-checked where they lock a fix; +30 from the Round 5 remediation) |
-| CI/CD (9 jobs) | **green** — lint · build-test (ubuntu/macos-26/windows × Node 22+24) · real-server E2E + fail-probes · Combine (matrix) · live MiniLM inference · audit + secret scan · CodeQL (gated to public) |
+| Unit/integration tests | **303 passing** in the 2026-07-30 local run; the suite reports the authoritative current count |
+| CI/CD workflow | **all 9 CI job instances passed** at PR head `a2f5ec4` — lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan. The CodeQL workflow, separate GitHub Advanced Security CodeQL check, and Semgrep also passed. Sourcery was skipped and is not claimed. |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
-| Combine vs real filesystem server | **8/8, deterministic** — and the fail-probes prove the verifiers *catch* wrongness (0/8) |
+| Combine vs real filesystem server | **8/8, deterministic** — and all 8 fail-probes reached the verifier and were rejected there (0/8); transport failures no longer satisfy the CI proof |
 | Dense rung — MiniLM + Gemma live (real inference) | **verified** end-to-end; hybrid fusion signal-adaptive; OATS moves rankings from real outcomes |
-| Trust laws (privacy/telemetry-off/suggest-only/eject) | **verified** by 3 independent reviewers + hostile QA + the swarm's trust charters |
+| Trust laws (privacy/telemetry-off/suggest-only/eject) | **rechecked locally and through hosted gates** with focused regressions and source/write-path review; final evidence is recorded in the Round 5 hardening report |
 | Experiment swarm (16 charters — real models/servers/processes) | **15/16 reported · 100 findings** · digest: `docs/lab/campaign-digest.md` |
-| Fix waves (4 rounds) + meta-review + full-codebase audit | **DONE** — swarm bugs → my meta-review → deferred items → an independent Fable 5 audit of the whole tree (no CRITICAL; found + fixed one moat bug M1 + M2–M5/D1–D9); every real bug regression-tested; record: `docs/lab/fixes-applied.md` |
+| Fix waves + objective hardening | **implemented and verified on PR #10** — historical claims: `docs/lab/fixes-applied.md`; current branch evidence: `docs/lab/review-round5-hardening.md` |
 
 The dense-embedding path is fully implemented and live-verified on both models. The trust surfaces (config writes, sync/eject, drift, identity/routing) were hammered by the swarm, then re-audited by an independent meta-review that caught two bugs I'd *introduced* and three vacuous tests — all fixed and mutation-verified. **⚠️ One reversible policy change awaits your nod: P7.**
 
@@ -35,7 +35,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 | **P2** | Strategy docs & public repo | ✅ **Resolved: everything goes public at flip time** — gated on a personal/work-info sweep first (I'll run the sweep and show you its report before any flip) |
 | **P3** | When the repo flips public | ⏳ **OPEN** — you decide with me later; repo stays private until then. (No blocker on my side; the name sweep §3.2 is the gate.) |
 | **P4** | Combine signing | 🔶 **Partial — awaits you.** ~15–20 min, fully prepped: `docs/signing/session-1-checklist.md` (one pass run 8/8, one fail-probe run 0/8, flip `signed:true`, log PROVENANCE). I cannot flip it myself — human-signed-only is a law; agent-signing would falsify the provenance the League sells. **THE unlock** for any named League score. |
-| **P5** | Next build | ✅ **Resolved & shipped: League site** (`apps/league`, static, artifact-driven, methodology enforced in code, redesigned for readability). Next targets are in §4 for your "go". |
+| **P5** | Next build | ✅ **Resolved and implemented locally: League site** (`apps/league`, static, artifact-driven, methodology enforced in code, redesigned for readability). It is not deployed. |
 | **P6** | Launch-day rollout shape | ⏳ **OPEN**: one big drop · staged over 2–3 days (my rec: staged — repo+receipt day 1, League reveal day 2). Decide any time before Jul 28. |
 | **P7** | Attribution policy (from the fix wave) | ⏳ **OPEN — confirm/veto.** I made input-validation rejections (`tool_fail:schema`) **non-attributable** — modern servers fold "invalid params" into an error result, so counting it would ding a tool's public score for the *agent's* malformed args (methodology §8's own principle). Output-schema drift still counts; a genuine 500 mentioning "validation" now classifies as internal (attributable). Options: **(a)** keep the blanket rule [current] · **(b)** revert, count all errors · **(c)** precise — exclude only when the failed call's args actually failed the tool's own inputSchema (more plumbing, most fair). My rec: (a) now, (c) post-launch. Reversible either way. |
 | **P8** | Sixth Man: keep suggest-only, or enable the "save"? | ⏳ **OPEN — new.** Today the Sixth Man *suggests* an alternate on a hard failure (suggest-only, your D6); it doesn't auto-execute. The "watch it **save**" demo moment (DoD §7 #3) needs auto-execute. Safe middle path: auto-fire **only** when args validate against the alternate's schema **and** the tool is read-only (search/fetch/list), keep suggest-only otherwise — the killer demo without the double-write risk. Small, well-scoped build once you decide. Currently gathering `taken` field-data to justify it. |
@@ -56,11 +56,11 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 
 ## 4. 🔧 THE PIPELINE — my ready queue (zero input needed; building on your "go")
 
-**Fix waves: ✅ DONE** (3 rounds + meta-review; `docs/lab/fixes-applied.md`). Everything below is what remains between the verified core and the full `ROSTER.md` launch product, ordered by launch-leverage. Each is scoped and buildable without you (except where it needs a signed suite or a decision).
+**Objective code hardening: implemented and verified on PR #10** (`docs/lab/review-round5-hardening.md` carries the final local, mutation, and hosted evidence). Everything below remains between the verified core and the full `ROSTER.md` launch product.
 
 **A. Complete the League (highest launch-leverage after your signing):**
 - **Static badges service** — signed SVG performance shields keyed to server ID (the truest distribution metric; README-embeddable).
-- **Box-score enrichment** — deltas/upsets/streaks, All-Star teams, Benched list, Sixth Man of the Week, Rookie of the Year (the content artifacts that travel).
+- **Box-score enrichment** — base box scores exist; deltas/upsets/streaks and editorial awards do not.
 - **Weekly-rerun CI** — the League's "continuity is the product" promise: scheduled Combine reruns updating standings.
 - **More Combine suites** — memory, git, sqlite (drafted; each is one line in the CI matrix now — the harness is already data-driven). Each needs your signing to publish named scores.
 - **`combine self`** — first-class author self-run ("run yours, not ours").
@@ -94,17 +94,18 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 - **Router, transparent mode:** fronts real servers simultaneously, namespaced re-export, byte-faithful passthrough (protocol *and* transport errors surface exactly as a direct connection would — a crashed server is now correctly `transport`, re-arming the Sixth Man), outcomes recorded, secrets provably never persisted.
 - **Router, five mode:** `draft`/`call` with `draft_id` attribution; mixed tool+skill starters; never-empty drafts (rated fallback with a lexical floor so the worst genuine hit isn't dropped); Sixth Man **suggestions** (suggest-only, logged with taken-tracking).
 - **Coach:** classifier (exact spec precedence; input-validation carved out per P7) · FTS5 with stopword filtering + camelCase splitting + signal-adaptive hybrid fusion (0.15/0.85) · OATS (live-proven) · Wilson ratings (per-category filtered; stale ratings expire) · nightly job at serve boot (debounced ~20h) · drift quarantine with 24h dwell + stable-re-sight auto-clear + **remove/re-add tombstone** (a removed-then-changed tool can't evade drift) + outputSchema in the drift hash · model-switch guard · multi-process safe (immediate transactions, busy-wait, prune grace window, connect timeout).
-- **Playbook:** SKILL.md discovery/parse (full-body indexing, BOM-safe) · trust scan v0 (now scans description + bundled-script contents, bounded read) · OpenClaw exact injection-cost formula · universal skill-as-tool bridge.
-- **CLI:** `init` (10 client formats, platform-aware, verified on 3 OSes) · truthful client-aware receipt · `sync`/`eject` (byte-for-byte, era-aware, integrity-checked, **atomic private-tmp writes**, corrupt-manifest refusal, atomic backup-dir) · `serve` (bounded backend connect) · `telemetry` · `combine run` · `unquarantine`.
+- **Playbook:** SKILL.md discovery/parse (full-body indexing, BOM-safe) · bounded no-follow trust scan across hidden and executable extensionless scripts · incomplete scans fail closed to review · review skills withheld by default at the serving boundary · OpenClaw injection-cost formula · skill-as-tool bridge.
+- **CLI:** `init` reads 10 client formats; `sync` writes four clients and refuses URL-only configs before mutation; config mutations are cross-process locked and strictly validated; `eject` restores every active path, preserves direct symlinks, journals desired bytes privately, recovers after interruption, and reports integrity failures as process failures · `serve` is stdio-only with bounded backend connect · `telemetry` · `combine run` · `unquarantine`.
 - **Combine:** declarative end-state verifiers (dir-vs-file distinct; byte-exact names — macOS case/NFD-proof) · sandbox containment · connect timeouts · per-side OATS caps · `lab-results.json` with `environmentDigest` + **`signedWilsonLb`** (the only stat that may back a named score).
-- **League site (`apps/league`):** static generator from `lab-results.json` — standings + box scores, methodology enforced in code (no rank below 30 signed tasks, PRE-SEASON state, strict artifact schema, escaping), redesigned for readability. Generates in CI on every push.
-- **CI/CD:** 9-job pipeline (see §1) — modular (composite setup action), data-driven (matrix suites), future-proof (Node engines-floor test, Dependabot with majors split out), injection-safe.
+- **League site (`apps/league`):** static generator from `lab-results.json` — strict artifact metadata and row-derived summaries; suite-authoritative category/signing/descriptions; separate `(category, suite, version)` standings; collision-resistant box filenames; and render-first atomic directory publication. Generates locally and is configured to generate in CI; it is not hosted.
+- **CI/CD:** all 9 workflow job instances passed at PR head `a2f5ec4` (see §1), including the composite setup action and exact Node 22.13.x floor. The CodeQL workflow, separate GitHub Advanced Security CodeQL check, and Semgrep also passed.
 
 ## 6. Review record (velocity-discipline law — every accepted finding fixed with a regression test)
 
 - **Waves 1–7 (build):** 2 overnight code reviews (4 CRITICAL + 9 MAJOR) · functional QA (empty-draft bug) · clean-code sweep · dense-path specialist (model-switch poisoning) · concurrency auditor (boot-crash race) · docs/spec conformance (10 overclaims).
 - **Wave 8 — the experiment swarm:** 16 charters, real models/servers/processes, 100 findings (`docs/lab/campaign-digest.md`).
 - **Wave 9 — fix rounds 1–3:** round 1 applied the real swarm findings; **round 2 was an adversarial meta-review of round 1** that caught two bugs I'd *introduced* (Ajv over-strip, unbounded script read) + two gaps I'd missed (serve connect hang, output-schema drift) + **three vacuous tests**; round 3 finished the deferred list (remove/re-add tombstone, atomic backup-dir, testable transport-death mapping). The three rebuilt tests are **mutation-verified** — each fails when its fix is reverted.
+- **Round 5 objective hardening (2026-07-30):** closed the remaining cross-process, ownership, filesystem-topology, crash-recovery, scan-completeness, and League publication/identity classes, then fixed the hosted Windows durability, E2E attribution, fail-probe false-green, dependency-audit, and CodeQL trust-path findings. Final local, mutation, and remote evidence lives in `docs/lab/review-round5-hardening.md`.
 
 ## 7. Honest remaining gaps (nothing silent)
 
@@ -114,7 +115,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 3. Watch one **Sixth Man save** → 🔶 it *suggests*, doesn't auto-rescue (P8).
 4. Find a favorite server on the League with an honest score → ❌ **PRE-SEASON** until your signing (§3.1).
 
-**Not built yet (the pipeline — full list in §4):** League badges/box-scores/weekly-rerun, more suites, flight-recorder dashboard, `roster bench`, receipt archetype/percentile/roast/Wrapped, `configs/` templates + deeplink badges, `examples/`, OpenClaw allowlist writer, streamable-HTTP transport (+`http_5xx`), Lab-priors seeding, adaptive ~10K rule, roster-cache TTL, health checks, document expansion, `combine self`.
+**Not built yet (the pipeline — full list in §4):** League badges/enrichment/weekly rerun, more suites, flight-recorder dashboard, `roster bench`, receipt archetype/percentile/roast/Wrapped, `configs/` templates + deeplink badges, `examples/`, OpenClaw allowlist writer, streamable-HTTP transport (+`http_5xx`), Lab-priors seeding, adaptive ~10K rule, roster-cache TTL, health checks, document expansion, `combine self`.
 
 **By design (dormant until post-launch / opt-in):** ε-exploration challenger slot (D7, schema+exclusions exist, mechanism deliberately unbuilt) · telemetry upload (consent flag only — no event builder or endpoint exists) · auto-Sixth-Man (D6 → P8) · Bradley-Terry / Arena-Rank graduation (traffic-gated) · Street telemetry board (pipeline before table).
 
@@ -123,11 +124,12 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 - Prune de-suffix over-protection — protecting base `x` also shields a genuinely-removed `x-2` (safe direction: never wrongly delete).
 - camelCase index on upgrade — the split re-indexes added/drifted tools; an existing DB heals on the next drift (moot pre-launch, no installs).
 - Dead runtime `schema_drift_suspect` — harmless; connect-time `defHash` (now incl. outputSchema) is the real drift mechanism.
-- Trust-scan false positives (~33%, advisory-only) and base64-exec-inside-a-script (deliberately not scanned — too noisy on real code).
+- Trust-scan false positives (~33% in the committed Playbook experiment) and base64-exec-inside-a-script (deliberately not decoded — too noisy on real code). Directory symlinks are not followed and now produce a fail-closed review finding.
+- `environmentDigest` identifies the runtime plus suite/version set, not the exact target command or build. It is not a named score, but target identity must be added before presenting the digest as complete reproduction provenance.
 
 **Disclosed by the deep-review audit (2026-07-07; fixes + reasons in `docs/lab/fixes-applied.md` Round 4):** local quarantine lifts on a 24h dwell not a re-Combine, and a re-signatured tool inherits its predecessor's local rating/OATS state (methodology §6; published League scores unaffected — they re-verify) · praise-asymmetry is enforced by the human publishing gate, not code, and `signed:` is process-trust not cryptographic (v1, said out loud) · `trimSchema` depth-1 is a deliberate token/structure tradeoff · Ajv dialect false-negatives in `args_compatible` (suggest-only, advisory) · boot-order suffix identity for post-sanitization name collisions (exotic) · `markSuggestionTaken` overcounts P8 field-data on any later same-tool call · default-Gemma ~1.7–1.9 GB RSS per five-mode session · **M6: the draft-utilization harness (handoff M1 milestone) is unbuilt — restored to §4 tracking, needs real clients.**
 
-**Minor known:** non-Latin lexical tokenizer · `need_vec`/tombstone growth unbounded (tiny) · symlinked skill dirs skipped · sync strips config comments while synced (eject restores them) · `schema_version` written but no migration reader yet · TruffleHog CI step installs latest (unpinned) rather than a tagged version.
+**Minor known:** non-Latin lexical tokenizer · `need_vec`/tombstone growth unbounded (tiny) · symlinked skill directories are withheld rather than traversed · sync strips config comments while synced (eject restores them) · forward-only database migration is the disclosed v1 limit · TruffleHog CI installs latest (unpinned) rather than a tagged version.
 
 ## 8. Evidence & repo map
 

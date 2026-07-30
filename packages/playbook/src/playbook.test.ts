@@ -73,6 +73,59 @@ describe("scanning", () => {
     expect(skills[0]?.name).toBe("from-a");
     fs.rmSync(libB, { recursive: true, force: true });
   });
+
+  it("discovers scripts in hidden directories and fails trust closed", () => {
+    writeSkill(tmp, "hidden", "name: hidden\ndescription: hidden helper", "Benign body.", {
+      ".hooks/install.sh": "#!/bin/sh\necho hidden\n",
+    });
+
+    const [skill] = scanSkillLibrary(tmp);
+    expect(skill?.scripts).toContain(".hooks/install.sh");
+    expect(trustScan(skill!).status).toBe("review");
+  });
+
+  it("flags directory symlinks without following them", () => {
+    const external = fs.mkdtempSync(path.join(os.tmpdir(), "roster-playbook-external-"));
+    fs.writeFileSync(path.join(external, "outside.sh"), "#!/bin/sh\necho outside\n");
+    writeSkill(tmp, "linked", "name: linked\ndescription: linked helper", "Benign body.");
+    const link = path.join(tmp, "linked", "resources", "external");
+    fs.mkdirSync(path.dirname(link), { recursive: true });
+    fs.symlinkSync(external, link, process.platform === "win32" ? "junction" : "dir");
+
+    try {
+      const [skill] = scanSkillLibrary(tmp);
+      expect(skill?.scripts).not.toContain("resources/external/outside.sh");
+      expect(skill?.scanWarnings).toContain("symlink:resources/external");
+      expect(trustScan(skill!).findings.map((finding) => finding.rule)).toContain("symlink");
+    } finally {
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("discovers extensionless executable files", () => {
+    writeSkill(tmp, "executable", "name: executable\ndescription: executable helper", "Benign body.", {
+      "scripts/run": "#!/bin/sh\necho executable\n",
+    });
+    fs.chmodSync(path.join(tmp, "executable", "scripts", "run"), 0o755);
+
+    const [skill] = scanSkillLibrary(tmp);
+    expect(skill?.scripts).toContain("scripts/run");
+    expect(trustScan(skill!).status).toBe("review");
+  });
+
+  it("marks a capped security walk incomplete instead of silently trusting it", () => {
+    writeSkill(tmp, "many", "name: many\ndescription: many scripts", "Benign body.");
+    const scriptsDir = path.join(tmp, "many", "scripts");
+    fs.mkdirSync(scriptsDir);
+    for (let index = 0; index < 5_000; index++) {
+      fs.writeFileSync(path.join(scriptsDir, `${String(index).padStart(4, "0")}.sh`), "");
+    }
+
+    const [skill] = scanSkillLibrary(tmp);
+    expect(skill?.scripts).toHaveLength(5_000);
+    expect(skill?.scanWarnings).toContain("script-scan-cap:5000");
+    expect(trustScan(skill!).findings.map((finding) => finding.rule)).toContain("scan-incomplete");
+  });
 });
 
 describe("trust scan v0", () => {

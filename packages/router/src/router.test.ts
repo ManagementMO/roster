@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -11,6 +12,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { CoachStore, openCoachDb, type CoachDb } from "@rosterhq/coach";
 import { scanSkillLibrary } from "@rosterhq/playbook";
+import { stableNamespacedId } from "@rosterhq/shared";
 import { BackendManager } from "./backends.js";
 import { RosterServer, type RouterMode } from "./rosterServer.js";
 
@@ -199,6 +201,19 @@ describe("transparent mode", () => {
     );
     expect(everything).not.toContain("SECRET-VALUE");
   });
+
+  it("returns the backend result when recordOutcome throws", async () => {
+    rig.store.recordOutcome = () => {
+      throw new Error("SQLITE_FULL");
+    };
+
+    const result = await rig.client.callTool({
+      name: "alpha__echo",
+      arguments: { text: "still returned" },
+    });
+
+    expect((result.content as Array<{ text: string }>)[0]?.text).toBe("still returned");
+  });
 });
 
 describe("five mode", () => {
@@ -248,10 +263,11 @@ describe("five mode", () => {
   });
 
   it("call executes a drafted tool and logs need-linked outcomes", async () => {
-    await rig.client.callTool({ name: "draft", arguments: { need: "echo text" } });
+    const draft = await rig.client.callTool({ name: "draft", arguments: { need: "echo text" } });
+    const draftId = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text).draft_id as string;
     const result = await rig.client.callTool({
       name: "call",
-      arguments: { tool: "alpha__echo", args: { text: "via five" } },
+      arguments: { tool: "alpha__echo", args: { text: "via five" }, draft_id: draftId },
     });
     expect((result.content as Array<{ text: string }>)[0]?.text).toBe("via five");
     const row = rig.db
@@ -273,10 +289,11 @@ describe("five mode", () => {
   });
 
   it("Sixth Man: failure carries a suggested alternate from another source, suggest-only", async () => {
-    await rig.client.callTool({ name: "draft", arguments: { need: "echo text please" } });
+    const draft = await rig.client.callTool({ name: "draft", arguments: { need: "echo text please" } });
+    const draftId = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text).draft_id as string;
     const result = await rig.client.callTool({
       name: "call",
-      arguments: { tool: "alpha__flaky", args: { text: "hi" } },
+      arguments: { tool: "alpha__flaky", args: { text: "hi" }, draft_id: draftId },
     });
     expect(result.isError).toBe(true);
     const texts = (result.content as Array<{ text: string }>).map((c) => c.text);
@@ -315,9 +332,50 @@ describe("five mode", () => {
     expect(row.need_hash).toBeNull();
   });
 
+  it("omitted draft_id executes without borrowing the latest draft", async () => {
+    await rig.client.callTool({ name: "draft", arguments: { need: "echo text for request A" } });
+    await rig.client.callTool({ name: "draft", arguments: { need: "release checklist for request B" } });
+
+    const result = await rig.client.callTool({
+      name: "call",
+      arguments: { tool: "alpha__echo", args: { text: "request A result" } },
+    });
+
+    expect((result.content as Array<{ text: string }>)[0]?.text).toBe("request A result");
+    const row = rig.db
+      .prepare("SELECT need_hash FROM outcome ORDER BY id DESC LIMIT 1")
+      .get() as { need_hash: string | null };
+    expect(row.need_hash).toBeNull();
+  });
+
+  it("returns the Sixth Man suggestion when recordSuggestion throws", async () => {
+    const draft = await rig.client.callTool({
+      name: "draft",
+      arguments: { need: "echo text please" },
+    });
+    const draftId = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text).draft_id as string;
+    rig.store.recordSuggestion = () => {
+      throw new Error("SQLITE_FULL");
+    };
+
+    const result = await rig.client.callTool({
+      name: "call",
+      arguments: { tool: "alpha__flaky", args: { text: "still private" }, draft_id: draftId },
+    });
+
+    expect(result.isError).toBe(true);
+    const texts = (result.content as Array<{ text: string }>).map((entry) => entry.text);
+    expect(texts.some((text) => text.includes("Internal Server Error: backend exploded"))).toBe(true);
+    expect(texts.some((text) => text.includes("suggested_alternate"))).toBe(true);
+  });
+
   it("logs Sixth Man suggestions to the suggestion table", async () => {
-    await rig.client.callTool({ name: "draft", arguments: { need: "echo text please" } });
-    await rig.client.callTool({ name: "call", arguments: { tool: "alpha__flaky", args: { text: "x" } } });
+    const draft = await rig.client.callTool({ name: "draft", arguments: { need: "echo text please" } });
+    const draftId = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text).draft_id as string;
+    await rig.client.callTool({
+      name: "call",
+      arguments: { tool: "alpha__flaky", args: { text: "x" }, draft_id: draftId },
+    });
     const sugg = rig.db.prepare("SELECT failed_capability, suggested_capability, taken FROM suggestion").all() as Array<{
       failed_capability: string;
       suggested_capability: string;
@@ -348,6 +406,96 @@ describe("backend connect timeout (fix wave round 2)", () => {
     expect(manager.allTools()).toHaveLength(0);
     await manager.close();
   });
+
+  it("rejects a repeated tools cursor without starving the connect timer", async () => {
+    const manager = new BackendManager(2_000, 100);
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = new Server(
+      { name: "cursor-cycle", version: "1.0.0" },
+      { capabilities: { tools: {} } },
+    );
+    let listCalls = 0;
+    let connectTimerFired = false;
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
+      listCalls += 1;
+      if (listCalls > 100) throw new Error("test pagination guard exhausted");
+      return { tools: [], nextCursor: "repeat" };
+    });
+    await server.connect(serverTransport);
+    const connectTimer = setImmediate(() => {
+      connectTimerFired = true;
+    });
+
+    await expect(
+      manager.connect({ name: "cursor-cycle", transport: clientTransport }),
+    ).rejects.toThrow("tools pagination cursor repeated");
+    expect(connectTimerFired).toBe(true);
+    expect(listCalls).toBe(2);
+
+    clearImmediate(connectTimer);
+    await manager.close();
+  });
+
+  it("rejects a backend that exceeds the configured tool ceiling", async () => {
+    const manager = new BackendManager(2_000, 100, { maxTools: 1 });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = new Server(
+      { name: "too-many-tools", version: "1.0.0" },
+      { capabilities: { tools: {} } },
+    );
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: [
+        { name: "one", inputSchema: { type: "object" } },
+        { name: "two", inputSchema: { type: "object" } },
+      ],
+    }));
+    await server.connect(serverTransport);
+
+    await expect(
+      manager.connect({ name: "too-many-tools", transport: clientTransport }),
+    ).rejects.toThrow("backend exposes more than 1 tools");
+    expect(manager.allTools()).toHaveLength(0);
+    await manager.close();
+  });
+
+  it("does not await a transport close forever", async () => {
+    const manager = new BackendManager(2_000, 25, { closeTimeoutMs: 25 });
+    const hanging = {
+      onclose: undefined,
+      onerror: undefined,
+      onmessage: undefined,
+      start: async () => undefined,
+      send: async () => undefined,
+      close: async () => await new Promise<void>(() => {}),
+    };
+
+    await expect(
+      Promise.race([
+        manager.connect({ name: "wedged-close", transport: hanging } as never),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("connect cleanup remained blocked")), 150);
+        }),
+      ]),
+    ).rejects.toThrow("connect timeout");
+  });
+
+  it("bounds transport close during global shutdown", async () => {
+    const manager = new BackendManager(2_000, 100, { closeTimeoutMs: 25 });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await fakeBackend("global-close").connect(serverTransport);
+    await manager.connect({ name: "global-close", transport: clientTransport });
+    clientTransport.close = async () => await new Promise<void>(() => {});
+
+    await expect(
+      Promise.race([
+        manager.close(),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("global close remained blocked")), 150);
+        }),
+      ]),
+    ).resolves.toBeUndefined();
+    expect(manager.allTools()).toHaveLength(0);
+  });
 });
 
 describe("errorToEvidence — mid-call error classification (fix wave round 2)", () => {
@@ -362,6 +510,26 @@ describe("errorToEvidence — mid-call error classification (fix wave round 2)",
     expect(errorToEvidence(new McpError(ErrorCode.InvalidParams, "bad params"))).toMatchObject({ inputValidationError: true }); // caller-fault, non-attributable (M3)
     expect(errorToEvidence(new McpError(ErrorCode.MethodNotFound, "no such tool"))).toMatchObject({ protocolError: true });
     expect(errorToEvidence(new Error("socket hang up"))).toMatchObject({ transportError: true });
+  });
+
+  it("classifies SDK structured-output validation errors as output drift without rewriting their code", async () => {
+    const { errorToEvidence } = await import("./backends.js");
+    const { McpError, ErrorCode } = await import("@modelcontextprotocol/sdk/types.js");
+    const cases = [
+      [
+        ErrorCode.InvalidParams,
+        "Structured content does not match the tool's output schema: data must have required property 'value'",
+      ],
+      [ErrorCode.InvalidParams, "Failed to validate structured content: unsupported schema"],
+      [ErrorCode.InvalidRequest, "Tool echo has an output schema but did not return structured content"],
+    ] as const;
+
+    for (const [code, message] of cases) {
+      expect(errorToEvidence(new McpError(code, message))).toMatchObject({
+        outputSchemaViolation: true,
+        errorCode: code,
+      });
+    }
   });
 });
 
@@ -419,6 +587,127 @@ describe("tool-name collisions keep every physical tool addressable (R5-07)", ()
   });
 });
 
+describe("stable capability identities (production hardening task 1)", () => {
+  let skillsDir: string;
+
+  beforeEach(() => {
+    skillsDir = fs.mkdtempSync(path.join(os.tmpdir(), "roster-stable-skills-"));
+    for (const [slug, body] of [
+      ["safe.tool", "FIRST SKILL BODY"],
+      ["safe tool", "SECOND SKILL BODY"],
+    ]) {
+      const dir = path.join(skillsDir, slug);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, "SKILL.md"),
+        `---\nname: ${slug}\ndescription: stable collision skill\n---\n\n${body}\n`,
+      );
+    }
+  });
+
+  afterEach(() => fs.rmSync(skillsDir, { recursive: true, force: true }));
+
+  it("lists colliding skills separately and invokes each skill's own body", async () => {
+    rig = await buildRig("five", { skillsDir });
+    const draft = await rig.client.callTool({
+      name: "draft",
+      arguments: { need: "stable collision skill", k: 10 },
+    });
+    const payload = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text) as {
+      starters: Array<{ id: string; kind: string }>;
+    };
+    const expectedBodies = new Map([
+      [stableNamespacedId("skill", "safe.tool"), "FIRST SKILL BODY"],
+      [stableNamespacedId("skill", "safe tool"), "SECOND SKILL BODY"],
+    ]);
+    const skillIds = payload.starters
+      .filter((starter) => starter.kind === "skill")
+      .map((starter) => starter.id);
+    expect(new Set(skillIds)).toEqual(new Set(expectedBodies.keys()));
+
+    for (const [tool, body] of expectedBodies) {
+      const result = await rig.client.callTool({ name: "call", arguments: { tool } });
+      expect(JSON.parse((result.content as Array<{ text: string }>)[0]!.text).instructions).toBe(body);
+    }
+  });
+
+  it("keeps a backend's stable id when a sanitized-colliding peer fails", async () => {
+    const manager = new BackendManager(2_000);
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await fakeBackend("mail!").connect(serverTransport);
+    await manager.connect({ name: "mail!", transport: clientTransport });
+    const expectedSource = `mail-${createHash("sha256").update("mail!", "utf8").digest("hex").slice(0, 10)}`;
+    const before = manager.allTools().map((tool) => tool.id);
+
+    await expect(
+      manager.connect({
+        name: "mail?",
+        transport: {
+          onclose: undefined,
+          onerror: undefined,
+          onmessage: undefined,
+          start: async () => { throw new Error("colliding peer failed"); },
+          send: async () => undefined,
+          close: async () => undefined,
+        } as never,
+      }),
+    ).rejects.toThrow("colliding peer failed");
+
+    expect(manager.allTools().map((tool) => tool.id)).toEqual(before);
+    expect(before).toEqual([
+      `${expectedSource}__echo`,
+      `${expectedSource}__flaky`,
+      `${expectedSource}__slow`,
+    ]);
+    await manager.close();
+  });
+
+  it("rejects a duplicate stable backend identity instead of allocating an order-dependent suffix", async () => {
+    const manager = new BackendManager(2_000);
+    const [firstClient, firstServer] = InMemoryTransport.createLinkedPair();
+    await fakeBackend("duplicate").connect(firstServer);
+    await manager.connect({ name: "duplicate", transport: firstClient });
+    const before = manager.allTools().map((tool) => tool.id);
+
+    await expect(
+      manager.connect({
+        name: "duplicate",
+        transport: {
+          onclose: undefined,
+          onerror: undefined,
+          onmessage: undefined,
+          start: async () => undefined,
+          send: async () => undefined,
+          close: async () => undefined,
+        } as never,
+      }),
+    ).rejects.toThrow(/^duplicate backend identity: duplicate$/);
+
+    expect(manager.allTools().map((tool) => tool.id)).toEqual(before);
+    expect(before.some((id) => id.includes("-2__"))).toBe(false);
+    await manager.close();
+  });
+
+  it("reserves a stable backend identity while its first connection is in flight", async () => {
+    const manager = new BackendManager(2_000);
+    const [firstClient, firstServer] = InMemoryTransport.createLinkedPair();
+    const [secondClient, secondServer] = InMemoryTransport.createLinkedPair();
+    await Promise.all([fakeBackend("parallel").connect(firstServer), fakeBackend("parallel").connect(secondServer)]);
+
+    const results = await Promise.allSettled([
+      manager.connect({ name: "parallel", transport: firstClient }),
+      manager.connect({ name: "parallel", transport: secondClient }),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((result) => result.status === "rejected")[0]).toMatchObject({
+      reason: new Error("duplicate backend identity: parallel"),
+    });
+    expect(manager.allTools().every((tool) => tool.id.startsWith("parallel__"))).toBe(true);
+    await manager.close();
+  });
+});
+
 /**
  * "A trust scan before any skill is listed" (README §Playbook; handoff L-trust,
  * P0). The scan ran but was never enforced, so a `review`-flagged skill — an
@@ -463,10 +752,31 @@ describe("trust gate: review-flagged skills are withheld from serving (R5-09)", 
 
   it("a benign skill in the same library is still served", async () => {
     rig = await buildRig("five", { skillsDir: dir });
+    expect(rig.roster.servedSkillCount()).toBe(1);
     const draft = await rig.client.callTool({ name: "draft", arguments: { need: "format text tidily", k: 5 } });
     const parsed = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text);
     const ids = parsed.starters.map((s: { id: string }) => s.id);
     expect(ids.some((id: string) => id.startsWith("skill__") && id.includes("helper"))).toBe(true);
+  });
+
+  it("a skill whose only risk is a hidden script is withheld", async () => {
+    const hidden = path.join(dir, "hidden-script");
+    fs.mkdirSync(path.join(hidden, ".hooks"), { recursive: true });
+    fs.writeFileSync(
+      path.join(hidden, "SKILL.md"),
+      "---\nname: Hidden Script\ndescription: hidden script helper\n---\nBenign instructions.\n",
+    );
+    fs.writeFileSync(path.join(hidden, ".hooks", "install.sh"), "#!/bin/sh\necho hidden\n");
+
+    rig = await buildRig("five", { skillsDir: dir });
+    const draft = await rig.client.callTool({
+      name: "draft",
+      arguments: { need: "hidden script helper", k: 10 },
+    });
+    const parsed = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text);
+    expect(parsed.starters.map((starter: { id: string }) => starter.id)).not.toContain(
+      "skill__hidden-script",
+    );
   });
 
   it("the explicit opt-in serves it (operator accepted the risk)", async () => {

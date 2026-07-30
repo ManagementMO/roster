@@ -4,7 +4,7 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import type { CallEvidence } from "@rosterhq/coach";
 import type { CapabilityEntry } from "@rosterhq/shared";
-import { namespacedId, normalizeBackendName } from "@rosterhq/shared";
+import { stableBackendName, stableNamespacedId } from "@rosterhq/shared";
 
 export interface StdioBackendConfig {
   name: string;
@@ -33,6 +33,8 @@ const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 // otherwise hang the whole `roster serve` boot for the SDK's default ~60s —
 // per backend, sequentially — stalling the client's entire launch. Bound it.
 const DEFAULT_CONNECT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_TOOLS = 10_000;
+const DEFAULT_CLOSE_TIMEOUT_MS = 2_000;
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
@@ -61,70 +63,68 @@ interface ConnectedBackend {
  */
 export class BackendManager {
   private backends = new Map<string, ConnectedBackend>();
+  private connecting = new Set<string>();
+  private readonly maxTools: number;
+  private readonly closeTimeoutMs: number;
 
   constructor(
     private readonly callTimeoutMs = DEFAULT_CALL_TIMEOUT_MS,
     private readonly connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS,
-  ) {}
+    options: { maxTools?: number; closeTimeoutMs?: number } = {},
+  ) {
+    this.maxTools = options.maxTools ?? DEFAULT_MAX_TOOLS;
+    this.closeTimeoutMs = options.closeTimeoutMs ?? DEFAULT_CLOSE_TIMEOUT_MS;
+  }
 
   async connect(config: BackendConfig): Promise<CapabilityEntry[]> {
-    // normalizeBackendName = sanitize + reserved-namespace rename; serve reuses
-    // the SAME helper to protect an unavailable backend's learned state, so the
-    // keys can never drift apart. Two configured names that collapse to one base
-    // get a "-N" suffix here so they never share a source key.
-    let name = normalizeBackendName(config.name);
-    let suffix = 2;
-    const base = name;
-    while (this.backends.has(name)) name = `${base}-${suffix++}`;
-    const client = new Client({ name: "roster-router", version: "0.0.1" });
-    const transport: Transport =
-      "transport" in config
-        ? config.transport
-        : new StdioClientTransport({
-            command: config.command,
-            args: config.args ?? [],
-            // Only explicitly-configured env vars flow through; nothing is persisted or logged.
-            env: config.env,
-            stderr: "ignore",
-          });
+    // The source id is derived from the raw configured name before connecting,
+    // so a failed peer cannot change an already-public backend identity.
+    const name = stableBackendName(config.name);
+    if (this.backends.has(name) || this.connecting.has(name)) {
+      throw new Error(`duplicate backend identity: ${name}`);
+    }
+    this.connecting.add(name);
     // Bound the handshake AND close the spawned child on timeout, so a wedged
     // backend neither hangs boot nor leaks a process.
+    let client: Client | undefined;
     try {
+      client = new Client({ name: "roster-router", version: "0.0.1" });
+      const transport: Transport =
+        "transport" in config
+          ? config.transport
+          : new StdioClientTransport({
+              command: config.command,
+              args: config.args ?? [],
+              // Only explicitly-configured env vars flow through; nothing is persisted or logged.
+              env: config.env,
+              stderr: "ignore",
+            });
       await withTimeout(client.connect(transport), this.connectTimeoutMs, "connect timeout");
       const tools = await withTimeout(this.fetchTools(name, client), this.connectTimeoutMs, "listTools timeout");
       this.backends.set(name, { name, client, tools });
       return tools;
     } catch (err) {
-      await client.close().catch(() => undefined);
+      if (client) {
+        await withTimeout(client.close(), this.closeTimeoutMs, "close timeout").catch(
+          () => undefined,
+        );
+      }
       throw err;
+    } finally {
+      this.connecting.delete(name);
     }
   }
 
   private async fetchTools(source: string, client: Client): Promise<CapabilityEntry[]> {
     const entries: CapabilityEntry[] = [];
-    // Two RAW tool names on one backend can sanitize to the same public id
-    // ("safe.tool" and "safe tool" → "…__safe-tool"). Left alone, the id→tool
-    // lookup (a `.find`) silently reaches whichever came first, so an agent could
-    // invoke a DIFFERENT physical tool than the definition it saw (R5-07). We keep
-    // every physical tool addressable by giving each later collider a distinct id
-    // — probed against a used-set so the disambiguating suffix can't itself land
-    // on a real tool's id. Order is the backend's own listTools order, stable
-    // within a session (the client-compat "list never changes" rule). `id` is the
-    // routing key; `name` stays the true raw tool name that gets called.
-    const usedIds = new Set<string>();
-    const uniqueId = (baseId: string): string => {
-      if (!usedIds.has(baseId)) return baseId;
-      let n = 2;
-      let candidate = `${baseId}__dup-${n}`;
-      while (usedIds.has(candidate)) candidate = `${baseId}__dup-${++n}`;
-      return candidate;
-    };
+    const seenCursors = new Set<string>();
+    // Stable raw-name hashing makes sanitizer collisions independently
+    // addressable without assigning order-dependent duplicate suffixes.
     let cursor: string | undefined;
     do {
       const page = await client.listTools({ cursor });
       for (const tool of page.tools) {
-        const id = uniqueId(namespacedId(source, tool.name));
-        usedIds.add(id);
+        const id = stableNamespacedId(source, tool.name);
         entries.push({
           id,
           kind: "tool",
@@ -145,8 +145,16 @@ export class BackendManager {
           // through the proxy exactly as it would direct (R5-08).
           execution: (tool as { execution?: Record<string, unknown> }).execution ?? undefined,
         });
+        if (entries.length > this.maxTools) {
+          throw new Error(`backend exposes more than ${this.maxTools} tools`);
+        }
       }
       cursor = page.nextCursor;
+      if (cursor) {
+        if (seenCursors.has(cursor)) throw new Error("tools pagination cursor repeated");
+        seenCursors.add(cursor);
+        await new Promise<void>((resolve) => setImmediate(resolve));
+      }
     } while (cursor);
     return entries;
   }
@@ -197,7 +205,11 @@ export class BackendManager {
   }
 
   async close(): Promise<void> {
-    await Promise.allSettled([...this.backends.values()].map((b) => b.client.close()));
+    await Promise.allSettled(
+      [...this.backends.values()].map((backend) =>
+        withTimeout(backend.client.close(), this.closeTimeoutMs, "close timeout"),
+      ),
+    );
     this.backends.clear();
   }
 }
@@ -216,6 +228,13 @@ export function errorToEvidence(err: unknown): CallEvidence {
     // that branches on `-32001 RequestTimeout` must still see it — the round-4c D3
     // fix preserved the code only for `protocolError`, so timeout and
     // ConnectionClosed were silently rewritten to `-32603 InternalError` (R5-08).
+    if (isSdkOutputValidationError(err)) {
+      return {
+        outputSchemaViolation: true,
+        errorText: err.message,
+        errorCode: err.code,
+      };
+    }
     if (err.code === ErrorCode.RequestTimeout) return { timedOut: true, errorCode: err.code };
     if (err.code === ErrorCode.ConnectionClosed) {
       return { transportError: true, errorText: err.message, errorCode: err.code };
@@ -228,6 +247,15 @@ export function errorToEvidence(err: unknown): CallEvidence {
     return { protocolError: true, errorText: err.message, errorCode: err.code };
   }
   return { transportError: true, errorText: err instanceof Error ? err.message : "" };
+}
+
+function isSdkOutputValidationError(err: McpError): boolean {
+  const detail = err.message.replace(/^MCP error -?\d+: /, "");
+  return (
+    detail.startsWith("Structured content does not match the tool's output schema") ||
+    detail.startsWith("Failed to validate structured content") ||
+    detail.includes(" has an output schema but did not return structured content")
+  );
 }
 
 function extractErrorText(result: Record<string, unknown>): string {

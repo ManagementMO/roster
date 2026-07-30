@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
+  "engines": { "node": ">=22.13" },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,7 +17,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@rosterhq/shared": "workspace:*",
     "yaml": "^2.6.0"
   },

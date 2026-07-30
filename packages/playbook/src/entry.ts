@@ -1,5 +1,5 @@
 import type { CapabilityEntry } from "@rosterhq/shared";
-import { namespacedId } from "@rosterhq/shared";
+import { stableNamespacedId } from "@rosterhq/shared";
 import type { ParsedSkill } from "./skill.js";
 
 export const SKILL_SOURCE = "skill";
@@ -8,9 +8,9 @@ export const SKILL_SOURCE = "skill";
  * Skills join the same capability index as tools — full body included, which
  * is the load-bearing detail (SkillRouter: metadata alone is insufficient).
  */
-export function skillToCapabilityEntry(skill: ParsedSkill): CapabilityEntry {
+export function skillToCapabilityEntry(skill: ParsedSkill, id?: string): CapabilityEntry {
   return {
-    id: namespacedId(SKILL_SOURCE, skill.slug),
+    id: id ?? stableNamespacedId(SKILL_SOURCE, skill.slug),
     kind: "skill",
     source: SKILL_SOURCE,
     name: skill.name,

@@ -1,7 +1,10 @@
 import { describe, expect, it, beforeEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
-import { CoachStore } from "./store.js";
+import { CoachStore, defHash } from "./store.js";
 import { normalize } from "./oats.js";
 
 const tool = (id: string, name: string, description: string): CapabilityEntry => ({
@@ -198,6 +201,41 @@ describe("outcomes, soft-fail, ratings", () => {
     expect(rows.every((r) => r.soft_fail === 0)).toBe(true);
   });
 
+  it("recordOutcome rolls back its insert and soft-fail update when suggestion marking fails", () => {
+    store.recordOutcome({
+      session: "rollback-session",
+      source: "fs",
+      capability: "fs__read_file",
+      outcomeClass: "tool_fail:internal",
+      latencyMs: 10,
+      argsHash: "first-args-hash",
+    });
+    store.recordSuggestion("rollback-session", "failed__tool", "fs__read_file");
+    db.exec(`
+      CREATE TRIGGER fail_suggestion_update
+      BEFORE UPDATE OF taken ON suggestion
+      BEGIN
+        SELECT RAISE(ABORT, 'forced suggestion update failure');
+      END
+    `);
+
+    expect(() =>
+      store.recordOutcome({
+        session: "rollback-session",
+        source: "fs",
+        capability: "fs__read_file",
+        outcomeClass: "success",
+        latencyMs: 11,
+        argsHash: "retry-args-hash",
+      }),
+    ).toThrow("forced suggestion update failure");
+
+    expect(db.prepare("SELECT id, soft_fail FROM outcome ORDER BY id").all()).toEqual([
+      { id: 1, soft_fail: 0 },
+    ]);
+    expect(db.prepare("SELECT taken FROM suggestion").get()).toEqual({ taken: 0 });
+  });
+
   it("computes Wilson ratings excluding soft-fail and explored rows", () => {
     for (let i = 0; i < 8; i++) {
       store.recordOutcome({ session: `s${i}`, source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 100 + i });
@@ -283,10 +321,74 @@ describe("model-switch guards", () => {
     expect((db.prepare("SELECT adj, dims FROM vec").get() as { adj: Buffer | null; dims: number })).toMatchObject({ adj: null, dims: 2 });
   });
 
-  it("loadVecs drops length-mismatched blobs instead of reading garbage", () => {
+  it.each([
+    {
+      corruption: "zero dimensions",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 0 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "fractional dimensions",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 1.5 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "a length-mismatched blob",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 7 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "a non-finite base vector",
+      corrupt: () => db
+        .prepare("UPDATE vec SET base = ? WHERE capability = ?")
+        .run(Buffer.from(new Float32Array([Number.NaN, 0, 0]).buffer), "a__t"),
+    },
+  ])("repairs a vector row with $corruption", ({ corrupt }) => {
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
-    db.prepare("UPDATE vec SET dims = 7").run(); // corrupt: blob is 12B, dims says 28B
+    corrupt();
+
     expect(store.loadVecs().has("a__t")).toBe(false);
+    expect(store.vecCapabilityIds().has("a__t")).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
+  });
+
+  it.each([
+    ["a length-mismatched adjustment", Buffer.alloc(5)],
+    [
+      "a non-finite adjustment",
+      Buffer.from(new Float32Array([1, Number.POSITIVE_INFINITY, 0]).buffer),
+    ],
+  ])("clears %s while retaining the valid base vector", (_corruption, adj) => {
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    db.prepare("UPDATE vec SET adj = ? WHERE capability = ?").run(adj, "a__t");
+
+    expect(Array.from(store.loadVecs().get("a__t") ?? [])).toEqual([1, 0, 0]);
+    expect(store.vecCapabilityIds().has("a__t")).toBe(true);
+    expect(db.prepare("SELECT adj FROM vec WHERE capability = ?").get("a__t")).toEqual({
+      adj: null,
+    });
+  });
+
+  it("rejects a stale backfill after capability drift", () => {
+    const original = tool("a__t", "t", "original definition");
+    store.upsertCapabilities([original]);
+    store.ensureEmbeddingModel("model-A");
+    const expected = { defHash: defHash(original), modelId: "model-A" };
+
+    store.upsertCapabilities([{ ...original, description: "drifted definition" }]);
+
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 123, expected)).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
+  });
+
+  it("rejects a stale backfill after an embedding-model switch", () => {
+    const entry = tool("a__t", "t", "stable definition");
+    store.upsertCapabilities([entry]);
+    store.ensureEmbeddingModel("model-A");
+    const expected = { defHash: defHash(entry), modelId: "model-A" };
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 122, expected)).toBe(true);
+
+    store.ensureEmbeddingModel("model-B");
+
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 123, expected)).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
   });
 });
 
@@ -314,6 +416,71 @@ describe("pruneMissing grace window", () => {
     const gone = store.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
     expect(gone).toEqual(["x__old"]);
     expect(store.listCapabilities().map((c) => c.id)).toEqual(["y__fresh"]);
+  });
+
+  it("pruneMissing selects and deletes under one immediate transaction", () => {
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-prune-"));
+    const path = join(directory, "coach.db");
+    const pruneDb = openCoachDb(path);
+    const refreshDb = openCoachDb(path);
+    try {
+      const pruneStore = new CoachStore(pruneDb);
+      const t0 = 1_000_000;
+      const refreshedAt = t0 + 2_000;
+      pruneStore.upsertCapabilities([tool("race__tool", "tool", "race target")], t0);
+      refreshDb.pragma("busy_timeout = 0");
+
+      const sqliteErrorCode = (error: unknown): string | undefined => {
+        if (
+          typeof error !== "object" ||
+          error === null ||
+          !("code" in error) ||
+          typeof error.code !== "string"
+        ) {
+          return undefined;
+        }
+        return error.code;
+      };
+      let refreshErrorCode: string | undefined;
+      const originalPrepare = pruneDb.prepare.bind(pruneDb);
+      pruneDb.prepare = ((source: string) => {
+        const statement = originalPrepare(source);
+        if (source === "SELECT id, source, last_seen, def_hash, quarantined FROM capability") {
+          const originalAll = statement.all.bind(statement);
+          statement.all = (() => {
+            const rows = originalAll();
+            try {
+              refreshDb
+                .prepare("UPDATE capability SET last_seen = ? WHERE id = ?")
+                .run(refreshedAt, "race__tool");
+            } catch (error) {
+              refreshErrorCode = sqliteErrorCode(error);
+            }
+            return rows;
+          }) as typeof statement.all;
+        }
+        return statement;
+      }) as CoachDb["prepare"];
+
+      let pruneErrorCode: string | undefined;
+      try {
+        pruneStore.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
+      } catch (error) {
+        pruneErrorCode = sqliteErrorCode(error);
+      }
+
+      // IMMEDIATE must reserve the writer lock before the SELECT. A merely
+      // deferred transaction still reports `inTransaction`, but lets this
+      // sibling UPDATE commit after the stale snapshot.
+      expect(refreshErrorCode).toBe("SQLITE_BUSY");
+      expect(pruneErrorCode).toBeUndefined();
+      expect(refreshDb.prepare("SELECT 1 FROM capability WHERE id = ?").get("race__tool"))
+        .toBeUndefined();
+    } finally {
+      pruneDb.close();
+      refreshDb.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 
@@ -347,6 +514,31 @@ describe("OATS nightly", () => {
     store.upsertCapabilities([tool("a__t", "t", "d")]);
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
     expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+  });
+
+  it("discards a non-finite need vector without aborting OATS", () => {
+    store.upsertCapabilities([tool("a__t", "t", "d")]);
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    for (let i = 0; i < 4; i++) {
+      const needHash = `need-${i}`;
+      store.storeNeedVec(needHash, new Float32Array([0, 1, 0]));
+      store.recordOutcome({
+        session: `s${i}`,
+        source: "a",
+        capability: "a__t",
+        outcomeClass: "success",
+        latencyMs: 10,
+        needHash,
+      });
+    }
+    db.prepare("UPDATE need_vec SET vec = ? WHERE need_hash = ?").run(
+      Buffer.from(new Float32Array([0, Number.NaN, 0]).buffer),
+      "need-0",
+    );
+
+    expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+    expect(db.prepare("SELECT 1 FROM need_vec WHERE need_hash = ?").get("need-0"))
+      .toBeUndefined();
   });
 });
 

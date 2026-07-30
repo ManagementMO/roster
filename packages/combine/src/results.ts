@@ -23,7 +23,7 @@ export interface RunSummary {
 export interface LabResults {
   generatedAt: string;
   environment: { node: string; platform: string; arch: string };
-  /** sha256 over environment + suite versions: pins runs for reproduction. */
+  /** SHA-256 over runtime environment + ordered suite/version set; it does not identify the target build. */
   environmentDigest: string;
   runs: Array<SuiteRunResult & { summary: RunSummary }>;
 }

@@ -65,7 +65,23 @@ export function classifyOutcome(e: CallEvidence): OutcomeClass {
  */
 export function classifyToolFailKind(errorText: string): ToolFailKind {
   // Strip quoted literals so echoed paths/args/JSON can never trigger a kind.
-  const t = errorText.toLowerCase().replace(/'[^']*'|"[^"]*"/g, " ");
+  // A fully quoted diagnostic is the narrow exception: stripping it would erase
+  // the only diagnostic, so classify only its non-path diagnostic context.
+  const normalized = errorText.toLowerCase();
+  const redacted = normalized.replace(/'[^']*'|"[^"]*"/g, " ");
+  const wholeMessage = normalized.trim();
+  const quote = wholeMessage.at(0);
+  const isQuote = quote === "'" || quote === '"';
+  const interior = isQuote ? wholeMessage.slice(1, -1) : "";
+  const unwrappedWholeMessage =
+    wholeMessage.length >= 2 && isQuote && wholeMessage.at(-1) === quote && !hasUnescapedQuote(interior, quote)
+      ? interior
+      : "";
+  const fallback =
+    isBoundedFilenameLiteral(unwrappedWholeMessage) && !hasHighConfidenceFilenamePrefix(unwrappedWholeMessage)
+      ? ""
+      : stripPathLiteralTokens(unwrappedWholeMessage);
+  const t = redacted.trim() || fallback;
   if (/time.?out|timed out|deadline|etimedout/.test(t)) return "timeout";
   // quota BEFORE auth: "30000 tokens per min" / "Authenticated requests get a
   // higher rate limit" are quota messages that a bare `token`/`auth` word would
@@ -97,6 +113,47 @@ export function classifyToolFailKind(errorText: string): ToolFailKind {
     return "auth";
   }
   return "other";
+}
+
+function hasUnescapedQuote(text: string, quote: string): boolean {
+  let precedingBackslashes = 0;
+  for (const character of text) {
+    if (character === "\\") {
+      precedingBackslashes += 1;
+      continue;
+    }
+    if (character === quote && precedingBackslashes % 2 === 0) return true;
+    precedingBackslashes = 0;
+  }
+  return false;
+}
+
+function stripPathLiteralTokens(text: string): string {
+  return text
+    .split(/\s+/)
+    .filter((token) => !isPathUriOrFilenameToken(token))
+    .join(" ");
+}
+
+function isPathUriOrFilenameToken(token: string): boolean {
+  return (
+    /[\\/]/.test(token) ||
+    /^[a-z][a-z0-9+.-]{0,31}:(?:\/\/)?[^\s]{1,512}$/.test(token) ||
+    isBoundedFilenameLiteral(token)
+  );
+}
+
+function isBoundedFilenameLiteral(text: string): boolean {
+  return !/[\\/]/.test(text) && /^[a-z0-9][a-z0-9 ._-]{0,127}\.[a-z0-9_-]{1,16}$/.test(text);
+}
+
+function hasHighConfidenceFilenamePrefix(text: string): boolean {
+  const finalSpace = text.lastIndexOf(" ");
+  if (finalSpace <= 0) return false;
+  const prefix = text.slice(0, finalSpace).trim();
+  return /time.?out|timed out|deadline|etimedout|quota|rate.?limit|too many requests|\b429\b|tokens?\s+per\b|per\s+(minute|min|second|sec|hour|day)\b|internal (server )?error|\b50[023]\b|panic|crashed|segfault|schema|invalid (argument|param|input|request)|validation|required (field|property|parameter)|must be of type|invalid\b[\w\s'"()-]{0,40}\b(format|argument|parameter|value|type|field|property)\b|\b40[13]\b|unauthori[sz]ed|forbidden|permission denied|access denied|(?:invalid|expired)\b[^.;]{0,40}\btoken\b|\btoken\b[^.;]{0,40}(?:invalid|expired)|authentication failure/.test(
+    prefix,
+  );
 }
 
 /**

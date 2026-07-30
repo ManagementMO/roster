@@ -26,9 +26,13 @@ node packages/cli/dist/bin.js combine run docs/signing/fail-probes.yaml \
   --name filesystem-failprobe \
   --out docs/signing/last-failprobe-results.json \
   -- npx -y @modelcontextprotocol/server-filesystem '{{sandbox}}'
+node docs/verification/check-fail-probes.mjs \
+  docs/signing/fail-probes.yaml docs/signing/last-failprobe-results.json
 ```
 
-Expected: `FAIL` × 8 (every failure at the `verify` stage), summary `0/8 passed`, exit code 1.
+Expected: the Combine exits 1 after `FAIL` × 8, then the checker reports that
+all 8 reached the `verify` stage and were rejected. A transport or invocation
+failure is not verifier evidence and the checker rejects it.
 
 **If any probe PASSES: STOP.** That verifier cannot detect wrongness — do not sign its task; tell the agent which one.
 

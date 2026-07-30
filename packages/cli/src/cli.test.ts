@@ -1,13 +1,18 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawn, spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, discoverClients, type ClientId } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
 import { buildReceipt } from "./receipt.js";
+import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
 import { ejectClient } from "./eject.js";
+import { rosterEntry } from "./entry.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 import { syncClient } from "./sync.js";
 
 let home: string;
@@ -176,6 +181,7 @@ describe("receipt truthfulness", () => {
           dir: path.join(home, ".claude/skills/demo"),
           resources: [],
           scripts: [],
+          scanWarnings: [],
           frontmatter: {},
         },
       ],
@@ -322,6 +328,99 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(Buffer.compare(fs.readFileSync(configPath), original)).toBe(0);
   });
 
+  it("handles a deleted ordinary config directory with --force", () => {
+    const configPath = write(
+      ".cursor/mcp.json",
+      `${JSON.stringify({ mcpServers: { github: { command: "github-mcp" } } })}\n`,
+    );
+    const original = fs.readFileSync(configPath);
+    syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+    fs.rmSync(path.dirname(configPath), { recursive: true });
+
+    expect(ejectClient("cursor").action).toBe("missing-file");
+    expect(ejectClient("cursor", { force: true }).action).toBe("restored");
+    expect(fs.readFileSync(configPath)).toEqual(original);
+  });
+
+  describe.skipIf(process.platform === "win32")("symlink-preserving client writes", () => {
+    const sourcePath = () => path.join(home, ".cursor/mcp.json");
+    const targetPath = () => path.join(home, "cursor-target.json");
+    const original = `${JSON.stringify({
+      theme: "dark",
+      mcpServers: { github: { command: "github-mcp" } },
+    }, null, 2)}\n`;
+
+    function installSymlink(target = targetPath()): string {
+      fs.mkdirSync(path.dirname(sourcePath()), { recursive: true });
+      fs.writeFileSync(target, original);
+      const rawTarget = path.relative(path.dirname(sourcePath()), target);
+      fs.symlinkSync(rawTarget, sourcePath());
+      return rawTarget;
+    }
+
+    it("sync and eject preserve the link and restore bytes through its original target", () => {
+      const rawTarget = installSymlink();
+
+      const synced = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(fs.lstatSync(sourcePath()).isSymbolicLink()).toBe(true);
+      expect(fs.readlinkSync(sourcePath())).toBe(rawTarget);
+      expect(fs.readFileSync(targetPath(), "utf8")).toContain('"roster"');
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(synced.backupDir!, "manifest.json"), "utf8"),
+      ) as { writePath?: string; symlinkTarget?: string };
+      expect(manifest.writePath).toBe(fs.realpathSync(targetPath()));
+      expect(manifest.symlinkTarget).toBe(rawTarget);
+
+      expect(ejectClient("cursor").action).toBe("restored");
+      expect(fs.lstatSync(sourcePath()).isSymbolicLink()).toBe(true);
+      expect(fs.readlinkSync(sourcePath())).toBe(rawTarget);
+      expect(fs.readFileSync(targetPath(), "utf8")).toBe(original);
+    });
+
+    it("refuses a repointed link without touching either target", () => {
+      installSymlink();
+      syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      const syncedBytes = fs.readFileSync(targetPath());
+      const secondTarget = path.join(home, "cursor-other.json");
+      fs.writeFileSync(secondTarget, syncedBytes);
+      fs.unlinkSync(sourcePath());
+      fs.symlinkSync(path.relative(path.dirname(sourcePath()), secondTarget), sourcePath());
+
+      const firstBefore = fs.readFileSync(targetPath());
+      const secondBefore = fs.readFileSync(secondTarget);
+      const result = ejectClient("cursor");
+      expect(result.action).toBe("refused-modified");
+      expect(result.detail).toMatch(/symlink|topology/i);
+      expect(fs.readFileSync(targetPath())).toEqual(firstBefore);
+      expect(fs.readFileSync(secondTarget)).toEqual(secondBefore);
+    });
+
+    it("refuses a repointed symlinked parent directory without touching either config", () => {
+      const firstDir = path.join(home, "cursor-dir-one");
+      const secondDir = path.join(home, "cursor-dir-two");
+      fs.mkdirSync(firstDir);
+      fs.mkdirSync(secondDir);
+      const firstConfig = path.join(firstDir, "mcp.json");
+      const secondConfig = path.join(secondDir, "mcp.json");
+      fs.writeFileSync(firstConfig, original);
+      fs.symlinkSync(firstDir, path.join(home, ".cursor"), "dir");
+
+      syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      const syncedBytes = fs.readFileSync(firstConfig);
+      fs.writeFileSync(secondConfig, syncedBytes);
+      fs.unlinkSync(path.join(home, ".cursor"));
+      fs.symlinkSync(secondDir, path.join(home, ".cursor"), "dir");
+
+      const firstBefore = fs.readFileSync(firstConfig);
+      const secondBefore = fs.readFileSync(secondConfig);
+      const result = ejectClient("cursor");
+      expect(result.action).toBe("refused-modified");
+      expect(result.detail).toMatch(/symlink|topology/i);
+      expect(fs.readFileSync(firstConfig)).toEqual(firstBefore);
+      expect(fs.readFileSync(secondConfig)).toEqual(secondBefore);
+    });
+  });
+
   it("eject with no backup is a clean no-op", () => {
     expect(ejectClient("cursor").action).toBe("no-backup");
   });
@@ -336,10 +435,243 @@ args = ["-y", "@upstash/context7-mcp"]
     const configBefore = fs.readFileSync(configPath);
 
     const result = ejectClient("codex");
-    expect(result.action).toBe("no-backup");
+    expect(result.action).toBe("integrity-error");
     expect(result.detail).toContain("INTEGRITY");
     // The (rosterized) config was NOT overwritten with corrupt bytes.
     expect(Buffer.compare(fs.readFileSync(configPath), configBefore)).toBe(0);
+  });
+
+  it("rejects corruption in a non-pristine backup before restoring any path", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    syncClient("codex", new Date("2026-07-05T01:00:00Z"));
+    fs.writeFileSync(
+      configPath,
+      `model = "gpt-5"\n\n[mcp_servers.later]\ncommand = "later-mcp"\n`,
+    );
+    syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    const clientDir = path.join(home, ".roster/backups/codex");
+    const backups = fs
+      .readdirSync(clientDir)
+      .filter((name) => !name.startsWith(".") && name !== "latest")
+      .sort();
+    expect(backups).toHaveLength(2);
+    fs.writeFileSync(path.join(clientDir, backups[1]!, "original"), "TAMPERED");
+    const before = fs.readFileSync(configPath);
+
+    const result = ejectClient("codex");
+    expect(result.action).toBe("integrity-error");
+    expect(result.detail).toContain("INTEGRITY");
+    expect(fs.readFileSync(configPath)).toEqual(before);
+  });
+
+  it("refuses a corrupt backup-era boundary instead of reopening stale backups", () => {
+    const configPath = write(
+      ".cursor/mcp.json",
+      `${JSON.stringify({ mcpServers: { github: { command: "github-mcp" } } })}\n`,
+    );
+    syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+    const before = fs.readFileSync(configPath);
+    fs.writeFileSync(
+      path.join(home, ".roster/backups/cursor/.closed-through"),
+      "not-a-boundary\n",
+    );
+
+    const result = ejectClient("cursor");
+    expect(result.action).toBe("integrity-error");
+    expect(result.detail).toMatch(/boundary|marker/i);
+    expect(fs.readFileSync(configPath)).toEqual(before);
+  });
+
+  it("eject restores every active Claude project path before closing the era", () => {
+    const previousCwd = process.cwd();
+    const firstProject = path.join(home, "projects", "first");
+    const secondProject = path.join(home, "projects", "second");
+    const firstConfig = path.join(firstProject, ".mcp.json");
+    const secondConfig = path.join(secondProject, ".mcp.json");
+    const firstOriginal = `${JSON.stringify({
+      marker: "first",
+      mcpServers: { first: { command: "first-mcp" } },
+    })}\n`;
+    const secondOriginal = `${JSON.stringify({
+      marker: "second",
+      mcpServers: { second: { command: "second-mcp" } },
+    })}\n`;
+    fs.rmSync(path.join(home, ".claude.json"));
+    fs.mkdirSync(firstProject, { recursive: true });
+    fs.mkdirSync(secondProject, { recursive: true });
+    fs.writeFileSync(firstConfig, firstOriginal);
+    fs.writeFileSync(secondConfig, secondOriginal);
+
+    try {
+      process.chdir(firstProject);
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      process.chdir(secondProject);
+      syncClient("claude-code", new Date("2026-07-05T02:00:00Z"));
+
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("restored");
+      expect(result.restoredPaths?.sort()).toEqual(
+        [fs.realpathSync(firstConfig), fs.realpathSync(secondConfig)].sort(),
+      );
+      expect(fs.readFileSync(firstConfig, "utf8")).toBe(firstOriginal);
+      expect(fs.readFileSync(secondConfig, "utf8")).toBe(secondOriginal);
+    } finally {
+      process.chdir(previousCwd);
+    }
+  });
+
+  it("recovers an interrupted eject after target write and closes only its planned era", async () => {
+    const configPath = write(
+      ".cursor/mcp.json",
+      `${JSON.stringify({ marker: "ERA0", mcpServers: { zero: { command: "zero" } } })}\n`,
+    );
+    const era0 = fs.readFileSync(configPath);
+    syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+
+    const barrier = path.join(home, "eject-close-barrier");
+    const worker = `
+      import fs from "node:fs";
+      const originalOpen = fs.openSync;
+      fs.openSync = function(file, ...args) {
+        const candidate = String(file);
+        if (candidate.includes(".closed-through.") && candidate.endsWith(".tmp")) {
+          fs.writeFileSync(process.env.BARRIER, "ready");
+          for (;;) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+        }
+        return originalOpen.call(fs, file, ...args);
+      };
+      const { ejectClient } = await import(${JSON.stringify(
+        pathToFileURL(path.resolve("packages/cli/dist/eject.js")).href,
+      )});
+      ejectClient("cursor");
+    `;
+    const child = spawn(process.execPath, ["--input-type=module", "--eval", worker], {
+      cwd: path.resolve("."),
+      env: {
+        ...process.env,
+        ROSTER_TEST_HOME: home,
+        ROSTER_HOME: path.join(home, ".roster"),
+        BARRIER: barrier,
+      },
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const deadline = Date.now() + 5_000;
+      const poll = (): void => {
+        if (fs.existsSync(barrier)) {
+          resolve();
+          return;
+        }
+        if (child.exitCode !== null) {
+          reject(new Error(`eject worker exited before the close barrier: ${stderr}`));
+          return;
+        }
+        if (Date.now() >= deadline) {
+          reject(new Error(`eject worker did not reach the close barrier: ${stderr}`));
+          return;
+        }
+        setTimeout(poll, 5);
+      };
+      poll();
+    });
+    child.kill("SIGKILL");
+    await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+    expect(fs.readFileSync(configPath)).toEqual(era0);
+    expect(() =>
+      syncClient("cursor", new Date("2026-07-05T01:30:00Z")),
+    ).toThrow(/pending recovery/i);
+    if (process.platform !== "win32") {
+      const journal = path.join(home, ".roster/eject-journals/cursor");
+      const mode = (target: string) => fs.statSync(target).mode & 0o777;
+      expect(mode(journal)).toBe(0o700);
+      expect(mode(path.join(journal, "plan.json"))).toBe(0o600);
+      expect(mode(path.join(journal, "target-0.bin"))).toBe(0o600);
+    }
+
+    const recovered = ejectClient("cursor");
+    expect(recovered.action).toBe("restored");
+
+    const era1 = `${JSON.stringify({
+      marker: "ERA1",
+      mcpServers: { one: { command: "one" } },
+    })}\n`;
+    fs.writeFileSync(configPath, era1);
+    syncClient("cursor", new Date("2026-07-05T02:00:00Z"));
+    expect(ejectClient("cursor").action).toBe("restored");
+    expect(fs.readFileSync(configPath, "utf8")).toBe(era1);
+  });
+
+  it("preserves a state-file change that lands between planning and publish", () => {
+    const configPath = path.join(home, ".claude.json");
+    syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    const canonicalConfigPath = fs.realpathSync(configPath);
+    const configStat = fs.statSync(canonicalConfigPath, { bigint: true });
+    const originalRead = fs.readFileSync;
+    let changed = false;
+    fs.readFileSync = ((file: fs.PathOrFileDescriptor, ...args: unknown[]) => {
+      const value = Reflect.apply(originalRead, fs, [file, ...args]) as Buffer | string;
+      const readsConfig =
+        typeof file === "number"
+          ? (() => {
+              const stat = fs.fstatSync(file, { bigint: true });
+              return stat.dev === configStat.dev && stat.ino === configStat.ino;
+            })()
+          : fs.realpathSync(String(file)) === canonicalConfigPath;
+      if (
+        !changed &&
+        readsConfig
+      ) {
+        changed = true;
+        const live = JSON.parse(Buffer.isBuffer(value) ? value.toString("utf8") : value) as Record<
+          string,
+          unknown
+        >;
+        live.concurrentSetting = "keep-me";
+        fs.writeFileSync(configPath, `${JSON.stringify(live, null, 2)}\n`);
+      }
+      return value;
+    }) as typeof fs.readFileSync;
+    try {
+      expect(ejectClient("claude-code").action).toBe("restored");
+    } finally {
+      fs.readFileSync = originalRead;
+    }
+
+    const restored = JSON.parse(fs.readFileSync(configPath, "utf8")) as Record<string, unknown>;
+    expect(restored.concurrentSetting).toBe("keep-me");
+  });
+
+  it("the built CLI exits nonzero on backup-manifest integrity failure", () => {
+    write(
+      ".cursor/mcp.json",
+      `${JSON.stringify({ mcpServers: { github: { command: "github-mcp" } } })}\n`,
+    );
+    syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+    const clientDir = path.join(home, ".roster/backups/cursor");
+    const backup = fs.readdirSync(clientDir).find((name) => !name.startsWith(".") && name !== "latest")!;
+    fs.writeFileSync(path.join(clientDir, backup, "manifest.json"), "{ broken");
+
+    const result = spawnSync(
+      process.execPath,
+      [path.resolve("packages/cli/dist/bin.js"), "eject", "--client", "cursor"],
+      {
+        cwd: path.resolve("."),
+        env: {
+          ...process.env,
+          ROSTER_TEST_HOME: home,
+          ROSTER_HOME: path.join(home, ".roster"),
+        },
+        encoding: "utf8",
+      },
+    );
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toMatch(/INTEGRITY/i);
   });
 
   it("re-sync imports servers the user added after first sync; eject restores the PRISTINE original", () => {
@@ -352,14 +684,10 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(first.imported).toBeGreaterThanOrEqual(1);
 
     // User manually adds a NEW server after syncing.
+    const syncedContent = fs.readFileSync(configPath, "utf8");
     fs.writeFileSync(
       configPath,
-      `model = "gpt-5"
-
-[mcp_servers.roster]
-command = "roster"
-args = ["serve"]
-
+      `${syncedContent}
 [mcp_servers.late-addition]
 command = "npx"
 args = ["-y", "late-mcp"]
@@ -403,7 +731,7 @@ args = ["-y", "late-mcp"]
     fs.writeFileSync(path.join(clientDir, oldest, "manifest.json"), "{ not valid json");
 
     const result = ejectClient("codex");
-    expect(result.action).toBe("no-backup");
+    expect(result.action).toBe("integrity-error");
     expect(result.detail).toContain("INTEGRITY");
     // Crucially: config was NOT overwritten with backup #2's (evil-bearing) bytes.
     expect(Buffer.compare(fs.readFileSync(configPath), configBefore)).toBe(0);
@@ -421,6 +749,62 @@ args = ["-y", "late-mcp"]
       .readdirSync(home)
       .filter((f) => f.startsWith("cfg.json.") && f.endsWith(".tmp") && fs.statSync(path.join(home, f)).isFile());
     expect(litter).toEqual([]); // private tmp cleaned up on success
+  });
+
+  describe("descriptor-pinned integrity reads", () => {
+    it("reads through the validated descriptor instead of reopening the path", () => {
+      const target = write("integrity/original.bin", "trusted");
+      const originalRead = fs.readFileSync;
+      let descriptorRead = false;
+      fs.readFileSync = ((file, ...args) => {
+        if (typeof file === "number") {
+          descriptorRead = true;
+        } else if (path.resolve(String(file)) === path.resolve(target)) {
+          throw new Error("integrity path was reopened");
+        }
+        return Reflect.apply(originalRead, fs, [file, ...args]);
+      }) as typeof fs.readFileSync;
+      try {
+        expect(readRegularFileNoFollow(target).toString("utf8")).toBe("trusted");
+      } finally {
+        fs.readFileSync = originalRead;
+      }
+      expect(descriptorRead).toBe(true);
+    });
+
+    it("rejects a different file installed at the path after open", () => {
+      const target = write("integrity/swap.bin", "trusted");
+      const displaced = path.join(home, "integrity/swap-displaced.bin");
+      const originalOpen = fs.openSync;
+      let replaced = false;
+      fs.openSync = ((file, ...args) => {
+        const fd = Reflect.apply(originalOpen, fs, [file, ...args]);
+        if (!replaced && path.resolve(String(file)) === path.resolve(target)) {
+          replaced = true;
+          fs.renameSync(target, displaced);
+          fs.writeFileSync(target, "attacker-controlled");
+        }
+        return fd;
+      }) as typeof fs.openSync;
+      try {
+        expect(() => readRegularFileNoFollow(target)).toThrow(/changed while being opened/i);
+      } finally {
+        fs.openSync = originalOpen;
+      }
+    });
+  });
+
+  it("a file lock preserves an undefined thrown value instead of treating it as success", () => {
+    let caught = false;
+    try {
+      withFileLockSync("throw-undefined", () => {
+        throw undefined;
+      });
+    } catch (error) {
+      caught = true;
+      expect(error).toBeUndefined();
+    }
+    expect(caught).toBe(true);
   });
 
   it("does not report 'synced' (or clobber the client config) when the import step genuinely fails", () => {
@@ -444,6 +828,200 @@ args = ["-y", "late-mcp"]
     expect(() => syncClient("claude-code", new Date("2026-07-05T01:00:00Z"))).toThrow(/not a JSON object/i);
     expect(fs.readFileSync(configPath, "utf8")).toBe("[]"); // left exactly as found
   });
+
+  it("rejects an array-valued roster servers field before rewriting a client", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    const original = fs.readFileSync(configPath);
+    fs.mkdirSync(path.join(home, ".roster"), { recursive: true });
+    fs.writeFileSync(
+      path.join(home, ".roster/roster.json"),
+      `${JSON.stringify({ ...defaultConfig(), servers: [] }, null, 2)}\n`,
+    );
+
+    expect(() => syncClient("codex", new Date("2026-07-05T01:00:00Z"))).toThrow(
+      /servers.*object/i,
+    );
+    expect(fs.readFileSync(configPath)).toEqual(original);
+  });
+
+  it("persists provenance-only duplicate imports", () => {
+    const rosterPath = path.join(home, ".roster/roster.json");
+    fs.mkdirSync(path.dirname(rosterPath), { recursive: true });
+    const config = defaultConfig();
+    config.servers.shared = {
+      command: "npx",
+      args: ["-y", "shared-mcp"],
+      importedFrom: ["claude-code"],
+    };
+    fs.writeFileSync(rosterPath, `${JSON.stringify(config, null, 2)}\n`);
+    write(
+      ".cursor/mcp.json",
+      JSON.stringify({
+        mcpServers: {
+          sameDefinition: { command: "npx", args: ["-y", "shared-mcp"] },
+        },
+      }),
+    );
+
+    expect(syncClient("cursor", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+    const saved = JSON.parse(fs.readFileSync(rosterPath, "utf8")) as {
+      servers: Record<string, { importedFrom: string[] }>;
+    };
+    expect(saved.servers.shared?.importedFrom.sort()).toEqual(["claude-code", "cursor"]);
+  });
+
+  it("refuses a URL-only client before roster, backup, or client-config mutation", () => {
+    const configPath = write(
+      ".cursor/mcp.json",
+      JSON.stringify({
+        mcpServers: { remote: { url: "https://mcp.example.test/sse" } },
+      }),
+    );
+    const original = fs.readFileSync(configPath);
+
+    expect(() => syncClient("cursor", new Date("2026-07-05T01:00:00Z"))).toThrow(
+      /URL-only.*stdio/i,
+    );
+    expect(fs.readFileSync(configPath)).toEqual(original);
+    expect(fs.existsSync(path.join(home, ".roster/roster.json"))).toBe(false);
+    expect(fs.existsSync(path.join(home, ".roster/backups/cursor"))).toBe(false);
+  });
+
+  it("legacy state-file eject refuses key-level deletion without exact injected identity", () => {
+    const configPath = path.join(home, ".claude.json");
+    const original = fs.readFileSync(configPath);
+    syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    const synced = fs.readFileSync(configPath);
+    const clientDir = path.join(home, ".roster/backups/claude-code");
+    const backup = fs.readdirSync(clientDir).find((name) => name !== "latest" && !name.startsWith("."))!;
+    const manifestPath = path.join(clientDir, backup, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+    delete manifest.injectedEntry;
+    fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+    const refused = ejectClient("claude-code");
+    expect(refused.action).toBe("refused-modified");
+    expect(refused.detail).toMatch(/legacy|identity/i);
+    expect(fs.readFileSync(configPath)).toEqual(synced);
+
+    expect(ejectClient("claude-code", { force: true }).action).toBe("restored");
+    expect(fs.readFileSync(configPath)).toEqual(original);
+  });
+
+  it("serializes simultaneous Cursor and Codex imports across processes", async () => {
+    const cursorServers = Object.fromEntries(
+      Array.from({ length: 5_000 }, (_, index) => [
+        `cursor-${index}`,
+        { command: "cursor-mcp", args: [String(index)] },
+      ]),
+    );
+    write(".cursor/mcp.json", JSON.stringify({ mcpServers: cursorServers }));
+    const codexServers = Array.from(
+      { length: 1_000 },
+      (_, index) =>
+        `[mcp_servers."codex-${index}"]\ncommand = "codex-mcp"\nargs = ["${index}"]\n`,
+    ).join("\n");
+    write(".codex/config.toml", codexServers);
+    const rosterPath = path.join(home, ".roster/roster.json");
+    fs.mkdirSync(path.dirname(rosterPath), { recursive: true });
+    fs.writeFileSync(rosterPath, `${JSON.stringify(defaultConfig(), null, 2)}\n`);
+
+    const release = path.join(home, "release");
+    const configLock = path.join(home, ".roster", "locks", `${sha256Hex("config")}.lock`);
+    const distSync = pathToFileURL(path.resolve("packages/cli/dist/sync.js")).href;
+    const waitArray = "new Int32Array(new SharedArrayBuffer(4))";
+    const worker = `
+      import fs from "node:fs";
+      import path from "node:path";
+      const originalRead = fs.readFileSync;
+      fs.readFileSync = function(file, ...args) {
+        const value = originalRead.call(fs, file, ...args);
+        if (
+          path.resolve(String(file)) === path.resolve(process.env.ROSTER_CONFIG) &&
+          !fs.existsSync(process.env.CONFIG_LOCK)
+        ) {
+          fs.writeFileSync(process.env.READ_CONFIG_READY, "read");
+          while (!fs.existsSync(process.env.PEER_READ_CONFIG_READY)) {
+            Atomics.wait(${waitArray}, 0, 0, 5);
+          }
+        }
+        return value;
+      };
+      fs.writeFileSync(process.env.READY, "ready");
+      while (!fs.existsSync(process.env.RELEASE)) Atomics.wait(${waitArray}, 0, 0, 5);
+      const { syncClient } = await import(${JSON.stringify(distSync)});
+      syncClient(process.env.CLIENT);
+    `;
+    const readyCursor = path.join(home, "ready-cursor");
+    const readyCodex = path.join(home, "ready-codex");
+    const readCursor = path.join(home, "read-cursor");
+    const readCodex = path.join(home, "read-codex");
+    const runWithReadBarrier = (
+      client: "cursor" | "codex",
+      ready: string,
+      readReady: string,
+      peerReadReady: string,
+    ): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, ["--input-type=module", "--eval", worker], {
+          cwd: path.resolve("."),
+          env: {
+            ...process.env,
+            ROSTER_TEST_HOME: home,
+            ROSTER_HOME: path.join(home, ".roster"),
+            ROSTER_ASSUME_GLOBAL: "0",
+            ROSTER_CONFIG: rosterPath,
+            CONFIG_LOCK: configLock,
+            READ_CONFIG_READY: readReady,
+            PEER_READ_CONFIG_READY: peerReadReady,
+            READY: ready,
+            RELEASE: release,
+            CLIENT: client,
+          },
+          stdio: ["ignore", "ignore", "pipe"],
+        });
+        let stderr = "";
+        child.stderr.setEncoding("utf8");
+        child.stderr.on("data", (chunk: string) => {
+          stderr += chunk;
+        });
+        child.once("error", reject);
+        child.once("exit", (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(`${client} sync worker exited ${code}: ${stderr}`));
+        });
+      });
+    const children = [
+      runWithReadBarrier("cursor", readyCursor, readCursor, readCodex),
+      runWithReadBarrier("codex", readyCodex, readCodex, readCursor),
+    ];
+    await new Promise<void>((resolve, reject) => {
+      const deadline = Date.now() + 5_000;
+      const poll = (): void => {
+        if (fs.existsSync(readyCursor) && fs.existsSync(readyCodex)) {
+          resolve();
+          return;
+        }
+        if (Date.now() >= deadline) {
+          reject(new Error("sync workers did not reach start barrier"));
+          return;
+        }
+        setTimeout(poll, 5);
+      };
+      poll();
+    });
+    fs.writeFileSync(release, "go");
+    await Promise.all(children);
+
+    const saved = JSON.parse(
+      fs.readFileSync(rosterPath, "utf8"),
+    ) as { servers: Record<string, unknown> };
+    expect(Object.keys(saved.servers)).toHaveLength(6_000);
+    expect(saved.servers).toHaveProperty("cursor-0");
+    expect(saved.servers).toHaveProperty("cursor-4999");
+    expect(saved.servers).toHaveProperty("codex-0");
+    expect(saved.servers).toHaveProperty("codex-999");
+  }, 20_000);
 
   /**
    * A NAME is not an IDENTITY. All three of these keyed off the string "roster"
@@ -472,7 +1050,7 @@ args = ["-y", "late-mcp"]
 
     it("our OWN proxy entry is still never imported (identity, not name)", () => {
       // A config already pointing at us must not re-import the proxy as a server.
-      const ours = { command: process.execPath, args: [path.join("/somewhere", "bin.js"), "serve"] };
+      const ours = rosterEntry();
       write(".cursor/mcp.json", JSON.stringify({ mcpServers: { roster: ours } }));
       const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
       expect(result.imported).toBe(0);
@@ -497,10 +1075,81 @@ args = ["-y", "late-mcp"]
           mcpServers: { roster: { command: string } };
         };
         expect(cfg.mcpServers.roster.command).toBe(process.execPath); // healed to our own entrypoint
+        const roster = JSON.parse(
+          fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+        ) as { servers: Record<string, { command: string; args: string[] }> };
+        expect(roster.servers.roster).toEqual({ command: "roster", args: ["serve"], importedFrom: ["cursor"] });
       } finally {
         if (prev === undefined) delete process.env.ROSTER_ASSUME_GLOBAL;
         else process.env.ROSTER_ASSUME_GLOBAL = prev;
       }
+    });
+
+    it("an existing foreign bin.js serve entry is imported and replaced, not declared healthy", () => {
+      const foreignBin = write("foreign/bin.js", "console.log('foreign');\n");
+      const foreign = { command: process.execPath, args: [foreignBin, "serve"] };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { roster: foreign } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.action).toBe("synced");
+      expect(result.imported).toBe(1);
+      const saved = JSON.parse(
+        fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+      ) as { servers: Record<string, { command: string; args: string[] }> };
+      expect(saved.servers.roster).toMatchObject(foreign);
+    });
+
+    it("an unrelated npx command containing serve is imported instead of discarded", () => {
+      const foreign = { command: "npx", args: ["--yes", "unrelated-package", "serve"] };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { unrelated: foreign } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.imported).toBe(1);
+      const saved = JSON.parse(
+        fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+      ) as { servers: Record<string, { command: string; args: string[] }> };
+      expect(saved.servers.unrelated).toMatchObject(foreign);
+    });
+
+    it("our command tuple plus a user-owned env block is not an exact owned entry", () => {
+      const lookalike = {
+        ...rosterEntry(),
+        env: { USER_MARKER: "preserve-me" },
+      };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { customized: lookalike } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.action).toBe("synced");
+      expect(result.imported).toBe(1);
+      const saved = JSON.parse(
+        fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+      ) as { servers: Record<string, { env?: Record<string, string> }> };
+      expect(saved.servers.customized?.env).toEqual({ USER_MARKER: "preserve-me" });
+    });
+
+    it("an exact entry from an active manifest remains owned after the install moves", () => {
+      write(
+        ".cursor/mcp.json",
+        JSON.stringify({ mcpServers: { github: { command: "github-mcp" } } }),
+      );
+      syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      const clientDir = path.join(home, ".roster/backups/cursor");
+      const backup = fs.readdirSync(clientDir).find((name) => name !== "latest" && !name.startsWith("."))!;
+      const manifestPath = path.join(clientDir, backup, "manifest.json");
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
+        injectedEntry?: { command: string; args: string[] };
+      };
+      const historical = {
+        command: process.execPath,
+        args: [path.join(home, "removed-install", "bin.js"), "serve"],
+      };
+      manifest.injectedEntry = historical;
+      fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { oldRoster: historical } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T02:00:00Z"));
+      expect(result.action).toBe("already-synced");
+      expect(result.imported).toBe(0);
     });
 
     it("eject does NOT delete a server the user added under the name `roster` after syncing", () => {
@@ -587,8 +1236,8 @@ args = ["-y", "late-mcp"]
       fs.chmodSync(backupsRoot, 0o700);
       fs.chmodSync(clientDir, 0o700);
 
-      expect(result.action).toBe("restored"); // the restore itself did happen
-      expect(result.detail).toMatch(/could not be closed/); // …but never silently
+      expect(result.action).toBe("integrity-error"); // restore landed, but the operation is not safely complete
+      expect(result.detail).toMatch(/could not be closed/); // never a zero-exit success
     });
 
     it("a normal eject still archives the era away", () => {

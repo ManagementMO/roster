@@ -93,7 +93,7 @@ function readHead(file: string, maxBytes: number): string {
  */
 export function trustScan(
   skill: Pick<ParsedSkill, "body" | "scripts"> &
-    Partial<Pick<ParsedSkill, "name" | "description" | "dir">>,
+    Partial<Pick<ParsedSkill, "name" | "description" | "dir" | "scanWarnings">>,
 ): TrustReport {
   const findings: TrustFinding[] = [];
   const seen = new Set<string>();
@@ -128,6 +128,16 @@ export function trustScan(
     findings.push({
       rule: "bundled-scripts",
       detail: `bundles ${skill.scripts.length} executable script(s) — review before allowing execution`,
+    });
+  }
+  for (const warning of skill.scanWarnings ?? []) {
+    const rule = warning.startsWith("symlink:") ? "symlink" : "scan-incomplete";
+    const key = `${rule}:${warning}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    findings.push({
+      rule,
+      detail: `${warning} (filesystem discovery did not establish a fully trusted skill tree)`,
     });
   }
   return { status: findings.length > 0 ? "review" : "ok", findings };
