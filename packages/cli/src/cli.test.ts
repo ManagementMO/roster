@@ -10,6 +10,7 @@ import { parseJsonc } from "./jsonc.js";
 import { buildReceipt } from "./receipt.js";
 import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
+import { createEjectJournal, hasEjectJournal } from "./ejectJournal.js";
 import { ejectClient } from "./eject.js";
 import { rosterEntry } from "./entry.js";
 import { readRegularFileNoFollow } from "./safeFile.js";
@@ -320,6 +321,86 @@ args = ["-y", "@upstash/context7-mcp"]
       expect(after.mcpServers.roster).toEqual({ ...injected, env: { TOKEN: "sk-secret" } });
       expect(after.mcpServers.mine).toBeDefined(); // conflicting transport → not ours
       expect(after.mcpServers.other).toBeDefined(); // different command → not ours
+    });
+  });
+
+  /**
+   * NEW-3. A key-level eject that was interrupted leaves a durable journal. If the
+   * client then rewrites its state file to a THIRD state (neither the rosterized
+   * "before" nor the planned "desired"), the reviewed base refused on resume and
+   * RETAINED the journal — and sync refuses while a journal exists — so eject and
+   * sync were both permanently locked out. Resume now RE-DERIVES the key-level
+   * merge idempotently from the current bytes, so the client recovers.
+   */
+  describe("key-level eject journal recovers from a third state (NEW-3)", () => {
+    const configPath = () => path.join(home, ".claude.json");
+    const boundary = "2026-07-05T01-00-00-000Z";
+
+    function plantInterruptedKeyLevelJournal(): void {
+      // A real pending journal, as an eject that died after writing the journal
+      // but before completing would leave. Inputs mirror planRestore's state-file
+      // branch: pre-sync original bytes, the injected proxy, and a plausible
+      // desired (unused on the third-state path, which re-derives).
+      const backupDir = path.join(home, ".roster", "backups", "claude-code", boundary);
+      const originalBytes = fs.readFileSync(path.join(backupDir, "original"));
+      const rosterizedBytes = fs.readFileSync(configPath());
+      createEjectJournal("claude-code", boundary, [
+        {
+          sourcePath: configPath(),
+          beforeSha256: sha256Hex(rosterizedBytes),
+          desiredBytes: originalBytes,
+          keyLevel: true,
+          originalBytes,
+          injectedEntries: [rosterEntry()],
+        },
+      ]);
+    }
+
+    it("re-derives the merge from a third-state file instead of deadlocking", () => {
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      plantInterruptedKeyLevelJournal();
+      expect(hasEjectJournal("claude-code")).toBe(true);
+
+      // The client rewrites its state file AGAIN (a third state): bumps live
+      // state, adds a brand-new user server, and — as a real client would — still
+      // carries the roster proxy it has not been told to drop yet.
+      const cfg = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, unknown>;
+        numStartups?: number;
+      };
+      cfg.numStartups = 99;
+      cfg.mcpServers.newthing = { command: "new-mcp", args: ["--go"] };
+      fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2));
+
+      const result = ejectClient("claude-code"); // resume path
+      expect(result.action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, unknown>;
+        numStartups?: number;
+      };
+      expect(after.mcpServers).not.toHaveProperty("roster"); // owned proxy removed
+      expect(after.mcpServers).toHaveProperty("github"); // pre-sync original restored
+      expect(after.mcpServers).toHaveProperty("newthing"); // post-crash user addition preserved
+      expect(after.numStartups).toBe(99); // unrelated live state preserved
+
+      // Deadlock broken: journal cleared, and sync is usable again.
+      expect(hasEjectJournal("claude-code")).toBe(false);
+      expect(["synced", "already-synced"]).toContain(
+        syncClient("claude-code", new Date("2026-07-06T01:00:00Z")).action,
+      );
+    });
+
+    it("a corrupt journal is refused (recoverable), never silently applied", () => {
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      plantInterruptedKeyLevelJournal();
+      // Corrupt the plan on disk.
+      fs.writeFileSync(
+        path.join(home, ".roster", "eject-journals", "claude-code", "plan.json"),
+        "{ not valid json",
+      );
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("integrity-error");
+      expect(hasEjectJournal("claude-code")).toBe(true); // retained for inspection
     });
   });
 

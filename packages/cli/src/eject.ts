@@ -11,6 +11,7 @@ import {
   loadEjectJournal,
   type PreparedJournalTarget,
   readDesiredBytes,
+  readOriginalBytes,
 } from "./ejectJournal.js";
 import { parseJsonc } from "./jsonc.js";
 import { withFileLockSync } from "./lock.js";
@@ -42,12 +43,7 @@ export interface EjectResult {
   restoredPaths?: string[];
 }
 
-interface PlannedRestore extends PreparedJournalTarget {
-  stateContext?: {
-    originalBytes: Buffer;
-    injectedEntries: SpawnEntry[];
-  };
-}
+type PlannedRestore = PreparedJournalTarget;
 
 type ValidBackup = RawBackup & { manifest: BackupManifest };
 
@@ -230,7 +226,11 @@ function planRestore(
           : {}),
         beforeSha256: sha256Hex(currentBytes),
         desiredBytes: Buffer.from(desired),
-        stateContext: { originalBytes, injectedEntries },
+        // Persisted so a resume can re-derive this merge from a third-state file
+        // instead of deadlocking eject and sync (NEW-3).
+        keyLevel: true,
+        originalBytes,
+        injectedEntries,
       };
     } catch {
       // An unparseable state file uses the guarded byte-for-byte path below.
@@ -358,6 +358,12 @@ function applyJournal(
   const prepared: Array<{
     target: EjectJournalTarget;
     desiredBytes: Buffer;
+    // Effective hashes for THIS resume. They equal the journal's recorded hashes
+    // on the normal path, but a key-level third-state re-derivation replaces them
+    // with the freshly computed desired hash and the observed current hash, so
+    // the write loop validates against what it is actually writing (NEW-3).
+    desiredSha256: string;
+    beforeSha256: string | null;
     writePath: string;
     pending: boolean;
   }> = [];
@@ -380,17 +386,44 @@ function applyJournal(
     }
     const currentSha256 = hashIfPresent(writePath);
     if (currentSha256 === target.desiredSha256) {
-      prepared.push({ target, desiredBytes, writePath, pending: false });
+      prepared.push({
+        target, desiredBytes, writePath, pending: false,
+        desiredSha256: target.desiredSha256, beforeSha256: target.beforeSha256,
+      });
       continue;
     }
     if (currentSha256 !== target.beforeSha256) {
+      // A THIRD state (the client rewrote the file again after the crash, or a
+      // fast no-crash race). For a KEY-LEVEL state file the merge is idempotent,
+      // so re-derive the desired bytes from the CURRENT file plus the persisted
+      // pre-sync original and injected entries — removing owned proxies, keeping
+      // post-sync user servers — instead of deadlocking eject and sync (NEW-3).
+      // Dedicated byte-restore targets keep the strict guard (`--force` recovers).
+      const rederived = rederiveKeyLevel(journal, target, writePath);
+      if (rederived) {
+        if (ownedProxyRemains(rederived.toString("utf8"), target.injectedEntries ?? [])) {
+          return integrityFailure(
+            clientId,
+            `${target.sourcePath}: an owned proxy would remain after key-level recovery; refusing (recovery retained)`,
+            target.sourcePath,
+          );
+        }
+        prepared.push({
+          target, desiredBytes: rederived, writePath, pending: true,
+          desiredSha256: sha256Hex(rederived), beforeSha256: currentSha256,
+        });
+        continue;
+      }
       return integrityFailure(
         clientId,
-        `${target.sourcePath}: config changed to a third state during interrupted eject; refusing to overwrite it`,
+        `${target.sourcePath}: config changed to a third state during interrupted eject; refusing to overwrite it — re-run \`roster eject --force\` to restore the pristine backup`,
         target.sourcePath,
       );
     }
-    prepared.push({ target, desiredBytes, writePath, pending: true });
+    prepared.push({
+      target, desiredBytes, writePath, pending: true,
+      desiredSha256: target.desiredSha256, beforeSha256: target.beforeSha256,
+    });
   }
 
   for (const item of prepared) {
@@ -402,8 +435,8 @@ function applyJournal(
         item.target.symlinkTarget,
       );
       const currentSha256 = hashIfPresent(checkedWritePath);
-      if (currentSha256 === item.target.desiredSha256) continue;
-      if (currentSha256 !== item.target.beforeSha256) {
+      if (currentSha256 === item.desiredSha256) continue;
+      if (currentSha256 !== item.beforeSha256) {
         throw new Error("config changed after eject preflight");
       }
       fs.mkdirSync(path.dirname(item.target.sourcePath), {
@@ -416,7 +449,7 @@ function applyJournal(
         item.target.symlinkTarget,
       );
       atomicWriteFileSync(finalWritePath, item.desiredBytes);
-      if (hashIfPresent(finalWritePath) !== item.target.desiredSha256) {
+      if (hashIfPresent(finalWritePath) !== item.desiredSha256) {
         throw new Error("restored bytes failed their post-write hash check");
       }
     } catch (error) {
@@ -517,7 +550,7 @@ function stabilizeStateTargets(
   for (let pass = 0; pass < 4; pass++) {
     let changed = false;
     for (const target of targets) {
-      if (!target.stateContext) continue;
+      if (!target.keyLevel || !target.originalBytes || !target.injectedEntries) continue;
       let writePath: string;
       try {
         writePath = validateWriteTopology(
@@ -548,8 +581,8 @@ function stabilizeStateTargets(
         target.desiredBytes = Buffer.from(
           restoreServersKeyLevel(
             currentBytes.toString("utf8"),
-            target.stateContext.originalBytes.toString("utf8"),
-            target.stateContext.injectedEntries,
+            target.originalBytes.toString("utf8"),
+            target.injectedEntries,
           ),
         );
       } catch {
@@ -598,6 +631,37 @@ function stabilizeStateTargets(
  * never fires on a user lookalike (env-bearing / conflicting transport), which
  * removal correctly leaves; over-matching would wrongly block a clean eject.
  */
+/**
+ * Re-derive a key-level target's desired bytes from the CURRENT file plus the
+ * journal's persisted pre-sync original and injected entries. Because the merge
+ * (original servers ∪ post-sync user servers − owned proxies) is idempotent in
+ * the current bytes, this recovers a state file the client rewrote to a third
+ * state after a crash — the flagship ~/.claude.json case — instead of
+ * deadlocking (NEW-3). Returns null for a non-key-level target or if the current
+ * file / journal original is unreadable, so the caller keeps the strict guard.
+ */
+function rederiveKeyLevel(
+  journal: LoadedEjectJournal,
+  target: EjectJournalTarget,
+  writePath: string,
+): Buffer | null {
+  if (!target.keyLevel || !target.injectedEntries) return null;
+  try {
+    const currentBytes = readRegularFileIfPresent(writePath, 4);
+    if (currentBytes === null) return null;
+    const originalBytes = readOriginalBytes(journal, target);
+    return Buffer.from(
+      restoreServersKeyLevel(
+        currentBytes.toString("utf8"),
+        originalBytes.toString("utf8"),
+        target.injectedEntries,
+      ),
+    );
+  } catch {
+    return null;
+  }
+}
+
 function ownedProxyRemains(content: string, injectedEntries: readonly SpawnEntry[]): boolean {
   const parsed = parseJsonc(content);
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
