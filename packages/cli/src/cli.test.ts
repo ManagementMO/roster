@@ -227,6 +227,28 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(again.action).toBe("already-synced");
   });
 
+  it("sweeps a staging dir orphaned by an interrupted prior sync (L12)", () => {
+    expect(syncClient("codex", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+    const backupsDir = path.join(home, ".roster/backups/codex");
+
+    // Simulate a sync that crashed after mkdir(staging) but before the atomic
+    // rename into place: a `<ts>.staging-<hex>` dir carrying a partial, private
+    // copy of the config. Nothing ever removed these, so they leaked forever.
+    const orphan = path.join(backupsDir, "2026-07-05T09-09-09-999Z.staging-deadbeef");
+    fs.mkdirSync(orphan, { recursive: true });
+    fs.writeFileSync(path.join(orphan, "original"), "PARTIAL — never published");
+    expect(fs.existsSync(orphan)).toBe(true);
+
+    // The next sync (already-synced here) runs under the client lock and must
+    // garbage-collect the orphan while leaving real, published backups intact.
+    syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    expect(fs.existsSync(orphan)).toBe(false);
+    const realBackups = fs
+      .readdirSync(backupsDir)
+      .filter((n) => !n.startsWith(".") && !n.includes(".staging-") && n !== "latest");
+    expect(realBackups.length).toBeGreaterThanOrEqual(1);
+  });
+
   it("eject restores byte-for-byte, comments and all", () => {
     const configPath = path.join(home, ".codex/config.toml");
     const originalBytes = fs.readFileSync(configPath);
