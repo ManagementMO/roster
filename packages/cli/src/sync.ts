@@ -6,14 +6,14 @@ import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
 import { hasGlobalRoster, ourBinPath, rosterEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
+import { withFileLockSync } from "./lock.js";
 import {
   atomicWriteFileSync,
   backupDirFor,
-  loadConfig,
   mergeServers,
   PRIVATE_DIR,
   PRIVATE_FILE,
-  saveConfig,
+  updateConfig,
 } from "./rosterfile.js";
 
 /** The four write clients (handoff §6.3). Read-import covers everything; writes stay narrow. */
@@ -53,6 +53,10 @@ export { hasGlobalRoster } from "./entry.js";
  * referenced backup — never a clobbered config without a findable backup.
  */
 export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
+  return withFileLockSync(`client:${clientId}`, () => syncClientUnlocked(clientId, now));
+}
+
+function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   const spec = CLIENTS.find((c) => c.id === clientId);
   if (!spec) throw new Error(`unknown client: ${clientId}`);
   const configPath = spec.configPaths().find((p) => fs.existsSync(p));
@@ -72,9 +76,7 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
     servers = []; // unparseable: the backup still protects the original bytes
   }
   if (servers.length > 0) {
-    const config = loadConfig();
-    const { added } = mergeServers(config, servers);
-    if (added.length > 0) saveConfig(config);
+    const { added } = updateConfig((config) => mergeServers(config, servers));
     imported = added.length;
   }
 

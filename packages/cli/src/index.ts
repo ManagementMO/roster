@@ -8,8 +8,10 @@ export {
   mergeServers,
   saveConfig,
   serverIdentity,
+  updateConfig,
   type RosterConfig,
 } from "./rosterfile.js";
+export { withFileLockSync } from "./lock.js";
 export { syncClient, WRITE_CLIENTS, type SyncResult } from "./sync.js";
 export { init } from "./init.js";
 export { serve } from "./serve.js";

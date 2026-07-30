@@ -1,11 +1,14 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, discoverClients, type ClientId } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
 import { buildReceipt } from "./receipt.js";
+import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
 import { ejectClient } from "./eject.js";
 import { syncClient } from "./sync.js";
@@ -176,6 +179,7 @@ describe("receipt truthfulness", () => {
           dir: path.join(home, ".claude/skills/demo"),
           resources: [],
           scripts: [],
+          scanWarnings: [],
           frontmatter: {},
         },
       ],
@@ -423,6 +427,19 @@ args = ["-y", "late-mcp"]
     expect(litter).toEqual([]); // private tmp cleaned up on success
   });
 
+  it("a file lock preserves an undefined thrown value instead of treating it as success", () => {
+    let caught = false;
+    try {
+      withFileLockSync("throw-undefined", () => {
+        throw undefined;
+      });
+    } catch (error) {
+      caught = true;
+      expect(error).toBeUndefined();
+    }
+    expect(caught).toBe(true);
+  });
+
   it("does not report 'synced' (or clobber the client config) when the import step genuinely fails", () => {
     const configPath = path.join(home, ".codex/config.toml"); // beforeEach seeds context7 to import
     // Corrupt roster.json so loadConfig() throws DURING import — previously swallowed.
@@ -444,6 +461,162 @@ args = ["-y", "late-mcp"]
     expect(() => syncClient("claude-code", new Date("2026-07-05T01:00:00Z"))).toThrow(/not a JSON object/i);
     expect(fs.readFileSync(configPath, "utf8")).toBe("[]"); // left exactly as found
   });
+
+  it("rejects an array-valued roster servers field before rewriting a client", () => {
+    const configPath = path.join(home, ".codex/config.toml");
+    const original = fs.readFileSync(configPath);
+    fs.mkdirSync(path.join(home, ".roster"), { recursive: true });
+    fs.writeFileSync(
+      path.join(home, ".roster/roster.json"),
+      `${JSON.stringify({ ...defaultConfig(), servers: [] }, null, 2)}\n`,
+    );
+
+    expect(() => syncClient("codex", new Date("2026-07-05T01:00:00Z"))).toThrow(
+      /servers.*object/i,
+    );
+    expect(fs.readFileSync(configPath)).toEqual(original);
+  });
+
+  it("persists provenance-only duplicate imports", () => {
+    const rosterPath = path.join(home, ".roster/roster.json");
+    fs.mkdirSync(path.dirname(rosterPath), { recursive: true });
+    const config = defaultConfig();
+    config.servers.shared = {
+      command: "npx",
+      args: ["-y", "shared-mcp"],
+      importedFrom: ["claude-code"],
+    };
+    fs.writeFileSync(rosterPath, `${JSON.stringify(config, null, 2)}\n`);
+    write(
+      ".cursor/mcp.json",
+      JSON.stringify({
+        mcpServers: {
+          sameDefinition: { command: "npx", args: ["-y", "shared-mcp"] },
+        },
+      }),
+    );
+
+    expect(syncClient("cursor", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+    const saved = JSON.parse(fs.readFileSync(rosterPath, "utf8")) as {
+      servers: Record<string, { importedFrom: string[] }>;
+    };
+    expect(saved.servers.shared?.importedFrom.sort()).toEqual(["claude-code", "cursor"]);
+  });
+
+  it("serializes simultaneous Cursor and Codex imports across processes", async () => {
+    const cursorServers = Object.fromEntries(
+      Array.from({ length: 5_000 }, (_, index) => [
+        `cursor-${index}`,
+        { command: "cursor-mcp", args: [String(index)] },
+      ]),
+    );
+    write(".cursor/mcp.json", JSON.stringify({ mcpServers: cursorServers }));
+    const codexServers = Array.from(
+      { length: 1_000 },
+      (_, index) =>
+        `[mcp_servers."codex-${index}"]\ncommand = "codex-mcp"\nargs = ["${index}"]\n`,
+    ).join("\n");
+    write(".codex/config.toml", codexServers);
+    const rosterPath = path.join(home, ".roster/roster.json");
+    fs.mkdirSync(path.dirname(rosterPath), { recursive: true });
+    fs.writeFileSync(rosterPath, `${JSON.stringify(defaultConfig(), null, 2)}\n`);
+
+    const release = path.join(home, "release");
+    const configLock = path.join(home, ".roster", "locks", `${sha256Hex("config")}.lock`);
+    const distSync = pathToFileURL(path.resolve("packages/cli/dist/sync.js")).href;
+    const waitArray = "new Int32Array(new SharedArrayBuffer(4))";
+    const worker = `
+      import fs from "node:fs";
+      import path from "node:path";
+      const originalRead = fs.readFileSync;
+      fs.readFileSync = function(file, ...args) {
+        const value = originalRead.call(fs, file, ...args);
+        if (
+          path.resolve(String(file)) === path.resolve(process.env.ROSTER_CONFIG) &&
+          !fs.existsSync(process.env.CONFIG_LOCK)
+        ) {
+          fs.writeFileSync(process.env.READ_CONFIG_READY, "read");
+          while (!fs.existsSync(process.env.PEER_READ_CONFIG_READY)) {
+            Atomics.wait(${waitArray}, 0, 0, 5);
+          }
+        }
+        return value;
+      };
+      fs.writeFileSync(process.env.READY, "ready");
+      while (!fs.existsSync(process.env.RELEASE)) Atomics.wait(${waitArray}, 0, 0, 5);
+      const { syncClient } = await import(${JSON.stringify(distSync)});
+      syncClient(process.env.CLIENT);
+    `;
+    const readyCursor = path.join(home, "ready-cursor");
+    const readyCodex = path.join(home, "ready-codex");
+    const readCursor = path.join(home, "read-cursor");
+    const readCodex = path.join(home, "read-codex");
+    const runWithReadBarrier = (
+      client: "cursor" | "codex",
+      ready: string,
+      readReady: string,
+      peerReadReady: string,
+    ): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, ["--input-type=module", "--eval", worker], {
+          cwd: path.resolve("."),
+          env: {
+            ...process.env,
+            ROSTER_TEST_HOME: home,
+            ROSTER_HOME: path.join(home, ".roster"),
+            ROSTER_ASSUME_GLOBAL: "0",
+            ROSTER_CONFIG: rosterPath,
+            CONFIG_LOCK: configLock,
+            READ_CONFIG_READY: readReady,
+            PEER_READ_CONFIG_READY: peerReadReady,
+            READY: ready,
+            RELEASE: release,
+            CLIENT: client,
+          },
+          stdio: ["ignore", "ignore", "pipe"],
+        });
+        let stderr = "";
+        child.stderr.setEncoding("utf8");
+        child.stderr.on("data", (chunk: string) => {
+          stderr += chunk;
+        });
+        child.once("error", reject);
+        child.once("exit", (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(`${client} sync worker exited ${code}: ${stderr}`));
+        });
+      });
+    const children = [
+      runWithReadBarrier("cursor", readyCursor, readCursor, readCodex),
+      runWithReadBarrier("codex", readyCodex, readCodex, readCursor),
+    ];
+    await new Promise<void>((resolve, reject) => {
+      const deadline = Date.now() + 5_000;
+      const poll = (): void => {
+        if (fs.existsSync(readyCursor) && fs.existsSync(readyCodex)) {
+          resolve();
+          return;
+        }
+        if (Date.now() >= deadline) {
+          reject(new Error("sync workers did not reach start barrier"));
+          return;
+        }
+        setTimeout(poll, 5);
+      };
+      poll();
+    });
+    fs.writeFileSync(release, "go");
+    await Promise.all(children);
+
+    const saved = JSON.parse(
+      fs.readFileSync(rosterPath, "utf8"),
+    ) as { servers: Record<string, unknown> };
+    expect(Object.keys(saved.servers)).toHaveLength(6_000);
+    expect(saved.servers).toHaveProperty("cursor-0");
+    expect(saved.servers).toHaveProperty("cursor-4999");
+    expect(saved.servers).toHaveProperty("codex-0");
+    expect(saved.servers).toHaveProperty("codex-999");
+  }, 20_000);
 
   /**
    * A NAME is not an IDENTITY. All three of these keyed off the string "roster"

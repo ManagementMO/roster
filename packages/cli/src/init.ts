@@ -1,7 +1,7 @@
 import { trustScan, defaultSkillSources, scanSkillSources } from "@rosterhq/playbook";
 import { discoverClients } from "./clients.js";
 import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
-import { loadConfig, mergeServers, saveConfig } from "./rosterfile.js";
+import { mergeServers, updateConfig } from "./rosterfile.js";
 import { WRITE_CLIENTS } from "./sync.js";
 
 /**
@@ -12,16 +12,15 @@ export function init(): void {
   const discoveries = discoverClients();
   const imported = discoveries.flatMap((d) => d.servers);
 
-  const config = loadConfig();
-  const { added, merged } = mergeServers(config, imported);
-
-  // Union with existing sources — a re-run must never clobber user additions.
-  const skillSources = [...new Set([...config.skillSources, ...defaultSkillSources()])];
-  config.skillSources = skillSources;
+  const { config, added, merged } = updateConfig((config) => {
+    const result = mergeServers(config, imported);
+    // Union with existing sources — a re-run must never clobber user additions.
+    config.skillSources = [...new Set([...config.skillSources, ...defaultSkillSources()])];
+    return { config, added: result.added, merged: result.merged };
+  });
+  const skillSources = config.skillSources;
   const skills = scanSkillSources(skillSources);
   const trustReview = skills.filter((s) => trustScan(s).status === "review").length;
-
-  saveConfig(config);
 
   const receipt = buildReceipt(discoveries, skills, trustReview);
   saveReceipt(receipt);

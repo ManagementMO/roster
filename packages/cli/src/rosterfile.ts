@@ -4,6 +4,7 @@ import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import type { ImportedServer } from "./clients.js";
 import { isRosterProxyEntry } from "./entry.js";
+import { withFileLockSync } from "./lock.js";
 import { rosterConfigPath, rosterHome } from "./paths.js";
 
 /**
@@ -79,7 +80,7 @@ export function defaultConfig(): RosterConfig {
   return {
     version: 1,
     mode: "transparent",
-    servers: {},
+    servers: Object.create(null) as Record<string, RosterServerEntry>,
     skillSources: [],
     telemetry: { enabled: false },
     embeddings: "auto",
@@ -89,31 +90,118 @@ export function defaultConfig(): RosterConfig {
 export function loadConfig(): RosterConfig {
   const p = rosterConfigPath();
   if (!fs.existsSync(p)) return defaultConfig();
-  let parsed: Partial<RosterConfig>;
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RosterConfig>;
+    parsed = JSON.parse(fs.readFileSync(p, "utf8"));
   } catch (err) {
     throw new Error(`~/.roster/roster.json is malformed JSON: ${err instanceof Error ? err.message : err}`);
   }
-  const base = defaultConfig();
-  // Normalize each field so a hand-edited null/wrong-type can't crash serve.
-  return {
-    ...base,
-    ...parsed,
-    servers:
-      parsed.servers && typeof parsed.servers === "object" ? parsed.servers : base.servers,
-    skillSources: Array.isArray(parsed.skillSources) ? parsed.skillSources : base.skillSources,
-    telemetry: { enabled: parsed.telemetry?.enabled === true },
-    embeddings: parsed.embeddings === "off" ? "off" : "auto",
-    mode: parsed.mode === "five" ? "five" : "transparent",
-  };
+  return normalizeConfig(parsed);
 }
 
 export function saveConfig(config: RosterConfig): void {
   fs.mkdirSync(rosterHome(), { recursive: true, mode: PRIVATE_DIR });
   // roster.json holds every imported server's `env` — i.e. the user's API keys.
   // It is the "one place" the README promises they live, so it is owner-only.
-  atomicWriteFileSync(rosterConfigPath(), `${JSON.stringify(config, null, 2)}\n`, PRIVATE_FILE);
+  const normalized = normalizeConfig(config);
+  atomicWriteFileSync(
+    rosterConfigPath(),
+    `${JSON.stringify(normalized, null, 2)}\n`,
+    PRIVATE_FILE,
+  );
+}
+
+/** Reload, mutate, and publish roster.json while holding the global config lock. */
+export function updateConfig<T>(mutator: (config: RosterConfig) => T): T {
+  return withFileLockSync("config", () => {
+    const config = loadConfig();
+    const result = mutator(config);
+    saveConfig(config);
+    return result;
+  });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function stringArray(value: unknown, field: string, fallback: string[] = []): string[] {
+  if (value === undefined) return [...fallback];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(`~/.roster/roster.json ${field} must be an array of strings`);
+  }
+  return [...value];
+}
+
+function normalizeServer(value: unknown, field: string): RosterServerEntry {
+  if (!isRecord(value)) {
+    throw new Error(`~/.roster/roster.json ${field} must be an object`);
+  }
+  const command = value.command;
+  const url = value.url;
+  if (command !== undefined && typeof command !== "string") {
+    throw new Error(`~/.roster/roster.json ${field}.command must be a string`);
+  }
+  if (url !== undefined && typeof url !== "string") {
+    throw new Error(`~/.roster/roster.json ${field}.url must be a string`);
+  }
+  if (command === undefined && url === undefined) {
+    throw new Error(`~/.roster/roster.json ${field} must define command or url`);
+  }
+  let env: Record<string, string> | undefined;
+  if (value.env !== undefined) {
+    if (!isRecord(value.env) || Object.values(value.env).some((item) => typeof item !== "string")) {
+      throw new Error(`~/.roster/roster.json ${field}.env must be an object of strings`);
+    }
+    env = Object.fromEntries(Object.entries(value.env)) as Record<string, string>;
+  }
+  return {
+    ...(command !== undefined ? { command } : {}),
+    ...(value.args !== undefined ? { args: stringArray(value.args, `${field}.args`) } : {}),
+    ...(env !== undefined ? { env } : {}),
+    ...(url !== undefined ? { url } : {}),
+    importedFrom: stringArray(value.importedFrom, `${field}.importedFrom`),
+  };
+}
+
+function normalizeConfig(value: unknown): RosterConfig {
+  if (!isRecord(value)) {
+    throw new Error("~/.roster/roster.json must be a JSON object");
+  }
+  if (value.version !== undefined && value.version !== 1) {
+    throw new Error("~/.roster/roster.json version must be 1");
+  }
+  if (value.mode !== undefined && value.mode !== "transparent" && value.mode !== "five") {
+    throw new Error('~/.roster/roster.json mode must be "transparent" or "five"');
+  }
+  if (value.embeddings !== undefined && value.embeddings !== "auto" && value.embeddings !== "off") {
+    throw new Error('~/.roster/roster.json embeddings must be "auto" or "off"');
+  }
+  if (value.servers !== undefined && !isRecord(value.servers)) {
+    throw new Error("~/.roster/roster.json servers must be an object");
+  }
+  const servers = Object.create(null) as Record<string, RosterServerEntry>;
+  for (const [name, server] of Object.entries(value.servers ?? {})) {
+    servers[name] = normalizeServer(server, `servers.${name}`);
+  }
+  let telemetryEnabled = false;
+  if (value.telemetry !== undefined) {
+    if (!isRecord(value.telemetry)) {
+      throw new Error("~/.roster/roster.json telemetry must be an object");
+    }
+    if (value.telemetry.enabled !== undefined && typeof value.telemetry.enabled !== "boolean") {
+      throw new Error("~/.roster/roster.json telemetry.enabled must be a boolean");
+    }
+    telemetryEnabled = value.telemetry.enabled === true;
+  }
+  return {
+    version: 1,
+    mode: value.mode === "five" ? "five" : "transparent",
+    servers,
+    skillSources: stringArray(value.skillSources, "skillSources"),
+    telemetry: { enabled: telemetryEnabled },
+    embeddings: value.embeddings === "off" ? "off" : "auto",
+  };
 }
 
 /**
@@ -138,6 +226,7 @@ export interface MergeResult {
   config: RosterConfig;
   added: string[];
   merged: string[];
+  changed: boolean;
 }
 
 /** Merge imported servers into the roster, deduping identical definitions across clients. */
@@ -148,6 +237,7 @@ export function mergeServers(config: RosterConfig, imported: readonly ImportedSe
   }
   const added: string[] = [];
   const merged: string[] = [];
+  let changed = false;
   for (const server of imported) {
     // Roster never imports ITSELF — but "itself" is an ENTRY, not a NAME. Keying
     // this off `name === "roster"` silently dropped a user's own server that
@@ -159,13 +249,16 @@ export function mergeServers(config: RosterConfig, imported: readonly ImportedSe
     const existingName = byIdentity.get(identity);
     if (existingName) {
       const entry = config.servers[existingName]!;
-      if (!entry.importedFrom.includes(server.client)) entry.importedFrom.push(server.client);
+      if (!entry.importedFrom.includes(server.client)) {
+        entry.importedFrom.push(server.client);
+        changed = true;
+      }
       merged.push(existingName);
       continue;
     }
     let name = server.name;
     let suffix = 2;
-    while (config.servers[name]) name = `${server.name}-${suffix++}`;
+    while (Object.hasOwn(config.servers, name)) name = `${server.name}-${suffix++}`;
     config.servers[name] = {
       command: server.command,
       args: server.args,
@@ -175,8 +268,9 @@ export function mergeServers(config: RosterConfig, imported: readonly ImportedSe
     };
     byIdentity.set(identity, name);
     added.push(name);
+    changed = true;
   }
-  return { config, added, merged };
+  return { config, added, merged, changed };
 }
 
 export function backupDirFor(clientId: string, timestamp: string): string {
