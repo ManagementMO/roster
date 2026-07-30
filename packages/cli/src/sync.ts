@@ -108,6 +108,10 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
     imported = added.length;
   }
 
+  // Garbage-collect staging dirs orphaned by a previously interrupted sync
+  // before we (maybe) create a new one. Under the client lock, so it is race-free.
+  sweepOrphanStaging(clientId);
+
   const rewritten = rewriteConfig(
     clientId,
     originalBytes.toString("utf8"),
@@ -240,6 +244,48 @@ export function ownedRosterEntries(
 /** Client backup root, e.g. ~/.roster/backups/cursor. */
 function clientBackupDir(clientId: ClientId): string {
   return path.dirname(backupDirFor(clientId, "x"));
+}
+
+const ORPHAN_STAGING_NAME =
+  /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\.staging-[0-9a-f]{8}$/;
+
+/**
+ * Remove staging dirs left by a PRIOR interrupted sync. Each backup is assembled
+ * in a `<timestamp>.staging-<hex>` dir and renamed into place atomically, so a
+ * crash between mkdir and rename leaves the staging dir orphaned. `rawBackups`
+ * already SKIPS `.staging-` entries so a partial backup can never be restored,
+ * but nothing removed them — they accumulated in the backups tree indefinitely,
+ * each leaking a verbatim copy of the client config (env/API keys included).
+ *
+ * Safe to delete unconditionally here: this runs under the per-client sync lock
+ * (`withFileLockSync("client:<id>")`), and the ONLY writer that creates one of
+ * these is `syncClientUnlocked` itself under that same lock — so any `.staging-`
+ * entry present now is an orphan, never a live sibling mid-write.
+ */
+function sweepOrphanStaging(clientId: ClientId): void {
+  const dir = clientBackupDir(clientId);
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return; // no backups dir yet — nothing to sweep
+  }
+  for (const name of entries) {
+    // Delete only the exact name shape produced above. The backup root is
+    // Roster-owned, but a tampered or manually-added lookalike must not turn a
+    // best-effort cleanup into an overbroad recursive delete.
+    if (!ORPHAN_STAGING_NAME.test(name)) continue;
+    try {
+      // maxRetries absorbs the transient EPERM/EBUSY Windows throws while another
+      // process (or a scanner/indexer) briefly holds a directory handle open.
+      fs.rmSync(path.join(dir, name), { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    } catch {
+      // BEST EFFORT, deliberately: this is opportunistic garbage collection of an
+      // orphan that is already inert (rawBackups skips `.staging-` entries, so it
+      // can never be restored). Failing to delete it must NEVER fail the sync the
+      // user actually asked for — the orphan is simply retried next sync.
+    }
+  }
 }
 
 /**

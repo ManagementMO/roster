@@ -29,7 +29,7 @@ export interface BuildReport {
   uncertified: Array<{ path: string; server: string; reason: string }>;
 }
 
-interface LoadedSuites {
+export interface LoadedSuites {
   /** Exact suite/version authority for category, signing, and descriptions. */
   authorities: Map<string, SuiteAuthority>;
 }
@@ -41,16 +41,36 @@ interface LoadedSuites {
  * unrankable. That is the fail-closed direction: a broken suite can cost a
  * server its rank, but it can never mint one.
  */
-function loadSuites(suitesDir: string): LoadedSuites {
+export function loadSuites(suitesDir: string): LoadedSuites {
   const authorities = new Map<string, SuiteAuthority>();
+  // A (suite, version) that appears in more than one suite directory is an
+  // AMBIGUOUS authority. Silently letting the last-loaded one win (and "last"
+  // was filesystem-order roulette — readdir is unsorted) would let a duplicate
+  // MINT or STRIP signed credit depending on which copy won, breaking the
+  // fail-closed promise that a suite can cost a rank but never mint one.
+  const conflicted = new Set<string>();
   if (!fs.existsSync(suitesDir)) return { authorities };
-  for (const dir of fs.readdirSync(suitesDir, { withFileTypes: true })) {
+  // Sorted so the build is reproducible regardless of the host filesystem's
+  // directory order (the artifacts read below is already `.sort()`ed).
+  const dirs = fs
+    .readdirSync(suitesDir, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name));
+  for (const dir of dirs) {
     if (!dir.isDirectory()) continue;
     const file = path.join(suitesDir, dir.name, "tasks.yaml");
     if (!fs.existsSync(file)) continue;
     try {
       const suite = parseSuite(fs.readFileSync(file, "utf8"));
-      authorities.set(suiteKey(suite.suite, suite.version), {
+      const key = suiteKey(suite.suite, suite.version);
+      // Poison a duplicated key: drop it entirely so every run against it is
+      // `unverifiable` (shown, never ranked) — never silently authoritative.
+      if (conflicted.has(key)) continue;
+      if (authorities.has(key)) {
+        authorities.delete(key);
+        conflicted.add(key);
+        continue;
+      }
+      authorities.set(key, {
         category: suite.category,
         tasks: new Map(
           suite.tasks.map((task) => [

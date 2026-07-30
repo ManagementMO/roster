@@ -1,5 +1,5 @@
-import fs from "node:fs";
 import path from "node:path";
+import { readFileHead } from "./boundedRead.js";
 import type { ParsedSkill } from "./skill.js";
 
 /**
@@ -17,13 +17,19 @@ export interface TrustReport {
   findings: TrustFinding[];
 }
 
-interface Rule {
+export interface Rule {
   id: string;
   pattern: RegExp;
   detail: string;
 }
 
-const BODY_RULES: Rule[] = [
+/**
+ * Exported so the suite can hold EVERY rule — present and future — to the
+ * linear-time bar on hostile input, instead of only the one that was known to
+ * backtrack. Adding a rule with overlapping unbounded quantifiers fails that
+ * test rather than shipping a boot-time DoS.
+ */
+export const TRUST_RULES: readonly Rule[] = [
   {
     id: "injection-override",
     pattern: /ignore (all |any )?(previous|prior|above) (instructions|rules|guidance)/i,
@@ -46,7 +52,27 @@ const BODY_RULES: Rule[] = [
   },
   {
     id: "destructive-command",
-    pattern: /\brm\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r)[a-z]*\s+[~/]/i,
+    // Linear by CONSTRUCTION, and with NO semantic length cap (a real `rm`
+    // accepts arbitrarily long repeated-flag clusters, so a cap would be a
+    // trivial bypass — `rm -rr…rf /`).
+    //
+    // The pre-fix form `-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r` wrapped each required
+    // letter in UNBOUNDED runs, so a failing match enumerated the O(n²) ways to
+    // split the cluster (a 4 KB body of `rm -` + "rf"×2048 took 9.7 s, and every
+    // listing boundary scans untrusted SKILL.md text).
+    //
+    // Here the two required letters are checked by ZERO-WIDTH lookaheads that run
+    // exactly once at the fixed position after `-` (each an O(k) forward scan for
+    // `r` / `f`), then a single greedy `[a-z]+` consumes the cluster once. When
+    // `\s+[~/]` fails, only `[a-z]+` backtracks — one char at a time, O(k) — and
+    // the already-matched zero-width lookaheads are NOT re-evaluated, so there is
+    // no multiplicative backtracking. Measured ~linear: 1 MiB in ~5.7 ms.
+    //
+    // Semantics: requires a flag cluster containing BOTH r and f (any order, any
+    // length, other flags allowed) followed by whitespace and a ~ or / target.
+    // `rm -r`/`rm -f` alone, a missing target, and non-home/root targets do not
+    // match.
+    pattern: /\brm\s+-(?=[a-z]*r)(?=[a-z]*f)[a-z]+\s+[~/]/i,
     detail: "recursive force-delete against home or root paths",
   },
   {
@@ -65,24 +91,6 @@ const BODY_RULES: Rule[] = [
 const MAX_SCRIPT_BYTES = 256 * 1024;
 
 /**
- * Read at most `maxBytes` from the head of a file WITHOUT loading the whole
- * thing. readFileSync(...).slice() reads the entire file first, so a huge
- * bundled script would OOM/throw — and that throw, swallowed by the caller,
- * silently left the script UNSCANNED (re-opening the curl|bash-in-a-script
- * false-negative this scan exists to close).
- */
-function readHead(file: string, maxBytes: number): string {
-  const fd = fs.openSync(file, "r");
-  try {
-    const buf = Buffer.allocUnsafe(maxBytes);
-    const n = fs.readSync(fd, buf, 0, maxBytes, 0);
-    return buf.subarray(0, n).toString("utf8");
-  } finally {
-    fs.closeSync(fd);
-  }
-}
-
-/**
  * Scans body AND the two blind spots the lab surfaced: the `description` (the
  * exact text OpenClaw injects into every prompt and retrieval indexes — the
  * highest-value injection surface) and the CONTENTS of bundled scripts (a path
@@ -97,7 +105,7 @@ export function trustScan(
 ): TrustReport {
   const findings: TrustFinding[] = [];
   const seen = new Set<string>();
-  const scan = (text: string, where: string, rules: Rule[]): void => {
+  const scan = (text: string, where: string, rules: readonly Rule[]): void => {
     for (const rule of rules) {
       if (!rule.pattern.test(text)) continue;
       const key = `${rule.id}:${where}`;
@@ -107,17 +115,21 @@ export function trustScan(
     }
   };
 
-  scan(`${skill.name ?? ""}\n${skill.description ?? ""}`, "metadata", BODY_RULES);
-  scan(skill.body, "body", BODY_RULES);
+  scan(`${skill.name ?? ""}\n${skill.description ?? ""}`, "metadata", TRUST_RULES);
+  scan(skill.body, "body", TRUST_RULES);
 
   // Real code is full of base64-looking and env-reading fragments, so scripts
   // are scanned for the actionable threats only — not the generic base64 rule,
   // which would flag every minified bundle. `dir` present ⇒ read from disk.
-  const scriptRules = BODY_RULES.filter((r) => r.id !== "base64-blob");
+  const scriptRules = TRUST_RULES.filter((r) => r.id !== "base64-blob");
   if (skill.dir) {
     for (const rel of skill.scripts) {
       try {
-        scan(readHead(path.join(skill.dir, rel), MAX_SCRIPT_BYTES), `script:${rel}`, scriptRules);
+        scan(
+          readFileHead(path.join(skill.dir, rel), MAX_SCRIPT_BYTES).text,
+          `script:${rel}`,
+          scriptRules,
+        );
       } catch {
         // Unreadable script: the bundled-scripts advisory below still fires.
       }

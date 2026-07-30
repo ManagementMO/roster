@@ -11,3 +11,4 @@ export {
   type TaskResult,
 } from "./runner.js";
 export { buildLabResults, summarizeResults, type LabResults, type RunSummary } from "./results.js";
+export { MAX_VERIFIER_FILE_BYTES, readVerifierFile } from "./safeVerifierRead.js";

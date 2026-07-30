@@ -53,7 +53,7 @@ The site builder treats every artifact field as a claim. It validates canonical 
 
 ## 6. Drift events
 
-Roster hashes each tool's (name, description, inputSchema, **outputSchema**, body) at every connect. A change raises a **drift event**: the affected tool/server is quarantined from default rosters pending a re-run of its Combine suite, and the event enters the server's public drift history. A dedicated drift column in League standings follows. **(implementation pending)**
+Roster hashes each tool's full contract at every connect — name, description, title, **annotations**, inputSchema, **outputSchema**, **execution**, and body — over a canonical (key-sorted) serialization so field order can't hide a change. Annotations and execution are in the fingerprint deliberately: a tool that flips a safety hint (e.g. `readOnlyHint`/`destructiveHint`) or changes how it runs must raise drift, not slip through as "same definition." Local drift events and default-roster quarantine are implemented. Requiring a re-signed Combine run before public re-admission, publishing drift history, and adding a dedicated League drift column remain **implementation pending**.
 
 Connect-time hashing is the reliable drift mechanism — including for output-schema changes, since the MCP SDK validates structured output itself and throws before Roster could observe a runtime mismatch. A tool that is fully *removed* and later *re-added* with a changed definition is **still caught**: a tombstone (`removed_capability`) carries the last-seen hash forward across the removal, so the re-add raises a drift event and re-quarantines rather than slipping in as new. An interrupted quarantine dwell is likewise preserved across a remove/re-add.
 
@@ -74,7 +74,7 @@ Ratings use only tool-attributable outcome classes: transport/protocol failures,
 
 ## 9. Skills Division
 
-Skills rank with the same math — Wilson LB over distinct signed tasks — in their own division. By default, no skill is served before the Trust scan passes it. Discovery is bounded and no-follow; hidden files are included, executable extensionless scripts are scanned, and unreadable entries, symlinks, unsupported file types, or an exhausted scan cap fail closed into `review`. An operator may deliberately serve reviewed skills only with `ROSTER_ALLOW_REVIEW_SKILLS=1`. Launch-depth behavioral certification and task-depth suites remain pending under the same signing rule. **(implementation pending)**
+Skills will rank with the same math — Wilson LB over distinct signed tasks — in their own division. The local Trust gate is implemented: tree traversal and script reads are bounded and no-follow; hidden files and executable extensionless scripts are scanned; unreadable entries, unsupported file types, symlinks, or an exhausted scan cap fail closed into `review`. A primary `SKILL.md` symlink is read only for dotfile-manager compatibility, with a byte bound and descriptor/path identity checks, and is always review-flagged. Review skills are withheld unless the operator explicitly sets `ROSTER_ALLOW_REVIEW_SKILLS=1`. The public Skills Division, launch-depth behavioral certification, and signed task-depth suites remain **implementation pending**.
 
 ## 9a. Retrieval & learning — measured limits (honest scope)
 

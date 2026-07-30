@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { readVerifierFile } from "./safeVerifierRead.js";
 import { template, type CombineTask, type Suite, type Verifier } from "./task.js";
 
 const CONNECT_TIMEOUT_MS = 15_000;
@@ -189,14 +190,31 @@ function checkVerifier(
     case "fileEquals": {
       const p = resolvePath(verifier.path);
       if (!entryIsSafeExact(sandbox, p)) return `expected ${verifier.path} to exist`;
-      const actual = fs.readFileSync(p, "utf8");
+      // Descriptor-pinned, no-follow, non-blocking, bounded read: a hostile FIFO,
+      // device, symlink-swap, or huge file becomes a verify failure, never a hang,
+      // an OOM, or a read THROUGH the sandbox.
+      let read: { text: string; truncated: boolean };
+      try {
+        read = readVerifierFile(p, { sandboxRoot: sandbox });
+      } catch {
+        return `expected ${verifier.path} to be a readable regular file`;
+      }
+      // A file larger than the cap cannot equal a bounded expected value — a
+      // truncated read must never be allowed to match on its prefix.
+      if (read.truncated) return `content mismatch in ${verifier.path}`;
       const expected = template(verifier.equals, vars);
-      return actual === expected ? null : `content mismatch in ${verifier.path}`;
+      return read.text === expected ? null : `content mismatch in ${verifier.path}`;
     }
     case "fileContains": {
       const p = resolvePath(verifier.path);
       if (!entryIsSafeExact(sandbox, p)) return `expected ${verifier.path} to exist`;
-      return fs.readFileSync(p, "utf8").includes(template(verifier.contains, vars))
+      let read: { text: string; truncated: boolean };
+      try {
+        read = readVerifierFile(p, { sandboxRoot: sandbox });
+      } catch {
+        return `expected ${verifier.path} to be a readable regular file`;
+      }
+      return read.text.includes(template(verifier.contains, vars))
         ? null
         : `missing expected content in ${verifier.path}`;
     }

@@ -46,6 +46,11 @@ jobs:
       # and would miss cross-package type errors). Fail fast on compile.
       - name: Build (tsc project references)
         run: pnpm build
+      # The build tsconfigs EXCLUDE *.test.ts, so a bad import or type error in a
+      # test would otherwise surface only at vitest runtime (esbuild does not
+      # typecheck). This no-emit pass typechecks every test file and its imports.
+      - name: Typecheck tests (no-emit)
+        run: pnpm typecheck:tests
       - name: Unit + integration tests
         run: pnpm test
 

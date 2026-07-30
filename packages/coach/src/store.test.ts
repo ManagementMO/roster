@@ -1,7 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
+import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
 import { CoachStore, defHash } from "./store.js";
@@ -41,6 +43,169 @@ describe("capability upsert + drift", () => {
     expect(store.listCapabilities({ includeQuarantined: true })).toHaveLength(1);
     store.clearQuarantine("fs__read_file");
     expect(store.listCapabilities()).toHaveLength(1);
+  });
+});
+
+/**
+ * Drift identity must cover the fields a CLIENT or agent ACTS on, not only the
+ * ones the retrieval index reads. On the reviewed base `defHash` hashed only
+ * name/description/inputSchema/outputSchema/body, so a backend could flip
+ * `annotations.destructiveHint` true->false — the exact hint clients gate
+ * confirmations on — with a byte-identical hash: no drift event, no quarantine
+ * (reproduced). Safety annotations and the execution contract must participate
+ * in stable definition identity; volatile runtime state must not.
+ */
+describe("drift identity covers safety and contract metadata", () => {
+  const base: CapabilityEntry = {
+    id: "fs__delete",
+    kind: "tool",
+    source: "fs",
+    name: "delete",
+    description: "Delete a file",
+    title: "Delete a file",
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    execution: { taskSupport: "optional" },
+    inputSchema: { type: "object", properties: { path: { type: "string" } } },
+  };
+  const seed = (now = 1) => expect(store.upsertCapabilities([base], now).added).toEqual(["fs__delete"]);
+  const expectDrift = (next: CapabilityEntry, why: string) => {
+    const res = store.upsertCapabilities([next], 2);
+    expect(res.changed, why).toEqual(["fs__delete"]);
+    expect(res.driftEvents, why).toBe(1);
+    expect(store.driftEvents().length, why).toBeGreaterThanOrEqual(1);
+    expect(store.listCapabilities(), why).toHaveLength(0); // quarantined => withheld
+  };
+  const expectStable = (next: CapabilityEntry, why: string) => {
+    const res = store.upsertCapabilities([next], 2);
+    expect(res, why).toMatchObject({ changed: [], driftEvents: 0 });
+    expect(store.listCapabilities(), why).toHaveLength(1); // never quarantined
+  };
+
+  it("drifts on each safety annotation independently", () => {
+    for (const [k, v] of [
+      ["destructiveHint", false],
+      ["readOnlyHint", true],
+      ["idempotentHint", true],
+      ["openWorldHint", true],
+    ] as const) {
+      db = openCoachDb(":memory:");
+      store = new CoachStore(db);
+      seed();
+      expectDrift({ ...base, annotations: { ...base.annotations, [k]: v } }, `annotations.${k}`);
+    }
+  });
+
+  it("drifts on an execution/task-support contract change", () => {
+    seed();
+    expectDrift({ ...base, execution: { taskSupport: "required" } }, "taskSupport optional->required");
+  });
+
+  it("drifts on a title change (definition text the agent is shown)", () => {
+    seed();
+    expectDrift({ ...base, title: "Delete EVERYTHING" }, "title rewritten");
+  });
+
+  it("drifts on an outputSchema change (positive control)", () => {
+    seed();
+    expectDrift(
+      { ...base, outputSchema: { type: "object", properties: { ok: { type: "boolean" } } } },
+      "outputSchema added",
+    );
+  });
+
+  it("does NOT drift on pure JSON key-order changes (negative control)", () => {
+    seed();
+    expectStable(
+      {
+        ...base,
+        annotations: { openWorldHint: false, idempotentHint: false, destructiveHint: true, readOnlyHint: false },
+        inputSchema: { properties: { path: { type: "string" } }, type: "object" },
+      },
+      "reordered keys",
+    );
+  });
+
+  it("treats an absent field and an explicit undefined as equivalent (no false drift)", () => {
+    const bare: CapabilityEntry = {
+      id: "fs__plain",
+      kind: "tool",
+      source: "fs",
+      name: "plain",
+      description: "no metadata",
+      inputSchema: { type: "object" },
+    };
+    store.upsertCapabilities([bare], 1); // fields absent
+    // Same definition, but with the optional fields present as explicit undefined.
+    const res = store.upsertCapabilities(
+      [{ ...bare, title: undefined, annotations: undefined, execution: undefined }],
+      2,
+    );
+    expect(res).toMatchObject({ changed: [], driftEvents: 0 });
+  });
+
+  it("persists safety metadata so a DB reload round-trips it and does not self-drift", () => {
+    seed();
+    // New store over the SAME db handle = a fresh process reading the same file.
+    const reopened = new CoachStore(db);
+    const got = reopened.getCapability("fs__delete");
+    expect(got?.annotations).toEqual(base.annotations);
+    expect(got?.execution).toEqual(base.execution);
+    expect(got?.title).toBe(base.title);
+    // Re-sighting the identical definition after reload must be a no-op.
+    expect(reopened.upsertCapabilities([base], 3)).toMatchObject({ changed: [], driftEvents: 0 });
+  });
+
+  it("carries the expanded identity through a remove/re-add tombstone", () => {
+    seed();
+    store.pruneMissing(new Set(), new Set(), { now: 2 });
+    const res = store.upsertCapabilities(
+      [{ ...base, annotations: { ...base.annotations, destructiveHint: false } }],
+      3,
+    );
+    expect(res.driftEvents).toBe(1); // metadata-only change cannot slip back in as "new"
+    expect(res.changed).toEqual(["fs__delete"]);
+    expect(store.listCapabilities()).toHaveLength(0);
+  });
+
+  it("deletes the stored vector on metadata-only drift and rejects a stale-hash backfill", () => {
+    seed();
+    store.storeBaseVec("fs__delete", new Float32Array([1, 0]), 1);
+    const staleHash = defHash(base);
+    expectDrift({ ...base, annotations: { ...base.annotations, destructiveHint: false } }, "vector-deletion drift");
+    // A warm-boot backfill still holding the PRE-drift hash must not land.
+    expect(
+      store.storeBaseVec("fs__delete", new Float32Array([0, 1]), 3, { defHash: staleHash, modelId: "m" }),
+    ).toBe(false);
+  });
+
+  it("re-baselines silently when the hash FORMULA changes (no whole-roster quarantine)", () => {
+    seed();
+    store.upsertCapabilities([tool("fs__read", "read", "Read a file")], 1);
+    expect(store.listCapabilities()).toHaveLength(2);
+    db.prepare("UPDATE meta SET value = 'v-ancient' WHERE key = 'def_hash_version'").run();
+    const store2 = new CoachStore(db);
+    const res = store2.upsertCapabilities([base, tool("fs__read", "read", "Read a file")], 5);
+    expect(res.driftEvents, "a formula change is our change, not backend drift").toBe(0);
+    expect(res.changed).toEqual([]);
+    expect(store2.listCapabilities()).toHaveLength(2);
+  });
+
+  it("does not fabricate drift when an unchanged tombstoned capability returns after a hash-formula upgrade", () => {
+    seed();
+    store.pruneMissing(new Set(), new Set(), { now: 2 });
+    expect(store.listCapabilities({ includeQuarantined: true })).toHaveLength(0);
+
+    // Trigger the one-time formula re-baseline while the removed capability is
+    // still only a tombstone. Its old hash cannot be recomputed from that row.
+    db.prepare("UPDATE meta SET value = 'v-ancient' WHERE key = 'def_hash_version'").run();
+    const store2 = new CoachStore(db);
+    store2.upsertCapabilities([tool("fs__read", "read", "Read a file")], 3);
+
+    const returned = store2.upsertCapabilities([base, tool("fs__read", "read", "Read a file")], 4);
+    expect(returned.driftEvents, "our hash-formula change is not backend drift").toBe(0);
+    expect(returned.changed).toEqual([]);
+    expect(returned.added).toContain("fs__delete");
+    expect(store2.getCapability("fs__delete")).not.toBeNull();
   });
 });
 
@@ -645,4 +810,56 @@ describe("fix-wave round 2 — drift + robustness", () => {
     expect(res.driftEvents).toBe(1);
     expect(res.changed).toEqual(["a__t"]);
   });
+});
+
+describe("recomputeRatings is safe under cross-process contention (L11)", () => {
+  it("many processes log outcomes and recompute at once without crashing or corrupting", async () => {
+    // Several `roster serve` processes share one coach.db. This spawns real
+    // separate node processes that concurrently recordOutcome (IMMEDIATE write
+    // txn) AND recomputeRatings (write-only txn) against ONE file-backed WAL DB.
+    // A clean exit(0) from every worker proves no writer crashed with
+    // SQLITE_BUSY or corrupted the file; the final aggregate proves durability.
+    const dir = mkdtempSync(join(tmpdir(), "coach-contention-"));
+    const dbPath = join(dir, "coach.db");
+    try {
+      new CoachStore(openCoachDb(dbPath)).close(); // migrate once, then release
+
+      const worker = fileURLToPath(new URL("../test/fixtures/recompute-worker.mjs", import.meta.url));
+      const CAP = "cap__contended";
+      const N = 4;
+      const COUNT = 25;
+      const ITERS = 6;
+
+      const codes = await Promise.all(
+        Array.from({ length: N }, (_, i) =>
+          new Promise<number | null>((resolve) => {
+            const child = spawn(
+              process.execPath,
+              [worker, dbPath, CAP, `w${i}`, String(COUNT), String(ITERS)],
+              { stdio: ["ignore", "ignore", "pipe"] },
+            );
+            let err = "";
+            child.stderr?.on("data", (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on("exit", (code) => {
+              if (code !== 0) console.error(`contention worker ${i} failed:\n${err}`);
+              resolve(code);
+            });
+          }),
+        ),
+      );
+      expect(codes.every((c) => c === 0)).toBe(true);
+
+      // The file survived and a final recompute reflects EVERY logged outcome.
+      const store = new CoachStore(openCoachDb(dbPath));
+      store.recomputeRatings();
+      const rating = store.getRating(CAP);
+      expect(rating?.n).toBe(N * COUNT);
+      expect(rating?.successes).toBe(N * COUNT);
+      store.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
 });

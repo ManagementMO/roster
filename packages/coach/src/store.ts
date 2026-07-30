@@ -42,6 +42,9 @@ interface CapabilityRow {
   source: string;
   name: string;
   description: string;
+  title: string | null;
+  annotations: string | null;
+  execution: string | null;
   input_schema: string | null;
   output_schema: string | null;
   body: string | null;
@@ -104,17 +107,63 @@ function ftsNameText(source: string, name: string): string {
   return `${source} ${name} ${lexTokens(name).join(" ")}`;
 }
 
+/**
+ * Stable serialization for hashing: object keys are emitted in sorted order at
+ * every depth so a backend that merely re-serializes its schema with a
+ * different key order cannot manufacture FALSE drift (which would quarantine a
+ * healthy tool). Array order is PRESERVED — it can be semantically meaningful.
+ * `undefined` members are dropped so an explicit `undefined` hashes identically
+ * to an absent field.
+ */
+function canonicalJson(value: unknown): string {
+  if (value === undefined) return "null";
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+}
+
+/**
+ * Identity of the hashed definition FORMULA. Bumping it is OUR change, not a
+ * backend's: `upsertCapabilities` re-baselines stored hashes on a version change
+ * instead of reporting drift, so an upgrade can never quarantine an entire
+ * existing roster. Bump whenever the set of hashed fields changes.
+ */
+export const DEF_HASH_VERSION = "2";
+const DEF_HASH_VERSION_KEY = "def_hash_version";
+
+/**
+ * The drift fingerprint. It covers every field of the definition a client or an
+ * agent ACTS on — not only the ones the retrieval index reads:
+ *
+ * - `annotations` carries destructiveHint/readOnlyHint/idempotentHint/
+ *   openWorldHint. Clients gate confirmation prompts on these and transparent
+ *   mode passes them through verbatim, so a backend flipping destructiveHint
+ *   true->false is exactly what drift detection exists to catch. Before v2 they
+ *   were unhashed: no event, no quarantine.
+ * - `execution` (task-support hints) decides sync-vs-async handling.
+ * - `title` is definition text the agent is shown; including it keeps README's
+ *   "changed capability definitions are quarantined" true without a carve-out.
+ * - `outputSchema` stays in: the SDK validates results before the router sees
+ *   them, so connect-time hashing is the only place output drift is detectable.
+ *
+ * Deliberately EXCLUDED (identity/location, not contract, and not "definition"
+ * the way a client reads it): `id`, `kind`, `source`, `path`. No volatile
+ * runtime state is hashed. Serialization is canonical (key-order independent).
+ */
 export function defHash(entry: CapabilityEntry): string {
   return sha256Hex(
-    JSON.stringify({
+    canonicalJson({
+      v: DEF_HASH_VERSION,
       name: entry.name,
       description: entry.description,
+      title: entry.title ?? null,
+      annotations: entry.annotations ?? null,
       inputSchema: entry.inputSchema ?? null,
-      // outputSchema is part of a tool's contract: a change to it is drift.
-      // Runtime output validation can't catch it (the MCP SDK validates and
-      // throws before the router sees the result), so connect-time hashing is
-      // the ONLY place output-schema drift is detectable.
       outputSchema: entry.outputSchema ?? null,
+      execution: entry.execution ?? null,
       body: entry.body ?? null,
     }),
   );
@@ -128,9 +177,16 @@ export class CoachStore {
 
   constructor(private readonly db: CoachDb) {
     this.activeCapabilityStmt = this.db.prepare(
-      `SELECT id, kind, source, name, description, input_schema, output_schema, body, path, quarantined
+      `SELECT id, kind, source, name, description, title, annotations, execution, input_schema, output_schema, body, path, quarantined
        FROM capability WHERE id = ? AND quarantined = 0`,
     );
+  }
+
+  /** Close the underlying database handle. Idempotent — a second call is a
+   *  no-op — so it is safe to call from a shutdown path that may fire more than
+   *  once (stdin EOF racing SIGTERM). */
+  close(): void {
+    if (this.db.open) this.db.close();
   }
 
   // ── maintenance (the nightly job) ─────────────────────────────────────────
@@ -172,18 +228,29 @@ export class CoachStore {
     const result: UpsertResult = { added: [], changed: [], driftEvents: 0 };
     const getExisting = this.db.prepare("SELECT id, def_hash FROM capability WHERE id = ?");
     const insert = this.db.prepare(`
-      INSERT INTO capability(id, kind, source, name, description, input_schema, output_schema,
-        body, path, def_hash, quarantined, first_seen, last_seen)
-      VALUES(@id, @kind, @source, @name, @description, @input_schema, @output_schema,
-        @body, @path, @def_hash, 0, @now, @now)
+      INSERT INTO capability(id, kind, source, name, description, title, annotations, execution,
+        input_schema, output_schema, body, path, def_hash, quarantined, first_seen, last_seen)
+      VALUES(@id, @kind, @source, @name, @description, @title, @annotations, @execution,
+        @input_schema, @output_schema, @body, @path, @def_hash, 0, @now, @now)
     `);
     const update = this.db.prepare(`
       UPDATE capability SET kind=@kind, source=@source, name=@name, description=@description,
+        title=@title, annotations=@annotations, execution=@execution,
         input_schema=@input_schema, output_schema=@output_schema, body=@body, path=@path,
         def_hash=@def_hash, quarantined=@quarantined, last_seen=@now
       WHERE id=@id
     `);
     const touch = this.db.prepare("UPDATE capability SET last_seen=? WHERE id=?");
+    // Refresh definition columns + adopt the new hash WITHOUT touching
+    // `quarantined` — used only when the hash FORMULA changed (our upgrade), so a
+    // roster is silently re-baselined instead of quarantined en masse.
+    const rebaseline = this.db.prepare(`
+      UPDATE capability SET kind=@kind, source=@source, name=@name, description=@description,
+        title=@title, annotations=@annotations, execution=@execution,
+        input_schema=@input_schema, output_schema=@output_schema, body=@body, path=@path,
+        def_hash=@def_hash, last_seen=@now
+      WHERE id=@id
+    `);
     const drift = this.db.prepare(
       "INSERT INTO drift_event(ts, capability, old_hash, new_hash) VALUES(?,?,?,?)",
     );
@@ -206,22 +273,32 @@ export class CoachStore {
     const setQuarantined = this.db.prepare("UPDATE capability SET quarantined = 1 WHERE id = ?");
 
     const run = this.db.transaction(() => {
+      // A defHash FORMULA change would otherwise make every stored hash mismatch
+      // and quarantine the whole roster on the first boot after an upgrade. Blank
+      // stored hashes (capability AND tombstones) so the next sight of each id
+      // ADOPTS the new fingerprint silently. A tombstone contains only the old
+      // hash, not the definition needed to recompute it, so its blank value is
+      // handled as an incomparable baseline below. Cost: a genuine backend
+      // change landing in the same upgrade window is folded into the new baseline
+      // rather than reported — strictly better than fabricated fleet-wide drift.
+      // Runs once (guarded by the stored version).
+      if (this.getMeta(DEF_HASH_VERSION_KEY) !== DEF_HASH_VERSION) {
+        this.db.prepare("UPDATE capability SET def_hash = ''").run();
+        this.db.prepare("UPDATE removed_capability SET def_hash = ''").run();
+        this.setMeta(DEF_HASH_VERSION_KEY, DEF_HASH_VERSION);
+      }
       for (const entry of entries) {
         const hash = defHash(entry);
         const row = getExisting.get(entry.id) as { id: string; def_hash: string } | undefined;
-        const params = {
-          id: entry.id,
-          kind: entry.kind,
-          source: entry.source,
-          name: entry.name,
-          description: entry.description,
-          input_schema: entry.inputSchema ? JSON.stringify(entry.inputSchema) : null,
-          output_schema: entry.outputSchema ? JSON.stringify(entry.outputSchema) : null,
-          body: entry.body ?? null,
-          path: entry.path ?? null,
-          def_hash: hash,
-          now,
-        };
+        // A blanked hash (from the re-baseline above) is not drift: adopt the new
+        // fingerprint in place, leaving quarantine state untouched.
+        if (row && row.def_hash === "") {
+          rebaseline.run(buildParams(entry, hash, now));
+          ftsDelete.run(entry.id);
+          ftsInsert.run(entry.id, ftsNameText(entry.source, entry.name), entry.description, entry.body ?? "");
+          continue; // silent re-baseline: neither added, changed, nor drift
+        }
+        const params = buildParams(entry, hash, now);
         if (!row) {
           insert.run(params);
           // Source name is part of the lexical surface: "memory" must find
@@ -237,12 +314,15 @@ export class CoachStore {
             | undefined;
           if (tomb) {
             deleteTombstone.run(entry.id);
-            if (tomb.def_hash !== hash) {
+            if (tomb.def_hash !== "" && tomb.def_hash !== hash) {
               drift.run(now, entry.id, tomb.def_hash, hash);
               setQuarantined.run(entry.id);
               result.changed.push(entry.id);
               result.driftEvents += 1;
             } else {
+              // Empty means our hash FORMULA changed while this capability was
+              // absent. The old digest is deliberately incomparable; re-adopt
+              // silently while preserving any still-active quarantine dwell.
               if (
                 tomb.quarantined === 1 &&
                 tomb.last_drift_ts !== null &&
@@ -319,7 +399,7 @@ export class CoachStore {
   listCapabilities(opts: { includeQuarantined?: boolean; kind?: "tool" | "skill" } = {}): CapabilityEntry[] {
     const rows = this.db
       .prepare(
-        `SELECT id, kind, source, name, description, input_schema, output_schema, body, path, quarantined
+        `SELECT id, kind, source, name, description, title, annotations, execution, input_schema, output_schema, body, path, quarantined
          FROM capability
          WHERE (@includeQuarantined = 1 OR quarantined = 0)
            AND (@kind IS NULL OR kind = @kind)
@@ -335,7 +415,7 @@ export class CoachStore {
   getCapability(id: string): CapabilityEntry | null {
     const row = this.db
       .prepare(
-        `SELECT id, kind, source, name, description, input_schema, output_schema, body, path, quarantined
+        `SELECT id, kind, source, name, description, title, annotations, execution, input_schema, output_schema, body, path, quarantined
          FROM capability WHERE id = ?`,
       )
       .get(id) as CapabilityRow | undefined;
@@ -574,6 +654,17 @@ export class CoachStore {
       .prepare("SELECT capability FROM rating WHERE category = ?")
       .all(category) as Array<{ capability: string }>;
     const deleteRating = this.db.prepare("DELETE FROM rating WHERE capability = ? AND category = ?");
+    // Concurrency (several `roster serve` processes share this WAL file): the
+    // outcome scan and the aggregation above run OUTSIDE this transaction on
+    // purpose — the write lock is held only for the DELETE/UPSERT writes, never
+    // for the (potentially large) read+compute, so a maintenance recompute never
+    // stalls the hot `recordOutcome` path for longer than the writes take. The
+    // transaction body is WRITE-ONLY, so the BEGIN DEFERRED → first-write path
+    // takes the write lock immediately and cannot hit SQLITE_BUSY_SNAPSHOT (the
+    // deferred read-then-write upgrade hazard); busy_timeout absorbs the wait if
+    // a sibling holds the lock. Ratings are a full recompute, so an outcome
+    // written by a sibling between our scan and our write is simply reflected by
+    // the next maintenance cycle — eventual consistency, never corruption.
     const run = this.db.transaction(() => {
       for (const { capability } of existing) {
         if (!byCap.has(capability)) deleteRating.run(capability, category);
@@ -911,6 +1002,42 @@ export class CoachStore {
   }
 }
 
+/** Row parameters for insert/update/rebaseline. Nested metadata is stored as
+ *  JSON so it round-trips through rowToEntry; the drift hash uses canonicalJson
+ *  independently, so column serialization order never affects drift. */
+function buildParams(entry: CapabilityEntry, hash: string, now: number): Record<string, unknown> {
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    source: entry.source,
+    name: entry.name,
+    description: entry.description,
+    title: entry.title ?? null,
+    annotations: entry.annotations ? JSON.stringify(entry.annotations) : null,
+    execution: entry.execution ? JSON.stringify(entry.execution) : null,
+    input_schema: entry.inputSchema ? JSON.stringify(entry.inputSchema) : null,
+    output_schema: entry.outputSchema ? JSON.stringify(entry.outputSchema) : null,
+    body: entry.body ?? null,
+    path: entry.path ?? null,
+    def_hash: hash,
+    now,
+  };
+}
+
+/** Defensive JSON parse for stored metadata: a torn/foreign row degrades to
+ *  `undefined` for that field rather than throwing out of a hot read path. */
+function parseJsonColumn(value: string | null): Record<string, unknown> | undefined {
+  if (value === null) return undefined;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function rowToEntry(row: CapabilityRow): CapabilityEntry {
   return {
     id: row.id,
@@ -918,10 +1045,11 @@ function rowToEntry(row: CapabilityRow): CapabilityEntry {
     source: row.source,
     name: row.name,
     description: row.description,
-    inputSchema: row.input_schema ? (JSON.parse(row.input_schema) as Record<string, unknown>) : undefined,
-    outputSchema: row.output_schema
-      ? (JSON.parse(row.output_schema) as Record<string, unknown>)
-      : undefined,
+    title: row.title ?? undefined,
+    annotations: parseJsonColumn(row.annotations),
+    execution: parseJsonColumn(row.execution),
+    inputSchema: parseJsonColumn(row.input_schema),
+    outputSchema: parseJsonColumn(row.output_schema),
     body: row.body ?? undefined,
     path: row.path ?? undefined,
   };

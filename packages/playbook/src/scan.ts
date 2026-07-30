@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { readFileHead } from "./boundedRead.js";
 import { isScriptPath, parseSkillMd, type ParsedSkill } from "./skill.js";
 
 /**
@@ -24,6 +25,21 @@ export function defaultSkillSources(opts: { home?: string; cwd?: string } = {}):
 
 const MAX_RESOURCES_LISTED = 200;
 
+/**
+ * Cap on SKILL.md bytes read from disk. A SKILL.md is prose — the spec's own
+ * examples are a few KB — so 1 MiB is far beyond anything legitimate while a
+ * hostile multi-gigabyte file (or /dev/zero behind a symlink) can no longer
+ * stall or OOM a listing boundary: `serve` boot, `init`, and `receipt` all scan
+ * untrusted skill text.
+ *
+ * Reaching the cap NEVER truncates-and-trusts. The skill keeps a
+ * `skill-md-truncated:` warning, which `trustScan` turns into a
+ * `scan-incomplete` finding → `review` → withheld at the serving boundary
+ * unless the operator sets ROSTER_ALLOW_REVIEW_SKILLS=1. Below the cap the body
+ * is still indexed WHOLE.
+ */
+export const MAX_SKILL_MD_BYTES = 1024 * 1024;
+
 /** Scan one library directory: every child dir containing SKILL.md is a skill. */
 export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
   if (!fs.existsSync(libraryDir)) return [];
@@ -39,16 +55,31 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
     const dir = path.join(libraryDir, entry.name);
     const skillMd = path.join(dir, "SKILL.md");
     if (!fs.existsSync(skillMd)) continue;
-    let content: string;
+    // SKILL.md symlink policy, stated rather than implied: a symlinked SKILL.md
+    // is READ (dotfile managers legitimately link skill files, so refusing
+    // outright would break real installs) but is NEVER silently trusted — the
+    // security walk below already emits `symlink:SKILL.md` for it, which becomes
+    // a review finding, so the skill is withheld at the serving boundary unless
+    // the operator opts in. Locked by "flags a symlinked SKILL.md for review".
+    let head: { text: string; truncated: boolean; symlinked: boolean };
     try {
-      content = fs.readFileSync(skillMd, "utf8");
+      head = readFileHead(skillMd, MAX_SKILL_MD_BYTES, { allowSymlink: true });
     } catch {
+      // Unreadable, or not a regular file (FIFO/device/directory): the skill is
+      // not discovered at all, which is the fail-closed direction.
       continue;
     }
-    const parsed = parseSkillMd(content, entry.name, dir);
+    const parsed = parseSkillMd(head.text, entry.name, dir);
     if (!parsed) continue;
     const resources = listResources(dir);
     const securityWalk = listScripts(dir);
+    const scanWarnings = [
+      ...new Set([
+        ...securityWalk.warnings,
+        ...(head.symlinked ? ["symlink:SKILL.md"] : []),
+        ...(head.truncated ? [`skill-md-truncated:${MAX_SKILL_MD_BYTES}`] : []),
+      ]),
+    ].sort();
     skills.push({
       ...parsed,
       resources,
@@ -58,7 +89,7 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
       // behind 200 benign files: it was neither listed nor scanned, so the skill
       // scanned "ok" and (with the R5-09 gate) was served (R5-15).
       scripts: securityWalk.scripts,
-      scanWarnings: securityWalk.warnings,
+      scanWarnings,
     });
   }
   return skills;

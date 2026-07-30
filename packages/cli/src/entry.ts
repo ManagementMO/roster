@@ -58,16 +58,44 @@ export function rosterEntry(): SpawnEntry {
   return { command: process.execPath, args: [ourBinPath(), "serve"] };
 }
 
+/**
+ * Keys a CLIENT adds to its OWN serialization of a stdio entry that carry no
+ * "what runs" intent, each pinned to the only inert value consistent with the
+ * command+args stdio entry Roster writes. Claude Code stamps `type: "stdio"`
+ * onto every MCP entry in ~/.claude.json, which made the annotated proxy stop
+ * matching and survive eject (NEW-1). This allowlist is deliberately tiny:
+ * anything NOT here (env, cwd, url, headers, disabled, …) is treated as a
+ * meaningful field whose presence means the entry is NOT one Roster wrote.
+ */
+const INERT_CLIENT_KEYS: Record<string, (value: unknown) => boolean> = {
+  type: (value) => value === "stdio", // a non-stdio transport is a CONFLICTING entry, not ours
+};
+
+/**
+ * Canonicalize a config entry to the {command, args} identity Roster writes, or
+ * null if it is not an entry Roster could have written.
+ *
+ * Ownership is EXACT on command and args. Client-added transport annotations
+ * (see INERT_CLIENT_KEYS) are tolerated so a re-serialized proxy is still
+ * recognized on eject; ANY other extra key — env with a token, cwd, a url, an
+ * unknown or conflicting `type` — makes this null, so a user's lookalike is
+ * never mistaken for ours and deleted.
+ */
 export const normalizeSpawnEntry = (v: unknown): SpawnEntry | null => {
   if (v === null || typeof v !== "object" || Array.isArray(v)) return null;
-  const keys = Object.keys(v).sort();
-  if (keys.length !== 2 || keys[0] !== "args" || keys[1] !== "command") return null;
-  const e = v as { command?: unknown; args?: unknown };
+  const e = v as Record<string, unknown>;
   if (typeof e.command !== "string") return null;
   if (e.args !== undefined && (!Array.isArray(e.args) || e.args.some((arg) => typeof arg !== "string"))) {
     return null;
   }
-  return { command: e.command, args: e.args === undefined ? [] : [...e.args] as string[] };
+  for (const key of Object.keys(e)) {
+    if (key === "command" || key === "args") continue;
+    const inert = INERT_CLIENT_KEYS[key];
+    // An unknown key, or a known key with a non-inert value (e.g. type:"http"),
+    // means this is not the entry Roster wrote — refuse to claim ownership.
+    if (!inert || !inert(e[key])) return null;
+  }
+  return { command: e.command, args: e.args === undefined ? [] : ([...e.args] as string[]) };
 };
 
 /** Exact identity: is `candidate` byte-for-byte the entry we recorded writing? */

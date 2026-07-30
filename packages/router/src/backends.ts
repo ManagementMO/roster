@@ -2,9 +2,45 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { AjvJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/ajv";
+import type {
+  JsonSchemaType,
+  JsonSchemaValidator,
+  jsonSchemaValidator as JsonSchemaValidatorProvider,
+} from "@modelcontextprotocol/sdk/validation/types";
 import type { CallEvidence } from "@rosterhq/coach";
 import type { CapabilityEntry } from "@rosterhq/shared";
 import { stableBackendName, stableNamespacedId } from "@rosterhq/shared";
+
+/**
+ * The MCP SDK compiles EVERY tool's `outputSchema` after `listTools`. A single
+ * uncompilable schema — an unresolvable `$ref`, a malformed schema — throws
+ * there, which propagates out of `fetchTools`/`connect` and takes the ENTIRE
+ * backend, including its healthy sibling tools, offline (reproduced: one bad
+ * `$ref` → "can't resolve reference" → connect rejects). A direct SDK client
+ * would lose the siblings too, but Roster can and should contain the blast
+ * radius to the offending tool.
+ *
+ * This wraps the SDK's own Ajv validator (so valid schemas compile and validate
+ * IDENTICALLY, preserving the PR #10 output-drift attribution) and, ONLY when a
+ * schema fails to compile, installs an always-invalid validator for that one
+ * tool. The backend's healthy siblings remain available, while an invalid
+ * contract never becomes an excuse to accept arbitrary output.
+ */
+class IsolatingSchemaValidator implements JsonSchemaValidatorProvider {
+  private readonly inner = new AjvJsonSchemaValidator();
+  getValidator<T>(schema: JsonSchemaType): JsonSchemaValidator<T> {
+    try {
+      return this.inner.getValidator<T>(schema);
+    } catch {
+      return () => ({
+        valid: false,
+        data: undefined,
+        errorMessage: "the tool declares an invalid output schema",
+      });
+    }
+  }
+}
 
 export interface StdioBackendConfig {
   name: string;
@@ -88,7 +124,10 @@ export class BackendManager {
     // backend neither hangs boot nor leaks a process.
     let client: Client | undefined;
     try {
-      client = new Client({ name: "roster-router", version: "0.0.1" });
+      client = new Client(
+        { name: "roster-router", version: "0.0.1" },
+        { jsonSchemaValidator: new IsolatingSchemaValidator() },
+      );
       const transport: Transport =
         "transport" in config
           ? config.transport

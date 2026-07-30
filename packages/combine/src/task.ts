@@ -12,6 +12,12 @@ export type Verifier =
   | { kind: "fileExists"; path: string }
   | { kind: "dirExists"; path: string }
   | { kind: "fileAbsent"; path: string }
+  // `resultContains` is a FLAT substring match over the concatenated text
+  // content of the result — it matches a field LABEL and a field VALUE alike and
+  // cannot express exact-value or word-boundary matching. So `contains: "size"`
+  // certifies only that the word "size" appears (a stat tool always emits it),
+  // NOT that the reported size is correct. Author discriminating substrings:
+  // include the value and a following boundary, e.g. `"size: 17\n"` (L10).
   | { kind: "resultContains"; contains: string };
 
 export interface CombineTask {

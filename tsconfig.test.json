@@ -1,0 +1,20 @@
+{
+  // No-emit typecheck gate for TEST files. The per-package build tsconfigs
+  // `exclude` `**/*.test.ts`, and vitest transpiles tests with esbuild (which does
+  // NOT typecheck) — so a test with a bad import or a type error (e.g. importing
+  // an export that does not exist) failed only at RUNTIME, if at all. This program
+  // typechecks every test file and, transitively, the source it imports, against
+  // the same strict base settings. Run via `pnpm typecheck:tests`.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "sourceMap": false,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": [
+    "packages/*/src/**/*.test.ts",
+    "apps/*/test/**/*.test.ts"
+  ]
+}

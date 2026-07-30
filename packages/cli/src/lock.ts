@@ -7,6 +7,12 @@ const PRIVATE_FILE = 0o600;
 const PRIVATE_DIR = 0o700;
 const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_POLL_MS = 20;
+// Windows throws EPERM/EBUSY on rmSync when another process (or a virus scanner
+// / indexer) holds a directory handle open for a moment; recursive rmSync with
+// maxRetries retries exactly those transient errors (a no-op on POSIX, where the
+// remove succeeds first try). Without it, a lock contender crashes on Windows
+// instead of cleanly releasing/reclaiming.
+const RM_OPTS = { recursive: true, force: true, maxRetries: 10, retryDelay: 50 } as const;
 
 interface LockOwner {
   pid: number;
@@ -43,6 +49,23 @@ function readOwner(dir: string): LockOwner | null {
   }
 }
 
+/**
+ * PID reuse: a dead owner's pid can later belong to a LIVE, unrelated process.
+ * That is the SAFE direction here — `processIsAlive` then reports "alive", so the
+ * lock is treated as held and the contender waits rather than evicting it. The
+ * per-acquisition random `token` closes the other direction: it, not the pid, is
+ * identity, so a reused pid carrying a stale token is never mistaken for the
+ * original owner (see `reclaimStaleLock`). A non-positive pid never reaches this
+ * function — `readOwner` rejects it — so `process.kill` can never be handed a
+ * negative pid (which targets a process GROUP).
+ *
+ * Platform reductions (cannot be forced in a local Linux run, so exercised on the
+ * POSIX path and reduced to a documented dependency): the atomic reclaim rests on
+ * `rename()` being atomic (POSIX; holds on local fs and NFSv3+), and liveness on
+ * `process.kill(pid, 0)` (POSIX + Windows via libuv). The consuming LOGIC — token
+ * disambiguation, live-owner refusal, invalid-owner rejection — is platform-
+ * neutral and unit-tested directly.
+ */
 function processIsAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -50,6 +73,64 @@ function processIsAlive(pid: number): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code !== "ESRCH";
   }
+}
+
+/**
+ * Reclaim a lock whose recorded owner is provably dead — ATOMICALLY, so two
+ * contenders can never both reclaim the same stale lock and enter the critical
+ * section together (NEW-2). The reviewed base did `readOwner(dir)` then a blind
+ * `rmSync(dir)`; between those steps another process could reclaim and acquire,
+ * and the first process's `rmSync` then deleted that LIVE lock before its own
+ * `mkdir` succeeded — two owners at once.
+ *
+ * The rename is the serialization point: `rename(dir, claim)` moves whatever
+ * inode is at `dir` atomically, so exactly one racer can move a given lock; the
+ * loser gets ENOENT. The winner then verifies the moved directory is the SAME
+ * dead owner it decided to reclaim (pid AND token) and is still dead before
+ * removing it. If a live lock had slipped in (different token, or the pid is now
+ * alive), it is renamed back and never destroyed — the safe direction is always
+ * to preserve a lock we are not certain is dead.
+ *
+ * Returns "reclaimed" when `dir` is now free to (re)create, or "occupied" when
+ * another owner holds it (caller retries `mkdir`, which fails EEXIST and waits).
+ */
+export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" | "occupied" {
+  // Never treat a symlink as our lock directory: a hostile or stray symlink at
+  // the lock path must not let a rename/remove escape the locks root.
+  try {
+    if (fs.lstatSync(dir).isSymbolicLink()) return "occupied";
+  } catch {
+    return "reclaimed"; // vanished underneath us → free to retry
+  }
+  const claim = `${dir}.reclaim-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
+  try {
+    fs.renameSync(dir, claim);
+  } catch {
+    // Failing to rename-claim means we did NOT win the claim, and declining is
+    // always safe: the caller falls through to the mkdir mutex + deadline, so a
+    // lost claim can only cost a bounded wait, never two owners. POSIX racers
+    // lose with ENOENT (a competitor already moved the dir); Windows instead
+    // throws EPERM/EACCES/EBUSY when another process holds the directory open.
+    // Both mean the same thing here, so treat ANY rename failure as "occupied"
+    // rather than crashing the contender.
+    return "occupied";
+  }
+  const moved = readOwner(claim);
+  const isExactlyTheDeadLock =
+    moved !== null && moved.pid === observed.pid && moved.token === observed.token;
+  if (isExactlyTheDeadLock && !processIsAlive(moved.pid)) {
+    fs.rmSync(claim, RM_OPTS);
+    return "reclaimed";
+  }
+  // We moved something we did not intend to reclaim (a live lock replaced the
+  // dead one between our read and our rename). Put it back; if the slot was
+  // re-taken meanwhile, leave the claim dir for later GC rather than destroy it.
+  try {
+    fs.renameSync(claim, dir);
+  } catch {
+    /* slot reoccupied — never delete a lock we do not own */
+  }
+  return "occupied";
 }
 
 function acquire(key: string): { dir: string; token: string } {
@@ -70,7 +151,7 @@ function acquire(key: string): { dir: string; token: string } {
           { mode: PRIVATE_FILE, flag: "wx" },
         );
       } catch (error) {
-        fs.rmSync(dir, { recursive: true, force: true });
+        fs.rmSync(dir, RM_OPTS);
         throw error;
       }
       return { dir, token };
@@ -80,12 +161,10 @@ function acquire(key: string): { dir: string; token: string } {
 
     const owner = readOwner(dir);
     if (owner && !processIsAlive(owner.pid)) {
-      try {
-        fs.rmSync(dir, { recursive: true });
-        continue;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
-      }
+      // Atomic, token-verified reclaim (see reclaimStaleLock). Only skip the
+      // backoff when we actually freed the slot; if a live lock now holds it,
+      // fall through to the deadline + poll so we cannot spin.
+      if (reclaimStaleLock(dir, owner) === "reclaimed") continue;
     }
     if (Date.now() >= deadline) {
       throw new Error(
@@ -101,7 +180,7 @@ function release(dir: string, token: string): void {
   if (!owner || owner.pid !== process.pid || owner.token !== token) {
     throw new Error("Roster lock ownership changed before release");
   }
-  fs.rmSync(dir, { recursive: true });
+  fs.rmSync(dir, RM_OPTS);
 }
 
 /**

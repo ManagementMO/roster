@@ -10,6 +10,7 @@ import { parseJsonc } from "./jsonc.js";
 import { buildReceipt } from "./receipt.js";
 import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
+import { createEjectJournal, hasEjectJournal } from "./ejectJournal.js";
 import { ejectClient } from "./eject.js";
 import { rosterEntry } from "./entry.js";
 import { readRegularFileNoFollow } from "./safeFile.js";
@@ -226,6 +227,56 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(again.action).toBe("already-synced");
   });
 
+  it("sweeps a staging dir orphaned by an interrupted prior sync (L12)", () => {
+    expect(syncClient("codex", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+    const backupsDir = path.join(home, ".roster/backups/codex");
+
+    // Simulate a sync that crashed after mkdir(staging) but before the atomic
+    // rename into place: a `<ts>.staging-<hex>` dir carrying a partial, private
+    // copy of the config. Nothing ever removed these, so they leaked forever.
+    const orphan = path.join(backupsDir, "2026-07-05T09-09-09-999Z.staging-deadbeef");
+    const lookalike = path.join(backupsDir, "user-notes.staging-do-not-delete");
+    fs.mkdirSync(orphan, { recursive: true });
+    fs.mkdirSync(lookalike, { recursive: true });
+    fs.writeFileSync(path.join(orphan, "original"), "PARTIAL — never published");
+    fs.writeFileSync(path.join(lookalike, "keep"), "NOT CREATED BY ROSTER");
+    expect(fs.existsSync(orphan)).toBe(true);
+    expect(fs.existsSync(lookalike)).toBe(true);
+
+    // The next sync (already-synced here) runs under the client lock and must
+    // garbage-collect the orphan while leaving real, published backups intact.
+    syncClient("codex", new Date("2026-07-05T02:00:00Z"));
+    expect(fs.existsSync(orphan)).toBe(false);
+    expect(fs.existsSync(lookalike)).toBe(true);
+    const realBackups = fs
+      .readdirSync(backupsDir)
+      .filter((n) => !n.startsWith(".") && !n.includes(".staging-") && n !== "latest");
+    expect(realBackups.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("an UNDELETABLE staging orphan does not fail the sync (sweep is best-effort)", () => {
+    expect(syncClient("codex", new Date("2026-07-05T01:00:00Z")).action).toBe("synced");
+    const orphan = path.join(home, ".roster/backups/codex/2026-07-05T09-09-09-999Z.staging-locked");
+    fs.mkdirSync(orphan, { recursive: true });
+
+    // Simulate Windows holding the directory open (EPERM even with force+retries).
+    // GC of an already-inert orphan must never break the operation the user asked
+    // for: rawBackups skips `.staging-` entries, so leaving it is harmless.
+    const realRm = fs.rmSync;
+    fs.rmSync = ((target: fs.PathLike, opts?: fs.RmOptions) => {
+      if (String(target).includes(".staging-locked")) {
+        throw Object.assign(new Error("simulated locked staging dir"), { code: "EPERM" });
+      }
+      return Reflect.apply(realRm, fs, [target, opts]);
+    }) as typeof fs.rmSync;
+    try {
+      expect(syncClient("codex", new Date("2026-07-05T02:00:00Z")).action).toBe("already-synced");
+    } finally {
+      fs.rmSync = realRm;
+    }
+    expect(fs.existsSync(orphan)).toBe(true); // left for the next sweep, not fatal
+  });
+
   it("eject restores byte-for-byte, comments and all", () => {
     const configPath = path.join(home, ".codex/config.toml");
     const originalBytes = fs.readFileSync(configPath);
@@ -260,6 +311,147 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(after.theme).toBe("dark"); // original non-mcp key preserved
     expect(after.mcpServers).not.toHaveProperty("roster"); // roster removed
     expect(after.mcpServers).toHaveProperty("github"); // pre-sync server restored
+  });
+
+  /**
+   * NEW-1 regression. Claude Code rewrites its state file and annotates every
+   * MCP entry with `type: "stdio"`. On the reviewed base, `normalizeSpawnEntry`
+   * required EXACTLY {command,args}, so the annotated proxy no longer matched;
+   * eject reported "restored" while leaving Roster's proxy installed, then
+   * closed the era so a retry found no backup — the flagship client left
+   * permanently rosterized. Ownership must tolerate the known-inert client
+   * transport annotation while still requiring exact command/args and rejecting
+   * meaningful env / conflicting transport.
+   */
+  describe("eject recognizes a client-annotated owned proxy (NEW-1)", () => {
+    const configPath = () => path.join(home, ".claude.json");
+    const annotateRosterEntry = (extra: Record<string, unknown>): void => {
+      const cfg = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, Record<string, unknown>>;
+      };
+      expect(cfg.mcpServers.roster, "roster proxy present after sync").toBeDefined();
+      cfg.mcpServers.roster = { ...cfg.mcpServers.roster, ...extra }; // client re-serializes with extra keys
+      fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2));
+    };
+
+    it('removes the proxy when the client added type:"stdio", and closes the era', () => {
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      annotateRosterEntry({ type: "stdio" });
+
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, unknown>;
+      };
+      expect(after.mcpServers).not.toHaveProperty("roster"); // proxy actually removed
+      expect(after.mcpServers).toHaveProperty("github"); // user's server restored
+      // Era closed on genuine success: a retry finds nothing to restore.
+      expect(ejectClient("claude-code").action).toBe("no-backup");
+    });
+
+    it("NEVER removes a lookalike: user server named roster / env / different command survive", () => {
+      // A user's OWN server, merely sharing the name and even the command+args
+      // but carrying a meaningful env (a token) — a hardened lookalike.
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      const injected = rosterEntry();
+      const cfg = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, Record<string, unknown>>;
+      };
+      cfg.mcpServers.roster = { ...injected, env: { TOKEN: "sk-secret" } }; // meaningful env
+      cfg.mcpServers.mine = { command: injected.command, args: injected.args, type: "http" }; // conflicting transport
+      cfg.mcpServers.other = { command: "some-other", args: ["serve"] }; // different command
+      fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2));
+
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, Record<string, unknown>>;
+      };
+      // The env-bearing lookalike is the user's; it MUST survive (data-loss guard).
+      expect(after.mcpServers.roster).toEqual({ ...injected, env: { TOKEN: "sk-secret" } });
+      expect(after.mcpServers.mine).toBeDefined(); // conflicting transport → not ours
+      expect(after.mcpServers.other).toBeDefined(); // different command → not ours
+    });
+  });
+
+  /**
+   * NEW-3. A key-level eject that was interrupted leaves a durable journal. If the
+   * client then rewrites its state file to a THIRD state (neither the rosterized
+   * "before" nor the planned "desired"), the reviewed base refused on resume and
+   * RETAINED the journal — and sync refuses while a journal exists — so eject and
+   * sync were both permanently locked out. Resume now RE-DERIVES the key-level
+   * merge idempotently from the current bytes, so the client recovers.
+   */
+  describe("key-level eject journal recovers from a third state (NEW-3)", () => {
+    const configPath = () => path.join(home, ".claude.json");
+    const boundary = "2026-07-05T01-00-00-000Z";
+
+    function plantInterruptedKeyLevelJournal(): void {
+      // A real pending journal, as an eject that died after writing the journal
+      // but before completing would leave. Inputs mirror planRestore's state-file
+      // branch: pre-sync original bytes, the injected proxy, and a plausible
+      // desired (unused on the third-state path, which re-derives).
+      const backupDir = path.join(home, ".roster", "backups", "claude-code", boundary);
+      const originalBytes = fs.readFileSync(path.join(backupDir, "original"));
+      const rosterizedBytes = fs.readFileSync(configPath());
+      createEjectJournal("claude-code", boundary, [
+        {
+          sourcePath: configPath(),
+          beforeSha256: sha256Hex(rosterizedBytes),
+          desiredBytes: originalBytes,
+          keyLevel: true,
+          originalBytes,
+          injectedEntries: [rosterEntry()],
+        },
+      ]);
+    }
+
+    it("re-derives the merge from a third-state file instead of deadlocking", () => {
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      plantInterruptedKeyLevelJournal();
+      expect(hasEjectJournal("claude-code")).toBe(true);
+
+      // The client rewrites its state file AGAIN (a third state): bumps live
+      // state, adds a brand-new user server, and — as a real client would — still
+      // carries the roster proxy it has not been told to drop yet.
+      const cfg = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, unknown>;
+        numStartups?: number;
+      };
+      cfg.numStartups = 99;
+      cfg.mcpServers.newthing = { command: "new-mcp", args: ["--go"] };
+      fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2));
+
+      const result = ejectClient("claude-code"); // resume path
+      expect(result.action).toBe("restored");
+      const after = JSON.parse(fs.readFileSync(configPath(), "utf8")) as {
+        mcpServers: Record<string, unknown>;
+        numStartups?: number;
+      };
+      expect(after.mcpServers).not.toHaveProperty("roster"); // owned proxy removed
+      expect(after.mcpServers).toHaveProperty("github"); // pre-sync original restored
+      expect(after.mcpServers).toHaveProperty("newthing"); // post-crash user addition preserved
+      expect(after.numStartups).toBe(99); // unrelated live state preserved
+
+      // Deadlock broken: journal cleared, and sync is usable again.
+      expect(hasEjectJournal("claude-code")).toBe(false);
+      expect(["synced", "already-synced"]).toContain(
+        syncClient("claude-code", new Date("2026-07-06T01:00:00Z")).action,
+      );
+    });
+
+    it("a corrupt journal is refused (recoverable), never silently applied", () => {
+      syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+      plantInterruptedKeyLevelJournal();
+      // Corrupt the plan on disk.
+      fs.writeFileSync(
+        path.join(home, ".roster", "eject-journals", "claude-code", "plan.json"),
+        "{ not valid json",
+      );
+      const result = ejectClient("claude-code");
+      expect(result.action).toBe("integrity-error");
+      expect(hasEjectJournal("claude-code")).toBe(true); // retained for inspection
+    });
   });
 
   it("dedicated client: still refuses to clobber post-sync manual edits without --force", () => {
@@ -1198,19 +1390,45 @@ args = ["-y", "late-mcp"]
     const era = (marker: string) =>
       `${JSON.stringify({ marker, mcpServers: { [marker]: { command: marker } } }, null, 2)}\n`;
 
-    // These two force an archive/close FAILURE via chmod, which only bites on
-    // POSIX — Windows ignores mode bits for the owner, so the rename would succeed
-    // and there'd be no failure to test. The fix itself (a durable marker) is
-    // platform-independent fs+string logic, verified on macOS + Linux in CI.
-    it.skipIf(process.platform === "win32")("a FAILED archive must not let a later eject restore the previous era", () => {
+    // These force an archive/close FAILURE by intercepting the exact fs.rename
+    // that publishes the era close — a DETERMINISTIC seam that fires regardless
+    // of platform OR uid. The old approach chmod'd the backups dir read-only,
+    // but that is a no-op both on Windows (mode bits ignored) AND for root
+    // (uid 0 bypasses permission checks), so under either the archive silently
+    // SUCCEEDED and the "failure" the test depends on never happened. Mocking
+    // the syscall reproduces the failure everywhere. The fix under test — a
+    // durable close marker — is itself platform-independent fs+string logic.
+    //
+    // The archive rename targets a `<clientDir>-ejected-<ts>` path; the durable
+    // close marker is written (atomically, via a final rename) to a path ending
+    // `.closed-through`. Failing by target path lets each test choose precisely
+    // which step breaks while the config RESTORE (a different path) still lands.
+    const failRenamesTo = (matches: (target: string) => boolean) => {
+      const real = fs.renameSync;
+      fs.renameSync = ((from, to) => {
+        if (matches(String(to))) {
+          throw Object.assign(new Error("simulated era-close failure"), { code: "EACCES" });
+        }
+        return real(from, to);
+      }) as typeof fs.renameSync;
+      return () => {
+        fs.renameSync = real;
+      };
+    };
+
+    it("a FAILED archive must not let a later eject restore the previous era", () => {
       const backupsRoot = path.join(home, ".roster", "backups");
 
-      // Era 0: sync, then eject with archiving BLOCKED (backups root not writable).
+      // Era 0: sync, then eject with only the ARCHIVE rename blocked — the
+      // durable close marker still writes, so the era is closed regardless.
       write(".cursor/mcp.json", era("ERA0"));
       syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
-      fs.chmodSync(backupsRoot, 0o500);
-      expect(ejectClient("cursor").action).toBe("restored");
-      fs.chmodSync(backupsRoot, 0o700);
+      const restore = failRenamesTo((to) => to.includes("-ejected-"));
+      try {
+        expect(ejectClient("cursor").action).toBe("restored");
+      } finally {
+        restore();
+      }
       expect(fs.existsSync(path.join(backupsRoot, "cursor"))).toBe(true); // archive really did fail
 
       // Era 1: a genuinely new pristine, synced and then ejected normally.
@@ -1219,22 +1437,22 @@ args = ["-y", "late-mcp"]
       expect(ejectClient("cursor").action).toBe("restored");
 
       // It must be ERA1 that comes back — not the stale ERA0 sitting in the
-      // un-archived backup directory.
+      // un-archived backup directory: the durable marker closed era 0.
       expect(fs.readFileSync(configPath(), "utf8")).toBe(era("ERA1"));
     });
 
-    it.skipIf(process.platform === "win32")("says so loudly when the era cannot be closed at all", () => {
+    it("says so loudly when the era cannot be closed at all", () => {
       write(".cursor/mcp.json", era("ERA0"));
       syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
-      const backupsRoot = path.join(home, ".roster", "backups");
-      const clientDir = path.join(backupsRoot, "cursor");
-      // Neither the marker (inside clientDir) nor the archive (rename inside
-      // backupsRoot) can be written.
-      fs.chmodSync(clientDir, 0o500);
-      fs.chmodSync(backupsRoot, 0o500);
-      const result = ejectClient("cursor");
-      fs.chmodSync(backupsRoot, 0o700);
-      fs.chmodSync(clientDir, 0o700);
+      // Neither the durable marker (a rename to `.closed-through`) NOR the
+      // archive (a rename to `-ejected-`) can be written.
+      const restore = failRenamesTo((to) => to.includes("-ejected-") || to.endsWith(".closed-through"));
+      let result: ReturnType<typeof ejectClient>;
+      try {
+        result = ejectClient("cursor");
+      } finally {
+        restore();
+      }
 
       expect(result.action).toBe("integrity-error"); // restore landed, but the operation is not safely complete
       expect(result.detail).toMatch(/could not be closed/); // never a zero-exit success
