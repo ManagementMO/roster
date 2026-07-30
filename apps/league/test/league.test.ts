@@ -16,7 +16,7 @@ import {
   type LoadedArtifact,
   type SuiteAuthority,
 } from "../src/artifact.js";
-import { buildSite } from "../src/build.js";
+import { buildSite, loadSuites } from "../src/build.js";
 import {
   boxScoreFilename,
   renderBoxScore,
@@ -376,6 +376,62 @@ describe("public-score integrity (R5-03 / R5-10)", () => {
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("suite authority is unambiguous and fail-closed (L9)", () => {
+  const suiteYaml = (over: { suite?: string; version?: string; category?: string; signed?: boolean }) => `
+suite: ${over.suite ?? "dup"}
+version: "${over.version ?? "1.0.0"}"
+category: ${over.category ?? "filesystem"}
+tasks:
+  - id: t1
+    signed: ${over.signed ?? false}
+    invoke: { tool: write_file, args: { path: "a.txt", content: "x" } }
+    verify:
+      - { kind: fileExists, path: "a.txt" }
+`;
+  const writeSuiteDir = (root: string, dirName: string, yaml: string) => {
+    const d = path.join(root, dirName);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, "tasks.yaml"), yaml);
+  };
+  const withSuitesDir = (fn: (dir: string) => void) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-suites-"));
+    try {
+      fn(dir);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("loads a unique (suite,version) as authoritative", () => {
+    withSuitesDir((dir) => {
+      writeSuiteDir(dir, "only", suiteYaml({ suite: "solo", version: "2.0.0" }));
+      expect(loadSuites(dir).authorities.has(suiteKey("solo", "2.0.0"))).toBe(true);
+    });
+  });
+
+  it("poisons a (suite,version) duplicated across suite dirs — never silently authoritative", () => {
+    withSuitesDir((dir) => {
+      // Two dirs claim the SAME (suite, version) but disagree on signed credit.
+      // Silent last-writer-wins would let one copy MINT (signed:true) or STRIP
+      // credit depending on load order; fail-closed drops the key entirely so
+      // every run against it is unverifiable (shown, never ranked).
+      writeSuiteDir(dir, "a-unsigned", suiteYaml({ signed: false }));
+      writeSuiteDir(dir, "b-signed", suiteYaml({ signed: true }));
+      expect(loadSuites(dir).authorities.has(suiteKey("dup", "1.0.0"))).toBe(false);
+    });
+  });
+
+  it("keeps distinct versions of the same suite name (does not over-poison)", () => {
+    withSuitesDir((dir) => {
+      writeSuiteDir(dir, "v1", suiteYaml({ suite: "shared", version: "1.0.0" }));
+      writeSuiteDir(dir, "v2", suiteYaml({ suite: "shared", version: "2.0.0" }));
+      const { authorities } = loadSuites(dir);
+      expect(authorities.has(suiteKey("shared", "1.0.0"))).toBe(true);
+      expect(authorities.has(suiteKey("shared", "2.0.0"))).toBe(true);
+    });
   });
 });
 
