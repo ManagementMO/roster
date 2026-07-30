@@ -156,3 +156,69 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     });
   }, 30_000);
 });
+
+/**
+ * L14 — the PID-reuse and platform-specific claims reduced to the parts that CAN
+ * be exercised deterministically on any OS. Actual pid reuse and the OS specifics
+ * of rename() atomicity (POSIX vs NFS) and process.kill(pid,0) (POSIX vs Windows)
+ * cannot be forced in one local Linux run, but the LOGIC that consumes them — the
+ * token that disambiguates a reused pid, the refusal to evict a live-appearing
+ * owner, and the rejection of a crafted non-positive pid — is platform-neutral.
+ */
+describe("PID reuse and platform reductions (L14)", () => {
+  const lockDir = () =>
+    path.join(
+      home,
+      ".roster",
+      "locks",
+      `${crypto.createHash("sha256").update("k").digest("hex")}.lock`,
+    );
+
+  it("a token mismatch stops eviction even for the SAME (dead) pid — token is identity", () => {
+    // We OBSERVED {pid: P, token: T1}, but the slot now holds {pid: P, token: T2}
+    // — a different acquisition that also recorded pid P (e.g. P was reused,
+    // acquired, and died). P is dead, so ONLY the token can tell us this is not
+    // the lock we observed; without that check we would destroy a lock we never
+    // actually saw. This isolates the token guard from the liveness guard.
+    const dir = lockDir();
+    const pid = deadPid();
+    writeLock(dir, { pid, token: "T2" });
+    expect(reclaimStaleLock(dir, { pid, token: "T1" })).toBe("occupied");
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "owner.json"), "utf8"))).toEqual({
+      pid,
+      token: "T2",
+    });
+  });
+
+  it("never evicts a lock whose owner is ALIVE, even on an exact pid+token match", () => {
+    // The owner we believed dead is in fact alive at reclaim time (revived, or a
+    // misjudgement). Exact identity is NOT sufficient — a live owner is kept.
+    const dir = lockDir();
+    const owner = { pid: process.pid, token: "T1" };
+    writeLock(dir, owner);
+    expect(reclaimStaleLock(dir, owner)).toBe("occupied");
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "owner.json"), "utf8"))).toEqual(owner);
+  });
+
+  it("rejects a crafted non-positive owner pid — process.kill is never handed a group target", () => {
+    // A negative pid passed to process.kill targets a process GROUP. readOwner
+    // must reject pid <= 0 so it can never reach processIsAlive.
+    const dir = lockDir();
+    writeLock(dir, { pid: -1, token: "T1" });
+    const realKill = process.kill.bind(process);
+    const killPids: number[] = [];
+    process.kill = ((pid: number) => {
+      killPids.push(pid);
+      return true;
+    }) as typeof process.kill;
+    try {
+      expect(reclaimStaleLock(dir, { pid: -1, token: "T1" })).toBe("occupied");
+    } finally {
+      process.kill = realKill;
+    }
+    expect(killPids.every((p) => p > 0)).toBe(true); // -1 never reached process.kill
+    expect(fs.existsSync(dir)).toBe(true); // fail-closed: unreclaimable, preserved
+  });
+});

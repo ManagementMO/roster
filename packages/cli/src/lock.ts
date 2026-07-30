@@ -43,6 +43,23 @@ function readOwner(dir: string): LockOwner | null {
   }
 }
 
+/**
+ * PID reuse: a dead owner's pid can later belong to a LIVE, unrelated process.
+ * That is the SAFE direction here — `processIsAlive` then reports "alive", so the
+ * lock is treated as held and the contender waits rather than evicting it. The
+ * per-acquisition random `token` closes the other direction: it, not the pid, is
+ * identity, so a reused pid carrying a stale token is never mistaken for the
+ * original owner (see `reclaimStaleLock`). A non-positive pid never reaches this
+ * function — `readOwner` rejects it — so `process.kill` can never be handed a
+ * negative pid (which targets a process GROUP).
+ *
+ * Platform reductions (cannot be forced in a local Linux run, so exercised on the
+ * POSIX path and reduced to a documented dependency): the atomic reclaim rests on
+ * `rename()` being atomic (POSIX; holds on local fs and NFSv3+), and liveness on
+ * `process.kill(pid, 0)` (POSIX + Windows via libuv). The consuming LOGIC — token
+ * disambiguation, live-owner refusal, invalid-owner rejection — is platform-
+ * neutral and unit-tested directly.
+ */
 function processIsAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
