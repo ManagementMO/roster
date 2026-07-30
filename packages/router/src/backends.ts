@@ -23,8 +23,9 @@ import { stableBackendName, stableNamespacedId } from "@rosterhq/shared";
  *
  * This wraps the SDK's own Ajv validator (so valid schemas compile and validate
  * IDENTICALLY, preserving the PR #10 output-drift attribution) and, ONLY when a
- * schema fails to compile, isolates that one tool with a permissive validator.
- * Output validation is never disabled globally.
+ * schema fails to compile, installs an always-invalid validator for that one
+ * tool. The backend's healthy siblings remain available, while an invalid
+ * contract never becomes an excuse to accept arbitrary output.
  */
 class IsolatingSchemaValidator implements JsonSchemaValidatorProvider {
   private readonly inner = new AjvJsonSchemaValidator();
@@ -32,7 +33,11 @@ class IsolatingSchemaValidator implements JsonSchemaValidatorProvider {
     try {
       return this.inner.getValidator<T>(schema);
     } catch {
-      return (input: unknown) => ({ valid: true, data: input as T, errorMessage: undefined });
+      return () => ({
+        valid: false,
+        data: undefined,
+        errorMessage: "the tool declares an invalid output schema",
+      });
     }
   }
 }

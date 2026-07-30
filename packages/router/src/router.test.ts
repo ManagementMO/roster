@@ -828,7 +828,7 @@ describe("trust gate: review-flagged skills are withheld from serving (R5-09)", 
  * The MCP SDK compiles every tool's outputSchema after listTools, so one
  * uncompilable schema (an unresolvable $ref) threw at connect and took the whole
  * backend — healthy siblings included — offline. Roster isolates that one schema
- * with a permissive validator while every valid schema still compiles and
+ * with a fail-closed validator while every valid schema still compiles and
  * validates, so output-drift attribution (PR #10) is preserved.
  */
 describe("invalid tool output schemas are isolated, not fatal", () => {
@@ -847,8 +847,8 @@ describe("invalid tool output schemas are isolated, not fatal", () => {
       ],
     }));
     s.setRequestHandler(CallToolRequestSchema, async (req) => {
-      // badref returns structured content: with its schema isolated (permissive),
-      // this must pass through — proving the tool is usable, not dead.
+      // The malformed contract is isolated at this tool. Its result must fail
+      // closed without preventing the healthy siblings from connecting.
       if (req.params.name === "badref")
         return { content: [{ type: "text", text: "{}" }], structuredContent: { v: "anything" } };
       if (req.params.name === "goodstruct")
@@ -877,11 +877,18 @@ describe("invalid tool output schemas are isolated, not fatal", () => {
     await mgr.close();
   });
 
-  it("the isolated bad-$ref tool becomes callable instead of dead", async () => {
+  it("the isolated bad-$ref tool fails closed without taking healthy siblings offline", async () => {
     const { mgr, name } = await connectManager();
     const out = await mgr.call(name, "badref", {}, BAD_REF);
-    expect(out.result).not.toBeNull(); // permissive validator ⇒ result passes through
-    expect(out.evidence.transportError).toBeUndefined();
+    expect(out.result).toBeNull();
+    expect(out.evidence.outputSchemaViolation).toBe(true);
+    expect(classifyOutcome(out.evidence)).toBe("schema_drift_suspect");
+
+    // Isolation is per-tool: a malformed sibling schema must not weaken or
+    // disable the SDK validator for a valid schema.
+    const good = await mgr.call(name, "goodstruct", {}, OK_SCHEMA);
+    expect(good.result).not.toBeNull();
+    expect(good.evidence.outputSchemaViolation).toBe(false);
     await mgr.close();
   });
 
