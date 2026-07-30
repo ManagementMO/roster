@@ -10,7 +10,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { CoachStore, openCoachDb, type CoachDb } from "@rosterhq/coach";
+import { classifyOutcome, CoachStore, isAttributable, openCoachDb, type CoachDb } from "@rosterhq/coach";
 import { MAX_SKILL_MD_BYTES, scanSkillLibrary } from "@rosterhq/playbook";
 import { stableNamespacedId } from "@rosterhq/shared";
 import { BackendManager } from "./backends.js";
@@ -821,5 +821,91 @@ describe("trust gate: review-flagged skills are withheld from serving (R5-09)", 
         arguments: { tool: "skill__oversized", args: {}, draft_id: parsed.draft_id },
       }),
     ).rejects.toThrow(/Unknown capability/);
+  });
+});
+
+/**
+ * The MCP SDK compiles every tool's outputSchema after listTools, so one
+ * uncompilable schema (an unresolvable $ref) threw at connect and took the whole
+ * backend — healthy siblings included — offline. Roster isolates that one schema
+ * with a permissive validator while every valid schema still compiles and
+ * validates, so output-drift attribution (PR #10) is preserved.
+ */
+describe("invalid tool output schemas are isolated, not fatal", () => {
+  const OK_SCHEMA = { type: "object", properties: { v: { type: "string" } }, required: ["v"] };
+  const BAD_REF = { type: "object", properties: { v: { $ref: "#/$defs/DoesNotExist" } }, required: ["v"] };
+
+  function backend(): Server {
+    const s = new Server({ name: "schemas", version: "1.0.0" }, { capabilities: { tools: {} } });
+    s.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: [
+        { name: "ok", description: "no output schema", inputSchema: { type: "object" } },
+        { name: "badref", description: "unresolvable $ref", inputSchema: { type: "object" }, outputSchema: BAD_REF },
+        { name: "textonly", description: "declares schema, returns text", inputSchema: { type: "object" }, outputSchema: OK_SCHEMA },
+        { name: "goodstruct", description: "returns matching structured content", inputSchema: { type: "object" }, outputSchema: OK_SCHEMA },
+        { name: "badstruct", description: "returns MISmatched structured content", inputSchema: { type: "object" }, outputSchema: OK_SCHEMA },
+      ],
+    }));
+    s.setRequestHandler(CallToolRequestSchema, async (req) => {
+      // badref returns structured content: with its schema isolated (permissive),
+      // this must pass through — proving the tool is usable, not dead.
+      if (req.params.name === "badref")
+        return { content: [{ type: "text", text: "{}" }], structuredContent: { v: "anything" } };
+      if (req.params.name === "goodstruct")
+        return { content: [{ type: "text", text: "{}" }], structuredContent: { v: "hello" } };
+      if (req.params.name === "badstruct")
+        return { content: [{ type: "text", text: "{}" }], structuredContent: { v: 123 } };
+      return { content: [{ type: "text", text: "PLAIN_TEXT" }] };
+    });
+    return s;
+  }
+
+  async function connectManager(): Promise<{ mgr: BackendManager; name: string; tools: string[] }> {
+    const mgr = new BackendManager();
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await backend().connect(st);
+    const entries = await mgr.connect({ name: "schemas", transport: ct });
+    // The stored backend key is the entries' `source` (what call() looks up by).
+    return { mgr, name: entries[0]!.source, tools: entries.map((e) => e.name) };
+  }
+
+  it("L6: one unresolvable $ref does not take the whole backend offline", async () => {
+    const { mgr, tools } = await connectManager();
+    // Connect SUCCEEDS and every sibling tool — including the healthy ones —
+    // survives; on the reviewed base connect() threw and lost them all.
+    expect(tools.sort()).toEqual(["badref", "badstruct", "goodstruct", "ok", "textonly"]);
+    await mgr.close();
+  });
+
+  it("the isolated bad-$ref tool becomes callable instead of dead", async () => {
+    const { mgr, name } = await connectManager();
+    const out = await mgr.call(name, "badref", {}, BAD_REF);
+    expect(out.result).not.toBeNull(); // permissive validator ⇒ result passes through
+    expect(out.evidence.transportError).toBeUndefined();
+    await mgr.close();
+  });
+
+  it("valid output schemas are STILL enforced (isolation is per-schema, not global)", async () => {
+    const { mgr, name } = await connectManager();
+    // Matching structured content → no violation.
+    const good = await mgr.call(name, "goodstruct", {}, OK_SCHEMA);
+    expect(good.evidence.outputSchemaViolation).toBe(false);
+    // Mismatched structured content → the SDK validator (compiled from the VALID
+    // schema) rejects it → attributable output drift preserved (PR #10).
+    const bad = await mgr.call(name, "badstruct", {}, OK_SCHEMA);
+    expect(bad.evidence.outputSchemaViolation).toBe(true);
+    await mgr.close();
+  });
+
+  it("L7 parity lock: a text-only result from an outputSchema tool is drift, not a proxy bug", async () => {
+    // A DIRECT SDK client rejects this too (reproduced: -32600). Roster mirrors
+    // the SDK contract — classifies it as attributable output drift — rather than
+    // being stricter than a direct client or bypassing validation.
+    const { mgr, name } = await connectManager();
+    const out = await mgr.call(name, "textonly", {}, OK_SCHEMA);
+    expect(out.evidence.outputSchemaViolation).toBe(true);
+    expect(classifyOutcome(out.evidence)).toBe("schema_drift_suspect");
+    expect(isAttributable("schema_drift_suspect")).toBe(true);
+    await mgr.close();
   });
 });
