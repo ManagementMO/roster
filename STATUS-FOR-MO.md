@@ -1,25 +1,25 @@
 # Roster — status & decision board for Mo
 
-> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-07-29**, after the objective production-hardening pass on `review/round5-hardening`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
+> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-07-30**, after the objective production-hardening pass on `review/round5-hardening`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
-> **Current hardening delta:** cross-process config locks and strict config validation; exact proxy ownership and URL-sync refusal; symlink-preserving durable writes; multi-path, crash-recoverable eject; fail-closed Playbook discovery; strict authoritative League identities; and complete atomic League publication. The local gate on 2026-07-29 reports **297/297 tests**, build clean, and lint clean. Nothing was pushed, published, registered, deployed, or made public.
+> **Current hardening delta:** cross-process config locks and strict config validation; exact proxy ownership and URL-sync refusal; symlink-preserving durable writes; multi-path, crash-recoverable eject; fail-closed Playbook discovery; strict authoritative League identities; complete atomic League publication; strict fail-probe stage proof; and descriptor-pinned trust-artifact reads. The 2026-07-30 local gate reports **303/303 tests**, build clean, lint clean, and no known dependency vulnerabilities at the configured audit threshold. The branch is pushed in PR #10 and all required checks are green; no package was published, registered, deployed, or made public.
 
 ---
 
 ## 1. TL;DR — where we are
 
-**The M0+ core is built and locally gate-green. Remote CI and platform branches remain claims until their next GitHub runs; this pass did not publish or trigger them.**
+**The M0+ core is built and locally and remotely gate-green on PR #10. No package or site was published or deployed.**
 
 | Gate | Status |
 |---|---|
-| Unit/integration tests | **297 passing** in the 2026-07-29 local run; the suite reports the authoritative current count |
-| CI/CD workflow | **configured for 9 CI job instances** — lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan; CodeQL is a separate public-repo-gated workflow. **Not remotely re-run in this pass.** |
+| Unit/integration tests | **303 passing** in the 2026-07-30 local run; the suite reports the authoritative current count |
+| CI/CD workflow | **all 9 CI job instances passed** at PR head `a2f5ec4` — lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan. The CodeQL workflow, separate GitHub Advanced Security CodeQL check, and Semgrep also passed. Sourcery was skipped and is not claimed. |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
-| Combine vs real filesystem server | **8/8, deterministic** — and the fail-probes prove the verifiers *catch* wrongness (0/8) |
+| Combine vs real filesystem server | **8/8, deterministic** — and all 8 fail-probes reached the verifier and were rejected there (0/8); transport failures no longer satisfy the CI proof |
 | Dense rung — MiniLM + Gemma live (real inference) | **verified** end-to-end; hybrid fusion signal-adaptive; OATS moves rankings from real outcomes |
-| Trust laws (privacy/telemetry-off/suggest-only/eject) | **locally rechecked** through focused regressions and source/write-path review; final evidence is recorded in the Round 5 hardening report |
+| Trust laws (privacy/telemetry-off/suggest-only/eject) | **rechecked locally and through hosted gates** with focused regressions and source/write-path review; final evidence is recorded in the Round 5 hardening report |
 | Experiment swarm (16 charters — real models/servers/processes) | **15/16 reported · 100 findings** · digest: `docs/lab/campaign-digest.md` |
-| Fix waves + objective hardening | **implemented locally** — historical claims: `docs/lab/fixes-applied.md`; current branch evidence: `docs/lab/review-round5-hardening.md` |
+| Fix waves + objective hardening | **implemented and verified on PR #10** — historical claims: `docs/lab/fixes-applied.md`; current branch evidence: `docs/lab/review-round5-hardening.md` |
 
 The dense-embedding path is fully implemented and live-verified on both models. The trust surfaces (config writes, sync/eject, drift, identity/routing) were hammered by the swarm, then re-audited by an independent meta-review that caught two bugs I'd *introduced* and three vacuous tests — all fixed and mutation-verified. **⚠️ One reversible policy change awaits your nod: P7.**
 
@@ -56,7 +56,7 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 
 ## 4. 🔧 THE PIPELINE — my ready queue (zero input needed; building on your "go")
 
-**Objective code hardening: implemented on the local review branch** (`docs/lab/review-round5-hardening.md` will carry final gate and mutation evidence). Everything below remains between the verified core and the full `ROSTER.md` launch product.
+**Objective code hardening: implemented and verified on PR #10** (`docs/lab/review-round5-hardening.md` carries the final local, mutation, and hosted evidence). Everything below remains between the verified core and the full `ROSTER.md` launch product.
 
 **A. Complete the League (highest launch-leverage after your signing):**
 - **Static badges service** — signed SVG performance shields keyed to server ID (the truest distribution metric; README-embeddable).
@@ -98,14 +98,14 @@ Nothing is published, registered, or public. Private repo: `github.com/Managemen
 - **CLI:** `init` reads 10 client formats; `sync` writes four clients and refuses URL-only configs before mutation; config mutations are cross-process locked and strictly validated; `eject` restores every active path, preserves direct symlinks, journals desired bytes privately, recovers after interruption, and reports integrity failures as process failures · `serve` is stdio-only with bounded backend connect · `telemetry` · `combine run` · `unquarantine`.
 - **Combine:** declarative end-state verifiers (dir-vs-file distinct; byte-exact names — macOS case/NFD-proof) · sandbox containment · connect timeouts · per-side OATS caps · `lab-results.json` with `environmentDigest` + **`signedWilsonLb`** (the only stat that may back a named score).
 - **League site (`apps/league`):** static generator from `lab-results.json` — strict artifact metadata and row-derived summaries; suite-authoritative category/signing/descriptions; separate `(category, suite, version)` standings; collision-resistant box filenames; and render-first atomic directory publication. Generates locally and is configured to generate in CI; it is not hosted.
-- **CI/CD:** workflow expands to 9 CI job instances (see §1), with a composite setup action and an explicit Node 22.13.x floor check. Remote status was not re-verified in this pass.
+- **CI/CD:** all 9 workflow job instances passed at PR head `a2f5ec4` (see §1), including the composite setup action and exact Node 22.13.x floor. The CodeQL workflow, separate GitHub Advanced Security CodeQL check, and Semgrep also passed.
 
 ## 6. Review record (velocity-discipline law — every accepted finding fixed with a regression test)
 
 - **Waves 1–7 (build):** 2 overnight code reviews (4 CRITICAL + 9 MAJOR) · functional QA (empty-draft bug) · clean-code sweep · dense-path specialist (model-switch poisoning) · concurrency auditor (boot-crash race) · docs/spec conformance (10 overclaims).
 - **Wave 8 — the experiment swarm:** 16 charters, real models/servers/processes, 100 findings (`docs/lab/campaign-digest.md`).
 - **Wave 9 — fix rounds 1–3:** round 1 applied the real swarm findings; **round 2 was an adversarial meta-review of round 1** that caught two bugs I'd *introduced* (Ajv over-strip, unbounded script read) + two gaps I'd missed (serve connect hang, output-schema drift) + **three vacuous tests**; round 3 finished the deferred list (remove/re-add tombstone, atomic backup-dir, testable transport-death mapping). The three rebuilt tests are **mutation-verified** — each fails when its fix is reverted.
-- **Round 5 objective hardening (2026-07-29):** closed the remaining cross-process, ownership, filesystem-topology, crash-recovery, scan-completeness, and League publication/identity classes. Final commands and mutation evidence live in `docs/lab/review-round5-hardening.md`.
+- **Round 5 objective hardening (2026-07-30):** closed the remaining cross-process, ownership, filesystem-topology, crash-recovery, scan-completeness, and League publication/identity classes, then fixed the hosted Windows durability, E2E attribution, fail-probe false-green, dependency-audit, and CodeQL trust-path findings. Final local, mutation, and remote evidence lives in `docs/lab/review-round5-hardening.md`.
 
 ## 7. Honest remaining gaps (nothing silent)
 
