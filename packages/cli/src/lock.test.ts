@@ -134,13 +134,17 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     const kids = Array.from({ length: 4 }, () =>
       require("node:child_process").spawn(process.execPath, [worker], {
         env: { ...process.env },
-        stdio: ["ignore", "pipe", "ignore"],
+        stdio: ["ignore", "pipe", "pipe"],
       }),
     );
     const outs = kids.map(() => "");
+    const errs = kids.map(() => "");
     kids.forEach((k, i) => {
       k.stdout.on("data", (d: Buffer) => {
         outs[i] += d.toString();
+      });
+      k.stderr.on("data", (d: Buffer) => {
+        errs[i] += d.toString();
       });
     });
     fs.writeFileSync(go, "go"); // release the barrier
@@ -149,6 +153,10 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
         new Promise<number>((resolve) => k.on("exit", (c: number | null) => resolve(c ?? -1))),
     );
     return Promise.all(codes).then((exitCodes) => {
+      // Surface a crashed worker's stderr so a CI failure is diagnosable.
+      exitCodes.forEach((c, i) => {
+        if (c !== 0) console.error(`lock worker ${i} exited ${c}; stderr:\n${errs[i]}`);
+      });
       expect(exitCodes.every((c) => c === 0)).toBe(true);
       // Each worker reports the max concurrent occupancy it ever observed. With a
       // correct mutex that is exactly 1; the pre-fix double-entry made it >= 2.

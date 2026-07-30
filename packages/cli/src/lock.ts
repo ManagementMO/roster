@@ -7,6 +7,12 @@ const PRIVATE_FILE = 0o600;
 const PRIVATE_DIR = 0o700;
 const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_POLL_MS = 20;
+// Windows throws EPERM/EBUSY on rmSync when another process (or a virus scanner
+// / indexer) holds a directory handle open for a moment; recursive rmSync with
+// maxRetries retries exactly those transient errors (a no-op on POSIX, where the
+// remove succeeds first try). Without it, a lock contender crashes on Windows
+// instead of cleanly releasing/reclaiming.
+const RM_OPTS = { recursive: true, force: true, maxRetries: 10, retryDelay: 50 } as const;
 
 interface LockOwner {
   pid: number;
@@ -113,7 +119,7 @@ export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" 
   const isExactlyTheDeadLock =
     moved !== null && moved.pid === observed.pid && moved.token === observed.token;
   if (isExactlyTheDeadLock && !processIsAlive(moved.pid)) {
-    fs.rmSync(claim, { recursive: true, force: true });
+    fs.rmSync(claim, RM_OPTS);
     return "reclaimed";
   }
   // We moved something we did not intend to reclaim (a live lock replaced the
@@ -145,7 +151,7 @@ function acquire(key: string): { dir: string; token: string } {
           { mode: PRIVATE_FILE, flag: "wx" },
         );
       } catch (error) {
-        fs.rmSync(dir, { recursive: true, force: true });
+        fs.rmSync(dir, RM_OPTS);
         throw error;
       }
       return { dir, token };
@@ -174,7 +180,7 @@ function release(dir: string, token: string): void {
   if (!owner || owner.pid !== process.pid || owner.token !== token) {
     throw new Error("Roster lock ownership changed before release");
   }
-  fs.rmSync(dir, { recursive: true });
+  fs.rmSync(dir, RM_OPTS);
 }
 
 /**
