@@ -3,24 +3,56 @@ import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId } from "./clients.js";
 import { normalizeSpawnEntry, sameEntry, type SpawnEntry } from "./entry.js";
+import {
+  clearEjectJournal,
+  createEjectJournal,
+  type EjectJournalTarget,
+  type LoadedEjectJournal,
+  loadEjectJournal,
+  type PreparedJournalTarget,
+  readDesiredBytes,
+} from "./ejectJournal.js";
 import { parseJsonc } from "./jsonc.js";
+import { withFileLockSync } from "./lock.js";
 import {
   atomicWriteFileSync,
   backupDirFor,
+  PRIVATE_DIR,
   validateWriteTopology,
 } from "./rosterfile.js";
-import { closeEra, listBackups, pristineRawBackup } from "./sync.js";
+import {
+  type BackupManifest,
+  closeEraThrough,
+  type RawBackup,
+  rawBackups,
+  readClosedThrough,
+} from "./sync.js";
 
 export interface EjectResult {
   client: ClientId;
-  action: "restored" | "no-backup" | "refused-modified" | "missing-file";
+  action:
+    | "restored"
+    | "no-backup"
+    | "refused-modified"
+    | "missing-file"
+    | "integrity-error";
   configPath?: string;
   detail?: string;
+  restoredPaths?: string[];
 }
+
+interface PlannedRestore extends PreparedJournalTarget {
+  stateContext?: {
+    originalBytes: Buffer;
+    injectedEntries: SpawnEntry[];
+  };
+}
+
+type ValidBackup = RawBackup & { manifest: BackupManifest };
 
 /**
  * The headline trust feature: put the client back exactly as Roster found it —
- * from the OLDEST backup of the current era. Two restore modes by file kind:
+ * from the OLDEST backup PER PATH in the current era. Two restore modes by file kind:
  * dedicated MCP configs restore BYTE-FOR-BYTE (comments/formatting included),
  * guarded by modified-since-sync (refuse without --force if the file isn't
  * what Roster last wrote); live STATE files the client itself rewrites (e.g.
@@ -31,161 +63,498 @@ export interface EjectResult {
  * can never destroy in-between changes.
  */
 export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}): EjectResult {
-  const pristine = pristineRawBackup(clientId);
-  if (!pristine) return { client: clientId, action: "no-backup" };
-  // The OLDEST backup's manifest is missing or corrupt. Advancing to a newer
-  // backup would silently restore the WRONG (user-edited, still-rosterized)
-  // bytes — the measured 1-byte-tamper wrong-restore. Refuse loudly instead;
-  // no --force can conjure a manifest we can trust to identify the pristine.
-  if (!pristine.manifest) {
-    return {
-      client: clientId,
-      action: "no-backup",
-      detail:
-        "BACKUP INTEGRITY FAILURE: the pristine backup's manifest is missing or corrupt — refusing to restore a different backup; inspect the backup dir",
-    };
+  return withFileLockSync(`client:${clientId}`, () =>
+    ejectClientUnlocked(clientId, opts),
+  );
+}
+
+function ejectClientUnlocked(
+  clientId: ClientId,
+  opts: { force?: boolean },
+): EjectResult {
+  let pending: LoadedEjectJournal | null;
+  try {
+    pending = loadEjectJournal(clientId);
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `pending eject recovery data is corrupt — refusing: ${errorMessage(error)}`,
+    );
   }
-  const manifest = pristine.manifest;
-  const targetPath = manifest.sourcePath;
+  if (pending) return applyJournal(clientId, pending);
+
+  let slots: RawBackup[];
+  try {
+    slots = rawBackups(clientId);
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `the backup era boundary is unreadable or corrupt: ${errorMessage(error)}`,
+    );
+  }
+  if (slots.length === 0) return { client: clientId, action: "no-backup" };
+  if (slots.some((slot) => slot.manifest === null)) {
+    return integrityFailure(
+      clientId,
+      "the active backup set has a missing, corrupt, or non-directory slot — refusing every restore",
+    );
+  }
+  const backups = slots as ValidBackup[];
+  try {
+    for (const backup of backups) validateManifest(clientId, backup);
+  } catch (error) {
+    return integrityFailure(clientId, errorMessage(error));
+  }
+
+  const groups = new Map<string, ValidBackup[]>();
+  for (const backup of backups) {
+    const group = groups.get(backup.manifest.sourcePath) ?? [];
+    group.push(backup);
+    groups.set(backup.manifest.sourcePath, group);
+  }
+  const planned: PlannedRestore[] = [];
+  for (const [sourcePath, group] of [...groups.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    const result = planRestore(clientId, sourcePath, group, opts.force === true);
+    if ("action" in result) return result;
+    planned.push(result);
+  }
+  const stable = stabilizeStateTargets(clientId, planned);
+  if (stable) return stable;
+
+  const boundary = backups.at(-1)!.name;
+  let journal: LoadedEjectJournal;
+  try {
+    journal = createEjectJournal(clientId, boundary, planned);
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `could not persist the eject recovery journal before writing configs: ${errorMessage(error)}`,
+    );
+  }
+  return applyJournal(clientId, journal);
+}
+
+function planRestore(
+  clientId: ClientId,
+  sourcePath: string,
+  backups: ValidBackup[],
+  force: boolean,
+): PlannedRestore | EjectResult {
+  const pristine = backups[0]!;
+  const latest = backups.at(-1)!;
+  let topology: Pick<BackupManifest, "writePath" | "symlinkTarget">;
+  try {
+    topology = newestTopology(backups);
+  } catch (error) {
+    return integrityFailure(clientId, `${sourcePath}: ${errorMessage(error)}`, sourcePath);
+  }
   let writePath: string;
   try {
     writePath = validateWriteTopology(
-      targetPath,
-      manifest.writePath,
-      manifest.symlinkTarget,
+      sourcePath,
+      topology.writePath,
+      topology.symlinkTarget,
     );
   } catch (error) {
     return {
       client: clientId,
       action: "refused-modified",
-      configPath: targetPath,
-      detail: `config symlink/topology changed after sync — refusing restore: ${error instanceof Error ? error.message : String(error)}`,
+      configPath: sourcePath,
+      detail: `config symlink/topology changed after sync — refusing restore: ${errorMessage(error)}`,
     };
   }
-  // Config paths can be cwd-dependent; the guard must compare against the
-  // latest write to the SAME file, never a different candidate path.
-  const latest =
-    listBackups(clientId)
-      .filter((b) => b.manifest.sourcePath === targetPath)
-      .pop() ?? { dir: pristine.dir, manifest };
-
-  const originalPath = path.join(pristine.dir, "original");
-  if (!fs.existsSync(originalPath)) {
-    return { client: clientId, action: "no-backup", detail: "backup bytes missing" };
+  let originalBytes: Buffer;
+  try {
+    const originalPath = path.join(pristine.dir, "original");
+    const stat = fs.lstatSync(originalPath);
+    if (stat.isSymbolicLink() || !stat.isFile()) {
+      throw new Error("stored pristine bytes are not a regular file");
+    }
+    originalBytes = fs.readFileSync(originalPath);
+    if (sha256Hex(originalBytes) !== pristine.manifest.originalSha256) {
+      throw new Error("stored pristine bytes do not match their recorded hash");
+    }
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `${sourcePath}: ${errorMessage(error)} — not restoring`,
+      sourcePath,
+    );
   }
 
-  const originalBytes = fs.readFileSync(originalPath);
-  if (sha256Hex(originalBytes) !== manifest.originalSha256) {
-    return {
-      client: clientId,
-      action: "no-backup",
-      configPath: targetPath,
-      detail:
-        "BACKUP INTEGRITY FAILURE: stored bytes do not match their recorded hash — not restoring; inspect the backup dir",
-    };
-  }
+  const currentExists = fs.existsSync(writePath);
+  const currentBytes = currentExists ? fs.readFileSync(writePath) : null;
+  const stateFile =
+    CLIENTS.find((client) => client.id === clientId)?.stateFileBasename ===
+    path.basename(sourcePath);
+  const injectedEntries = backups
+    .map((backup) => normalizeSpawnEntry(backup.manifest.injectedEntry))
+    .filter((entry): entry is SpawnEntry => entry !== null);
 
-  const currentExists = fs.existsSync(targetPath);
-  const isStateFile =
-    CLIENTS.find((c) => c.id === clientId)?.stateFileBasename === path.basename(targetPath);
-  const injectedEntry = normalizeSpawnEntry(manifest.injectedEntry) ?? undefined;
-
-  // State file (~/.claude.json &c.): the client rewrites it constantly, so a
-  // byte-restore would revert every unrelated setting and the modified-guard
-  // would refuse forever. Restore KEY-LEVEL — put the ORIGINAL servers back,
-  // KEEP servers the user added after sync (never destroy in-between work),
-  // preserve all other live keys (M2). --force explicitly requests the raw
-  // byte-restore instead.
-  if (isStateFile && currentExists && !opts.force) {
-    if (!injectedEntry) {
+  if (stateFile && currentBytes && !force) {
+    if (!normalizeSpawnEntry(latest.manifest.injectedEntry)) {
       return {
         client: clientId,
         action: "refused-modified",
-        configPath: targetPath,
+        configPath: sourcePath,
         detail:
           "legacy backup has no exact injected-entry identity; refusing key-level deletion — use --force for an explicit pristine byte restore",
       };
     }
     try {
-      const restored = restoreServersKeyLevel(
-        fs.readFileSync(targetPath, "utf8"),
+      const desired = restoreServersKeyLevel(
+        currentBytes.toString("utf8"),
         originalBytes.toString("utf8"),
-        injectedEntry,
+        injectedEntries,
       );
-      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-      const checkedWritePath = validateWriteTopology(
-        targetPath,
-        manifest.writePath,
-        manifest.symlinkTarget,
-      );
-      atomicWriteFileSync(checkedWritePath, restored);
-      return finishEject(clientId, targetPath, {
-        detail: "key-level restore (state file — live settings and post-sync servers preserved)",
-      });
+      return {
+        sourcePath,
+        ...(topology.writePath !== undefined
+          ? { writePath: topology.writePath }
+          : {}),
+        ...(topology.symlinkTarget !== undefined
+          ? { symlinkTarget: topology.symlinkTarget }
+          : {}),
+        beforeSha256: sha256Hex(currentBytes),
+        desiredBytes: Buffer.from(desired),
+        stateContext: { originalBytes, injectedEntries },
+      };
     } catch {
-      // Current file unparseable → fall through to the GUARDED byte path.
+      // An unparseable state file uses the guarded byte-for-byte path below.
     }
   }
 
-  // Byte-for-byte restore (dedicated MCP files — preserves comments/formatting;
-  // the --force override; and the fallback for an unparseable state file).
-  if (!currentExists) {
-    if (!opts.force) {
-      return {
-        client: clientId,
-        action: "missing-file",
-        configPath: targetPath,
-        detail: "config file no longer exists; use --force to recreate it from backup",
-      };
-    }
-  } else {
-    const currentSha = sha256Hex(fs.readFileSync(targetPath));
-    if (currentSha !== latest.manifest.writtenSha256 && !opts.force) {
-      return {
-        client: clientId,
-        action: "refused-modified",
-        configPath: targetPath,
-        detail:
-          "config was modified after sync — refusing to overwrite those edits; re-run with --force to restore the pristine backup anyway",
-      };
-    }
+  if (!currentBytes && !force) {
+    return {
+      client: clientId,
+      action: "missing-file",
+      configPath: sourcePath,
+      detail: "config file no longer exists; use --force to recreate it from backup",
+    };
   }
+  if (
+    currentBytes &&
+    sha256Hex(currentBytes) !== latest.manifest.writtenSha256 &&
+    !force
+  ) {
+    return {
+      client: clientId,
+      action: "refused-modified",
+      configPath: sourcePath,
+      detail:
+        "config was modified after sync — refusing to overwrite those edits; re-run with --force to restore the pristine backup anyway",
+    };
+  }
+  return {
+    sourcePath,
+    ...(topology.writePath !== undefined ? { writePath: topology.writePath } : {}),
+    ...(topology.symlinkTarget !== undefined
+      ? { symlinkTarget: topology.symlinkTarget }
+      : {}),
+    beforeSha256: currentBytes ? sha256Hex(currentBytes) : null,
+    desiredBytes: originalBytes,
+  };
+}
 
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  writePath = validateWriteTopology(
-    targetPath,
-    manifest.writePath,
-    manifest.symlinkTarget,
+function validateManifest(clientId: ClientId, backup: ValidBackup): void {
+  const { manifest } = backup;
+  if (
+    manifest.client !== clientId ||
+    typeof manifest.sourcePath !== "string" ||
+    !path.isAbsolute(manifest.sourcePath) ||
+    manifest.timestamp !== backup.name ||
+    !/^[a-f0-9]{64}$/.test(manifest.originalSha256) ||
+    !/^[a-f0-9]{64}$/.test(manifest.writtenSha256) ||
+    (manifest.writePath !== undefined &&
+      (typeof manifest.writePath !== "string" ||
+        !path.isAbsolute(manifest.writePath))) ||
+    (manifest.symlinkTarget !== undefined &&
+      typeof manifest.symlinkTarget !== "string") ||
+    (manifest.symlinkTarget !== undefined && manifest.writePath === undefined)
+  ) {
+    throw new Error(
+      `backup ${backup.name} has invalid or mismatched manifest fields`,
+    );
+  }
+  const originalPath = path.join(backup.dir, "original");
+  const originalStat = fs.lstatSync(originalPath);
+  if (originalStat.isSymbolicLink() || !originalStat.isFile()) {
+    throw new Error(`backup ${backup.name} original is not a regular file`);
+  }
+  if (sha256Hex(fs.readFileSync(originalPath)) !== manifest.originalSha256) {
+    throw new Error(`backup ${backup.name} original bytes failed their hash check`);
+  }
+}
+
+function newestTopology(
+  backups: ValidBackup[],
+): Pick<BackupManifest, "writePath" | "symlinkTarget"> {
+  const recorded = backups.filter(
+    (backup) =>
+      backup.manifest.writePath !== undefined ||
+      backup.manifest.symlinkTarget !== undefined,
   );
-  atomicWriteFileSync(writePath, originalBytes);
-  return finishEject(clientId, targetPath, {});
+  if (recorded.length === 0) return {};
+  const newest = recorded.at(-1)!.manifest;
+  for (const backup of recorded) {
+    if (
+      backup.manifest.writePath !== newest.writePath ||
+      backup.manifest.symlinkTarget !== newest.symlinkTarget
+    ) {
+      throw new Error(
+        "write topology changed between backups; refusing to guess which target owns the pristine bytes",
+      );
+    }
+  }
+  return {
+    ...(newest.writePath !== undefined ? { writePath: newest.writePath } : {}),
+    ...(newest.symlinkTarget !== undefined
+      ? { symlinkTarget: newest.symlinkTarget }
+      : {}),
+  };
 }
 
 /**
- * The config is restored — now CLOSE THE ERA, durably, before we call this a
- * success. Archiving (the directory rename) is only tidy-up and is allowed to
- * fail; the closed-through marker is what actually prevents a later eject from
- * reaching back into this era and restoring stale bytes over the user's config
- * (R5-02). If even the marker cannot be written we say so loudly rather than
- * returning a clean "restored" that quietly leaves the trap armed.
+ * Apply or resume a durable journal. Every target is preflighted before the
+ * first write. A desired hash means a prior write landed, a before hash means
+ * it remains safe to apply, and any third hash is a user change we refuse.
  */
-function finishEject(clientId: ClientId, targetPath: string, opts: { detail?: string }): EjectResult {
-  // Two independent ways to close an era: record the boundary, or move the whole
-  // era's backups out of reach. EITHER is sufficient; only if BOTH fail is a later
-  // eject still able to restore this era's stale bytes.
-  const marked = closeEra(clientId);
-  const archived = archiveEra(clientId);
-  if (!marked && !archived) {
-    return {
-      client: clientId,
-      action: "restored",
-      configPath: targetPath,
-      detail:
-        "restored, BUT the backup era could not be closed (backups dir not writable) — " +
-        "fix permissions on ~/.roster/backups and re-run `roster eject`, or a later eject could restore these stale bytes",
-    };
+function applyJournal(
+  clientId: ClientId,
+  journal: LoadedEjectJournal,
+): EjectResult {
+  const restoredPaths = journal.plan.targets.map((target) => target.sourcePath);
+  let alreadyClosed: string | null;
+  try {
+    alreadyClosed = readClosedThrough(clientId);
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `the backup era boundary is unreadable or corrupt: ${errorMessage(error)}`,
+    );
   }
-  return { client: clientId, action: "restored", configPath: targetPath, ...opts };
+  if (alreadyClosed !== null && alreadyClosed >= journal.plan.boundary) {
+    try {
+      clearEjectJournal(journal);
+    } catch (error) {
+      return integrityFailure(
+        clientId,
+        `the eject era is closed but its recovery journal could not be cleared: ${errorMessage(error)}`,
+      );
+    }
+    archiveEraThrough(clientId, journal.plan.boundary);
+    return restoredResult(clientId, restoredPaths, "completed interrupted eject cleanup");
+  }
+
+  const prepared: Array<{
+    target: EjectJournalTarget;
+    desiredBytes: Buffer;
+    writePath: string;
+    pending: boolean;
+  }> = [];
+  for (const target of journal.plan.targets) {
+    let desiredBytes: Buffer;
+    let writePath: string;
+    try {
+      desiredBytes = readDesiredBytes(journal, target);
+      writePath = validateWriteTopology(
+        target.sourcePath,
+        target.writePath,
+        target.symlinkTarget,
+      );
+    } catch (error) {
+      return integrityFailure(
+        clientId,
+        `${target.sourcePath}: pending eject recovery failed validation: ${errorMessage(error)}`,
+        target.sourcePath,
+      );
+    }
+    const currentSha256 = hashIfPresent(writePath);
+    if (currentSha256 === target.desiredSha256) {
+      prepared.push({ target, desiredBytes, writePath, pending: false });
+      continue;
+    }
+    if (currentSha256 !== target.beforeSha256) {
+      return integrityFailure(
+        clientId,
+        `${target.sourcePath}: config changed to a third state during interrupted eject; refusing to overwrite it`,
+        target.sourcePath,
+      );
+    }
+    prepared.push({ target, desiredBytes, writePath, pending: true });
+  }
+
+  for (const item of prepared) {
+    if (!item.pending) continue;
+    try {
+      const checkedWritePath = validateWriteTopology(
+        item.target.sourcePath,
+        item.target.writePath,
+        item.target.symlinkTarget,
+      );
+      const currentSha256 = hashIfPresent(checkedWritePath);
+      if (currentSha256 === item.target.desiredSha256) continue;
+      if (currentSha256 !== item.target.beforeSha256) {
+        throw new Error("config changed after eject preflight");
+      }
+      fs.mkdirSync(path.dirname(item.target.sourcePath), {
+        recursive: true,
+        mode: PRIVATE_DIR,
+      });
+      const finalWritePath = validateWriteTopology(
+        item.target.sourcePath,
+        item.target.writePath,
+        item.target.symlinkTarget,
+      );
+      atomicWriteFileSync(finalWritePath, item.desiredBytes);
+      if (hashIfPresent(finalWritePath) !== item.target.desiredSha256) {
+        throw new Error("restored bytes failed their post-write hash check");
+      }
+    } catch (error) {
+      return integrityFailure(
+        clientId,
+        `${item.target.sourcePath}: eject write stopped safely and remains recoverable: ${errorMessage(error)}`,
+        item.target.sourcePath,
+      );
+    }
+  }
+
+  let marked: boolean;
+  try {
+    marked = closeEraThrough(clientId, journal.plan.boundary);
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `the backup era boundary is unreadable or corrupt: ${errorMessage(error)}`,
+    );
+  }
+  if (!marked && !archiveEraThrough(clientId, journal.plan.boundary)) {
+    return integrityFailure(
+      clientId,
+      "configs were restored, but the exact backup era could not be closed; recovery data was retained",
+      restoredPaths[0],
+    );
+  }
+  try {
+    clearEjectJournal(journal);
+  } catch (error) {
+    return integrityFailure(
+      clientId,
+      `configs were restored and the era is closed, but recovery cleanup failed: ${errorMessage(error)}`,
+      restoredPaths[0],
+    );
+  }
+  if (marked) archiveEraThrough(clientId, journal.plan.boundary);
+  return restoredResult(clientId, restoredPaths);
+}
+
+function restoredResult(
+  clientId: ClientId,
+  restoredPaths: string[],
+  detail?: string,
+): EjectResult {
+  return {
+    client: clientId,
+    action: "restored",
+    configPath: restoredPaths[0],
+    restoredPaths,
+    ...(detail ? { detail } : {}),
+  };
+}
+
+function hashIfPresent(target: string): string | null {
+  try {
+    return sha256Hex(fs.readFileSync(target));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function integrityFailure(
+  clientId: ClientId,
+  detail: string,
+  configPath?: string,
+): EjectResult {
+  return {
+    client: clientId,
+    action: "integrity-error",
+    ...(configPath ? { configPath } : {}),
+    detail: `BACKUP INTEGRITY FAILURE: ${detail}`,
+  };
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * State files can change while eject is planning. Require a full stable pass
+ * immediately before journal publication; every observed change is folded into
+ * the desired key-level merge. A continuously changing file is refused.
+ */
+function stabilizeStateTargets(
+  clientId: ClientId,
+  targets: PlannedRestore[],
+): EjectResult | null {
+  for (let pass = 0; pass < 4; pass++) {
+    let changed = false;
+    for (const target of targets) {
+      if (!target.stateContext) continue;
+      let writePath: string;
+      try {
+        writePath = validateWriteTopology(
+          target.sourcePath,
+          target.writePath,
+          target.symlinkTarget,
+        );
+      } catch (error) {
+        return {
+          client: clientId,
+          action: "refused-modified",
+          configPath: target.sourcePath,
+          detail: `config topology changed while planning eject: ${errorMessage(error)}`,
+        };
+      }
+      if (!fs.existsSync(writePath)) {
+        return {
+          client: clientId,
+          action: "refused-modified",
+          configPath: target.sourcePath,
+          detail: "state file disappeared while planning eject",
+        };
+      }
+      const currentBytes = fs.readFileSync(writePath);
+      const currentSha256 = sha256Hex(currentBytes);
+      if (currentSha256 === target.beforeSha256) continue;
+      try {
+        target.desiredBytes = Buffer.from(
+          restoreServersKeyLevel(
+            currentBytes.toString("utf8"),
+            target.stateContext.originalBytes.toString("utf8"),
+            target.stateContext.injectedEntries,
+          ),
+        );
+      } catch {
+        return {
+          client: clientId,
+          action: "refused-modified",
+          configPath: target.sourcePath,
+          detail: "state file became unparseable while planning eject",
+        };
+      }
+      target.beforeSha256 = currentSha256;
+      changed = true;
+    }
+    if (!changed) return null;
+  }
+  return {
+    client: clientId,
+    action: "refused-modified",
+    detail: "state files kept changing while eject was planning; retry when the client is idle",
+  };
 }
 
 /**
@@ -207,7 +576,7 @@ function finishEject(clientId: ClientId, targetPath: string, opts: { detail?: st
 function restoreServersKeyLevel(
   currentContent: string,
   originalContent: string,
-  injected: SpawnEntry,
+  injectedEntries: readonly SpawnEntry[],
 ): string {
   const current = parseJsonc(currentContent);
   if (current === null || typeof current !== "object" || Array.isArray(current)) {
@@ -224,7 +593,9 @@ function restoreServersKeyLevel(
       ? { ...(cur.mcpServers as Record<string, unknown>) }
       : {};
   for (const [name, entry] of Object.entries(currentServers)) {
-    if (sameEntry(entry, injected)) delete currentServers[name];
+    if (injectedEntries.some((injected) => sameEntry(entry, injected))) {
+      delete currentServers[name];
+    }
   }
   const merged = { ...(origServers ?? {}), ...currentServers };
   if (Object.keys(merged).length === 0 && origServers === undefined) {
@@ -236,20 +607,30 @@ function restoreServersKeyLevel(
 }
 
 /**
- * Move the whole era's backups aside. Tidy-up, and a SECOND way to close the era:
- * if the directory is gone, no later eject can reach its backups either. Still
- * best-effort — a failed archive must never fail the restore — but its success or
- * failure is now reported, because correctness depends on at least one of the two
- * closures landing (see finishEject).
+ * Archive only the planned boundary. Normally no newer backup can exist because
+ * sync and eject share a client lock and sync refuses a pending journal, so the
+ * whole client directory can move atomically. The partial path is a fail-safe
+ * for externally modified backup trees.
  */
-function archiveEra(clientId: ClientId): boolean {
+function archiveEraThrough(clientId: ClientId, boundary: string): boolean {
   const clientDir = path.dirname(backupDirFor(clientId, "x"));
   if (!fs.existsSync(clientDir)) return true; // nothing left to archive
   const archived = `${clientDir}-ejected-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   try {
-    fs.renameSync(clientDir, archived);
+    const backupNames = fs
+      .readdirSync(clientDir)
+      .filter((name) => !name.startsWith(".") && name !== "latest")
+      .sort();
+    if (backupNames.every((name) => name <= boundary)) {
+      fs.renameSync(clientDir, archived);
+      return true;
+    }
+    fs.mkdirSync(archived, { mode: PRIVATE_DIR });
+    for (const name of backupNames.filter((name) => name <= boundary)) {
+      fs.renameSync(path.join(clientDir, name), path.join(archived, name));
+    }
     return true;
   } catch {
-    return false; // keep the restore result; the marker is the durable guarantee
+    return false;
   }
 }

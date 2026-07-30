@@ -10,6 +10,7 @@ import {
   rosterEntry,
   type SpawnEntry,
 } from "./entry.js";
+import { hasEjectJournal } from "./ejectJournal.js";
 import { parseJsonc } from "./jsonc.js";
 import { withFileLockSync } from "./lock.js";
 import {
@@ -70,6 +71,11 @@ export function syncClient(clientId: ClientId, now = new Date()): SyncResult {
 function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   const spec = CLIENTS.find((c) => c.id === clientId);
   if (!spec) throw new Error(`unknown client: ${clientId}`);
+  if (hasEjectJournal(clientId)) {
+    throw new Error(
+      `a previous ${clientId} eject is pending recovery; run \`roster eject --client ${clientId}\` before syncing again`,
+    );
+  }
   const configPath = spec.configPaths().find((p) => fs.existsSync(p));
   if (!configPath) return { client: clientId, configPath: "", action: "not-found" };
 
@@ -255,9 +261,14 @@ function closedThroughPath(clientId: ClientId): string {
 
 export function readClosedThrough(clientId: ClientId): string | null {
   try {
-    return fs.readFileSync(closedThroughPath(clientId), "utf8").trim() || null;
-  } catch {
-    return null; // no marker → nothing has been ejected yet
+    const value = fs.readFileSync(closedThroughPath(clientId), "utf8").trim();
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/.test(value)) {
+      throw new Error(`backup era marker for ${clientId} is corrupt`);
+    }
+    return value;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
   }
 }
 
@@ -267,12 +278,11 @@ export function readClosedThrough(clientId: ClientId): string | null {
  * refuse to report a clean success, because a future eject could otherwise reach
  * back into this era.
  */
-export function closeEra(clientId: ClientId): boolean {
-  const active = rawBackups(clientId);
-  const newest = active.at(-1);
-  if (!newest) return true; // nothing open to close
+export function closeEraThrough(clientId: ClientId, backupName: string): boolean {
+  const current = readClosedThrough(clientId);
+  if (current !== null && current >= backupName) return true;
   try {
-    atomicWriteFileSync(closedThroughPath(clientId), `${newest.name}\n`);
+    atomicWriteFileSync(closedThroughPath(clientId), `${backupName}\n`);
     return true;
   } catch {
     return false;
@@ -300,7 +310,12 @@ export function rawBackups(clientId: ClientId): RawBackup[] {
     if (closedThrough !== null && name <= closedThrough) continue; // already ejected
     const dir = path.join(clientDir, name);
     try {
-      if (!fs.statSync(dir).isDirectory()) continue;
+      const stat = fs.lstatSync(dir);
+      if (stat.isSymbolicLink()) {
+        out.push({ dir, name, manifest: null });
+        continue;
+      }
+      if (!stat.isDirectory()) continue;
     } catch {
       continue;
     }
