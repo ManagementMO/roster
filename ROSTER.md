@@ -7,7 +7,7 @@
 **Status:** Ideation complete, validated, ready for design → build.
 **Date:** July 3, 2026 (all research current to this date; 5 deep research passes + direct validation).
 **Author:** Mo (build-in-public, solo-first).
-**Launch target:** **July 28, 2026** — the day the new MCP spec ships.
+**Launch status:** The original **July 28, 2026** target passed without a release. No revised launch date has been set; dated milestones below are retained as the original plan, not current promises.
 
 ---
 

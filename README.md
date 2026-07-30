@@ -19,11 +19,11 @@ Four parts, one product:
 - **The router ("the Rotation").** An aggregating stdio MCP proxy for command-backed servers. Your supported write-client configs go from N `mcpServers` entries to one. Default mode is **transparent**: a faithful passthrough — every backend tool re-exported (namespaced), with titles, annotations, execution hints, and error codes preserved — while only derived outcomes are stored locally. Opt into **five mode** and the agent sees two meta-tools — `draft(need)` returns the best ≤5 capabilities for the stated task (K configurable 1–10), `call(tool, args)` proxies the invocation. When a drafted tool hard-fails, Roster can attach a structured suggestion for the next-ranked equivalent (the Sixth Man — suggest-only; Roster never executes the alternate).
 - **The Coach.** Local outcome learning. Outcome class, latency, hashes, and drift are stored on-device; raw prompts, arguments, and results are not. An opportunistic maintenance job refines routing toward the tools that work on *your* stack. No hosted Roster service or API key is involved.
 - **The League.** A static generator for public MCP server rankings, fed by the open-source Combine harness. Certification binds category, task signing, and descriptions to an exact authoritative suite/version; standings rank only within that identical comparison set. Named scores use `signedWilsonLb` only. Artifacts are validated before a complete atomic site swap, and box-score filenames include a SHA-256 identity suffix so lossy display names cannot collide. The committed run remains unsigned pre-season data until a human signing session occurs. See [docs/methodology.md](docs/methodology.md).
-- **The Playbook.** Skills (SKILL.md) are first-class alongside tools. Discovery is bounded and no-follow; unreadable entries, unsupported file types, symlinks, or scan-cap exhaustion produce a review finding. Review-flagged skills are withheld by default at the serving boundary and become available only through the explicit `ROSTER_ALLOW_REVIEW_SKILLS=1` operator override.
+- **The Playbook.** Skills (SKILL.md) are first-class alongside tools. Tree traversal and script reads are bounded and no-follow. A primary `SKILL.md` symlink is the deliberate exception for dotfile-managed installs: its descriptor is read with a bound and identity checks, it is always review-flagged, and it is withheld by default. Unreadable entries, unsupported file types, other symlinks, or scan-cap exhaustion likewise produce a review finding. Review-flagged skills become available only through the explicit `ROSTER_ALLOW_REVIEW_SKILLS=1` operator override.
 
 ## Quickstart
 
-> **Not yet published — coming July 28, 2026.** Roster is not on npm. The commands below are the planned install path and will not work today.
+> **Not yet published.** The original July 28, 2026 target passed without a release; no revised launch date has been set. Roster is not on npm, and the commands below are the planned install path rather than commands that work today.
 
 ```sh
 npx roster init   # detect clients, import every server, print your Day-0 receipt
@@ -57,7 +57,7 @@ The League is the show; these earn the install without it:
 
 **Under active construction (July 2026). Nothing here is released, and nothing unvalidated will ship.**
 
-- Launch target: **July 28, 2026** — the day the new MCP spec ships.
+- The original **July 28, 2026** launch target passed without a release; a revised date remains an owner decision.
 - **Not on npm yet.** Package-name clearance is pending; the CLI binary will be `roster` regardless of the final package name.
 - **No domains registered, nothing hosted.** The League static generator exists and builds locally from the committed artifact; no League deployment, badge origin, or telemetry endpoint exists.
 - What exists today: a pnpm/TypeScript monorepo (`packages/router`, `coach`, `cli`, `combine`, `playbook`, `shared`) with CI, built against the milestones in [ROSTER-BUILD-HANDOFF.md](ROSTER-BUILD-HANDOFF.md). Strategy and decision records: [ROSTER.md](ROSTER.md), [ROSTER-STATE-AND-DECISIONS.md](ROSTER-STATE-AND-DECISIONS.md).

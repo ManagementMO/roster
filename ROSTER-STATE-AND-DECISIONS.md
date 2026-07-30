@@ -1,5 +1,9 @@
 # ROSTER — State of Play & Decision Brief
 
+> **Schedule note (2026-07-30):** The original July 28 launch target recorded
+> below passed without a release. Those entries remain as decision history; a
+> revised launch date has not been set.
+
 > **What this document is:** the synthesis of the entire ideation → research → verification → red-team cycle (July 3–4, 2026), written for two readers: **Mo**, to finalize the open decisions, and **future agents**, to understand exactly where truth lives before touching anything.
 >
 > **Precedence rule (updated 2026-07-04): the D5 consolidation pass has been EXECUTED.** The handoff (`ROSTER-BUILD-HANDOFF.md`) is authoritative for build; this file is the decision log, binding-laws record, and red-team archive. The 11 contradictions in §3.4 are resolved.
