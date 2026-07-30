@@ -52,6 +52,58 @@ function processIsAlive(pid: number): boolean {
   }
 }
 
+/**
+ * Reclaim a lock whose recorded owner is provably dead — ATOMICALLY, so two
+ * contenders can never both reclaim the same stale lock and enter the critical
+ * section together (NEW-2). The reviewed base did `readOwner(dir)` then a blind
+ * `rmSync(dir)`; between those steps another process could reclaim and acquire,
+ * and the first process's `rmSync` then deleted that LIVE lock before its own
+ * `mkdir` succeeded — two owners at once.
+ *
+ * The rename is the serialization point: `rename(dir, claim)` moves whatever
+ * inode is at `dir` atomically, so exactly one racer can move a given lock; the
+ * loser gets ENOENT. The winner then verifies the moved directory is the SAME
+ * dead owner it decided to reclaim (pid AND token) and is still dead before
+ * removing it. If a live lock had slipped in (different token, or the pid is now
+ * alive), it is renamed back and never destroyed — the safe direction is always
+ * to preserve a lock we are not certain is dead.
+ *
+ * Returns "reclaimed" when `dir` is now free to (re)create, or "occupied" when
+ * another owner holds it (caller retries `mkdir`, which fails EEXIST and waits).
+ */
+export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" | "occupied" {
+  // Never treat a symlink as our lock directory: a hostile or stray symlink at
+  // the lock path must not let a rename/remove escape the locks root.
+  try {
+    if (fs.lstatSync(dir).isSymbolicLink()) return "occupied";
+  } catch {
+    return "reclaimed"; // vanished underneath us → free to retry
+  }
+  const claim = `${dir}.reclaim-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
+  try {
+    fs.renameSync(dir, claim);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "occupied"; // lost the race
+    throw error;
+  }
+  const moved = readOwner(claim);
+  const isExactlyTheDeadLock =
+    moved !== null && moved.pid === observed.pid && moved.token === observed.token;
+  if (isExactlyTheDeadLock && !processIsAlive(moved.pid)) {
+    fs.rmSync(claim, { recursive: true, force: true });
+    return "reclaimed";
+  }
+  // We moved something we did not intend to reclaim (a live lock replaced the
+  // dead one between our read and our rename). Put it back; if the slot was
+  // re-taken meanwhile, leave the claim dir for later GC rather than destroy it.
+  try {
+    fs.renameSync(claim, dir);
+  } catch {
+    /* slot reoccupied — never delete a lock we do not own */
+  }
+  return "occupied";
+}
+
 function acquire(key: string): { dir: string; token: string } {
   const root = path.join(rosterHome(), "locks");
   fs.mkdirSync(root, { recursive: true, mode: PRIVATE_DIR });
@@ -80,12 +132,10 @@ function acquire(key: string): { dir: string; token: string } {
 
     const owner = readOwner(dir);
     if (owner && !processIsAlive(owner.pid)) {
-      try {
-        fs.rmSync(dir, { recursive: true });
-        continue;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
-      }
+      // Atomic, token-verified reclaim (see reclaimStaleLock). Only skip the
+      // backoff when we actually freed the slot; if a live lock now holds it,
+      // fall through to the deadline + poll so we cannot spin.
+      if (reclaimStaleLock(dir, owner) === "reclaimed") continue;
     }
     if (Date.now() >= deadline) {
       throw new Error(
