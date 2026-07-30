@@ -53,7 +53,7 @@ The site builder treats every artifact field as a claim. It validates canonical 
 
 ## 6. Drift events
 
-Roster hashes each tool's (name, description, inputSchema, **outputSchema**, body) at every connect. A change raises a **drift event**: the affected tool/server is quarantined from default rosters pending a re-run of its Combine suite, and the event enters the server's public drift history. A dedicated drift column in League standings follows. **(implementation pending)**
+Roster hashes each tool's full contract at every connect — name, description, title, **annotations**, inputSchema, **outputSchema**, **execution**, and body — over a canonical (key-sorted) serialization so field order can't hide a change. Annotations and execution are in the fingerprint deliberately: a tool that flips a safety hint (e.g. `readOnlyHint`/`destructiveHint`) or changes how it runs must raise drift, not slip through as "same definition." A change raises a **drift event**: the affected tool/server is quarantined from default rosters pending a re-run of its Combine suite, and the event enters the server's public drift history. A dedicated drift column in League standings follows. **(implementation pending)**
 
 Connect-time hashing is the reliable drift mechanism — including for output-schema changes, since the MCP SDK validates structured output itself and throws before Roster could observe a runtime mismatch. A tool that is fully *removed* and later *re-added* with a changed definition is **still caught**: a tombstone (`removed_capability`) carries the last-seen hash forward across the removal, so the re-add raises a drift event and re-quarantines rather than slipping in as new. An interrupted quarantine dwell is likewise preserved across a remove/re-add.
 
