@@ -299,6 +299,36 @@ tasks:
     }
   }, 30_000);
 
+  it("does not hang or certify when a reading verifier meets a hostile FIFO", async () => {
+    // A named pipe with no writer makes the OLD fs.readFileSync open() block the
+    // verify phase forever (there is no verify-phase timeout). The suite MUST
+    // still complete and report a verify failure, never hang. The test's own
+    // timeout is the liveness assertion: on the unfixed runner it is exceeded.
+    const fifoSuite = parseSuite(`
+suite: hostile-fifo
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: fifo.file-contains
+    invoke: { tool: create_fifo, args: { path: "pipe-contains" } }
+    verify:
+      - { kind: fileContains, path: "pipe-contains", contains: "anything" }
+  - id: fifo.file-equals
+    invoke: { tool: create_fifo, args: { path: "pipe-equals" } }
+    verify:
+      - { kind: fileEquals, path: "pipe-equals", equals: "anything" }
+`);
+    const run = await runSuite(fifoSuite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+    const byId = Object.fromEntries(run.results.map((r) => [r.taskId, r]));
+    expect(byId["fifo.file-contains"]).toMatchObject({ pass: false, stage: "verify" });
+    expect(byId["fifo.file-equals"]).toMatchObject({ pass: false, stage: "verify" });
+  }, 20_000);
+
   it("accepts contained filenames that merely begin with two dots", async () => {
     const suite = parseSuite(`
 suite: dot-prefix

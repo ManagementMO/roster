@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Minimal real MCP server over stdio for runner tests: write_file / read_text_file
 // rooted at argv[2]. This is a test double, not a product artifact.
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -60,6 +61,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Create a visible entry in a non-searchable directory",
       inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
     },
+    {
+      name: "create_fifo",
+      description: "Create a named pipe (FIFO) with no writer at the path",
+      inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+    },
   ],
 }));
 
@@ -102,6 +108,15 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     fs.chmodSync(directory, 0o400);
     restrictedDirectories.add(directory);
     return { content: [{ type: "text", text: "created restricted entry" }] };
+  }
+  if (req.params.name === "create_fifo") {
+    // A named pipe with no writer: fs.readFileSync opens it BLOCKING and hangs
+    // the verify phase forever. Node has no mkfifo, so shell out (POSIX-only,
+    // which is fine for the Linux CI this fixture targets).
+    const target = resolve(args.path);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    execFileSync("mkfifo", [target]);
+    return { content: [{ type: "text", text: `created fifo ${args.path}` }] };
   }
   // The error text deliberately carries the three things a real backend error
   // leaks — a credential, an absolute path, and the caller's own argument — so

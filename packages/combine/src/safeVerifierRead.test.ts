@@ -1,0 +1,77 @@
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { readVerifierFile } from "./safeVerifierRead.js";
+
+/**
+ * L8. The Combine's reading verifiers used `fs.readFileSync(path, "utf8")` on an
+ * attacker-controlled sandbox (contributed suites + probed servers are both
+ * untrusted). `readVerifierFile` replaces it with a descriptor-pinned read that
+ * cannot hang on a FIFO, OOM on a huge file, or follow a symlink swapped in after
+ * the path was validated. These tests exercise those three properties directly.
+ */
+const dirs: string[] = [];
+afterEach(() => {
+  for (const d of dirs) fs.rmSync(d, { recursive: true, force: true });
+  dirs.length = 0;
+});
+function tmp(): string {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "roster-verread-"));
+  dirs.push(d);
+  return d;
+}
+
+describe("readVerifierFile: safe, bounded, no-follow verifier read", () => {
+  it("reads a regular file exactly and reports no truncation", () => {
+    const d = tmp();
+    const p = path.join(d, "f.txt");
+    fs.writeFileSync(p, "hello world");
+    expect(readVerifierFile(p)).toEqual({ text: "hello world", truncated: false });
+  });
+
+  it("bounds a large file to the cap and reports truncation (no unbounded slurp)", () => {
+    const d = tmp();
+    const p = path.join(d, "big.txt");
+    fs.writeFileSync(p, "x".repeat(10_000));
+    const read = readVerifierFile(p, 16);
+    expect(read.truncated).toBe(true);
+    expect(read.text.length).toBeLessThanOrEqual(16);
+  });
+
+  it("refuses a FIFO instead of blocking forever on the open (liveness)", () => {
+    const d = tmp();
+    const fifo = path.join(d, "pipe");
+    execFileSync("mkfifo", [fifo]);
+    // With the unsafe read this call blocks the event loop on open() with no
+    // writer and the test times out; the safe read throws immediately.
+    expect(() => readVerifierFile(fifo)).toThrow(/non-regular file/);
+  }, 8_000);
+
+  it("refuses a directory (only regular files are read)", () => {
+    const d = tmp();
+    const sub = path.join(d, "sub");
+    fs.mkdirSync(sub);
+    expect(() => readVerifierFile(sub)).toThrow(/non-regular file/);
+  });
+
+  it("does not follow a symlink at the final component (no-follow / TOCTOU)", () => {
+    const d = tmp();
+    const real = path.join(d, "real.txt");
+    fs.writeFileSync(real, "SECRET_TARGET_CONTENT");
+    const link = path.join(d, "link.txt");
+    fs.symlinkSync(real, link);
+    // O_NOFOLLOW fails the open (ELOOP) rather than reading through the link, so
+    // the verifier can never be tricked into reading a swapped-in symlink.
+    expect(() => readVerifierFile(link)).toThrow();
+    // And it certainly never returns the link target's content.
+    let leaked = "";
+    try {
+      leaked = readVerifierFile(link).text;
+    } catch {
+      /* expected */
+    }
+    expect(leaked).not.toContain("SECRET_TARGET_CONTENT");
+  });
+});
