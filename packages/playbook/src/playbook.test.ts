@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseSkillMd } from "./skill.js";
 import { MAX_SKILL_MD_BYTES, scanSkillLibrary, scanSkillSources } from "./scan.js";
 import { TRUST_RULES, trustScan } from "./trust.js";
@@ -485,6 +485,37 @@ describe("trust scan input safety", () => {
       expect(skill!.scanWarnings).toContain("symlink:SKILL.md"); // …but never trusted
       expect(trustScan(skill!).status).toBe("review");
     } finally {
+      fs.rmSync(real, { force: true });
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("retains the symlink review flag if SKILL.md is replaced after reading", () => {
+    const real = path.join(tmp, "..", `roster-raced-${process.pid}.md`);
+    fs.writeFileSync(real, "---\nname: raced\ndescription: linked skill\n---\n\nlinked body\n");
+    const dir = path.join(tmp, "raced");
+    const skillMd = path.join(dir, "SKILL.md");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.symlinkSync(real, skillMd);
+
+    // Swap the name only after its descriptor has been read and closed. The
+    // subsequent filesystem walk therefore sees a plain regular file; the
+    // bounded reader itself must carry forward the fact that it followed a link.
+    const realClose = fs.closeSync.bind(fs);
+    const close = vi.spyOn(fs, "closeSync").mockImplementationOnce((fd) => {
+      realClose(fd);
+      fs.unlinkSync(skillMd);
+      fs.writeFileSync(
+        skillMd,
+        "---\nname: raced\ndescription: replacement\n---\n\nreplacement body\n",
+      );
+    });
+    try {
+      const skill = scanSkillLibrary(tmp).find((s) => s.slug === "raced");
+      expect(skill?.body).toContain("linked body");
+      expect(skill?.scanWarnings).toContain("symlink:SKILL.md");
+      expect(trustScan(skill!).status).toBe("review");
+    } finally {
+      close.mockRestore();
       fs.rmSync(real, { force: true });
     }
   });

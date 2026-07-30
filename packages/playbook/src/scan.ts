@@ -61,9 +61,9 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
     // security walk below already emits `symlink:SKILL.md` for it, which becomes
     // a review finding, so the skill is withheld at the serving boundary unless
     // the operator opts in. Locked by "flags a symlinked SKILL.md for review".
-    let head: { text: string; truncated: boolean };
+    let head: { text: string; truncated: boolean; symlinked: boolean };
     try {
-      head = readFileHead(skillMd, MAX_SKILL_MD_BYTES);
+      head = readFileHead(skillMd, MAX_SKILL_MD_BYTES, { allowSymlink: true });
     } catch {
       // Unreadable, or not a regular file (FIFO/device/directory): the skill is
       // not discovered at all, which is the fail-closed direction.
@@ -74,8 +74,11 @@ export function scanSkillLibrary(libraryDir: string): ParsedSkill[] {
     const resources = listResources(dir);
     const securityWalk = listScripts(dir);
     const scanWarnings = [
-      ...securityWalk.warnings,
-      ...(head.truncated ? [`skill-md-truncated:${MAX_SKILL_MD_BYTES}`] : []),
+      ...new Set([
+        ...securityWalk.warnings,
+        ...(head.symlinked ? ["symlink:SKILL.md"] : []),
+        ...(head.truncated ? [`skill-md-truncated:${MAX_SKILL_MD_BYTES}`] : []),
+      ]),
     ].sort();
     skills.push({
       ...parsed,
