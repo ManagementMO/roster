@@ -195,7 +195,7 @@ function checkVerifier(
       // an OOM, or a read THROUGH the sandbox.
       let read: { text: string; truncated: boolean };
       try {
-        read = readVerifierFile(p);
+        read = readVerifierFile(p, { sandboxRoot: sandbox });
       } catch {
         return `expected ${verifier.path} to be a readable regular file`;
       }
@@ -210,7 +210,7 @@ function checkVerifier(
       if (!entryIsSafeExact(sandbox, p)) return `expected ${verifier.path} to exist`;
       let read: { text: string; truncated: boolean };
       try {
-        read = readVerifierFile(p);
+        read = readVerifierFile(p, { sandboxRoot: sandbox });
       } catch {
         return `expected ${verifier.path} to be a readable regular file`;
       }

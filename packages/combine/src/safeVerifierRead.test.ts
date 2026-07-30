@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readVerifierFile } from "./safeVerifierRead.js";
 
 /**
@@ -28,14 +28,17 @@ describe("readVerifierFile: safe, bounded, no-follow verifier read", () => {
     const d = tmp();
     const p = path.join(d, "f.txt");
     fs.writeFileSync(p, "hello world");
-    expect(readVerifierFile(p)).toEqual({ text: "hello world", truncated: false });
+    expect(readVerifierFile(p, { sandboxRoot: d })).toEqual({
+      text: "hello world",
+      truncated: false,
+    });
   });
 
   it("bounds a large file to the cap and reports truncation (no unbounded slurp)", () => {
     const d = tmp();
     const p = path.join(d, "big.txt");
     fs.writeFileSync(p, "x".repeat(10_000));
-    const read = readVerifierFile(p, 16);
+    const read = readVerifierFile(p, { sandboxRoot: d, maxBytes: 16 });
     expect(read.truncated).toBe(true);
     expect(read.text.length).toBeLessThanOrEqual(16);
   });
@@ -49,14 +52,14 @@ describe("readVerifierFile: safe, bounded, no-follow verifier read", () => {
     execFileSync("mkfifo", [fifo]);
     // With the unsafe read this call blocks the event loop on open() with no
     // writer and the test times out; the safe read throws immediately.
-    expect(() => readVerifierFile(fifo)).toThrow(/non-regular file/);
+    expect(() => readVerifierFile(fifo, { sandboxRoot: d })).toThrow(/non-regular file/);
   }, 8_000);
 
   it("refuses a directory (only regular files are read)", () => {
     const d = tmp();
     const sub = path.join(d, "sub");
     fs.mkdirSync(sub);
-    expect(() => readVerifierFile(sub)).toThrow(/non-regular file/);
+    expect(() => readVerifierFile(sub, { sandboxRoot: d })).toThrow(/non-regular file/);
   });
 
   // POSIX-only: O_NOFOLLOW does not exist on Windows (the flag degrades to 0),
@@ -70,14 +73,66 @@ describe("readVerifierFile: safe, bounded, no-follow verifier read", () => {
     fs.symlinkSync(real, link);
     // O_NOFOLLOW fails the open (ELOOP) rather than reading through the link, so
     // the verifier can never be tricked into reading a swapped-in symlink.
-    expect(() => readVerifierFile(link)).toThrow();
+    expect(() => readVerifierFile(link, { sandboxRoot: d })).toThrow();
     // And it certainly never returns the link target's content.
     let leaked = "";
     try {
-      leaked = readVerifierFile(link).text;
+      leaked = readVerifierFile(link, { sandboxRoot: d }).text;
     } catch {
       /* expected */
     }
     expect(leaked).not.toContain("SECRET_TARGET_CONTENT");
+  });
+
+  it.skipIf(process.platform === "win32")("rejects an intermediate-directory symlink swapped in during open", () => {
+    const d = tmp();
+    const sandbox = path.join(d, "sandbox");
+    const parent = path.join(sandbox, "parent");
+    const displaced = path.join(sandbox, "parent-before-swap");
+    const outside = path.join(d, "outside");
+    const target = path.join(parent, "result.txt");
+    fs.mkdirSync(parent, { recursive: true });
+    fs.mkdirSync(outside);
+    fs.writeFileSync(target, "SAFE_SANDBOX_CONTENT");
+    fs.writeFileSync(path.join(outside, "result.txt"), "OUTSIDE_SECRET_CONTENT");
+
+    const realOpen = fs.openSync.bind(fs);
+    const open = vi.spyOn(fs, "openSync").mockImplementationOnce(((...args: Parameters<typeof fs.openSync>) => {
+      fs.renameSync(parent, displaced);
+      fs.symlinkSync(outside, parent, "dir");
+      return realOpen(...args);
+    }) as typeof fs.openSync);
+    try {
+      expect(() => readVerifierFile(target, { sandboxRoot: sandbox })).toThrow();
+    } finally {
+      open.mockRestore();
+    }
+  });
+
+  it("rejects an intermediate directory replaced during open (platform-neutral identity lock)", () => {
+    const d = tmp();
+    const sandbox = path.join(d, "sandbox");
+    const parent = path.join(sandbox, "parent");
+    const displaced = path.join(sandbox, "parent-before-swap");
+    const replacement = path.join(sandbox, "replacement");
+    const target = path.join(parent, "result.txt");
+    fs.mkdirSync(parent, { recursive: true });
+    fs.mkdirSync(replacement);
+    fs.writeFileSync(target, "ORIGINAL_CONTENT");
+    fs.writeFileSync(path.join(replacement, "result.txt"), "REPLACEMENT_CONTENT");
+
+    const realOpen = fs.openSync.bind(fs);
+    const open = vi.spyOn(fs, "openSync").mockImplementationOnce(((...args: Parameters<typeof fs.openSync>) => {
+      fs.renameSync(parent, displaced);
+      fs.renameSync(replacement, parent);
+      return realOpen(...args);
+    }) as typeof fs.openSync);
+    try {
+      expect(() => readVerifierFile(target, { sandboxRoot: sandbox })).toThrow(
+        /changed while being opened/,
+      );
+    } finally {
+      open.mockRestore();
+    }
   });
 });
