@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { assertFailProbeArtifact } from "./failProbes.js";
 import { parseSuite, template } from "./task.js";
 import { runSuite } from "./runner.js";
 import { buildLabResults } from "./results.js";
@@ -438,4 +439,72 @@ tasks:
     expect(r.stage).toBe("verify");
     expect(r.detail).toBe("content mismatch in a.txt"); // task-derived, safe, and diagnostic
   }, 30_000);
+});
+
+describe("fail-probe certification gate", () => {
+  const suite = parseSuite(`
+suite: verifier-fail-probes
+version: "1"
+category: filesystem
+tasks:
+  - id: probe.one
+    invoke: { tool: t, args: {} }
+    verify: [{ kind: fileExists, path: missing-one }]
+  - id: probe.two
+    invoke: { tool: t, args: {} }
+    verify: [{ kind: fileExists, path: missing-two }]
+`);
+  const validArtifact = () =>
+    buildLabResults(
+      [
+        {
+          server: "target",
+          suite: suite.suite,
+          suiteVersion: suite.version,
+          category: suite.category,
+          results: suite.tasks.map((task) => ({
+            taskId: task.id,
+            signed: false,
+            pass: false,
+            stage: "verify" as const,
+            detail: "suite-derived verifier failure",
+            latencyMs: 1,
+          })),
+        },
+      ],
+      new Date("2026-07-30T00:00:00Z"),
+    );
+
+  it("accepts complete unsigned probes only when every task reaches and fails verification", () => {
+    expect(assertFailProbeArtifact(suite, validArtifact())).toEqual({
+      taskCount: suite.tasks.length,
+    });
+  });
+
+  it("rejects false-green transport failures, passes, missing tasks, and signed probes", () => {
+    const transport = validArtifact();
+    transport.runs[0]!.results[0]!.stage = "transport";
+    expect(() => assertFailProbeArtifact(suite, transport)).toThrow(
+      /probe\.one.*verify.*transport/i,
+    );
+
+    const passed = validArtifact();
+    passed.runs[0]!.results[0]!.pass = true;
+    passed.runs[0]!.results[0]!.stage = null;
+    expect(() => assertFailProbeArtifact(suite, passed)).toThrow(
+      /probe\.one.*unexpectedly passed/i,
+    );
+
+    const incomplete = validArtifact();
+    incomplete.runs[0]!.results.pop();
+    expect(() => assertFailProbeArtifact(suite, incomplete)).toThrow(
+      /complete.*task coverage/i,
+    );
+
+    const signedSuite = structuredClone(suite);
+    signedSuite.tasks[0]!.signed = true;
+    expect(() => assertFailProbeArtifact(signedSuite, validArtifact())).toThrow(
+      /must be unsigned/i,
+    );
+  });
 });

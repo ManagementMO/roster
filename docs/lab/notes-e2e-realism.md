@@ -69,6 +69,10 @@ validates against it.
 **no outcome row at all** (hallucination failures are invisible to ratings — info);
 omitted draft_id → binds to the most recent draft (by design, measured).
 
+Historical note: that final behavior describes the experiment build. Round-5
+hardening removed implicit latest-draft borrowing; current omitted or unknown
+`draft_id` calls still execute but persist `need_hash = NULL`.
+
 **Soft-fail misattribution:** 5 rows marked `soft_fail=1`; only 2 were the intended
 retry marks (rows 7, 27 — the failed attempts). **3 were legitimate successes**,
 including session row 8 (success), retro-marked because call 11 later called the same

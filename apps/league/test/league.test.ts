@@ -396,6 +396,47 @@ describe("strict atomic site publication", () => {
     return data.runs[0]!;
   }
 
+  it("reopens staged files writable before fsync for Windows compatibility", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-windows-fsync-"));
+    const originalOpenSync = fs.openSync;
+    try {
+      const artifactsDir = path.join(dir, "artifacts");
+      const outDir = path.join(dir, "site");
+      fs.mkdirSync(artifactsDir);
+      writeRunArtifact(
+        artifactsDir,
+        "only",
+        "windows-fsync",
+        "2026-07-05T01:00:00.000Z",
+      );
+      fs.openSync = ((target, flags, ...rest) => {
+        const isStagedFile =
+          typeof target === "string" &&
+          target.includes(".staging-") &&
+          path.extname(target) === ".html";
+        if (isStagedFile && flags === "r") {
+          throw Object.assign(
+            new Error("simulated Windows fsync requires a writable descriptor"),
+            { code: "EPERM" },
+          );
+        }
+        return Reflect.apply(originalOpenSync, fs, [target, flags, ...rest]);
+      }) as typeof fs.openSync;
+
+      expect(() =>
+        buildSite({
+          artifactsDir,
+          suitesDir: path.join(repoRoot, "suites"),
+          outDir,
+        }),
+      ).not.toThrow();
+      expect(fs.existsSync(path.join(outDir, "index.html"))).toBe(true);
+    } finally {
+      fs.openSync = originalOpenSync;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("replaces the complete site so removed runs leave no stale box page", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-atomic-"));
     try {

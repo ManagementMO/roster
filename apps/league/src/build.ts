@@ -225,7 +225,10 @@ function publishCompleteSite(
     for (const [name, html] of rendered) {
       const target = path.join(staging, name);
       fs.writeFileSync(target, html, { mode: 0o600 });
-      const fd = fs.openSync(target, "r");
+      // Windows rejects fsync on a read-only file descriptor. Reopen the
+      // already-rendered file without truncation but with write access so the
+      // durability barrier is portable.
+      const fd = fs.openSync(target, "r+");
       try {
         fs.fsyncSync(fd);
       } finally {
