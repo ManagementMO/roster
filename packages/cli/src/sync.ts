@@ -18,7 +18,9 @@ import {
   mergeServers,
   PRIVATE_DIR,
   PRIVATE_FILE,
+  resolveWriteTopology,
   updateConfig,
+  validateWriteTopology,
 } from "./rosterfile.js";
 
 /** The four write clients (handoff §6.3). Read-import covers everything; writes stay narrow. */
@@ -36,6 +38,10 @@ export interface BackupManifest {
    * after syncing is theirs and survives (R5-01). Absent on pre-R5 backups.
    */
   injectedEntry?: SpawnEntry;
+  /** Resolved regular file atomically replaced while preserving sourcePath. */
+  writePath?: string;
+  /** Raw readlink value when sourcePath was a symlink. */
+  symlinkTarget?: string;
 }
 
 export interface SyncResult {
@@ -67,7 +73,8 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   const configPath = spec.configPaths().find((p) => fs.existsSync(p));
   if (!configPath) return { client: clientId, configPath: "", action: "not-found" };
 
-  const originalBytes = fs.readFileSync(configPath);
+  const topology = resolveWriteTopology(configPath);
+  const originalBytes = fs.readFileSync(topology.writePath);
 
   // Step 1 — import before we overwrite anything. ONLY the parse may fail
   // benignly (unparseable config = nothing to import). A failure of the import
@@ -121,6 +128,10 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
     writtenSha256: sha256Hex(rewritten),
     timestamp,
     injectedEntry, // exact identity for eject — never the key name (R5-01)
+    writePath: topology.writePath,
+    ...(topology.symlinkTarget !== undefined
+      ? { symlinkTarget: topology.symlinkTarget }
+      : {}),
   };
   fs.writeFileSync(path.join(stagingDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, {
     mode: PRIVATE_FILE,
@@ -129,7 +140,12 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp, { mode: PRIVATE_FILE });
 
   // Step 3 — atomic config replacement (private tmp + rename).
-  atomicWriteFileSync(configPath, rewritten);
+  const writePath = validateWriteTopology(
+    configPath,
+    manifest.writePath,
+    manifest.symlinkTarget,
+  );
+  atomicWriteFileSync(writePath, rewritten);
 
   return { client: clientId, configPath, action: "synced", backupDir, imported };
 }

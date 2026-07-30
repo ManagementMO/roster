@@ -15,6 +15,106 @@ import { rosterConfigPath, rosterHome } from "./paths.js";
 export const PRIVATE_FILE = 0o600;
 export const PRIVATE_DIR = 0o700;
 
+export interface WriteTopology {
+  sourcePath: string;
+  writePath: string;
+  symlinkTarget?: string;
+}
+
+/** Resolve a visible config path without replacing a symlink during atomic writes. */
+export function resolveWriteTopology(sourcePath: string): WriteTopology {
+  const source = path.resolve(sourcePath);
+  const stat = fs.lstatSync(source);
+  const writePath = fs.realpathSync(source);
+  if (stat.isSymbolicLink()) {
+    const symlinkTarget = fs.readlinkSync(source);
+    if (!fs.lstatSync(writePath).isFile()) {
+      throw new Error(`client config symlink target is not a regular file: ${sourcePath}`);
+    }
+    return { sourcePath: source, writePath, symlinkTarget };
+  }
+  if (!stat.isFile()) {
+    throw new Error(`client config is not a regular file: ${sourcePath}`);
+  }
+  return { sourcePath: source, writePath };
+}
+
+/**
+ * Resolve the deepest existing ancestor, then project any missing suffix below
+ * it. This keeps platform aliases such as macOS `/var` → `/private/var` from
+ * looking like a topology change while still detecting a removed/repointed
+ * user-controlled symlink in the path.
+ */
+function projectedRealPath(target: string): string {
+  const suffix: string[] = [];
+  let cursor = target;
+  for (;;) {
+    try {
+      return path.join(fs.realpathSync(cursor), ...suffix.reverse());
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      const parent = path.dirname(cursor);
+      if (parent === cursor) throw error;
+      suffix.push(path.basename(cursor));
+      cursor = parent;
+    }
+  }
+}
+
+/**
+ * Revalidate the exact source/write topology recorded at sync. Legacy manifests
+ * have neither optional field and retain their original direct-path behavior.
+ */
+export function validateWriteTopology(
+  sourcePath: string,
+  recordedWritePath?: string,
+  recordedSymlinkTarget?: string,
+): string {
+  const source = path.resolve(sourcePath);
+  if (recordedWritePath === undefined && recordedSymlinkTarget === undefined) return source;
+  if (recordedWritePath === undefined) {
+    throw new Error("recorded symlink topology is missing its write path");
+  }
+  const writePath = path.resolve(recordedWritePath);
+  if (recordedSymlinkTarget !== undefined) {
+    let sourceStat: fs.Stats;
+    try {
+      sourceStat = fs.lstatSync(source);
+    } catch {
+      throw new Error("recorded config symlink is missing");
+    }
+    if (!sourceStat.isSymbolicLink()) {
+      throw new Error("recorded config symlink was replaced");
+    }
+    if (fs.readlinkSync(source) !== recordedSymlinkTarget) {
+      throw new Error("recorded config symlink target changed");
+    }
+    if (fs.realpathSync(source) !== writePath) {
+      throw new Error("recorded config symlink now resolves to a different target");
+    }
+    if (!fs.lstatSync(writePath).isFile()) {
+      throw new Error("recorded config write target is not a regular file");
+    }
+    return writePath;
+  }
+  try {
+    const stat = fs.lstatSync(source);
+    if (stat.isSymbolicLink() || !stat.isFile()) {
+      throw new Error("recorded regular config changed filesystem type");
+    }
+    if (fs.realpathSync(source) !== writePath) {
+      throw new Error("recorded config parent symlink now resolves to a different target");
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    // A missing regular config remains eligible for the existing --force path.
+    if (projectedRealPath(source) !== writePath) {
+      throw new Error("recorded config parent symlink now resolves to a different target");
+    }
+  }
+  return writePath;
+}
+
 /** The target's current permissions, or undefined if it doesn't exist yet. */
 function existingMode(target: string): number | undefined {
   try {
@@ -43,12 +143,34 @@ function existingMode(target: string): number | undefined {
  */
 export function atomicWriteFileSync(target: string, data: string | Buffer, mode?: number): void {
   const tmp = `${target}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+  const finalMode = mode ?? existingMode(target) ?? PRIVATE_FILE;
+  let fd: number | undefined;
   try {
-    fs.writeFileSync(tmp, data, { mode: PRIVATE_FILE });
-    const finalMode = mode ?? existingMode(target) ?? PRIVATE_FILE;
-    fs.chmodSync(tmp, finalMode); // writeFileSync's mode is masked by umask; set it exactly
+    fd = fs.openSync(tmp, "wx", PRIVATE_FILE);
+    fs.writeFileSync(fd, data);
+    fs.fchmodSync(fd, finalMode);
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    fd = undefined;
     fs.renameSync(tmp, target);
+    try {
+      const parent = fs.openSync(path.dirname(target), "r");
+      try {
+        fs.fsyncSync(parent);
+      } finally {
+        fs.closeSync(parent);
+      }
+    } catch {
+      // Directory fsync is unavailable on some platforms/filesystems.
+    }
   } catch (err) {
+    if (fd !== undefined) {
+      try {
+        fs.closeSync(fd);
+      } catch {
+        /* best effort */
+      }
+    }
     try {
       fs.rmSync(tmp, { force: true });
     } catch {

@@ -4,7 +4,11 @@ import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId } from "./clients.js";
 import { normalizeSpawnEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
-import { atomicWriteFileSync, backupDirFor } from "./rosterfile.js";
+import {
+  atomicWriteFileSync,
+  backupDirFor,
+  validateWriteTopology,
+} from "./rosterfile.js";
 import { closeEra, listBackups, pristineRawBackup } from "./sync.js";
 
 export interface EjectResult {
@@ -43,6 +47,21 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   }
   const manifest = pristine.manifest;
   const targetPath = manifest.sourcePath;
+  let writePath: string;
+  try {
+    writePath = validateWriteTopology(
+      targetPath,
+      manifest.writePath,
+      manifest.symlinkTarget,
+    );
+  } catch (error) {
+    return {
+      client: clientId,
+      action: "refused-modified",
+      configPath: targetPath,
+      detail: `config symlink/topology changed after sync — refusing restore: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
   // Config paths can be cwd-dependent; the guard must compare against the
   // latest write to the SAME file, never a different candidate path.
   const latest =
@@ -94,7 +113,12 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
         injectedEntry,
       );
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-      atomicWriteFileSync(targetPath, restored);
+      const checkedWritePath = validateWriteTopology(
+        targetPath,
+        manifest.writePath,
+        manifest.symlinkTarget,
+      );
+      atomicWriteFileSync(checkedWritePath, restored);
       return finishEject(clientId, targetPath, {
         detail: "key-level restore (state file — live settings and post-sync servers preserved)",
       });
@@ -128,7 +152,12 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   }
 
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  atomicWriteFileSync(targetPath, originalBytes);
+  writePath = validateWriteTopology(
+    targetPath,
+    manifest.writePath,
+    manifest.symlinkTarget,
+  );
+  atomicWriteFileSync(writePath, originalBytes);
   return finishEject(clientId, targetPath, {});
 }
 

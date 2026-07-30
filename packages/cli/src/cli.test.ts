@@ -327,6 +327,99 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(Buffer.compare(fs.readFileSync(configPath), original)).toBe(0);
   });
 
+  it("handles a deleted ordinary config directory with --force", () => {
+    const configPath = write(
+      ".cursor/mcp.json",
+      `${JSON.stringify({ mcpServers: { github: { command: "github-mcp" } } })}\n`,
+    );
+    const original = fs.readFileSync(configPath);
+    syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+    fs.rmSync(path.dirname(configPath), { recursive: true });
+
+    expect(ejectClient("cursor").action).toBe("missing-file");
+    expect(ejectClient("cursor", { force: true }).action).toBe("restored");
+    expect(fs.readFileSync(configPath)).toEqual(original);
+  });
+
+  describe.skipIf(process.platform === "win32")("symlink-preserving client writes", () => {
+    const sourcePath = () => path.join(home, ".cursor/mcp.json");
+    const targetPath = () => path.join(home, "cursor-target.json");
+    const original = `${JSON.stringify({
+      theme: "dark",
+      mcpServers: { github: { command: "github-mcp" } },
+    }, null, 2)}\n`;
+
+    function installSymlink(target = targetPath()): string {
+      fs.mkdirSync(path.dirname(sourcePath()), { recursive: true });
+      fs.writeFileSync(target, original);
+      const rawTarget = path.relative(path.dirname(sourcePath()), target);
+      fs.symlinkSync(rawTarget, sourcePath());
+      return rawTarget;
+    }
+
+    it("sync and eject preserve the link and restore bytes through its original target", () => {
+      const rawTarget = installSymlink();
+
+      const synced = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(fs.lstatSync(sourcePath()).isSymbolicLink()).toBe(true);
+      expect(fs.readlinkSync(sourcePath())).toBe(rawTarget);
+      expect(fs.readFileSync(targetPath(), "utf8")).toContain('"roster"');
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(synced.backupDir!, "manifest.json"), "utf8"),
+      ) as { writePath?: string; symlinkTarget?: string };
+      expect(manifest.writePath).toBe(fs.realpathSync(targetPath()));
+      expect(manifest.symlinkTarget).toBe(rawTarget);
+
+      expect(ejectClient("cursor").action).toBe("restored");
+      expect(fs.lstatSync(sourcePath()).isSymbolicLink()).toBe(true);
+      expect(fs.readlinkSync(sourcePath())).toBe(rawTarget);
+      expect(fs.readFileSync(targetPath(), "utf8")).toBe(original);
+    });
+
+    it("refuses a repointed link without touching either target", () => {
+      installSymlink();
+      syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      const syncedBytes = fs.readFileSync(targetPath());
+      const secondTarget = path.join(home, "cursor-other.json");
+      fs.writeFileSync(secondTarget, syncedBytes);
+      fs.unlinkSync(sourcePath());
+      fs.symlinkSync(path.relative(path.dirname(sourcePath()), secondTarget), sourcePath());
+
+      const firstBefore = fs.readFileSync(targetPath());
+      const secondBefore = fs.readFileSync(secondTarget);
+      const result = ejectClient("cursor");
+      expect(result.action).toBe("refused-modified");
+      expect(result.detail).toMatch(/symlink|topology/i);
+      expect(fs.readFileSync(targetPath())).toEqual(firstBefore);
+      expect(fs.readFileSync(secondTarget)).toEqual(secondBefore);
+    });
+
+    it("refuses a repointed symlinked parent directory without touching either config", () => {
+      const firstDir = path.join(home, "cursor-dir-one");
+      const secondDir = path.join(home, "cursor-dir-two");
+      fs.mkdirSync(firstDir);
+      fs.mkdirSync(secondDir);
+      const firstConfig = path.join(firstDir, "mcp.json");
+      const secondConfig = path.join(secondDir, "mcp.json");
+      fs.writeFileSync(firstConfig, original);
+      fs.symlinkSync(firstDir, path.join(home, ".cursor"), "dir");
+
+      syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      const syncedBytes = fs.readFileSync(firstConfig);
+      fs.writeFileSync(secondConfig, syncedBytes);
+      fs.unlinkSync(path.join(home, ".cursor"));
+      fs.symlinkSync(secondDir, path.join(home, ".cursor"), "dir");
+
+      const firstBefore = fs.readFileSync(firstConfig);
+      const secondBefore = fs.readFileSync(secondConfig);
+      const result = ejectClient("cursor");
+      expect(result.action).toBe("refused-modified");
+      expect(result.detail).toMatch(/symlink|topology/i);
+      expect(fs.readFileSync(firstConfig)).toEqual(firstBefore);
+      expect(fs.readFileSync(secondConfig)).toEqual(secondBefore);
+    });
+  });
+
   it("eject with no backup is a clean no-op", () => {
     expect(ejectClient("cursor").action).toBe("no-backup");
   });
