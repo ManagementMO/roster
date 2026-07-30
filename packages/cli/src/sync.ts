@@ -4,7 +4,12 @@ import path from "node:path";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
-import { hasGlobalRoster, ourBinPath, rosterEntry, sameEntry, type SpawnEntry } from "./entry.js";
+import {
+  isOwnedRosterEntry,
+  normalizeSpawnEntry,
+  rosterEntry,
+  type SpawnEntry,
+} from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
 import { withFileLockSync } from "./lock.js";
 import {
@@ -75,13 +80,24 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   } catch {
     servers = []; // unparseable: the backup still protects the original bytes
   }
+  if (servers.some((server) => server.url && !server.command)) {
+    throw new Error(
+      "URL-only MCP servers cannot be synced yet: Roster routing is stdio-only; the client was left untouched",
+    );
+  }
+  const injectedEntry = rosterEntry();
+  const ownedEntries = ownedRosterEntries(clientId, injectedEntry);
   if (servers.length > 0) {
-    const { added } = updateConfig((config) => mergeServers(config, servers));
+    const { added } = updateConfig((config) => mergeServers(config, servers, ownedEntries));
     imported = added.length;
   }
 
-  const injectedEntry = rosterEntry();
-  const rewritten = rewriteConfig(clientId, originalBytes.toString("utf8"), injectedEntry);
+  const rewritten = rewriteConfig(
+    clientId,
+    originalBytes.toString("utf8"),
+    injectedEntry,
+    ownedEntries,
+  );
   if (rewritten === null) {
     return { client: clientId, configPath, action: "already-synced", imported };
   }
@@ -119,10 +135,15 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
 }
 
 /** Returns the new file content, or null when the config already points solely at Roster. */
-function rewriteConfig(clientId: ClientId, content: string, entry: SpawnEntry): string | null {
+function rewriteConfig(
+  clientId: ClientId,
+  content: string,
+  entry: SpawnEntry,
+  ownedEntries: readonly SpawnEntry[],
+): string | null {
   if (clientId === "codex") {
     const data = parseToml(content) as Record<string, unknown>;
-    if (isAlreadySynced(data.mcp_servers, entry)) return null;
+    if (isAlreadySynced(data.mcp_servers, ownedEntries)) return null;
     data.mcp_servers = { roster: entry };
     return `${stringifyToml(data)}\n`;
   }
@@ -135,53 +156,20 @@ function rewriteConfig(clientId: ClientId, content: string, entry: SpawnEntry): 
     throw new Error(`config is not a JSON object (got ${Array.isArray(data) ? "array" : typeof data})`);
   }
   const obj = data as Record<string, unknown>;
-  if (isAlreadySynced(obj.mcpServers, entry)) return null;
+  if (isAlreadySynced(obj.mcpServers, ownedEntries)) return null;
   obj.mcpServers = { roster: entry };
   return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
 /**
- * Is the servers map already a HEALTHY Roster-only install? Loose on FORM (global,
- * execPath+bin.js, or post-publish npx) so a re-sync from a machine that installs
- * differently doesn't loop — but "already synced" is a claim that the client will
- * actually reach US, so every form must be one we can stand behind:
- *
- *  - the exact entry we'd write now → current, leave it;
- *  - a bare `roster` → healthy ONLY if a trusted global roster actually exists.
- *    Round 5 (R5-01) found this branch returning true unconditionally: a config
- *    naming a `roster` binary that is a stranger's, or absent entirely, was
- *    reported healthy and left in place — the same squatter hazard DEF-5 closed
- *    for WRITES, still wide open for the health CHECK. `hasGlobalRoster()` is the
- *    one authority on whether that command is ours;
- *  - the execPath form → our own bin path is authoritative even after the machine
- *    gains a global (don't churn a working entry, M5); a DIFFERENT bin.js counts
- *    only while it still exists on disk, so a moved/removed install refreshes
- *    instead of claiming false health (DEF-4).
- *
- * A user's own server merely NAMED "roster" matches none of these and is left for
- * sync to import and preserve (R5-01).
+ * A healthy Roster-only install has one entry whose full shape exactly matches
+ * either this install or an intact active manifest. Basenames, key names,
+ * executable existence, and a trailing "serve" are insufficient proof.
  */
-function isAlreadySynced(servers: unknown, want: SpawnEntry): boolean {
-  if (servers === null || typeof servers !== "object") return false;
+function isAlreadySynced(servers: unknown, ownedEntries: readonly SpawnEntry[]): boolean {
+  if (servers === null || typeof servers !== "object" || Array.isArray(servers)) return false;
   const entries = Object.entries(servers as Record<string, unknown>);
-  if (entries.length !== 1 || entries[0]![0] !== "roster") return false;
-  const entry = entries[0]![1] as Record<string, unknown> | null;
-  if (entry === null || typeof entry !== "object") return false;
-  const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
-
-  if (sameEntry(entry, want)) return true; // exactly what we'd write now
-  if (entry.command === "roster" && args.includes("serve")) return hasGlobalRoster();
-
-  const script = typeof entry.command === "string" && path.basename(entry.command).startsWith("node") ? args[0] : undefined;
-  if (script && /(^|[\\/])bin\.js$/.test(script) && args.includes("serve")) {
-    if (script === ourBinPath()) return true;
-    try {
-      return fs.existsSync(script);
-    } catch {
-      return false;
-    }
-  }
-  return false;
+  return entries.length === 1 && isOwnedRosterEntry(entries[0]![1], ownedEntries);
 }
 
 export interface BackupRef {
@@ -195,6 +183,31 @@ export interface RawBackup {
   name: string;
   /** null when the manifest is missing or unparseable — surfaced, never skipped. */
   manifest: BackupManifest | null;
+}
+
+/** Exact current and historical entries Roster can prove it installed. */
+export function ownedRosterEntries(
+  clientId?: ClientId,
+  current: SpawnEntry = rosterEntry(),
+): SpawnEntry[] {
+  const entries: SpawnEntry[] = [current];
+  const clients = clientId ? [clientId] : WRITE_CLIENTS;
+  for (const id of clients) {
+    for (const backup of rawBackups(id)) {
+      const injected = normalizeSpawnEntry(backup.manifest?.injectedEntry);
+      if (!injected || !backup.manifest) continue;
+      try {
+        const original = fs.readFileSync(path.join(backup.dir, "original"));
+        if (sha256Hex(original) !== backup.manifest.originalSha256) continue;
+      } catch {
+        continue;
+      }
+      if (!entries.some((entry) => isOwnedRosterEntry(injected, [entry]))) {
+        entries.push(injected);
+      }
+    }
+  }
+  return entries;
 }
 
 /** Client backup root, e.g. ~/.roster/backups/cursor. */

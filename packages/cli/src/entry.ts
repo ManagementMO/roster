@@ -58,16 +58,21 @@ export function rosterEntry(): SpawnEntry {
   return { command: process.execPath, args: [ourBinPath(), "serve"] };
 }
 
-const asEntry = (v: unknown): { command: string; args: string[] } | null => {
-  if (v === null || typeof v !== "object") return null;
+export const normalizeSpawnEntry = (v: unknown): SpawnEntry | null => {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return null;
+  const keys = Object.keys(v).sort();
+  if (keys.length !== 2 || keys[0] !== "args" || keys[1] !== "command") return null;
   const e = v as { command?: unknown; args?: unknown };
   if (typeof e.command !== "string") return null;
-  return { command: e.command, args: Array.isArray(e.args) ? e.args.map(String) : [] };
+  if (e.args !== undefined && (!Array.isArray(e.args) || e.args.some((arg) => typeof arg !== "string"))) {
+    return null;
+  }
+  return { command: e.command, args: e.args === undefined ? [] : [...e.args] as string[] };
 };
 
 /** Exact identity: is `candidate` byte-for-byte the entry we recorded writing? */
 export function sameEntry(candidate: unknown, injected: SpawnEntry | undefined): boolean {
-  const e = asEntry(candidate);
+  const e = normalizeSpawnEntry(candidate);
   if (!e || !injected) return false;
   return (
     e.command === injected.command &&
@@ -77,31 +82,13 @@ export function sameEntry(candidate: unknown, injected: SpawnEntry | undefined):
 }
 
 /**
- * Is this entry ROSTER'S OWN proxy — something Roster wrote — as opposed to a
- * server the USER merely happens to have NAMED "roster"?
- *
- * Identity is the ENTRY, never the key. Round 5 (R5-01) found all three places
- * that confused the two: import skipped anything *named* `roster` (silently
- * dropping a user's own server), health accepted anything *commanded* `roster`,
- * and key-level eject did `delete servers.roster` (silently destroying a server
- * the user added after syncing). A name is a label the user chose; it says
- * nothing about what a thing IS.
- *
- * Every form we have ever written ends in `serve` and is one of: a bare global
- * `roster`, this install's `node <…>/bin.js`, or (post-publish) `npx`. A user's
- * own server called "roster" — `node /opt/my-roster-server.js` — matches none of
- * them and is imported and preserved like any other.
- *
- * For the DESTRUCTIVE path (eject) this structural test is not enough on its own:
- * see `sameEntry`, which matches against the exact entry recorded in the backup
- * manifest, so eject removes only what this install actually installed.
+ * Ownership is a set of exact entries Roster can prove it wrote: the current
+ * install and intact active manifests. Command basenames and a trailing
+ * "serve" are not identities; treating them as such discards unrelated tools.
  */
-export function isRosterProxyEntry(candidate: unknown): boolean {
-  const e = asEntry(candidate);
-  if (!e || !e.args.includes("serve")) return false;
-  if (e.command === "roster") return true; // global form
-  const base = path.basename(e.command);
-  if (base.startsWith("node") && /(^|[\\/])bin\.js$/.test(e.args[0] ?? "")) return true; // this install
-  if (base.startsWith("npx")) return true; // post-publish form
-  return false;
+export function isOwnedRosterEntry(
+  candidate: unknown,
+  ownedEntries: readonly SpawnEntry[],
+): boolean {
+  return ownedEntries.some((owned) => sameEntry(candidate, owned));
 }

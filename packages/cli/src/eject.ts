@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import { CLIENTS, type ClientId } from "./clients.js";
-import { isRosterProxyEntry, sameEntry, type SpawnEntry } from "./entry.js";
+import { normalizeSpawnEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import { parseJsonc } from "./jsonc.js";
 import { atomicWriteFileSync, backupDirFor } from "./rosterfile.js";
 import { closeEra, listBackups, pristineRawBackup } from "./sync.js";
@@ -69,6 +69,7 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   const currentExists = fs.existsSync(targetPath);
   const isStateFile =
     CLIENTS.find((c) => c.id === clientId)?.stateFileBasename === path.basename(targetPath);
+  const injectedEntry = normalizeSpawnEntry(manifest.injectedEntry) ?? undefined;
 
   // State file (~/.claude.json &c.): the client rewrites it constantly, so a
   // byte-restore would revert every unrelated setting and the modified-guard
@@ -77,11 +78,20 @@ export function ejectClient(clientId: ClientId, opts: { force?: boolean } = {}):
   // preserve all other live keys (M2). --force explicitly requests the raw
   // byte-restore instead.
   if (isStateFile && currentExists && !opts.force) {
+    if (!injectedEntry) {
+      return {
+        client: clientId,
+        action: "refused-modified",
+        configPath: targetPath,
+        detail:
+          "legacy backup has no exact injected-entry identity; refusing key-level deletion — use --force for an explicit pristine byte restore",
+      };
+    }
     try {
       const restored = restoreServersKeyLevel(
         fs.readFileSync(targetPath, "utf8"),
         originalBytes.toString("utf8"),
-        manifest.injectedEntry,
+        injectedEntry,
       );
       fs.mkdirSync(path.dirname(targetPath), { recursive: true });
       atomicWriteFileSync(targetPath, restored);
@@ -161,14 +171,14 @@ function finishEject(clientId: ClientId, targetPath: string, opts: { detail?: st
  * What we remove is identified by the EXACT entry recorded in the backup manifest
  * — never by the key name. `delete servers.roster` destroyed a server the user
  * added under that name after syncing (R5-01): eject's one promise is that it
- * never loses your work, and a name is not an identity. Backups written before
- * this fix carry no recorded entry; those fall back to the structural test, which
- * still refuses to delete anything that isn't shaped like a Roster proxy entry.
+ * never loses your work, and a name is not an identity. A legacy state-file
+ * backup without that identity refuses key-level deletion; `--force` is the
+ * explicit byte-for-byte recovery path.
  */
 function restoreServersKeyLevel(
   currentContent: string,
   originalContent: string,
-  injected: SpawnEntry | undefined,
+  injected: SpawnEntry,
 ): string {
   const current = parseJsonc(currentContent);
   if (current === null || typeof current !== "object" || Array.isArray(current)) {
@@ -185,8 +195,7 @@ function restoreServersKeyLevel(
       ? { ...(cur.mcpServers as Record<string, unknown>) }
       : {};
   for (const [name, entry] of Object.entries(currentServers)) {
-    const isOurs = injected ? sameEntry(entry, injected) : isRosterProxyEntry(entry);
-    if (isOurs) delete currentServers[name];
+    if (sameEntry(entry, injected)) delete currentServers[name];
   }
   const merged = { ...(origServers ?? {}), ...currentServers };
   if (Object.keys(merged).length === 0 && origServers === undefined) {

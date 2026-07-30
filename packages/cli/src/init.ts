@@ -2,7 +2,7 @@ import { trustScan, defaultSkillSources, scanSkillSources } from "@rosterhq/play
 import { discoverClients } from "./clients.js";
 import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
 import { mergeServers, updateConfig } from "./rosterfile.js";
-import { WRITE_CLIENTS } from "./sync.js";
+import { ownedRosterEntries, WRITE_CLIENTS } from "./sync.js";
 
 /**
  * The 60-second path (§6.3): discover → import → receipt. No network, no
@@ -13,7 +13,7 @@ export function init(): void {
   const imported = discoveries.flatMap((d) => d.servers);
 
   const { config, added, merged } = updateConfig((config) => {
-    const result = mergeServers(config, imported);
+    const result = mergeServers(config, imported, ownedRosterEntries());
     // Union with existing sources — a re-run must never clobber user additions.
     config.skillSources = [...new Set([...config.skillSources, ...defaultSkillSources()])];
     return { config, added: result.added, merged: result.merged };

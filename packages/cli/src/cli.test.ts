@@ -11,6 +11,7 @@ import { buildReceipt } from "./receipt.js";
 import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
 import { ejectClient } from "./eject.js";
+import { rosterEntry } from "./entry.js";
 import { syncClient } from "./sync.js";
 
 let home: string;
@@ -356,14 +357,10 @@ args = ["-y", "@upstash/context7-mcp"]
     expect(first.imported).toBeGreaterThanOrEqual(1);
 
     // User manually adds a NEW server after syncing.
+    const syncedContent = fs.readFileSync(configPath, "utf8");
     fs.writeFileSync(
       configPath,
-      `model = "gpt-5"
-
-[mcp_servers.roster]
-command = "roster"
-args = ["serve"]
-
+      `${syncedContent}
 [mcp_servers.late-addition]
 command = "npx"
 args = ["-y", "late-mcp"]
@@ -501,6 +498,44 @@ args = ["-y", "late-mcp"]
       servers: Record<string, { importedFrom: string[] }>;
     };
     expect(saved.servers.shared?.importedFrom.sort()).toEqual(["claude-code", "cursor"]);
+  });
+
+  it("refuses a URL-only client before roster, backup, or client-config mutation", () => {
+    const configPath = write(
+      ".cursor/mcp.json",
+      JSON.stringify({
+        mcpServers: { remote: { url: "https://mcp.example.test/sse" } },
+      }),
+    );
+    const original = fs.readFileSync(configPath);
+
+    expect(() => syncClient("cursor", new Date("2026-07-05T01:00:00Z"))).toThrow(
+      /URL-only.*stdio/i,
+    );
+    expect(fs.readFileSync(configPath)).toEqual(original);
+    expect(fs.existsSync(path.join(home, ".roster/roster.json"))).toBe(false);
+    expect(fs.existsSync(path.join(home, ".roster/backups/cursor"))).toBe(false);
+  });
+
+  it("legacy state-file eject refuses key-level deletion without exact injected identity", () => {
+    const configPath = path.join(home, ".claude.json");
+    const original = fs.readFileSync(configPath);
+    syncClient("claude-code", new Date("2026-07-05T01:00:00Z"));
+    const synced = fs.readFileSync(configPath);
+    const clientDir = path.join(home, ".roster/backups/claude-code");
+    const backup = fs.readdirSync(clientDir).find((name) => name !== "latest" && !name.startsWith("."))!;
+    const manifestPath = path.join(clientDir, backup, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+    delete manifest.injectedEntry;
+    fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+    const refused = ejectClient("claude-code");
+    expect(refused.action).toBe("refused-modified");
+    expect(refused.detail).toMatch(/legacy|identity/i);
+    expect(fs.readFileSync(configPath)).toEqual(synced);
+
+    expect(ejectClient("claude-code", { force: true }).action).toBe("restored");
+    expect(fs.readFileSync(configPath)).toEqual(original);
   });
 
   it("serializes simultaneous Cursor and Codex imports across processes", async () => {
@@ -645,7 +680,7 @@ args = ["-y", "late-mcp"]
 
     it("our OWN proxy entry is still never imported (identity, not name)", () => {
       // A config already pointing at us must not re-import the proxy as a server.
-      const ours = { command: process.execPath, args: [path.join("/somewhere", "bin.js"), "serve"] };
+      const ours = rosterEntry();
       write(".cursor/mcp.json", JSON.stringify({ mcpServers: { roster: ours } }));
       const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
       expect(result.imported).toBe(0);
@@ -670,10 +705,81 @@ args = ["-y", "late-mcp"]
           mcpServers: { roster: { command: string } };
         };
         expect(cfg.mcpServers.roster.command).toBe(process.execPath); // healed to our own entrypoint
+        const roster = JSON.parse(
+          fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+        ) as { servers: Record<string, { command: string; args: string[] }> };
+        expect(roster.servers.roster).toEqual({ command: "roster", args: ["serve"], importedFrom: ["cursor"] });
       } finally {
         if (prev === undefined) delete process.env.ROSTER_ASSUME_GLOBAL;
         else process.env.ROSTER_ASSUME_GLOBAL = prev;
       }
+    });
+
+    it("an existing foreign bin.js serve entry is imported and replaced, not declared healthy", () => {
+      const foreignBin = write("foreign/bin.js", "console.log('foreign');\n");
+      const foreign = { command: process.execPath, args: [foreignBin, "serve"] };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { roster: foreign } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.action).toBe("synced");
+      expect(result.imported).toBe(1);
+      const saved = JSON.parse(
+        fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+      ) as { servers: Record<string, { command: string; args: string[] }> };
+      expect(saved.servers.roster).toMatchObject(foreign);
+    });
+
+    it("an unrelated npx command containing serve is imported instead of discarded", () => {
+      const foreign = { command: "npx", args: ["--yes", "unrelated-package", "serve"] };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { unrelated: foreign } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.imported).toBe(1);
+      const saved = JSON.parse(
+        fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+      ) as { servers: Record<string, { command: string; args: string[] }> };
+      expect(saved.servers.unrelated).toMatchObject(foreign);
+    });
+
+    it("our command tuple plus a user-owned env block is not an exact owned entry", () => {
+      const lookalike = {
+        ...rosterEntry(),
+        env: { USER_MARKER: "preserve-me" },
+      };
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { customized: lookalike } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      expect(result.action).toBe("synced");
+      expect(result.imported).toBe(1);
+      const saved = JSON.parse(
+        fs.readFileSync(path.join(home, ".roster/roster.json"), "utf8"),
+      ) as { servers: Record<string, { env?: Record<string, string> }> };
+      expect(saved.servers.customized?.env).toEqual({ USER_MARKER: "preserve-me" });
+    });
+
+    it("an exact entry from an active manifest remains owned after the install moves", () => {
+      write(
+        ".cursor/mcp.json",
+        JSON.stringify({ mcpServers: { github: { command: "github-mcp" } } }),
+      );
+      syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+      const clientDir = path.join(home, ".roster/backups/cursor");
+      const backup = fs.readdirSync(clientDir).find((name) => name !== "latest" && !name.startsWith("."))!;
+      const manifestPath = path.join(clientDir, backup, "manifest.json");
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
+        injectedEntry?: { command: string; args: string[] };
+      };
+      const historical = {
+        command: process.execPath,
+        args: [path.join(home, "removed-install", "bin.js"), "serve"],
+      };
+      manifest.injectedEntry = historical;
+      fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+      write(".cursor/mcp.json", JSON.stringify({ mcpServers: { oldRoster: historical } }));
+
+      const result = syncClient("cursor", new Date("2026-07-05T02:00:00Z"));
+      expect(result.action).toBe("already-synced");
+      expect(result.imported).toBe(0);
     });
 
     it("eject does NOT delete a server the user added under the name `roster` after syncing", () => {

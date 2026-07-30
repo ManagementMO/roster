@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@rosterhq/coach";
 import type { ImportedServer } from "./clients.js";
-import { isRosterProxyEntry } from "./entry.js";
+import { isOwnedRosterEntry, rosterEntry, type SpawnEntry } from "./entry.js";
 import { withFileLockSync } from "./lock.js";
 import { rosterConfigPath, rosterHome } from "./paths.js";
 
@@ -230,7 +230,11 @@ export interface MergeResult {
 }
 
 /** Merge imported servers into the roster, deduping identical definitions across clients. */
-export function mergeServers(config: RosterConfig, imported: readonly ImportedServer[]): MergeResult {
+export function mergeServers(
+  config: RosterConfig,
+  imported: readonly ImportedServer[],
+  ownedEntries: readonly SpawnEntry[] = [rosterEntry()],
+): MergeResult {
   const byIdentity = new Map<string, string>(); // identity → roster name
   for (const [name, entry] of Object.entries(config.servers)) {
     byIdentity.set(serverIdentity(entry), name);
@@ -244,7 +248,13 @@ export function mergeServers(config: RosterConfig, imported: readonly ImportedSe
     // happened to be called that: it was skipped here AND overwritten in the
     // client config by the sync, so it vanished from both (R5-01). A name is a
     // label the user chose; only the entry says what a thing actually is.
-    if (isRosterProxyEntry({ command: server.command, args: server.args })) continue;
+    const candidate = {
+      command: server.command,
+      args: server.args ?? [],
+      ...(server.env !== undefined ? { env: server.env } : {}),
+      ...(server.url !== undefined ? { url: server.url } : {}),
+    };
+    if (isOwnedRosterEntry(candidate, ownedEntries)) continue;
     const identity = serverIdentity(server);
     const existingName = byIdentity.get(identity);
     if (existingName) {
