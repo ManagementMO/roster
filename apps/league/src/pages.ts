@@ -148,7 +148,7 @@ ${body}
   const body = `<header>
 <div class="brandrow"><span class="wordmark">R<b>O</b>STER</span><span class="leaguetag">the mcp server leaderboard</span></div>
 <h1 class="masthead">The League<span class="dot">.</span></h1>
-<p class="tag">Real tasks, verified outcomes, humble statistics. Every number on this page traces to a reproducible run.</p>
+<p class="tag">Real tasks, verified outcomes, humble statistics. Every number on this page traces to an auditable run artifact.</p>
 <p class="seasonline">${seasonline}</p>
 </header>
 <ul class="how">
@@ -187,7 +187,7 @@ export function renderBoxScore(entry: StandingsEntry, taskDescriptions: Readonly
 <div class="stat"><div class="v">${fmt3(lb.value)}</div><div class="k">Score</div><div class="sub">Wilson LB · ${lb.unsigned ? "unofficial (uncertified)" : "certified tasks only"}</div></div>
 <div class="stat"><div class="v">${s.signedN}/${s.n}</div><div class="k">Certified</div><div class="sub">${MIN_RANKED_SIGNED_N}+ needed to rank</div></div>
 </div>
-${isPreSeason(run) ? `<div class="note"><b>UNSIGNED RUN · PRE-SEASON</b><br>These results are real and reproducible, but may not back a named ranking until a human certifies each task (methodology §4).</div>` : ""}
+${isPreSeason(run) ? `<div class="note"><b>UNSIGNED RUN · PRE-SEASON</b><br>These results are recorded and auditable, but may not back a named ranking until a human certifies each task (methodology §4).</div>` : ""}
 </header>
 <section class="section">
 <h3>Box score — end-state verified, no LLM judge</h3>

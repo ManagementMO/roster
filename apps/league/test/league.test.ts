@@ -167,6 +167,14 @@ describe("artifact loading (honesty gate)", () => {
 });
 
 describe("methodology enforced in the renderer", () => {
+  it("does not claim target-level reproducibility from a runtime-only digest", () => {
+    const artifact = realArtifact();
+    const entry = { artifact, run: artifact.data.runs[0]! };
+
+    expect(renderStandings([entry])).not.toMatch(/\breproducible\b/i);
+    expect(renderBoxScore(entry, new Map())).not.toMatch(/\breproducible\b/i);
+  });
+
   it(`never mints a rank below ${MIN_RANKED_SIGNED_N} signed tasks`, () => {
     expect(isRankable(syntheticRun({ signedN: MIN_RANKED_SIGNED_N - 1 }).run)).toBe(false);
     expect(isRankable(syntheticRun({ signedN: MIN_RANKED_SIGNED_N }).run)).toBe(true);

@@ -202,8 +202,8 @@ export function certifyRun(
 
 /**
  * Strip signed credit from a run we cannot certify. It stays visible (the
- * results are still real and reproducible) but reads as PRE-SEASON/unofficial
- * and can never mint a named rank.
+ * artifact remains auditable) but reads as PRE-SEASON/unofficial and can never
+ * mint a named rank.
  */
 export function withoutSignedCredit(run: LeagueRun): LeagueRun {
   return { ...run, summary: { ...run.summary, signedN: 0, signedPasses: 0, signedWilsonLb: 0 } };
