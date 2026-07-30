@@ -329,6 +329,45 @@ tasks:
     expect(byId["fifo.file-equals"]).toMatchObject({ pass: false, stage: "verify" });
   }, 20_000);
 
+  it("resultContains can assert an exact size VALUE, not just the 'size' label (L10)", async () => {
+    // The bare label "size" false-passes on any stat output; asserting the value
+    // with a newline boundary certifies the reported size and rejects a wrong or
+    // prefix-family one. The fixture mirrors the real server's output shape.
+    const infoSuite = parseSuite(`
+suite: get-file-info
+version: "0.0.1"
+category: filesystem
+tasks:
+  - id: gfi.correct-size-value-passes
+    setup: { files: { "info.txt": "roster-size-probe" } }
+    invoke: { tool: get_file_info, args: { path: "{{sandbox}}/info.txt" } }
+    verify:
+      - { kind: resultContains, contains: "size: 17\\n" }
+  - id: gfi.wrong-size-value-fails
+    setup: { files: { "info.txt": "roster-size-probe" } }
+    invoke: { tool: get_file_info, args: { path: "{{sandbox}}/info.txt" } }
+    verify:
+      - { kind: resultContains, contains: "size: 5\\n" }
+  - id: gfi.prefix-family-size-does-not-false-pass
+    setup: { files: { "info.txt": "roster-size-probe" } }
+    invoke: { tool: get_file_info, args: { path: "{{sandbox}}/info.txt" } }
+    verify:
+      - { kind: resultContains, contains: "size: 1\\n" }
+`);
+    const run = await runSuite(infoSuite, {
+      name: "fake-fs",
+      command: process.execPath,
+      args: [FIXTURE_SERVER, "{{sandbox}}"],
+      env: { ...process.env, NODE_PATH: path.join(SDK_CWD, "node_modules") } as Record<string, string>,
+    });
+    const byId = Object.fromEntries(run.results.map((r) => [r.taskId, r]));
+    expect(byId["gfi.correct-size-value-passes"]).toMatchObject({ pass: true, stage: null });
+    expect(byId["gfi.wrong-size-value-fails"]).toMatchObject({ pass: false, stage: "verify" });
+    // "size: 1" is a PREFIX of "size: 17"; the trailing newline stops it from
+    // matching, so a size that merely shares a prefix cannot false-pass.
+    expect(byId["gfi.prefix-family-size-does-not-false-pass"]).toMatchObject({ pass: false, stage: "verify" });
+  }, 30_000);
+
   it("accepts contained filenames that merely begin with two dots", async () => {
     const suite = parseSuite(`
 suite: dot-prefix

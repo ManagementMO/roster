@@ -56,14 +56,21 @@ tasks:
       - { kind: fileEquals, path: "dst-{{run_id}}.txt", equals: "move me" }
 
   - id: fs.get-file-info.v1
-    description: stat a seeded file; result must mention size
+    description: stat a seeded file; result must report its EXACT byte size
     setup:
-      files: { "info-{{run_id}}.txt": "12345" }
+      # Exactly 17 bytes — the value the stat must report back.
+      files: { "info-{{run_id}}.txt": "roster-size-probe" }
     invoke:
       tool: get_file_info
       args: { path: "{{sandbox}}/info-{{run_id}}.txt" }
     verify:
-      - { kind: resultContains, contains: "size" }
+      # The server prints "size: <bytes>\n<next field>..." (verified against
+      # @modelcontextprotocol/server-filesystem source: getFileStats emits
+      # `${key}: ${value}` with size first, a bare integer). Asserting the exact
+      # value with a trailing newline catches a wrong size and defeats a prefix
+      # collision ("size: 17\n" does not match "size: 170\n"); the bare label
+      # "size" false-passed on any output that merely said the word (L10).
+      - { kind: resultContains, contains: "size: 17\n" }
 
   - id: fs.search-files.v1
     description: search for a uniquely-named seeded file

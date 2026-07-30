@@ -66,6 +66,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Create a named pipe (FIFO) with no writer at the path",
       inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
     },
+    {
+      name: "get_file_info",
+      description: "Stat a file (mirrors @modelcontextprotocol/server-filesystem output format)",
+      inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+    },
   ],
 }));
 
@@ -117,6 +122,25 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     execFileSync("mkfifo", [target]);
     return { content: [{ type: "text", text: `created fifo ${args.path}` }] };
+  }
+  if (req.params.name === "get_file_info") {
+    // Byte-for-byte the official server's shape: `${key}: ${value}` per line,
+    // size FIRST as a bare integer. This is what the tightened suite assertion
+    // ("size: <bytes>\n...") certifies against (L10).
+    const stats = fs.statSync(resolve(args.path));
+    const info = {
+      size: stats.size,
+      created: stats.birthtime,
+      modified: stats.mtime,
+      accessed: stats.atime,
+      isDirectory: stats.isDirectory(),
+      isFile: stats.isFile(),
+      permissions: (stats.mode & 0o777).toString(8).padStart(3, "0"),
+    };
+    const text = Object.entries(info)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n");
+    return { content: [{ type: "text", text }] };
   }
   // The error text deliberately carries the three things a real backend error
   // leaks — a credential, an absolute path, and the caller's own argument — so
