@@ -1362,19 +1362,45 @@ args = ["-y", "late-mcp"]
     const era = (marker: string) =>
       `${JSON.stringify({ marker, mcpServers: { [marker]: { command: marker } } }, null, 2)}\n`;
 
-    // These two force an archive/close FAILURE via chmod, which only bites on
-    // POSIX — Windows ignores mode bits for the owner, so the rename would succeed
-    // and there'd be no failure to test. The fix itself (a durable marker) is
-    // platform-independent fs+string logic, verified on macOS + Linux in CI.
-    it.skipIf(process.platform === "win32")("a FAILED archive must not let a later eject restore the previous era", () => {
+    // These force an archive/close FAILURE by intercepting the exact fs.rename
+    // that publishes the era close — a DETERMINISTIC seam that fires regardless
+    // of platform OR uid. The old approach chmod'd the backups dir read-only,
+    // but that is a no-op both on Windows (mode bits ignored) AND for root
+    // (uid 0 bypasses permission checks), so under either the archive silently
+    // SUCCEEDED and the "failure" the test depends on never happened. Mocking
+    // the syscall reproduces the failure everywhere. The fix under test — a
+    // durable close marker — is itself platform-independent fs+string logic.
+    //
+    // The archive rename targets a `<clientDir>-ejected-<ts>` path; the durable
+    // close marker is written (atomically, via a final rename) to a path ending
+    // `.closed-through`. Failing by target path lets each test choose precisely
+    // which step breaks while the config RESTORE (a different path) still lands.
+    const failRenamesTo = (matches: (target: string) => boolean) => {
+      const real = fs.renameSync;
+      fs.renameSync = ((from, to) => {
+        if (matches(String(to))) {
+          throw Object.assign(new Error("simulated era-close failure"), { code: "EACCES" });
+        }
+        return real(from, to);
+      }) as typeof fs.renameSync;
+      return () => {
+        fs.renameSync = real;
+      };
+    };
+
+    it("a FAILED archive must not let a later eject restore the previous era", () => {
       const backupsRoot = path.join(home, ".roster", "backups");
 
-      // Era 0: sync, then eject with archiving BLOCKED (backups root not writable).
+      // Era 0: sync, then eject with only the ARCHIVE rename blocked — the
+      // durable close marker still writes, so the era is closed regardless.
       write(".cursor/mcp.json", era("ERA0"));
       syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
-      fs.chmodSync(backupsRoot, 0o500);
-      expect(ejectClient("cursor").action).toBe("restored");
-      fs.chmodSync(backupsRoot, 0o700);
+      const restore = failRenamesTo((to) => to.includes("-ejected-"));
+      try {
+        expect(ejectClient("cursor").action).toBe("restored");
+      } finally {
+        restore();
+      }
       expect(fs.existsSync(path.join(backupsRoot, "cursor"))).toBe(true); // archive really did fail
 
       // Era 1: a genuinely new pristine, synced and then ejected normally.
@@ -1383,22 +1409,22 @@ args = ["-y", "late-mcp"]
       expect(ejectClient("cursor").action).toBe("restored");
 
       // It must be ERA1 that comes back — not the stale ERA0 sitting in the
-      // un-archived backup directory.
+      // un-archived backup directory: the durable marker closed era 0.
       expect(fs.readFileSync(configPath(), "utf8")).toBe(era("ERA1"));
     });
 
-    it.skipIf(process.platform === "win32")("says so loudly when the era cannot be closed at all", () => {
+    it("says so loudly when the era cannot be closed at all", () => {
       write(".cursor/mcp.json", era("ERA0"));
       syncClient("cursor", new Date("2026-07-12T12:00:00Z"));
-      const backupsRoot = path.join(home, ".roster", "backups");
-      const clientDir = path.join(backupsRoot, "cursor");
-      // Neither the marker (inside clientDir) nor the archive (rename inside
-      // backupsRoot) can be written.
-      fs.chmodSync(clientDir, 0o500);
-      fs.chmodSync(backupsRoot, 0o500);
-      const result = ejectClient("cursor");
-      fs.chmodSync(backupsRoot, 0o700);
-      fs.chmodSync(clientDir, 0o700);
+      // Neither the durable marker (a rename to `.closed-through`) NOR the
+      // archive (a rename to `-ejected-`) can be written.
+      const restore = failRenamesTo((to) => to.includes("-ejected-") || to.endsWith(".closed-through"));
+      let result: ReturnType<typeof ejectClient>;
+      try {
+        result = ejectClient("cursor");
+      } finally {
+        restore();
+      }
 
       expect(result.action).toBe("integrity-error"); // restore landed, but the operation is not safely complete
       expect(result.detail).toMatch(/could not be closed/); // never a zero-exit success
