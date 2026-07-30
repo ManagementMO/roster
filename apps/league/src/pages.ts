@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
   isPreSeason,
   isRankable,
@@ -13,9 +14,27 @@ export interface StandingsEntry {
   run: LeagueRun;
 }
 
-const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const slug = (s: string): string =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40) || "unnamed";
 
-export const boxScoreFilename = (run: LeagueRun): string => `box-${slug(run.server)}-${slug(run.suite)}.html`;
+export const boxScoreFilename = (
+  run: LeagueRun,
+  generatedAt?: string,
+): string => {
+  const identity = JSON.stringify([
+    run.server,
+    run.suite,
+    run.suiteVersion,
+    run.category,
+    generatedAt ?? null,
+  ]);
+  const suffix = crypto.createHash("sha256").update(identity).digest("hex");
+  return `box-${slug(run.server)}-${slug(run.suite)}-${suffix}.html`;
+};
 
 const record = (run: LeagueRun): string => `${run.summary.passes}–${run.summary.n - run.summary.passes}`;
 
@@ -42,7 +61,7 @@ function standingsRow(entry: StandingsEntry, rank: number | null, index: number)
   const s = run.summary;
   return `<tr style="--i:${index}">
 <td class="rk${rank !== null && rank <= 3 ? " medal" : ""}">${rank === null ? "—" : String(rank)}</td>
-<td class="teamcell"><a href="${esc(boxScoreFilename(run))}">${esc(run.server)}</a><span class="sub">${esc(run.suite)} v${esc(run.suiteVersion)}</span></td>
+<td class="teamcell"><a href="${esc(boxScoreFilename(run, entry.artifact.data.generatedAt))}">${esc(run.server)}</a><span class="sub">${esc(run.suite)} v${esc(run.suiteVersion)}</span></td>
 <td class="scorecell"><span class="scoreval">${fmt3(lb.value)}</span><span class="scoresub">${lb.unsigned ? "unofficial — no certified tasks yet" : "official — certified tasks only"}</span><span class="scorebar"><i style="width:${Math.round(lb.value * 100)}%"></i></span></td>
 <td class="pair">${s.passes}/${s.n}<span class="sub">tasks passed</span></td>
 <td class="pair">${s.signedN}/${s.n}<span class="sub">human-certified</span></td>
@@ -51,30 +70,61 @@ function standingsRow(entry: StandingsEntry, rank: number | null, index: number)
 }
 
 export function renderStandings(entries: StandingsEntry[]): string {
-  const divisions = new Map<string, StandingsEntry[]>();
+  const divisions = new Map<
+    string,
+    {
+      category: string;
+      suite: string;
+      suiteVersion: string;
+      rows: StandingsEntry[];
+    }
+  >();
   for (const e of entries) {
-    const list = divisions.get(e.run.category) ?? [];
-    list.push(e);
-    divisions.set(e.run.category, list);
+    const key = JSON.stringify([
+      e.run.category,
+      e.run.suite,
+      e.run.suiteVersion,
+    ]);
+    const division = divisions.get(key) ?? {
+      category: e.run.category,
+      suite: e.run.suite,
+      suiteVersion: e.run.suiteVersion,
+      rows: [],
+    };
+    division.rows.push(e);
+    divisions.set(key, division);
   }
 
-  const sections = [...divisions.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([category, rows]) => {
+  const sections = [...divisions.values()]
+    .sort(
+      (a, b) =>
+        a.category.localeCompare(b.category) ||
+        a.suite.localeCompare(b.suite) ||
+        a.suiteVersion.localeCompare(b.suiteVersion),
+    )
+    .map(({ category, suite, suiteVersion, rows }) => {
       // Ranked rows first (by certified score); the rest ordered by the
       // unofficial score for readability, forever rank-less until certified.
       const ranked = rows
         .filter((r) => isRankable(r.run))
-        .sort((a, b) => b.run.summary.signedWilsonLb - a.run.summary.signedWilsonLb);
+        .sort(
+          (a, b) =>
+            b.run.summary.signedWilsonLb - a.run.summary.signedWilsonLb ||
+            a.run.server.localeCompare(b.run.server),
+        );
       const rest = rows
         .filter((r) => !isRankable(r.run))
-        .sort((a, b) => b.run.summary.wilsonLb - a.run.summary.wilsonLb);
+        .sort(
+          (a, b) =>
+            b.run.summary.wilsonLb - a.run.summary.wilsonLb ||
+            a.run.server.localeCompare(b.run.server),
+        );
       const body = [
         ...ranked.map((r, i) => standingsRow(r, i + 1, i)),
         ...rest.map((r, i) => standingsRow(r, null, ranked.length + i)),
       ].join("\n");
       return `<section class="division">
-<div class="divhead"><h2>${esc(category)} <span>division</span></h2><span class="tierchip">Lab tier — identical suites, sandboxed runs</span></div>
+<div class="divhead"><h2>${esc(category)} <span>division · ${esc(suite)} v${esc(suiteVersion)}</span></h2><span class="tierchip">Lab tier — identical suite/version, sandboxed runs</span></div>
 <div class="tablewrap">
 <table>
 <thead><tr><th>RK</th><th>Server</th><th>Score</th><th>Tasks</th><th>Certified</th><th>Status</th></tr></thead>

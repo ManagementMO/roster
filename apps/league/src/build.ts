@@ -9,7 +9,7 @@ import {
   suiteKey,
   withoutSignedCredit,
   type LoadedArtifact,
-  type SuiteSigning,
+  type SuiteAuthority,
 } from "./artifact.js";
 import { boxScoreFilename, renderBoxScore, renderStandings } from "./pages.js";
 
@@ -28,9 +28,8 @@ export interface BuildReport {
 }
 
 interface LoadedSuites {
-  descriptions: Map<string, string>;
-  /** The authority a run's `signed` flags are checked against. */
-  signing: Map<string, Map<string, boolean>>;
+  /** Exact suite/version authority for category, signing, and descriptions. */
+  authorities: Map<string, SuiteAuthority>;
 }
 
 /**
@@ -41,27 +40,34 @@ interface LoadedSuites {
  * server its rank, but it can never mint one.
  */
 function loadSuites(suitesDir: string): LoadedSuites {
-  const descriptions = new Map<string, string>();
-  const signing = new Map<string, Map<string, boolean>>();
-  if (!fs.existsSync(suitesDir)) return { descriptions, signing };
+  const authorities = new Map<string, SuiteAuthority>();
+  if (!fs.existsSync(suitesDir)) return { authorities };
   for (const dir of fs.readdirSync(suitesDir, { withFileTypes: true })) {
     if (!dir.isDirectory()) continue;
     const file = path.join(suitesDir, dir.name, "tasks.yaml");
     if (!fs.existsSync(file)) continue;
     try {
       const suite = parseSuite(fs.readFileSync(file, "utf8"));
-      const signed = new Map<string, boolean>();
-      for (const task of suite.tasks) {
-        if (task.description !== undefined) descriptions.set(task.id, task.description);
-        signed.set(task.id, task.signed);
-      }
-      signing.set(suiteKey(suite.suite, suite.version), signed);
+      authorities.set(suiteKey(suite.suite, suite.version), {
+        category: suite.category,
+        tasks: new Map(
+          suite.tasks.map((task) => [
+            task.id,
+            {
+              signed: task.signed,
+              ...(task.description !== undefined
+                ? { description: task.description }
+                : {}),
+            },
+          ]),
+        ),
+      });
     } catch {
       // Cosmetic descriptions must not block standings; and an uncertifiable
       // suite already fails closed above (its runs cannot rank).
     }
   }
-  return { descriptions, signing };
+  return { authorities };
 }
 
 export function buildSite(opts: BuildOptions): BuildReport {
@@ -80,14 +86,14 @@ export function buildSite(opts: BuildOptions): BuildReport {
     }
   }
 
-  const { descriptions, signing } = loadSuites(opts.suitesDir);
+  const { authorities } = loadSuites(opts.suitesDir);
 
   // Certify BEFORE rendering: a `signed` flag in an artifact is a claim about a
   // human's act, and only the suite can confirm it. Tampered runs are dropped;
   // unverifiable ones are shown without signed credit (visible, never ranked).
   const uncertified: BuildReport["uncertified"] = [];
   const entries = latestRuns(loaded).flatMap((entry) => {
-    const cert = certifyRun(entry.run, signing as SuiteSigning);
+    const cert = certifyRun(entry.run, authorities);
     if (cert.status === "certified") return [entry];
     if (cert.status === "tampered") {
       skipped.push({ path: entry.artifact.path, reason: `run "${entry.run.server}": ${cert.reason}` });
@@ -105,7 +111,19 @@ export function buildSite(opts: BuildOptions): BuildReport {
   pages.push(indexPath);
 
   for (const entry of entries) {
-    const boxPath = path.join(opts.outDir, boxScoreFilename(entry.run));
+    const boxPath = path.join(
+      opts.outDir,
+      boxScoreFilename(entry.run, entry.artifact.data.generatedAt),
+    );
+    const descriptions = new Map<string, string>();
+    const authority = authorities.get(
+      suiteKey(entry.run.suite, entry.run.suiteVersion),
+    );
+    for (const [taskId, task] of authority?.tasks ?? []) {
+      if (task.description !== undefined) {
+        descriptions.set(taskId, task.description);
+      }
+    }
     fs.writeFileSync(boxPath, renderBoxScore(entry, descriptions));
     pages.push(boxPath);
   }

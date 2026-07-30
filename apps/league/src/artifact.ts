@@ -110,10 +110,20 @@ export function parseLabResults(raw: string, path = "lab-results.json"): LabResu
  * Certification: binding a run's `signed` flags to the authoritative suite
  * ------------------------------------------------------------------ */
 
-/** `${suite}@${version}` → taskId → the SUITE's authoritative `signed` flag. */
-export type SuiteSigning = ReadonlyMap<string, ReadonlyMap<string, boolean>>;
+export interface SuiteTaskAuthority {
+  signed: boolean;
+  description?: string;
+}
 
-export const suiteKey = (suite: string, version: string): string => `${suite}@${version}`;
+/** Authoritative identity and task facts loaded from one reviewed suite file. */
+export interface SuiteAuthority {
+  category: string;
+  tasks: ReadonlyMap<string, SuiteTaskAuthority>;
+}
+
+/** Collision-free tuple key for a suite and version. */
+export const suiteKey = (suite: string, version: string): string =>
+  JSON.stringify([suite, version]);
 
 export type Certification =
   | { status: "certified" }
@@ -134,28 +144,37 @@ export type Certification =
  *    promises "the identical task suite", and dropping a failing signed row is
  *    how you'd forge a score by OMISSION rather than by assertion.
  */
-export function certifyRun(run: LeagueRun, signing: SuiteSigning): Certification {
+export function certifyRun(
+  run: LeagueRun,
+  authorities: ReadonlyMap<string, SuiteAuthority>,
+): Certification {
   const key = suiteKey(run.suite, run.suiteVersion);
-  const suite = signing.get(key);
-  if (!suite) {
+  const authority = authorities.get(key);
+  if (!authority) {
     return { status: "unverifiable", reason: `no suite ${key} available to certify against` };
   }
+  if (run.category !== authority.category) {
+    return {
+      status: "tampered",
+      reason: `run category "${run.category}" contradicts suite ${key}'s authoritative category "${authority.category}"`,
+    };
+  }
   for (const r of run.results) {
-    const authoritative = suite.get(r.taskId);
+    const authoritative = authority.tasks.get(r.taskId);
     if (authoritative === undefined) {
       return { status: "tampered", reason: `task "${r.taskId}" is not in suite ${key}` };
     }
-    if (r.signed !== authoritative) {
+    if (r.signed !== authoritative.signed) {
       return {
         status: "tampered",
-        reason: `task "${r.taskId}" claims signed=${r.signed} but suite ${key} says signed=${authoritative}`,
+        reason: `task "${r.taskId}" claims signed=${r.signed} but suite ${key} says signed=${authoritative.signed}`,
       };
     }
   }
-  if (run.results.length !== suite.size) {
+  if (run.results.length !== authority.tasks.size) {
     return {
       status: "tampered",
-      reason: `ran ${run.results.length} of suite ${key}'s ${suite.size} tasks — a partial run cannot be scored`,
+      reason: `ran ${run.results.length} of suite ${key}'s ${authority.tasks.size} tasks — a partial run cannot be scored`,
     };
   }
   return { status: "certified" };
@@ -170,13 +189,16 @@ export function withoutSignedCredit(run: LeagueRun): LeagueRun {
   return { ...run, summary: { ...run.summary, signedN: 0, signedPasses: 0, signedWilsonLb: 0 } };
 }
 
-/** Newest artifact wins per (server, suite); the builder reports what it dropped. */
+/** Newest artifact wins per exact (server, suite, suiteVersion) tuple. */
 export function latestRuns(artifacts: LoadedArtifact[]): Array<{ artifact: LoadedArtifact; run: LeagueRun }> {
   const byKey = new Map<string, { artifact: LoadedArtifact; run: LeagueRun }>();
   const sorted = [...artifacts].sort((a, b) => a.data.generatedAt.localeCompare(b.data.generatedAt));
   for (const artifact of sorted) {
     for (const run of artifact.data.runs) {
-      byKey.set(`${run.server} ${run.suite}`, { artifact, run });
+      byKey.set(
+        JSON.stringify([run.server, run.suite, run.suiteVersion]),
+        { artifact, run },
+      );
     }
   }
   return [...byKey.values()];

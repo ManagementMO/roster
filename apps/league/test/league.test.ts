@@ -13,10 +13,14 @@ import {
   suiteKey,
   withoutSignedCredit,
   type LoadedArtifact,
-  type SuiteSigning,
+  type SuiteAuthority,
 } from "../src/artifact.js";
 import { buildSite } from "../src/build.js";
-import { renderBoxScore, renderStandings } from "../src/pages.js";
+import {
+  boxScoreFilename,
+  renderBoxScore,
+  renderStandings,
+} from "../src/pages.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const verificationDir = path.join(repoRoot, "docs", "verification");
@@ -65,10 +69,23 @@ const rankedRun = () => {
   };
 };
 
-/** The authoritative signing map, straight from the real committed suite. */
-function realSigning(): SuiteSigning {
+/** The authoritative suite map, straight from the real committed suite. */
+function realAuthorities(): ReadonlyMap<string, SuiteAuthority> {
   const suite = parseSuite(fs.readFileSync(path.join(repoRoot, "suites", "filesystem", "tasks.yaml"), "utf8"));
-  return new Map([[suiteKey(suite.suite, suite.version), new Map(suite.tasks.map((t) => [t.id, t.signed]))]]);
+  return new Map([
+    [
+      suiteKey(suite.suite, suite.version),
+      {
+        category: suite.category,
+        tasks: new Map(
+          suite.tasks.map((task) => [
+            task.id,
+            { signed: task.signed, description: task.description },
+          ]),
+        ),
+      },
+    ],
+  ]);
 }
 
 /** Rebuild an artifact's single run from rows, with a summary that matches them. */
@@ -107,6 +124,17 @@ describe("artifact loading (honesty gate)", () => {
     expect(merged).toHaveLength(a.data.runs.length);
     expect(merged[0]!.run.summary.passes).toBe(a.data.runs[0]!.summary.passes);
   });
+
+  it("keeps separator-colliding server/suite tuples as distinct identities", () => {
+    const artifact = realArtifact();
+    const base = artifact.data.runs[0]!;
+    const first = { ...base, server: "A", suite: "B C" };
+    const second = { ...base, server: "A B", suite: "C" };
+    const data = { ...artifact.data, runs: [first, second] };
+
+    expect(latestRuns([{ ...artifact, data }])).toHaveLength(2);
+    expect(suiteKey("A@B", "C")).not.toBe(suiteKey("A", "B@C"));
+  });
 });
 
 describe("methodology enforced in the renderer", () => {
@@ -134,6 +162,37 @@ describe("methodology enforced in the renderer", () => {
     expect(html).toContain("RANKED");
     expect(html).toContain(ranked.run.summary.signedWilsonLb.toFixed(3)); // derived from 28/30 signed rows
     expect(html).not.toContain("PRE-SEASON</span>");
+  });
+
+  it("ranks different suite versions in separate identical-suite tables", () => {
+    const first = rankedRun();
+    first.run.server = "server-one";
+    first.run.suite = "suite-one";
+    first.run.suiteVersion = "1";
+    first.run.category = "filesystem";
+    const second = structuredClone(first);
+    second.run.server = "server-two";
+    second.run.suiteVersion = "2";
+
+    const html = renderStandings([first, second]);
+    expect(html.match(/<td class="rk medal">1<\/td>/g)).toHaveLength(2);
+    expect(html).toContain("suite-one v1");
+    expect(html).toContain("suite-one v2");
+  });
+
+  it("gives lossy names and suite versions collision-resistant box-score files", () => {
+    const first = rankedRun().run;
+    first.server = "same/name";
+    first.suite = "same suite";
+    first.suiteVersion = "1";
+    const second = structuredClone(first);
+    second.server = "same-name";
+    const third = structuredClone(first);
+    third.suiteVersion = "2";
+
+    expect(boxScoreFilename(first)).not.toBe(boxScoreFilename(second));
+    expect(boxScoreFilename(first)).not.toBe(boxScoreFilename(third));
+    expect(boxScoreFilename(first)).toMatch(/[a-f0-9]{64}\.html$/);
   });
 
   it("box score carries record, LB, provenance strip, digest, and methodology tag", () => {
@@ -221,7 +280,7 @@ describe("public-score integrity (R5-03 / R5-10)", () => {
     const rows = suite.tasks.map((t) => ({ ...unsignedRow(0), taskId: t.id, signed: true }));
     const parsed = parseLabResults(artifactWithRows(rows), "flipped.json");
     expect(parsed.runs[0]!.summary.signedN).toBe(suite.tasks.length); // parser accepts: internally consistent
-    const cert = certifyRun(parsed.runs[0]!, realSigning());
+    const cert = certifyRun(parsed.runs[0]!, realAuthorities());
     expect(cert.status).toBe("tampered"); // the SUITE is the authority
     expect(cert.status === "tampered" && cert.reason).toMatch(/says signed=false/);
   });
@@ -230,7 +289,7 @@ describe("public-score integrity (R5-03 / R5-10)", () => {
     const suite = parseSuite(fs.readFileSync(path.join(repoRoot, "suites", "filesystem", "tasks.yaml"), "utf8"));
     const rows = suite.tasks.slice(0, 4).map((t) => ({ ...unsignedRow(0), taskId: t.id }));
     const parsed = parseLabResults(artifactWithRows(rows), "partial.json");
-    const cert = certifyRun(parsed.runs[0]!, realSigning());
+    const cert = certifyRun(parsed.runs[0]!, realAuthorities());
     expect(cert.status).toBe("tampered");
     expect(cert.status === "tampered" && cert.reason).toMatch(/partial run cannot be scored/);
   });
@@ -243,9 +302,17 @@ describe("public-score integrity (R5-03 / R5-10)", () => {
     expect(isRankable(withoutSignedCredit(ranked))).toBe(false); // fail-closed
   });
 
+  it("CERTIFICATION: a forged category contradicting the suite is tampering", () => {
+    const { data } = realArtifact();
+    const forged = { ...data.runs[0]!, category: "forged-category" };
+    const cert = certifyRun(forged, realAuthorities());
+    expect(cert.status).toBe("tampered");
+    expect(cert.status === "tampered" && cert.reason).toMatch(/category/i);
+  });
+
   it("the real committed artifact still parses AND certifies against its real suite", () => {
     const { data } = realArtifact();
-    expect(certifyRun(data.runs[0]!, realSigning()).status).toBe("certified");
+    expect(certifyRun(data.runs[0]!, realAuthorities()).status).toBe("certified");
     expect(data.runs[0]!.summary.signedN).toBe(0); // honest: nothing is signed yet
   });
 
