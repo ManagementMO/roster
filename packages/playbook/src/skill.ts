@@ -14,6 +14,8 @@ export interface ParsedSkill {
   resources: string[];
   /** Subset of resources that are executable scripts. */
   scripts: string[];
+  /** Fail-closed warnings emitted when filesystem discovery was incomplete or unsafe. */
+  scanWarnings: string[];
   /** Raw frontmatter for forward-compat fields (license, allowed-tools, …). */
   frontmatter: Record<string, unknown>;
 }
@@ -34,7 +36,7 @@ export function parseSkillMd(
   content: string,
   slug: string,
   dir: string,
-): Omit<ParsedSkill, "resources" | "scripts"> | null {
+): Omit<ParsedSkill, "resources" | "scripts" | "scanWarnings"> | null {
   // A leading UTF-8 BOM sits before the "---", so ^--- never matches and the
   // ENTIRE frontmatter is silently voided (name→slug, description→""). Strip it
   // before parsing; String.trim() later hides the BOM, so this is invisible otherwise.

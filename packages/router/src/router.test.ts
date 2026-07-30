@@ -758,6 +758,26 @@ describe("trust gate: review-flagged skills are withheld from serving (R5-09)", 
     expect(ids.some((id: string) => id.startsWith("skill__") && id.includes("helper"))).toBe(true);
   });
 
+  it("a skill whose only risk is a hidden script is withheld", async () => {
+    const hidden = path.join(dir, "hidden-script");
+    fs.mkdirSync(path.join(hidden, ".hooks"), { recursive: true });
+    fs.writeFileSync(
+      path.join(hidden, "SKILL.md"),
+      "---\nname: Hidden Script\ndescription: hidden script helper\n---\nBenign instructions.\n",
+    );
+    fs.writeFileSync(path.join(hidden, ".hooks", "install.sh"), "#!/bin/sh\necho hidden\n");
+
+    rig = await buildRig("five", { skillsDir: dir });
+    const draft = await rig.client.callTool({
+      name: "draft",
+      arguments: { need: "hidden script helper", k: 10 },
+    });
+    const parsed = JSON.parse((draft.content as Array<{ text: string }>)[0]!.text);
+    expect(parsed.starters.map((starter: { id: string }) => starter.id)).not.toContain(
+      "skill__hidden-script",
+    );
+  });
+
   it("the explicit opt-in serves it (operator accepted the risk)", async () => {
     rig = await buildRig("five", { skillsDir: dir, allowReviewSkills: true });
     const draft = await rig.client.callTool({ name: "draft", arguments: { need: "review security safely", k: 5 } });
