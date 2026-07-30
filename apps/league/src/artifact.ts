@@ -17,6 +17,8 @@ export const isPreSeason = (run: LeagueRun): boolean => run.summary.signedN === 
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const isNonEmptyString = (v: unknown): v is string =>
+  typeof v === "string" && v.trim().length > 0;
 const STAGES = new Set(["invoke", "verify", "transport"]);
 
 /** Counts must match exactly; the Wilson floats only within representation noise. */
@@ -56,14 +58,32 @@ export function parseLabResults(raw: string, path = "lab-results.json"): LabResu
     throw new Error(`${path}: ${why} — legacy artifact? regenerate with \`roster combine run\``);
   };
   if (!isRecord(json)) return fail("artifact is not an object");
-  if (typeof json.generatedAt !== "string") return fail("missing generatedAt");
-  if (typeof json.environmentDigest !== "string") return fail("missing environmentDigest");
-  if (!isRecord(json.environment) || typeof json.environment.node !== "string") return fail("missing environment");
+  if (
+    !isNonEmptyString(json.generatedAt) ||
+    !Number.isFinite(Date.parse(json.generatedAt)) ||
+    new Date(json.generatedAt).toISOString() !== json.generatedAt
+  ) {
+    return fail("generatedAt must be a canonical ISO-8601 UTC timestamp");
+  }
+  if (
+    typeof json.environmentDigest !== "string" ||
+    !/^[a-f0-9]{64}$/.test(json.environmentDigest)
+  ) {
+    return fail("environmentDigest must be a lowercase SHA-256 digest");
+  }
+  if (
+    !isRecord(json.environment) ||
+    !isNonEmptyString(json.environment.node) ||
+    !isNonEmptyString(json.environment.platform) ||
+    !isNonEmptyString(json.environment.arch)
+  ) {
+    return fail("environment must include non-empty node, platform, and arch");
+  }
   if (!Array.isArray(json.runs) || json.runs.length === 0) return fail("missing runs");
   for (const run of json.runs) {
     if (!isRecord(run)) return fail("run is not an object");
     for (const key of ["server", "suite", "suiteVersion", "category"] as const) {
-      if (typeof run[key] !== "string") return fail(`run missing ${key}`);
+      if (!isNonEmptyString(run[key])) return fail(`run missing ${key}`);
     }
     const where = `run "${String(run.server)}"`;
     if (!Array.isArray(run.results)) return fail(`${where} missing results`);
@@ -192,7 +212,11 @@ export function withoutSignedCredit(run: LeagueRun): LeagueRun {
 /** Newest artifact wins per exact (server, suite, suiteVersion) tuple. */
 export function latestRuns(artifacts: LoadedArtifact[]): Array<{ artifact: LoadedArtifact; run: LeagueRun }> {
   const byKey = new Map<string, { artifact: LoadedArtifact; run: LeagueRun }>();
-  const sorted = [...artifacts].sort((a, b) => a.data.generatedAt.localeCompare(b.data.generatedAt));
+  const sorted = [...artifacts].sort(
+    (a, b) =>
+      Date.parse(a.data.generatedAt) - Date.parse(b.data.generatedAt) ||
+      a.path.localeCompare(b.path),
+  );
   for (const artifact of sorted) {
     for (const run of artifact.data.runs) {
       byKey.set(

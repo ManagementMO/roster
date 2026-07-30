@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -113,6 +114,34 @@ describe("artifact loading (honesty gate)", () => {
     const legacy = structuredClone(data) as { runs: Array<{ summary: Record<string, unknown> }> };
     delete legacy.runs[0]!.summary.signedWilsonLb;
     expect(() => parseLabResults(JSON.stringify(legacy), "old.json")).toThrow(/legacy artifact/);
+  });
+
+  it.each([
+    ["missing platform", (data: Record<string, unknown>) => {
+      delete (data.environment as Record<string, unknown>).platform;
+    }],
+    ["missing arch", (data: Record<string, unknown>) => {
+      delete (data.environment as Record<string, unknown>).arch;
+    }],
+    ["invalid date", (data: Record<string, unknown>) => {
+      data.generatedAt = "not-a-date";
+    }],
+    ["noncanonical date", (data: Record<string, unknown>) => {
+      data.generatedAt = "2026-07-05T01:05:26.314+00:00";
+    }],
+    ["invalid digest", (data: Record<string, unknown>) => {
+      data.environmentDigest = "not-a-sha256";
+    }],
+    ["empty server identity", (data: Record<string, unknown>) => {
+      ((data.runs as Array<Record<string, unknown>>)[0]!).server = "";
+    }],
+  ])("rejects strict metadata: %s", (_name, mutate) => {
+    const data = structuredClone(realArtifact().data) as unknown as Record<
+      string,
+      unknown
+    >;
+    mutate(data);
+    expect(() => parseLabResults(JSON.stringify(data), "strict.json")).toThrow();
   });
 
   it("keeps only the newest run per (server, suite)", () => {
@@ -329,12 +358,177 @@ describe("public-score integrity (R5-03 / R5-10)", () => {
         artifactsDir,
         suitesDir: path.join(repoRoot, "suites"),
         outDir: path.join(dir, "site"),
+        allowEmpty: true,
       });
 
       const html = fs.readFileSync(path.join(dir, "site", "index.html"), "utf8");
       expect(html).not.toContain("forged-server");
       expect(html).not.toContain(`<td class="rk medal">1</td>`);
       expect(report.skipped.map((s) => s.reason).join(" ")).toMatch(/says signed=false/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("strict atomic site publication", () => {
+  function writeRunArtifact(
+    artifactsDir: string,
+    name: string,
+    server: string,
+    generatedAt: string,
+  ): LoadedArtifact["data"]["runs"][number] {
+    const data = structuredClone(realArtifact().data);
+    data.generatedAt = generatedAt;
+    data.runs[0]!.server = server;
+    fs.writeFileSync(
+      path.join(artifactsDir, `${name}-lab-results.json`),
+      `${JSON.stringify(data, null, 2)}\n`,
+    );
+    return data.runs[0]!;
+  }
+
+  it("replaces the complete site so removed runs leave no stale box page", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-atomic-"));
+    try {
+      const artifactsDir = path.join(dir, "artifacts");
+      const outDir = path.join(dir, "site");
+      fs.mkdirSync(artifactsDir);
+      writeRunArtifact(
+        artifactsDir,
+        "first",
+        "first-server",
+        "2026-07-05T01:00:00.000Z",
+      );
+      const removedRun = writeRunArtifact(
+        artifactsDir,
+        "second",
+        "second-server",
+        "2026-07-05T02:00:00.000Z",
+      );
+      buildSite({
+        artifactsDir,
+        suitesDir: path.join(repoRoot, "suites"),
+        outDir,
+      });
+      const stalePath = path.join(
+        outDir,
+        boxScoreFilename(removedRun, "2026-07-05T02:00:00.000Z"),
+      );
+      expect(fs.existsSync(stalePath)).toBe(true);
+
+      fs.rmSync(path.join(artifactsDir, "second-lab-results.json"));
+      buildSite({
+        artifactsDir,
+        suitesDir: path.join(repoRoot, "suites"),
+        outDir,
+      });
+      expect(fs.existsSync(stalePath)).toBe(false);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("leaves the previously published site untouched on a mid-render exception", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-render-"));
+    const originalCreateHash = crypto.createHash;
+    try {
+      const artifactsDir = path.join(dir, "artifacts");
+      const outDir = path.join(dir, "site");
+      fs.mkdirSync(artifactsDir);
+      fs.mkdirSync(outDir);
+      fs.writeFileSync(path.join(outDir, "index.html"), "KNOWN-GOOD\n");
+      writeRunArtifact(
+        artifactsDir,
+        "only",
+        "render-failure",
+        "2026-07-05T01:00:00.000Z",
+      );
+      let calls = 0;
+      crypto.createHash = ((...args: Parameters<typeof crypto.createHash>) => {
+        calls++;
+        if (calls === 2) throw new Error("deliberate render failure");
+        return Reflect.apply(originalCreateHash, crypto, args);
+      }) as typeof crypto.createHash;
+
+      expect(() =>
+        buildSite({
+          artifactsDir,
+          suitesDir: path.join(repoRoot, "suites"),
+          outDir,
+        }),
+      ).toThrow(/deliberate render failure/);
+      expect(fs.readFileSync(path.join(outDir, "index.html"), "utf8")).toBe(
+        "KNOWN-GOOD\n",
+      );
+      expect(fs.readdirSync(outDir)).toEqual(["index.html"]);
+    } finally {
+      crypto.createHash = originalCreateHash;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects duplicate rendered destinations before replacing the live site", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-duplicate-"));
+    const originalCreateHash = crypto.createHash;
+    try {
+      const artifactsDir = path.join(dir, "artifacts");
+      const outDir = path.join(dir, "site");
+      fs.mkdirSync(artifactsDir);
+      fs.mkdirSync(outDir);
+      fs.writeFileSync(path.join(outDir, "index.html"), "KNOWN-GOOD\n");
+      writeRunArtifact(
+        artifactsDir,
+        "first",
+        "same/name",
+        "2026-07-05T01:00:00.000Z",
+      );
+      writeRunArtifact(
+        artifactsDir,
+        "second",
+        "same-name",
+        "2026-07-05T02:00:00.000Z",
+      );
+      crypto.createHash = (() =>
+        ({
+          update() {
+            return this;
+          },
+          digest() {
+            return "0".repeat(64);
+          },
+        }) as crypto.Hash) as typeof crypto.createHash;
+
+      expect(() =>
+        buildSite({
+          artifactsDir,
+          suitesDir: path.join(repoRoot, "suites"),
+          outDir,
+        }),
+      ).toThrow(/duplicate.*destination/i);
+      expect(fs.readFileSync(path.join(outDir, "index.html"), "utf8")).toBe(
+        "KNOWN-GOOD\n",
+      );
+    } finally {
+      crypto.createHash = originalCreateHash;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses an empty publication unless allowEmpty is explicit", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "league-empty-"));
+    try {
+      const opts = {
+        artifactsDir: path.join(dir, "missing-artifacts"),
+        suitesDir: path.join(repoRoot, "suites"),
+        outDir: path.join(dir, "site"),
+      };
+      expect(() => buildSite(opts)).toThrow(/empty|artifact/i);
+      expect(fs.existsSync(opts.outDir)).toBe(false);
+
+      const report = buildSite({ ...opts, allowEmpty: true });
+      expect(report.pages).toHaveLength(1);
+      expect(fs.existsSync(path.join(opts.outDir, "index.html"))).toBe(true);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
