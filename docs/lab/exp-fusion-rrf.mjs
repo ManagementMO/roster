@@ -57,11 +57,12 @@ const flag = (name, dflt) => {
   const hit = argv.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.slice(name.length + 3) : dflt;
 };
+// Living in docs/lab, the repo root is two levels up; --repo / ROSTER_REPO still win.
 const REPO = path.resolve(
-  flag("repo", process.env.ROSTER_REPO ?? "/tmp/roster-post-round5-closure"),
+  flag("repo", process.env.ROSTER_REPO ?? path.resolve(HERE, "..", "..")),
 );
 const LAB = path.join(REPO, "docs", "lab");
-const OUT = path.resolve(flag("out", path.join(HERE, "e1-results-fusion-rrf.json")));
+const OUT = path.resolve(flag("out", path.join(HERE, "results-fusion-rrf.json")));
 const EMBEDDER = flag("embedder", "stub");
 const RESAMPLES = Number(flag("resamples", "10000"));
 const SEED = Number(flag("seed", "20260731"));
@@ -771,7 +772,6 @@ fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(results, null, 2));
 
 // ── console digest ─────────────────────────────────────────────────────────
-const fmt = (s) => `hit@1 ${s.overall.hit1}  hit@5 ${s.overall.hit5}  MRR ${s.overall.mrr}  (n=${s.overall.n})`;
 console.log(`embedder=${EMBEDDER}  model=${results.meta.model}  dims=${results.meta.sanity.dims}`);
 console.log(
   `sanity dog~puppy=${results.meta.sanity.cosDogPuppy} dog~qft=${results.meta.sanity.cosDogQft}` +

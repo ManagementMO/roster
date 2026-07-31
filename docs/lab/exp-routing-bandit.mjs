@@ -17,11 +17,16 @@
  */
 import { createRequire } from "node:module";
 import { writeFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const OUT_JSON =
-  "/tmp/claude-0/-home-user-roster/c85b98df-18e8-5308-a861-b4353c52ba11/scratchpad/e2-results-routing-bandit.json";
+// Repo-relative, like every other experiment here. Override with ROSTER_REPO
+// when running out of tree.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO = process.env.ROSTER_REPO ?? path.resolve(HERE, "..", "..");
+const OUT_JSON = path.join(HERE, "results-routing-bandit.json");
 
-const req = createRequire("/tmp/roster-post-round5-closure/packages/cli/package.json");
+const req = createRequire(path.join(REPO, "packages/cli/package.json"));
 const { wilsonLowerBound: REAL_WILSON } = await import(req.resolve("@rosterhq/shared"));
 
 // ── parity check: local mirror vs the real production function ───────────────
@@ -582,7 +587,7 @@ for (const c of SELF_CHECKS) {
 const t0 = Date.now();
 const results = {
   generatedAt: new Date().toISOString(),
-  repo: "/tmp/roster-post-round5-closure @ 06f6c36 (read-only)",
+  repo: REPO,
   statusQuoAsRead: {
     file: "packages/coach/src/store.ts",
     draftCandidatesScore: "0.15*lexNorm + 0.85*cosNorm — contains NO rating term",

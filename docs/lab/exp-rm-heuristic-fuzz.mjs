@@ -23,9 +23,13 @@
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const REPO = "/tmp/roster-post-round5-closure";
-const OUT_DIR = "/tmp/claude-0/-home-user-roster/c85b98df-18e8-5308-a861-b4353c52ba11/scratchpad";
+// Repo-relative, like every other experiment here: results land beside the script
+// in docs/lab. Override with ROSTER_REPO when running out of tree.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO = process.env.ROSTER_REPO ?? path.resolve(HERE, "..", "..");
+const OUT_DIR = HERE;
 const N = Number(process.env.E3_FUZZ_N ?? 500000);
 
 const require_ = createRequire(path.join(REPO, "packages/cli/package.json"));
@@ -390,7 +394,7 @@ const out = {
   summary,
   pairedStats: stats,
 };
-fs.writeFileSync(path.join(OUT_DIR, "e3-results-fuzz.json"), JSON.stringify(out, null, 2));
+fs.writeFileSync(path.join(OUT_DIR, "results-rm-heuristic-fuzz.json"), JSON.stringify(out, null, 2));
 
 const pad = (x, n) => String(x).padEnd(n);
 console.log(`fuzz n=${N}  oracle-positives=${positives} (${((positives / N) * 100).toFixed(1)}%)`);
@@ -429,4 +433,4 @@ for (const n of names) {
   console.log(`${n} (${summary[n].fn} FN):`);
   for (const e of summary[n].fnExamples.slice(0, 12)) console.log(`   ${e}`);
 }
-console.log(`\nwrote ${path.join(OUT_DIR, "e3-results-fuzz.json")}`);
+console.log(`\nwrote ${path.join(OUT_DIR, "results-rm-heuristic-fuzz.json")}`);
