@@ -23,6 +23,87 @@ export interface Rule {
   detail: string;
 }
 
+/*
+ * Fragments of the `destructive-command` heuristic. The equivalent single regex
+ * literal is 433 characters; this is the one rule a hostile skill will probe, so
+ * it is assembled from named parts a reviewer can check one at a time. Each part
+ * is regex SOURCE, so composition is plain concatenation.
+ */
+
+/**
+ * Whitespace WITHIN one command: spaces/tabs, plus shell line continuations.
+ * Deliberately NOT `\s` — `\s` spans a bare newline, so the predecessor joined
+ * `rm -rf` at the end of one line to `/usr/local/bin/tool` at the start of the
+ * next and called it one command (483 of its 1,796 measured fuzz false positives).
+ */
+const RM_SEP = String.raw`[ \t]+(?:\\\r?\n[ \t]+)*`;
+
+/**
+ * One option token. It must contain an alphanumeric, so a BARE `--` is NOT an
+ * option — that is what lets the rule honour end-of-options: after `--`, `-r`
+ * and `-f` are operands, so `rm -- -r -f /` forces NOTHING, while `rm -r -f -- /`
+ * (a real destructive command) still matches through the optional trailing `--`.
+ */
+const RM_FLAG = "--?[A-Za-z0-9][-A-Za-z0-9=]*";
+const RM_OPT = `(?:${RM_SEP}${RM_FLAG})`;
+
+/**
+ * A token that SUPPLIES recursive / force: either a short cluster containing the
+ * letter (`-r`, `-fr`, `-xrfy`), or the long option — spelled as every
+ * abbreviation GNU getopt_long accepts, and nothing longer. `--recursive` and
+ * `--force` are rm's ONLY long options starting with r / f, so `rm --r --f /`
+ * really does recursively force-delete `/` (verified against GNU coreutils 9.4);
+ * accepting only the full spellings left a one-token evasion. The `(?![-\w])`
+ * guard keeps `--reflink=always` / `--fsync` — options of OTHER tools, which rm
+ * rejects outright — from counting as evidence.
+ */
+const RM_RECURSIVE = String.raw`-(?:[a-z]*r|-(?:recursive|recursiv|recursi|recurs|recur|recu|rec|re|r)(?![-\w]))`;
+const RM_FORCE = String.raw`-(?:[a-z]*f|-(?:force|forc|for|fo|f)(?![-\w]))`;
+
+/**
+ * Linear by CONSTRUCTION, and with NO semantic cap on cluster length or on the
+ * number of intervening flags (a cap is a trivial bypass — `rm -rr…rf /`).
+ *
+ * The two required letters are carried by zero-width lookaheads at the fixed
+ * position after `rm`. JS lookaheads are ATOMIC: once satisfied they are never
+ * re-entered, so they cannot multiply with what follows. Inside each one,
+ * `(?:SEP FLAG)*SEP -evidence` backtracks by whole TOKENS and tests exactly one
+ * token per level; token extents are disjoint, so that is O(flag run). The run is
+ * then consumed ONCE by the atomic-capture idiom `(?=(REGION+))\1` — `\1` is a
+ * fixed string, so there is no split enumeration against the target check. That
+ * is lossless here: a flag token starts with `-` and the target with `~`/`/`, so
+ * no shorter prefix of the greedy run could let `SEP [~/]` succeed.
+ *
+ * `(?<![-\w=])` instead of `\b` is LOAD-BEARING FOR THIS CONSTRUCTION. `\b` also
+ * matches the `rm` INSIDE a flag token (`-rm`, `--a=rm`), which is never an
+ * invocation — and because such a start sits inside another command's flag run,
+ * every start re-walks that run: measured 7,448 ms on 64 KiB of `rm -rm -rm …`
+ * for the `\b` form (quadratic) versus 0.96 ms here (linear). (The PREDECESSOR
+ * pattern was linear on that same input — its lookaheads never left the first
+ * cluster — so this anchor is required by the token-scanning form, not a fix to
+ * a shipped defect.) Excluding `-`, `=` and word chars is exactly what makes
+ * distinct start positions' flag runs disjoint.
+ *
+ * Measured: log-log slope 0.956–1.063 across 19 adversarial shapes from 4 KiB to
+ * 1 MiB; 30.6 ms worst case at the 1 MiB MAX_SKILL_MD_BYTES cap.
+ *
+ * Semantics: an `rm` in command position, whose flag run supplies BOTH recursive
+ * and force (any order, any number of unrelated flags between, short clusters or
+ * long options or a mix), followed by a `~` or `/` target on the SAME command.
+ * `rm -r`/`rm -f` alone, a missing target, a relative/quoted/variable target, and
+ * `rm` inside a flag or an assignment do not match.
+ */
+const DESTRUCTIVE_RM = new RegExp(
+  String.raw`(?<![-\w=])rm` +
+    `(?=${RM_OPT}*${RM_SEP}${RM_RECURSIVE})` +
+    `(?=${RM_OPT}*${RM_SEP}${RM_FORCE})` +
+    `(?=(${RM_OPT}+))` +
+    String.raw`\1` +
+    `(?:${RM_SEP}--)?` +
+    `${RM_SEP}[~/]`,
+  "i",
+);
+
 /**
  * Exported so the suite can hold EVERY rule — present and future — to the
  * linear-time bar on hostile input, instead of only the one that was known to
@@ -52,27 +133,13 @@ export const TRUST_RULES: readonly Rule[] = [
   },
   {
     id: "destructive-command",
-    // Linear by CONSTRUCTION, and with NO semantic length cap (a real `rm`
-    // accepts arbitrarily long repeated-flag clusters, so a cap would be a
-    // trivial bypass — `rm -rr…rf /`).
-    //
-    // The pre-fix form `-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r` wrapped each required
-    // letter in UNBOUNDED runs, so a failing match enumerated the O(n²) ways to
-    // split the cluster (a 4 KB body of `rm -` + "rf"×2048 took 9.7 s, and every
-    // listing boundary scans untrusted SKILL.md text).
-    //
-    // Here the two required letters are checked by ZERO-WIDTH lookaheads that run
-    // exactly once at the fixed position after `-` (each an O(k) forward scan for
-    // `r` / `f`), then a single greedy `[a-z]+` consumes the cluster once. When
-    // `\s+[~/]` fails, only `[a-z]+` backtracks — one char at a time, O(k) — and
-    // the already-matched zero-width lookaheads are NOT re-evaluated, so there is
-    // no multiplicative backtracking. Measured ~linear: 1 MiB in ~5.7 ms.
-    //
-    // Semantics: requires a flag cluster containing BOTH r and f (any order, any
-    // length, other flags allowed) followed by whitespace and a ~ or / target.
-    // `rm -r`/`rm -f` alone, a missing target, and non-home/root targets do not
-    // match.
-    pattern: /\brm\s+-(?=[a-z]*r)(?=[a-z]*f)[a-z]+\s+[~/]/i,
+    // Built above from named fragments: the flat literal is 433 chars. The
+    // predecessor `/\brm\s+-(?=[a-z]*r)(?=[a-z]*f)[a-z]+\s+[~/]/i` was linear but
+    // required ONE cluster to carry both letters, so it missed every split and
+    // long form — `rm -r -f /`, `rm --recursive --force /`, `rm --r --f /` — i.e.
+    // 0/25 of the split-form corpus and recall 0.0967 on a 500,000-case fuzz
+    // against a getopt oracle (this form: recall 1.0000, precision 0.966).
+    pattern: DESTRUCTIVE_RM,
     detail: "recursive force-delete against home or root paths",
   },
   {

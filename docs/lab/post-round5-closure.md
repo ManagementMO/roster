@@ -104,10 +104,14 @@ between old and new, so linearity cost no detection coverage.
 None of these regressed in this work; they are the honest edges of what it
 verifies, recorded so a later reader does not over-read the green gate.
 
-- **The destructive-command rule stays a heuristic.** `rm -r -f /` (split flags)
-  and `rm --recursive --force /` (long flags) match neither the old nor the new
-  pattern — verified identical on both. The trust gate flags for human review; it
-  is not a sandbox, and a determined author can phrase around any substring rule.
+- **The destructive-command rule stays a heuristic** — but the split/long-flag gap
+  recorded here is now CLOSED. `rm -r -f /` and `rm --recursive --force /` are
+  detected as of `af5d852` (measured recall 0.0967 → 1.0000 against a getopt
+  oracle over a 500,000-case fuzz; see `notes-gap-experiments.md` §E3). What
+  remains heuristic: quoted and variable targets (`rm -rf "$DIR"/x`) are out of
+  scope by design — catching them cost a 17× false-positive increase on the fuzz
+  grammar. The trust gate flags for human review; it is not a sandbox, and a
+  determined author can phrase around any substring rule.
 - **`serve` shutdown (C6) is not exercised on Windows.** Those tests spawn a real
   stdio backend and drive POSIX signals, so they skip on win32. The production
   listeners exist there (Node emulates SIGINT/SIGTERM) but CI does not prove the
