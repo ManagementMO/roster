@@ -9,6 +9,38 @@ allowBuilds:
   sharp: true
   sqlite-vec: true
   "@huggingface/transformers": true
+minimumReleaseAgeExclude:
+  - '@remotion/bundler@4.0.502'
+  - '@remotion/canvas-capture@4.0.502'
+  - '@remotion/captions@4.0.502'
+  - '@remotion/cli@4.0.502'
+  - '@remotion/compositor-darwin-arm64@4.0.502'
+  - '@remotion/compositor-darwin-x64@4.0.502'
+  - '@remotion/compositor-linux-arm64-gnu@4.0.502'
+  - '@remotion/compositor-linux-arm64-musl@4.0.502'
+  - '@remotion/compositor-linux-x64-gnu@4.0.502'
+  - '@remotion/compositor-linux-x64-musl@4.0.502'
+  - '@remotion/compositor-win32-x64-msvc@4.0.502'
+  - '@remotion/fonts@4.0.502'
+  - '@remotion/licensing@4.0.502'
+  - '@remotion/media-parser@4.0.502'
+  - '@remotion/media-utils@4.0.502'
+  - '@remotion/media@4.0.502'
+  - '@remotion/noise@4.0.502'
+  - '@remotion/paths@4.0.502'
+  - '@remotion/player@4.0.502'
+  - '@remotion/renderer@4.0.502'
+  - '@remotion/shapes@4.0.502'
+  - '@remotion/streaming@4.0.502'
+  - '@remotion/studio-codemods@4.0.502'
+  - '@remotion/studio-protocol@4.0.502'
+  - '@remotion/studio-server@4.0.502'
+  - '@remotion/studio-shared@4.0.502'
+  - '@remotion/studio@4.0.502'
+  - '@remotion/timeline-utils@4.0.502'
+  - '@remotion/web-renderer@4.0.502'
+  - '@remotion/zod-types@4.0.502'
+  - remotion@4.0.502
 # Upstream dependency ranges still resolve vulnerable releases. Keep the first
 # safe compatible Hono release and the patched Transformers transitives pinned
 # until their parents select them directly.

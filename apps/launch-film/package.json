@@ -1,0 +1,50 @@
+{
+  "name": "@rosterhq/launch-film",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Roster launch film \u2014 a 58s premium glass cinematic built in Remotion.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "studio": "remotion studio --no-open",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "audio": "tsx scripts/generate-audio.mjs",
+    "fonts": "node scripts/install-fonts.mjs",
+    "preview": "remotion render LaunchFilm out/premium-v1/roster-launch-premium-preview.mp4 --scale=0.5 --crf=24 --log=error",
+    "master": "remotion render LaunchFilm out/premium-v1/roster-launch-premium-master.mp4 --crf=16 --pixel-format=yuv420p --color-space=bt709 --log=error",
+    "poster": "remotion still LaunchFilm out/premium-v1/roster-launch-premium-poster.png --frame=3440 --log=error",
+    "stills": "tsx scripts/render-stills.mjs",
+    "contact-sheet": "tsx scripts/contact-sheet.mjs",
+    "before-after": "tsx scripts/before-after.mjs",
+    "qa-sheet": "tsx scripts/qa-sheet.mjs",
+    "teaser": "remotion render Teaser out/premium-v1/roster-launch-premium-teaser.mp4 --crf=18 --pixel-format=yuv420p --log=error",
+    "gif": "tsx scripts/render-gif.mjs",
+    "probe": "tsx scripts/probe-master.mjs",
+    "build:all": "tsx scripts/build-all.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.502",
+    "@remotion/fonts": "4.0.502",
+    "@remotion/media": "4.0.502",
+    "@remotion/media-parser": "4.0.502",
+    "@remotion/noise": "4.0.502",
+    "@remotion/paths": "4.0.502",
+    "@remotion/renderer": "4.0.502",
+    "@remotion/shapes": "4.0.502",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.502",
+    "@remotion/bundler": "4.0.502"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.2.0",
+    "@fontsource/jetbrains-mono": "^5.2.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^6.0.3",
+    "tsx": "^4.19.0"
+  }
+}

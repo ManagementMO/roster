@@ -11,3 +11,14 @@ dist-site/
 # accidental review/validation artifacts (never commit)
 actionlint
 docs/lab/tmp-*/
+
+# launch-film: QA working files, all regenerable
+# (`pnpm contact-sheet` rebuilds public/qa + out/qa-frames; `pnpm stills` rebuilds out/stills)
+apps/launch-film/out/stills/
+apps/launch-film/out/qa-frames/
+apps/launch-film/public/qa/
+
+# Agent skills installed for this work (vendored copy of remotion-dev/skills)
+.agents/
+.claude/skills/
+skills-lock.json

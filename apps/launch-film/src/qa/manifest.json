@@ -1,0 +1,241 @@
+{
+  "shots": [
+    {
+      "scene": "hook",
+      "label": "entry",
+      "frame": 32,
+      "file": "scene-hook-entry.png"
+    },
+    {
+      "scene": "hook",
+      "label": "mid",
+      "frame": 90,
+      "file": "scene-hook-mid.png"
+    },
+    {
+      "scene": "hook",
+      "label": "exit",
+      "frame": 155,
+      "file": "scene-hook-exit.png"
+    },
+    {
+      "scene": "terminal",
+      "label": "entry",
+      "frame": 256,
+      "file": "scene-terminal-entry.png"
+    },
+    {
+      "scene": "terminal",
+      "label": "mid",
+      "frame": 390,
+      "file": "scene-terminal-mid.png"
+    },
+    {
+      "scene": "terminal",
+      "label": "exit",
+      "frame": 541,
+      "file": "scene-terminal-exit.png"
+    },
+    {
+      "scene": "overload",
+      "label": "entry",
+      "frame": 676,
+      "file": "scene-overload-entry.png"
+    },
+    {
+      "scene": "overload",
+      "label": "mid",
+      "frame": 810,
+      "file": "scene-overload-mid.png"
+    },
+    {
+      "scene": "overload",
+      "label": "exit",
+      "frame": 961,
+      "file": "scene-overload-exit.png"
+    },
+    {
+      "scene": "initialize",
+      "label": "entry",
+      "frame": 1085,
+      "file": "scene-initialize-entry.png"
+    },
+    {
+      "scene": "initialize",
+      "label": "mid",
+      "frame": 1200,
+      "file": "scene-initialize-mid.png"
+    },
+    {
+      "scene": "initialize",
+      "label": "exit",
+      "frame": 1330,
+      "file": "scene-initialize-exit.png"
+    },
+    {
+      "scene": "search",
+      "label": "entry",
+      "frame": 1466,
+      "file": "scene-search-entry.png"
+    },
+    {
+      "scene": "search",
+      "label": "mid",
+      "frame": 1620,
+      "file": "scene-search-mid.png"
+    },
+    {
+      "scene": "search",
+      "label": "exit",
+      "frame": 1793,
+      "file": "scene-search-exit.png"
+    },
+    {
+      "scene": "clearing",
+      "label": "entry",
+      "frame": 1925,
+      "file": "scene-clearing-entry.png"
+    },
+    {
+      "scene": "clearing",
+      "label": "mid",
+      "frame": 2040,
+      "file": "scene-clearing-mid.png"
+    },
+    {
+      "scene": "clearing",
+      "label": "exit",
+      "frame": 2170,
+      "file": "scene-clearing-exit.png"
+    },
+    {
+      "scene": "startingFive",
+      "label": "entry",
+      "frame": 2285,
+      "file": "scene-startingFive-entry.png"
+    },
+    {
+      "scene": "startingFive",
+      "label": "mid",
+      "frame": 2400,
+      "file": "scene-startingFive-mid.png"
+    },
+    {
+      "scene": "startingFive",
+      "label": "exit",
+      "frame": 2530,
+      "file": "scene-startingFive-exit.png"
+    },
+    {
+      "scene": "toolCall",
+      "label": "entry",
+      "frame": 2623,
+      "file": "scene-toolCall-entry.png"
+    },
+    {
+      "scene": "toolCall",
+      "label": "mid",
+      "frame": 2700,
+      "file": "scene-toolCall-mid.png"
+    },
+    {
+      "scene": "toolCall",
+      "label": "exit",
+      "frame": 2786,
+      "file": "scene-toolCall-exit.png"
+    },
+    {
+      "scene": "sixthMan",
+      "label": "entry",
+      "frame": 2852,
+      "file": "scene-sixthMan-entry.png"
+    },
+    {
+      "scene": "sixthMan",
+      "label": "mid",
+      "frame": 2910,
+      "file": "scene-sixthMan-mid.png"
+    },
+    {
+      "scene": "sixthMan",
+      "label": "exit",
+      "frame": 2975,
+      "file": "scene-sixthMan-exit.png"
+    },
+    {
+      "scene": "coachLeague",
+      "label": "entry",
+      "frame": 3043,
+      "file": "scene-coachLeague-entry.png"
+    },
+    {
+      "scene": "coachLeague",
+      "label": "mid",
+      "frame": 3120,
+      "file": "scene-coachLeague-mid.png"
+    },
+    {
+      "scene": "coachLeague",
+      "label": "exit",
+      "frame": 3206,
+      "file": "scene-coachLeague-exit.png"
+    },
+    {
+      "scene": "reveal",
+      "label": "entry",
+      "frame": 3283,
+      "file": "scene-reveal-entry.png"
+    },
+    {
+      "scene": "reveal",
+      "label": "mid",
+      "frame": 3360,
+      "file": "scene-reveal-mid.png"
+    },
+    {
+      "scene": "reveal",
+      "label": "exit",
+      "frame": 3446,
+      "file": "scene-reveal-exit.png"
+    }
+  ],
+  "before": [
+    {
+      "file": "rejected-overload.png",
+      "scene": "overload",
+      "label": "entry",
+      "frame": 676
+    },
+    {
+      "file": "rejected-startingFive.png",
+      "scene": "startingFive",
+      "label": "mid",
+      "frame": 2400
+    },
+    {
+      "file": "rejected-reveal.png",
+      "scene": "reveal",
+      "label": "exit",
+      "frame": 3446
+    }
+  ],
+  "meta": {
+    "file": "out/premium-v1/roster-launch-premium-master.mp4",
+    "container": "mp4",
+    "size": "32.20 MB",
+    "resolution": "1920×1080",
+    "fps": "60.000",
+    "duration": "58.048 s",
+    "videoCodec": "h264",
+    "videoCodecString": "avc1.64002a",
+    "audioCodec": "aac",
+    "audioCodecString": "mp4a.40.02",
+    "audioChannels": "2",
+    "audioSampleRate": "48000 Hz",
+    "hdr": "false",
+    "decodedVideoSamples": "3480",
+    "decodedAudioSamples": "2721",
+    "lastVideoTimestamp": "57.983 s",
+    "verified": "PASS"
+  }
+}
