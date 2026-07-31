@@ -273,6 +273,15 @@ describe("trust scan input safety", () => {
         "do not tell ".repeat(N / 12),
         ("A".repeat(399) + " ").repeat(N / 400),
         "a".repeat(N),
+        // Split-form shapes. The first two are what a \b-anchored rule turns
+        // quadratic: an rm INSIDE a flag token is a nested start position, so
+        // every start re-walks the rest of the flag run.
+        "rm" + " -rm".repeat(N / 4),
+        "rm" + " --a=rm".repeat(N / 8),
+        "rm" + " -r".repeat(N / 3) + " /", // one letter present, the other never
+        "rm -rf" + " ".repeat(N), // whitespace run, no target
+        "rm" + " -rf --".repeat(N / 8), // repeated end-of-options markers
+        "rm" + " --recursiv".repeat(N / 12), // near-miss long options
       ];
       for (const rule of rules) {
         const re = new RegExp(rule.source, rule.flags);
@@ -351,6 +360,95 @@ describe("trust scan input safety", () => {
       // both letters buried among many other short flags
       expect(destructiveHit(`rm -${"v".repeat(len)}rf /`), `mixed len=${len}`).toBe(true);
     }
+  });
+
+  /**
+   * `rm -r -f /` and `rm --recursive --force /` are the same destructive command
+   * as `rm -rf /`. The single-cluster predecessor required ONE flag cluster to
+   * carry both letters, so it caught none of these (measured recall 0.0967 on a
+   * 500,000-case differential fuzz against a getopt oracle). GNU getopt_long also
+   * accepts any unambiguous abbreviation, and --recursive/--force are rm's only
+   * long options starting with r/f, so `rm --r --f DIR` really deletes DIR
+   * (verified against GNU coreutils 9.4) — the abbreviations are invocations.
+   */
+  it("detects split and long-form recursive force-deletes", () => {
+    const hits = [
+      "rm -r -f /",
+      "rm -f -r ~",
+      "rm --recursive --force /",
+      "rm --force --recursive ~",
+      "rm -r --force /", // short + long
+      "rm --recursive -f ~", // long + short
+      "rm --recu --forc /", // unambiguous abbreviations
+      "rm --r --f /", // shortest unambiguous abbreviations
+      "rm -v -r -f /", // unrelated flags between the two
+      "rm -v -i -r -d -f -v /",
+      "rm -rf --no-preserve-root /", // cluster plus a long flag
+      "rm --recursive --force --preserve-root=all /", // long flag with a value
+      "rm   -r    -f   /", // wide spacing
+      "rm\t-r\t-f\t/", // tabs
+      "RM -R -F /", // uppercase
+      "RM --RECURSIVE --FORCE /",
+      "rm -r -f -- /", // end-of-options marker before the target
+      "rm -r \\\n  -f /", // shell line continuation
+      "sudo rm -r -f /home/user",
+      "/bin/rm -r -f /",
+      "`rm -r -f /`",
+    ];
+    for (const hit of hits) expect(destructiveHit(hit), hit).toBe(true);
+  });
+
+  /**
+   * The forms that LOOK split but are not one destructive command. Every case was
+   * surfaced by the same differential fuzz, not by hand — these are the shapes a
+   * split-form rule over-accepts if it treats every `--r…`/`--f…` word as
+   * evidence, ignores the end-of-options marker, or lets a match start inside a
+   * flag token.
+   */
+  it("does not invent split-form destructive commands", () => {
+    const misses = [
+      "rm -- -r -f /", // after `--`, -r/-f are OPERANDS: nothing recurses
+      "rm -- -rf /",
+      "rm --reflink=always --fsync /", // --r…/--f… that rm rejects outright
+      "rm --recursive --fsync /", // recursive, but nothing forces
+      "rm --reflink=always --force /", // forced, but nothing recurses
+      "rm --force /", // long force alone
+      "rm --recursive /", // long recursive alone
+      "rm -r --one-file-system /",
+      "rm -r --no-preserve-root /", // no force: outside this rule's semantics
+      "rm -r -f ./build", // relative target, out of scope
+      "rm -r -f node_modules",
+      "git rm -r -f --cached src/x.ts", // target neither ~ nor /
+      `rm -r -f ${"$"}{BUILD_DIR}/out`, // variable target, out of scope
+      'rm -r -f "$TMPDIR"/x',
+      "docker run --rm -r -f /", // `rm` inside a flag is not a command…
+      "TOOL=rm -r -f /", // …nor is an assignment value
+      "rm -rf\n/usr/local/bin/tool --help", // two lines are two commands
+      "warm -r -f /",
+      "rmdir -r -f /",
+    ];
+    for (const miss of misses) expect(destructiveHit(miss), miss).toBe(false);
+  });
+
+  /**
+   * GROWTH, not speed. The sibling child-process test only enforces a wall-clock
+   * budget, and a quadratic mutant of this rule still fits inside it with ~17x
+   * headroom — so this ratio assertion is the only guard that actually fails when
+   * the command-position anchor is replaced by `\b`. 4x the input must cost ~4x
+   * (linear), not ~16x (quadratic).
+   */
+  it("scales linearly on flag runs that embed `rm`", () => {
+    const ms = (bytes: number): number => {
+      const body = `rm${" -rm".repeat(bytes / 4)} x`;
+      trustScan({ body, scripts: [] }); // warm
+      const started = process.hrtime.bigint();
+      trustScan({ body, scripts: [] });
+      return Number(process.hrtime.bigint() - started) / 1e6;
+    };
+    const small = ms(16 * 1024);
+    const large = ms(64 * 1024);
+    expect(large).toBeLessThan(500); // absolute backstop; measured ~1ms
+    expect(large / Math.max(small, 0.05)).toBeLessThan(10); // linear ~4, quadratic ~16
   });
 
   it("bounds SKILL.md and fails closed to review rather than silently trusting a truncated scan", () => {
