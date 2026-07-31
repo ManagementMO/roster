@@ -1,0 +1,52 @@
+# Lab measurement, NOT a gate. Runs the pre-registered RRF-vs-shipped-fusion
+# experiment with REAL MiniLM inference, which the dev sandbox cannot do
+# (huggingface.co is blocked there). Triggers only on `lab/**` branches and on
+# manual dispatch, so it never runs on main or on ordinary PRs.
+name: lab-rrf
+on:
+  push:
+    branches: ['lab/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-rrf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fusion:
+    name: RRF vs shipped fusion (real MiniLM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm build
+      # Same retry shape as the dense job: the model download is the flaky part.
+      - name: Measure fusion arms
+        run: |
+          for i in 1 2 3; do
+            node docs/lab/exp-fusion-rrf.mjs --embedder=real --resamples=10000 && exit 0
+            echo "retry $i"; sleep 10
+          done
+          exit 1
+      - name: Decision block
+        if: always()
+        run: |
+          test -f docs/lab/results-fusion-rrf.json || { echo "no results file"; exit 1; }
+          node -e '
+            const r = require("./docs/lab/results-fusion-rrf.json");
+            console.log("model:", r.meta.model, "dims:", r.meta.sanity.dims);
+            console.log("parity asserted:", r.parity.asserted, "mismatches:", r.parity.mismatches);
+            console.log("primary arm:", r.decision.primaryArm, "->", r.decision.primaryArmVerdict);
+            console.log("anyAdopt:", r.decision.anyAdopt);
+            console.log(r.decision.headline);
+            for (const [id, d] of Object.entries(r.decision.perArm)) console.log(" ", id, d.verdict);
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fusion-rrf-results
+          path: docs/lab/results-fusion-rrf.json
