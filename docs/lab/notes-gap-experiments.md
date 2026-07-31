@@ -10,14 +10,48 @@ Only **E3** produced a production change. The rest are documented outcomes.
 
 | # | Hypothesis | Verdict | Verifier | Outcome |
 |---|---|---|---|---|
-| E1 | RRF beats the weighted min-max fusion | **BLOCKED** | — | harness landed; fusion untouched |
+| E1 | RRF beats the weighted min-max fusion | **REFUTED** (real MiniLM, in CI) | pre-registered rule | all 11 arms rejected; fusion untouched |
 | E2 | Thompson sampling beats Wilson-LCB for routing | **REFUTED** | upheld | no change; a separate real degeneracy found |
 | E3 | the `rm` rule can catch split/long flags | **CONFIRMED** | upheld (2 fixes) | **shipped** (`af5d852`) |
 | E4 | `serve` shutdown can be tested platform-neutrally | CONFIRMED | **refuted** | not shipped — the seam costs a static guard |
 | E5 | dependency majors are safe | MIXED | **refuted** | not shipped — the safety criterion is insensitive |
 | E6 | `node:sqlite` could replace better-sqlite3 | CONFIRMED | upheld | document only; it is a version wait |
 
-## E1 — RRF vs weighted fusion: BLOCKED, and honestly so
+## E1 — RRF vs weighted fusion: **ANSWERED. Keep the shipped fusion.**
+
+**Resolved 2026-07-31 with real MiniLM inference**, by running the harness in CI
+(`.github/workflows/lab-rrf.yml`, run 30613928282) where huggingface.co is
+reachable. The sandbox blocker below stands; CI was the way around it.
+
+```
+model: Xenova/all-MiniLM-L6-v2  dims: 384
+parity asserted: true  mismatches: 0        <- the control IS the shipped fusion
+primary arm: rrf_k60 -> KEEP_SHIPPED
+anyAdopt: false
+PRE-REGISTERED PRIMARY ARM rrf_k60 does NOT clear the bar — KEEP the shipped
+weighted min-max fusion.
+```
+
+**All eleven challengers were rejected** by the pre-registered rule — RRF at
+k ∈ {0, 1, 10, 20, 60}, both uncapped-lexical-depth RRF variants, z-score
+weighted fusion at 0.15/0.85 and 0.5/0.5, and rank-weighted Borda at both
+weightings. Not one improved hit@1 and MRR with a paired 95% CI excluding zero.
+
+So **the literature prior does not hold on this corpus**, and the shipped
+`0.15/0.85` weighted min-max fusion — plus `LEX_SCORE_FLOOR` and
+`MIN_INFORMATIVE_COS_SPAN` — stands on measurement rather than on inertia. This
+is the outcome that a pre-registered decision rule exists to make sayable: RRF was
+a well-supported hypothesis, it was tested properly, and it lost.
+
+The corpus-specific reason predicted below was confirmed on the real run: **8.2
+lexical candidates per need** over 133 tools, 4 needs with none, and **0 needs
+reaching the depth-30 cap** — so the two `lexdepth_full` arms were provably a null
+control, which the harness flagged itself. Rank fusion had little room to work
+here. That is a fact about this corpus, not a refutation of RRF in general: a
+roster with a denser lexical head could still favour it, and re-running this
+experiment is now one push to a `lab/**` branch.
+
+### Original blocked analysis (retained — the blocker is still true locally)
 
 `exp-fusion-rrf.mjs` is complete and self-proving: real `CoachStore`, the real
 133-tool corpus, real FTS5 bm25, a `fuseMirror()` whose top-5 is asserted equal to
