@@ -93,7 +93,7 @@ export const normalizeSpawnEntry = (v: unknown): SpawnEntry | null => {
     const inert = INERT_CLIENT_KEYS[key];
     // An unknown key, or a known key with a non-inert value (e.g. type:"http"),
     // means this is not the entry Roster wrote — refuse to claim ownership.
-    if (!inert || !inert(e[key])) return null;
+    if (!inert?.(e[key])) return null;
   }
   return { command: e.command, args: e.args === undefined ? [] : ([...e.args] as string[]) };
 };

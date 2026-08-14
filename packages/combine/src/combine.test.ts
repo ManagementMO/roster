@@ -150,7 +150,7 @@ tasks:
 `);
     const files = suite.tasks[0]?.setup?.files;
     expect(Object.hasOwn(files ?? {}, "__proto__")).toBe(true);
-    expect(files?.__proto__).toBe("seeded");
+    expect(Object.getOwnPropertyDescriptor(files ?? {}, "__proto__")?.value).toBe("seeded");
   });
 
   it("rejects malformed verifier records and required verifier fields", () => {

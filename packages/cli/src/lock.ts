@@ -7,11 +7,11 @@ const PRIVATE_FILE = 0o600;
 const PRIVATE_DIR = 0o700;
 const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_POLL_MS = 20;
-// Windows throws EPERM/EBUSY on rmSync when another process (or a virus scanner
-// / indexer) holds a directory handle open for a moment; recursive rmSync with
-// maxRetries retries exactly those transient errors (a no-op on POSIX, where the
-// remove succeeds first try). Without it, a lock contender crashes on Windows
-// instead of cleanly releasing/reclaiming.
+// Windows throws EPERM/EBUSY on mkdirSync/rmSync when another process (or a virus
+// scanner / indexer) holds a directory handle open for a moment; recursive rmSync
+// with maxRetries retries exactly those transient errors (a no-op on POSIX, where
+// the remove succeeds first try). The mkdir path is handled as contention only
+// when the lock entry still exists, so a real permission error is not swallowed.
 const RM_OPTS = { recursive: true, force: true, maxRetries: 10, retryDelay: 50 } as const;
 
 interface LockOwner {
@@ -26,6 +26,18 @@ function sleepSync(ms: number): void {
 function lockPath(key: string): string {
   const digest = crypto.createHash("sha256").update(key).digest("hex");
   return path.join(rosterHome(), "locks", `${digest}.lock`);
+}
+
+function mkdirWasContended(error: unknown, dir: string): boolean {
+  const code = (error as NodeJS.ErrnoException).code;
+  if (code === "EEXIST") return true;
+  if (code !== "EPERM" && code !== "EACCES" && code !== "EBUSY") return false;
+  try {
+    fs.lstatSync(dir);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function readOwner(dir: string): LockOwner | null {
@@ -156,7 +168,7 @@ function acquire(key: string): { dir: string; token: string } {
       }
       return { dir, token };
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      if (!mkdirWasContended(error, dir)) throw error;
     }
 
     const owner = readOwner(dir);
