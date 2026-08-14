@@ -101,7 +101,9 @@
 
 ## 4. The revised plan (the one that survived both red teams)
 
-### 4.1 The launch — single launch, everything ready by July 28 (owner decisions D1/D4)
+### 4.1 The original launch plan — single launch, everything ready by July 28 (owner decisions D1/D4)
+
+> This is historical planning context. The July 28, 2026 target passed without a release; no revised date has been set.
 
 - **Router:** transparent + five modes; stdio + localhost-only HTTP; namespacing; roster cache; adaptive ~10K-token engagement rule; SEP-2322 relay + legacy passthrough
 - **Sixth Man: suggest-only** (structured error + `suggested_alternate` hint). Auto-substitution returns post-launch, qualified by suggestion field data — an AI-drafted idempotency regex must never auto-fire a write
@@ -142,27 +144,27 @@ named bottom tiers at launch · ε default-on · `tool_reference` deep integrati
 
 | ID | Decision | Options | Recommendation | Blocks |
 |---|---|---|---|---|
-| **D1** | Launch structure | — | ✅ **RESOLVED 2026-07-04: single launch, everything ready by Jul 28** (owner). Honesty gates preserved: human-signed-only coverage (stretch ~100 servers), praise asymmetry, SaaS gated on accounts. No second launch — post-launch = continuous weekly seasons | Milestones (handoff §10) |
-| **D2** | Name | — | ✅ **RESOLVED 2026-07-04: ROSTER** (owner decision). All docs renamed (`ROSTER*.md`) and identifiers updated (`npx roster`, `~/.roster/`, CLI `roster`); "the starting five" survives only as the lowercase feature term for the served five. **Prior npm/org clearance applied to the former name only** — the Roster-family sweep moves into D8 | D8 |
+| **D1** | Launch structure | — | ✅ **RESOLVED 2026-07-04: single-launch structure** (owner); the original Jul 28 target passed without a release. Honesty gates preserved: human-signed-only coverage (stretch ~100 servers), praise asymmetry, SaaS gated on accounts. No second launch — post-launch = continuous weekly seasons | Milestones (handoff §10) |
+| **D2** | Name | — | ✅ **RESOLVED 2026-07-04: ROSTER** (owner decision). All docs use the Roster product name and identifiers (`~/.roster/`, CLI `roster`). The published package is now selected as `@roster/cli` because the unscoped npm name `roster` is occupied; the Roster-family organization/domain/trademark sweep remains an owner gate. "The starting five" survives only as the lowercase feature term for the served five. | D8 |
 | **D3** | Beachhead & skills | — | ✅ **RESOLVED 2026-07-04: skills ("The Playbook") pulled into v1** after a dedicated research pass (SKILL.md = 26+ platform open standard; OpenClaw allowlists already shipped; SkillRouter full-body finding; bridge-shim prior art; official Skills-over-MCP WG). Product = universal (tools + skills, every client). Beachhead = dual: OpenClaw (skills+tools) + Cursor/Codex (tool search) | Handoff §6.7 |
-| **D4** | Launch date | — | ✅ **RESOLVED 2026-07-04: (a)** — everything targets ready-by-Jul-28 or sooner; owner chooses the exact rollout moment(s), day-of or across following days | Content calendar |
+| **D4** | Launch date | — | ⏳ **DEFERRED after the original Jul 28 target passed without a release** — owner chooses the revised rollout date and moment(s) | Content calendar |
 | **D5** | Consolidation pass | — | ✅ **EXECUTED 2026-07-04:** all 11 contradictions fixed; red-team resolutions + all owner decisions encoded in master + handoff; handoff authoritative again | — |
 | **D6** | Sixth Man | — | ✅ **RESOLVED: suggest-only at launch** (owner); auto-substitution returns post-launch, qualified by suggestion field data | Handoff §6.1 |
 | **D7** | ε-exploration | — | ✅ **RESOLVED: (b)** — OFF at launch; post-launch opt-in, disclosed, visible switch, excluded from personal stats | Handoff §6.2 |
-| **D8** | Repo setup | — | ✅ **EXECUTED 2026-07-04:** folder `/Users/mo/Downloads/roster/` created, docs moved in, git initialized + initial commit. Clearance sweep **deferred by owner** — ⚠️ standing caution: nothing registered/published; run the Roster-family sweep (npm/org/domains/@handle/USPTO; fallbacks `rosterhq`/`getroster`/`roster-mcp`) before any public artifact uses the name | — |
+| **D8** | Repo setup | — | ✅ **EXECUTED 2026-07-04:** folder `/Users/mo/Downloads/roster/` created, docs moved in, git initialized + initial commit. The repository is now public, and the available npm package choice is `@roster/cli`; publication plus the GitHub-org/domain/@handle/USPTO sweep remain owner-controlled launch work. Do not register or publish anything without the owner's approval. | — |
 
-**All decisions D1–D8 ✅ resolved as of 2026-07-04. Build phase begins: M0 per handoff §10.**
+**D1–D3 and D5–D8 remain resolved; D4's original date passed without a release and is now deferred pending an owner-selected revised date. Build phase begins: M0 per handoff §10.**
 
 ### 5.1 Second owner pass — P-decisions (2026-07-04, post-M0)
 
 | ID | Decision | Status |
 |---|---|---|
-| **P1** | npm package name | ✅ **RESOLVED: ship as `roster`**; revisit only if the clearance sweep forces it (fallback list from D8 stands) |
+| **P1** | npm package name | ✅ **RESOLVED 2026-08-14: ship as `@roster/cli`**; npm `roster` is occupied by an unrelated third-party package. The executable remains `roster`; publication and legal/organization clearance are still owner gates. |
 | **P2** | Strategy docs at public flip | ✅ **RESOLVED: publish everything** — gated on a personal/work-info sweep of all docs before the flip (owner: "all public… as long as no personal work stuff") |
-| **P3** | Flip date | ⏳ **DEFERRED** — owner decides later, with agent; repo stays private until then |
+| **P3** | Flip date | ⏳ **DEFERRED** — the repository is already public; the owner decides the package publication, League rollout, and product launch dates. |
 | **P4** | Combine signing | 🔶 **PARTIAL** — owner signs later; agent runs all pre-signing verification + guided checklist (`docs/signing/session-1-checklist.md`). ⚠️ Owner's "you do signing" is **not executable as written**: the human-signed-only law (§4.4) means an agent flipping `signed: true` would falsify the provenance the League sells. Interpreted as "do the verification legwork" (done). If the owner ever truly wants agent-signing, this law must be consciously amended here first — recommendation: never |
-| **P5** | Next build | ✅ **RESOLVED: League site** — built 2026-07-04 (`apps/league` — the frontend extension's own top-level home, per owner; static, artifact-driven, honesty rules enforced in code) |
-| **P6** | Rollout shape | ⏳ **OPEN** (one drop vs staged over 2–3 days) — needed before Jul 28 content planning |
+| **P5** | Next build | ⏸️ **DEFERRED: League website** — the local static generator exists in `apps/league`, but the public website, deployment, badges, and named signed scores are intentionally left for a later owner-directed phase. |
+| **P6** | Rollout shape | ⏳ **OPEN** (one drop vs staged over 2–3 days) — decide alongside the revised launch date |
 
 ---
 
@@ -174,7 +176,7 @@ named bottom tiers at launch · ε default-on · `tool_reference` deep integrati
 4. **Dates matter:** research verified as of 2026-07-03. If materially later, re-verify: MCP spec final status, Claude Code native search behavior, Composio/Klavis/MCPMark/Digital Applied moves (their 200-server rerun ~Oct 2026), sqlite-vec/transformers.js versions, competitor launches.
 5. **Plan in founder-hours.** Before proposing work, state its founder-verification cost, not its code cost. Anything needing human signing, review, accounts, or outreach is the expensive part.
 6. **When drafting Combine tasks:** two-agent adversarial drafting, mutation-test the verifiers, flag provenance. Unsigned = never feeds named scores.
-7. **Status flags (end of 2026-07-04 session):** ALL decisions D1–D8 ✅ RESOLVED · D5 consolidation EXECUTED (handoff authoritative; former inline overrides are now native spec) · repo initialized at `/Users/mo/Downloads/roster/`, three docs committed · name **Roster** — ⚠️ clearance sweep deferred by owner; nothing registered/published; sweep before any public artifact · skills ("The Playbook") in v1 · ε OFF · Sixth Man suggest-only · single launch targeting Jul 28 · next step: **M0** (handoff §10).
+7. **Status flags (historical end of 2026-07-04 session):** D1–D3 and D5–D8 resolved; D4's original Jul 28 date later passed without a release · D5 consolidation EXECUTED (handoff authoritative; former inline overrides are now native spec) · repo initialized at `/Users/mo/Downloads/roster/` · name **Roster** with the package now selected as `@roster/cli` · skills ("The Playbook") in v1 · ε OFF · Sixth Man suggest-only · no package or League site published.
 
 ## 7. How we got here (compressed timeline)
 

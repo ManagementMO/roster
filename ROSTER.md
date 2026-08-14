@@ -282,7 +282,7 @@ v1 features: description-poisoning heuristics at index time; schema-drift quaran
 
 **The 60-second path (install UX spec):**
 
-1. **One command:** `npx roster init` (Node) or `uvx roster init` (Python folks). No account. No API key. No cloud calls at runtime — retrieval serves **instantly in lexical mode with zero download**, the local embedding model fetches once in the background (checksummed, never bundled), and after that everything runs offline; permanently-offline machines simply stay in lexical mode.
+1. **One command:** `npx -y @roster/cli init` (Node) or `uvx roster init` (Python folks). No account. No API key. No cloud calls at runtime — retrieval serves **instantly in lexical mode with zero download**, the local embedding model fetches once in the background (checksummed, never bundled), and after that everything runs offline; permanently-offline machines simply stay in lexical mode. The npm package is not published yet; this is the planned launch command.
 2. **Auto-import:** the wizard scans the known config locations for every installed client — `~/.claude/settings.json` + `.mcp.json` + `claude_desktop_config.json`, `~/.codex/config.toml` (`[mcp_servers.*]` TOML), `~/.cursor/mcp.json`, `~/.gemini/settings.json`, `~/.hermes/config.yaml`, `openclaw.json`, Windsurf/Cline/VS Code variants ([the 8-format fragmentation is documented](https://mcpplaygroundonline.com/blog/complete-guide-mcp-config-files-claude-desktop-cursor-lovable) — there are even [converter tools](https://mcp.directory/tools/mcp-config-converter) because this mess is that bad) — and imports every server it finds into one roster. Nothing to retype, nothing to remember.
 3. **The Day-0 receipt (the aha moment, before any behavior change):** the wizard immediately prints your personal audit — *"Found 3 clients, 14 servers, 187 tools. Tool schemas ≈ 96K tokens loaded per session. Estimated waste: ~$X/month. Projected reduction with Roster: ~85%."* You see your own number in the first minute. That receipt is a shareable card — the personal-virality artifact exists before the leaderboard does.
 4. **One-keystroke swap, fully reversible:** `roster sync` writes the single Roster entry into each detected client (originals backed up); `roster eject` restores every config byte-for-byte. Reversibility is what makes trying it a no-risk decision — the uninstall story is a *feature*, advertised up front.
@@ -326,7 +326,7 @@ A dedicated adversarial pass on the single most important question — *will peo
 
 | Check | Verdict |
 |---|---|
-| npm `roster` / `starting-five` | **Both 404 — available** |
+| npm package | **`roster` is occupied by an unrelated third-party package (`roster@0.0.3`); `@roster/cli` was available when checked on 2026-08-14 and is the selected package name.** |
 | "Roster" dev/AI collisions | **None found** in search (only Netflix's NBA docuseries "Starting 5" — different market; do formal TM/domain check before shipping) |
 | OpenClaw MCP support | **Confirmed native** — `mcpServers` config, stdio + HTTP/SSE, plus `mcporter` skill ([docs](https://docs.openclaw.ai/cli/mcp)); open feature request [#29053](https://github.com/openclaw/openclaw/issues/29053) confirms appetite. Drop-in story: "replace 20 entries with 1" |
 | Claude Code native tool search | **Confirmed** — announced Jan 14, 2026 (Thariq Shihipar), default-on ≥2.1.7, 10%-of-context auto-defer threshold, ~77K → 8.7K tokens ([tessl](https://tessl.io/blog/anthropic-brings-mcp-tool-search-to-claude-code/), [docs](https://code.claude.com/docs/en/agent-sdk/tool-search)) |
@@ -345,7 +345,7 @@ A dedicated adversarial pass on the single most important question — *will peo
 | Beachhead still hot? | Hotter: OpenClaw at 378K stars / 3.2M MAU / mobile launch Jun 30 |
 | Legal exposure for naming servers in benchmarks? | Real but manageable — DeWitt-clause risk added to §13 with mitigations; MCPMark publishing named scores is live precedent |
 | Better build resources than planned? | Added: FastMCP proxy scaffold, Snyk config-auto-discovery precedent, OTel SLO conventions (§15) |
-| Name residuals | GitHub org `roster` taken (dormant Dutch entity) → use `starting-five`; npm + .dev clear |
+| Name residuals | GitHub org `roster` remains taken; npm package choice is `@roster/cli`; organization/domain/@handle/USPTO clearance remains an owner pre-launch task |
 
 ### Adversarial design review (hard questions → design answers)
 
@@ -373,7 +373,7 @@ Every mechanic below is tied to a 2026 case study, ranked by evidenced shareabil
 | 5 | Learning-curve updates | Only work welded to demos | Coach accuracy chart inside weekly box scores |
 
 **Launch-day package** (correlates of Show HN/X hits — one-line install + watchable demo + one hard number in the title; median Show HN is 2 points, 50 = top 6% ([Syften](https://syften.com/blog/hacker-news-marketing/))):
-- `npx roster init` → auto-imports every client's config, prints the Day-0 receipt, `roster sync` — working across Claude Code, Codex, Cursor, OpenClaw, and Hermes in under 60 seconds, reversible with `roster eject`.
+- `npx -y @roster/cli init` → auto-imports every client's config, prints the Day-0 receipt, `roster sync` — the planned launch path across Claude Code, Codex, Cursor, OpenClaw, and Hermes in under 60 seconds, reversible with `roster eject`.
 - One-click "Add to Cursor" / "Add to VS Code" deeplink badges at the top of the README; Claude Code plugin-marketplace listing live on day one.
 - The GIF: context meter 143K → ~4K, task succeeds, Sixth Man saves a failed call.
 - Title carries the crash-test ratio; the copy line is "replace twenty config entries with one."
@@ -431,7 +431,7 @@ Per project goals: **monetization optional; distribution first.** The league is 
 | **Velocity-induced re-creep** — agentic development makes every cut feel restorable in a weekend, producing the worst failure mode for a measurement product: *everything exists, half unvalidated* | Owner-endorsed law (2026-07-04): amend the docs BEFORE unleashing build agents (they faithfully implement spec bugs — a wrong spec ships wrong software faster); the no-restore list in `ROSTER-STATE-AND-DECISIONS.md` §4.3 is locked; releases gate on **"validated-only ships"** |
 | ToolRoute or a funded player wakes up | Ship in 25 days; the spec-day window and the league land-grab are the answer; graciously cite prior art to own the narrative |
 | Probe costs/ToS friction | Read-only live probes; sandboxed write suites; weekly cadence; authors self-run the OSS harness |
-| Name/trademark surprise | Final name **Roster** (2026-07-04); full Roster-family clearance sweep pending in D8 — `roster` is a common word (npm may be contested; fallbacks `rosterhq`/`getroster`/`roster-mcp`; CLI binary stays `roster`). Prior 2026-07-03 clearance applied to the former name only |
+| Name/trademark surprise | Final name **Roster** (2026-07-04); npm package choice is `@roster/cli` because unscoped `roster@0.0.3` is occupied. GitHub-org, domain, @handle, and USPTO clearance remain owner launch gates; CLI binary stays `roster`. |
 | **DeWitt-style benchmark clauses** — some hosted-server ToS prohibit publishing named benchmark results ([history](https://danluu.com/anon-benchmark/), [explainer](https://cube.dev/blog/dewitt-clause-or-can-you-benchmark-a-database)) | Precedent on our side: MCPMark already publishes named hosted-server scores publicly; mitigations: prefer self-hosted OSS instances (most of the catalog), per-ToS review for hosted first-party servers, published methodology + vendor right-of-reply section, and the [DeWitt-embrace framing](https://www.databricks.com/blog/2021/11/08/eliminating-the-dewitt-clause-for-database-benchmarking.html) — vendors increasingly drop these clauses under transparency pressure |
 
 ---
@@ -440,7 +440,7 @@ Per project goals: **monetization optional; distribution first.** The league is 
 
 **"Loadout" is dead** (original working name). Kill-check found: Aaron Francis building "Loadout" — a desktop AI-tool/MCP config manager ([faster.dev/projects/loadout](https://faster.dev/projects/loadout)); **LoadoutHQ** — an MCP-native private skills registry in design-partner phase ([loadouthq.dev](https://www.loadouthq.dev/)); YETI's LOADOUT trademark covering downloadable software ([USPTO SN 97447385](https://trademarks.justia.com/974/47/loadout-97447385.html)); ~6 small agent-skill managers on GitHub. Also checked and rejected: PatchBay (music-biz agentic platform, [launched Mar 31, 2026](https://www.billboard.com/pro/patchbay-agentic-ai-platform-music-biz-public-launch/)), Switchboard (crowded), Dialtone (usedialtone.com agent orchestration + Dialpad's design system).
 
-**Final name — ROSTER** (owner decision, 2026-07-04). Dead simple, instantly understood, CLI-perfect (`roster add`, `roster sync`), and it unlocks the transaction-wire drama format ("🚨 ROSTER MOVE: …") — a proven viral genre. The lowercase phrase "the starting five" survives as the *feature term* for the ≤5 tools served into context (Appendix A). Naming history: "Loadout" died in clearance (above); the interim two-word basketball name (styled **StartingFive**) passed npm/GitHub checks on 2026-07-03 but was superseded by Roster for punch and cleanliness. **Important: all prior clearance applied to the former name only — the Roster-family sweep is still pending (part of D8):** npm `roster` is a common word and may be contested (fallback package names: `rosterhq`, `getroster`, `roster-mcp` — the CLI binary stays `roster` regardless); GitHub org; domains (roster.dev likely taken; getroster.dev / roster.tools as candidates); @rosterhq-style X handle; USPTO class 9/42. **Do not register anything without the owner's approval.**
+**Final name — ROSTER** (owner decision, 2026-07-04). Dead simple, instantly understood, CLI-perfect (`roster add`, `roster sync`), and it unlocks the transaction-wire drama format ("🚨 ROSTER MOVE: …") — a proven viral genre. The lowercase phrase "the starting five" survives as the *feature term* for the ≤5 tools served into context (Appendix A). Naming history: "Loadout" died in clearance (above); the interim two-word basketball name (styled **StartingFive**) passed its 2026-07-03 checks but was superseded by Roster for punch and cleanliness. The selected npm package is `@roster/cli`; the unscoped `roster` name is occupied by an unrelated package. GitHub-org, domains, @handle, and USPTO clearance remain owner gates. **Do not register anything without the owner's approval.**
 
 ---
 

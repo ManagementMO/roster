@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Experiment (d) worker — hammers saveConfig() from @rosterhq/cli against the
+ * Experiment (d) worker — hammers saveConfig() from @roster/cli against the
  * SAME roster.json as three sibling processes (ROSTER_TEST_HOME isolated).
  * argv[2] = JSON {home, writerId, writes, goFile}.
  * Emits one JSON line: per-error-code counts from real saveConfig calls.
@@ -14,7 +14,7 @@ const cfg = JSON.parse(process.argv[2]);
 process.env.ROSTER_TEST_HOME = cfg.home; // must be set before paths.js is used
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { saveConfig, defaultConfig } = await import(req.resolve("@rosterhq/cli"));
+const { saveConfig, defaultConfig } = await import(req.resolve("@roster/cli"));
 
 while (!fs.existsSync(cfg.goFile)) await new Promise((r) => setTimeout(r, 5));
 

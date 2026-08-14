@@ -1,5 +1,5 @@
 {
-  "name": "@rosterhq/cli",
+  "name": "@roster/cli",
   "version": "0.0.1",
   "description": "Roster — the tool router for AI agents. One MCP endpoint, the right five tools per task.",
   "type": "module",

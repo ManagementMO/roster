@@ -23,10 +23,10 @@ Four parts, one product:
 
 ## Quickstart
 
-> **Not yet published.** The original July 28, 2026 target passed without a release; no revised launch date has been set. Roster is not on npm, and the commands below are the planned install path rather than commands that work today.
+> **Not yet published.** The original July 28, 2026 target passed without a release; no revised launch date has been set. Roster is not on npm yet. The selected package name is `@roster/cli` (the unscoped `roster` name is occupied by an unrelated package); the installed executable remains `roster`. The commands below are the planned install path rather than commands that work today.
 
 ```sh
-npx roster init   # detect clients, import every server, print your Day-0 receipt
+npx -y @roster/cli init   # detect clients, import every server, print your Day-0 receipt
 roster sync       # swap N config entries for one (originals backed up first)
 roster serve      # run the router
 roster eject      # put every config back exactly as found (byte-for-byte for dedicated files)
@@ -58,8 +58,8 @@ The League is the show; these earn the install without it:
 **Under active construction (July 2026). Nothing here is released, and nothing unvalidated will ship.**
 
 - The original **July 28, 2026** launch target passed without a release; a revised date remains an owner decision.
-- **Not on npm yet.** Package-name clearance is pending; the CLI binary will be `roster` regardless of the final package name.
-- **No domains registered, nothing hosted.** The League static generator exists and builds locally from the committed artifact; no League deployment, badge origin, or telemetry endpoint exists.
+- **Not on npm yet.** The package name is selected as `@roster/cli` (registry-available when checked on 2026-08-14); the CLI binary is `roster`. Publication and the remaining organization/domain/trademark clearance are still owner-controlled launch work.
+- **No domains registered, nothing hosted.** The League generator exists and can build locally from the committed artifact, but the public League website, deployment, badges, and named signed scores are not finished or published. No telemetry endpoint exists.
 - What exists today: a pnpm/TypeScript monorepo (`packages/router`, `coach`, `cli`, `combine`, `playbook`, `shared`) with CI, built against the milestones in [ROSTER-BUILD-HANDOFF.md](ROSTER-BUILD-HANDOFF.md). Strategy and decision records: [ROSTER.md](ROSTER.md), [ROSTER-STATE-AND-DECISIONS.md](ROSTER-STATE-AND-DECISIONS.md).
 - Day-to-day build status: [STATUS-FOR-MO.md](STATUS-FOR-MO.md) · design docs: [docs/](docs/).
 

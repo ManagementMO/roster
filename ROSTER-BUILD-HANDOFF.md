@@ -4,7 +4,7 @@
 >
 > **Companion file (the strategy/research master doc):** `ROSTER.md` (repo root — currently /Users/mo/Downloads/roster/) — read it FIRST. It holds the why, the market evidence, the virality playbook, the launch plan, and ~150 sourced links. This file holds the *how to build*.
 >
-> **Prepared:** July 3, 2026. All research verified as of this date. **Launch target: July 28, 2026 (MCP spec day).**
+> **Prepared:** July 3, 2026. All research was verified as of that date. The original **July 28, 2026** launch target passed without a release; no revised launch date has been set. Dated milestones below are retained as historical planning context, not current promises.
 
 ---
 
@@ -13,7 +13,7 @@
 > 2. **The no-restore list is locked.** See `ROSTER-STATE-AND-DECISIONS.md` §4.3. Velocity is never a reason to restore a cut item.
 > 3. **Validated-only ships.** Anything an agent built that no human verified is not an asset on launch day — it is the exhibit.
 >
-> **D5 CONSOLIDATION EXECUTED (2026-07-04).** This handoff is now authoritative for build; `ROSTER-STATE-AND-DECISIONS.md` remains the decision log and laws record. All owner decisions are encoded here: **single launch targeting July 28** (everything ready by then; owner chooses exact rollout), Combine stretch target ~100 servers (hard gate: only human-signed results feed named scores), **skills ("The Playbook") in v1 scope** (§6.7), Sixth Man **suggest-only**, ε-exploration **OFF by default**, praise-asymmetric league.
+> **D5 CONSOLIDATION EXECUTED (2026-07-04).** This handoff is now authoritative for build; `ROSTER-STATE-AND-DECISIONS.md` remains the decision log and laws record. The original single-launch plan targeted July 28, but that date passed without a release; the owner now chooses any revised rollout. The remaining design defaults are unchanged: Combine stretch target ~100 servers (hard gate: only human-signed results feed named scores), **skills ("The Playbook") in v1 scope** (§6.7), Sixth Man **suggest-only**, ε-exploration **OFF by default**, praise-asymmetric League.
 
 ## 1. Mission brief
 
@@ -38,7 +38,7 @@ Success = a stranger runs one command, sees their own token waste in 60 seconds,
 
 **Adoption laws (non-negotiable, master doc §7.6):** agnostic across ALL MCP clients; <60s install; no account/API key/cloud; transparent passthrough by default (progressive trust: observe → route → learn → share); `eject` restores everything byte-for-byte; telemetry is local-first and opt-in (Go model); seven day-one utilities independent of the League.
 
-**Name:** **ROSTER** (finalized by the owner 2026-07-04; interim name was the two-word basketball one, styled **StartingFive** — all prior npm/org clearance applied to that former name only). CLI binary: `roster`. The lowercase phrase "the starting five" survives only as the feature term for the ≤5 served tools. The **Roster-family clearance sweep is pending (D8)**: npm `roster` is a common word and may be contested (fallback package names `rosterhq`/`getroster`/`roster-mcp` — binary stays `roster` regardless), GitHub org, domains (getroster.dev / roster.tools candidates), @handle, USPTO. This sweep is a pre-launch human task — **do not register anything without the owner's approval.**
+**Name:** **ROSTER** (finalized by the owner 2026-07-04; interim name was the two-word basketball one, styled **StartingFive**). CLI binary: `roster`. The publishable npm package is selected as `@roster/cli` because the unscoped `roster` name is occupied by an unrelated package; the lowercase phrase "the starting five" survives only as the feature term for the ≤5 served tools. GitHub-org, domain, @handle, and USPTO clearance remain pre-launch human work — **do not register or publish anything without the owner's approval.**
 
 **Beachhead (updated 2026-07-04):** dual — **OpenClaw** (378K stars, 3.2M MAU; their #1 pain is *skills* bloat — ~70+52+25 skills injected into every system prompt — which Roster's Playbook now addresses directly via their shipped allowlist mechanism) **+ Cursor/Codex** (the exact MCP tool-bloat pain, zero native tool search). Then r/mcp, then Show HN on spec day. Product scope is universal by owner decision: MCP tools *and* SKILL.md skills, for every client (Claude Code, Codex, Gemini CLI, Cursor, OpenClaw, Hermes, VS Code…).
 
@@ -241,8 +241,8 @@ Latency: `draft` <50ms local (embedding search over ≤2,000 tools); passthrough
 8. **Velocity discipline (owner-endorsed law, 2026-07-04):** specs are amended before code, every time; the no-restore list (`ROSTER-STATE-AND-DECISIONS.md` §4.3) is locked regardless of how cheap restoration looks; releases are gated on "validated-only ships." Plan and report work in **founder-verification hours**, not code hours — code cost ≈ 0, so anything consuming human signing/review/outreach is the real expense.
 
 ## 12. Pre-launch checklist
-[ ] Name cleared — **Roster family** (npm `roster` or fallbacks `rosterhq`/`getroster`/`roster-mcp`; GitHub org; domains getroster.dev / roster.tools; @handle; USPTO 9/42) — owner task, agent prepares the sweep report
-[ ] `npx roster init` cold-run tested on clean macOS/Linux/Windows VMs
+[ ] Name cleared — **Roster family** (`@roster/cli` package selected; GitHub org; domains getroster.dev / roster.tools; @handle; USPTO 9/42) — owner task, agent prepares the sweep report
+[ ] `npx -y @roster/cli init` cold-run tested on clean macOS/Linux/Windows VMs
 [ ] Eject torture-tested (mutated configs, partial syncs, all dialects)
 [ ] Combine 200-run reproduced twice; methodology.md matches implementation exactly
 [ ] Every number in the exposé traces to `lab-results.json`; vendors get right-of-reply notes; ToS reviewed for any live-probed hosted server (DeWitt caution)
@@ -285,7 +285,7 @@ THE PRODUCT IN ONE BREATH: one MCP endpoint fronts all the user's tool servers; 
 
 NON-NEGOTIABLE LAWS (from the owner):
 - Tool/API routing only. Never model routing.
-- Adoption first: <60s from `npx roster init` to the Day-0 receipt; no account, no API key, no cloud; transparent passthrough is the default mode; `roster eject` must restore every client config byte-for-byte, always.
+- Adoption first: <60s from `npx -y @roster/cli init` to the Day-0 receipt; no account, no API key, no cloud; transparent passthrough is the default mode; `roster eject` must restore every client config byte-for-byte, always.
 - Privacy: args/results/prompts never leave the machine, never enter logs or telemetry. Telemetry is opt-in, local-first, schema-published.
 - Integrity: no fabricated numbers anywhere — receipts are labeled estimates, league stats carry n and confidence intervals, every public number traces to a run artifact.
 - Stop and ask the owner before: registering anything, publishing anything, deploying any public endpoint, or naming third-party servers in public artifacts.
@@ -293,7 +293,7 @@ NON-NEGOTIABLE LAWS (from the owner):
 
 EXECUTION ORDER: work milestones M0→M4 exactly as specified in the handoff §10, honoring the acceptance criteria as your definition of done. Begin with M0: scaffold the pnpm monorepo per handoff §5, then the transparent-mode router proxying 3 real servers (filesystem, fetch/search, github) with the outcome classifier from §6.2, then `init` + Day-0 receipt. Use TDD for classifier/parsers/eject; verify every milestone by driving a real client through the real router and reporting what actually happened, including failures. Keep commits small and conventional. PRIORITY DISCIPLINE: honor the §4 tiering strictly — P0 core first, then P1; the ADD-ON tier (P2: archetypes, founding flags · P3: --roast, bench, wrapped, percentile) is nice-to-have garnish the owner explicitly demoted: never let it consume pre-launch runway, and P3 items are post-launch only.
 
-QUALITY BAR: this ships publicly on July 28, 2026 (MCP spec day) into a launch with press-style scrutiny — the code, the math, and the claims must all survive hostile review. When the spec and the handoff conflict with reality (an SDK API changed, a config path moved), reality wins: verify against live docs, fix the handoff file, and note the change in your report.
+QUALITY BAR: this ships publicly only when the owner authorizes a revised release; the original July 28, 2026 target passed without a release. The code, math, and claims must survive press-style hostile review. When the spec and the handoff conflict with reality (an SDK API changed, a config path moved), reality wins: verify against live docs, fix the handoff file, and note the change in your report.
 
 Begin now: read both files end-to-end, produce a short gap report (anything ambiguous, missing, or outdated — with your proposed resolutions and which defaults from handoff §13 you're adopting), then start M0.
 ```
