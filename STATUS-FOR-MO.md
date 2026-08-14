@@ -1,19 +1,19 @@
 # Roster — status & decision board for Mo
 
-> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-08-14**, after the PR #12 merge and the release-readiness pass on `fix/release-readiness`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
+> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-08-14**, after PR #13 merged the release-readiness pass into `main`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
-> **Current hardening delta:** PR #10's cross-process/config/eject hardening plus PR #11's bounded Playbook scan, full-contract drift identity, resumable eject, child reaping, fail-closed per-tool schema isolation, exact staging cleanup, and descriptor/path-pinned verifier reads. The release-readiness pass also moved the CLI package to the available scoped name `@roster/cli` and pinned the audited dependency graph to patched releases. Current `origin/main` is `3640a18` (the isolated branch is based directly on it). The current isolated local gate reports **369/369 tests**, source-and-test typecheck clean, lint clean, League generator build clean, and no known dependency vulnerabilities at the configured audit threshold. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.
+> **Current hardening delta:** PR #10's cross-process/config/eject hardening plus PR #11's bounded Playbook scan, full-contract drift identity, resumable eject, child reaping, fail-closed per-tool schema isolation, exact staging cleanup, and descriptor/path-pinned verifier reads. PR #13 then moved the CLI package to the available scoped name `@roster/cli`, pinned the audited dependency graph to patched releases, and made the minimum-release-age exception explicit for the vetted patch. Current `origin/main` is `0d0ff02` (PR #13). The current local gate reports **369/369 tests**, source-and-test typecheck clean, lint clean, League generator build clean, and no known dependency vulnerabilities at the configured audit threshold. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.
 
 ---
 
 ## 1. TL;DR — where we are
 
-**The M0+ core is built; PR #10, PR #11, and PR #12 are merged, with release-readiness fixes staged on this branch. No npm package or public League site has been published or deployed.**
+**The M0+ core is built; PR #10, PR #11, PR #12, and PR #13 are merged. No npm package or public League site has been published or deployed.**
 
 | Gate | Status |
 |---|---|
 | Unit/integration tests | **369 passing across 14 files** in the 2026-08-14 isolated release-readiness run |
-| CI/CD workflow | PR #11 runs lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan, plus CodeQL and Semgrep. Final head status is verified before merge; Sourcery's size-limit skip is not claimed as a review. |
+| CI/CD workflow | PR #13 passed lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan, plus CodeQL, Semgrep, and Sourcery. |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
 | Combine vs real filesystem server | **8/8, deterministic** — and all 8 fail-probes reached the verifier and were rejected there (0/8); transport failures no longer satisfy the CI proof |
 | Dense rung — MiniLM + Gemma live (real inference) | **verified** end-to-end; hybrid fusion signal-adaptive; OATS moves rankings from real outcomes |
@@ -56,7 +56,7 @@ The GitHub repository is public: `github.com/ManagementMO/roster`. No npm packag
 
 ## 4. 🔧 THE PIPELINE — my ready queue (zero input needed; building on your "go")
 
-**Objective code hardening: PR #10, PR #11, and PR #12 are merged; the release-readiness branch adds the patched dependency graph and publish metadata.** (`docs/lab/review-round5-hardening.md` and `docs/lab/post-round5-closure.md` carry the historical local, mutation, and hosted evidence.) Everything below remains between the verified core and the full `ROSTER.md` launch product.
+**Objective code hardening: PR #10, PR #11, PR #12, and PR #13 are merged.** (`docs/lab/review-round5-hardening.md` and `docs/lab/post-round5-closure.md` carry the historical local, mutation, and hosted evidence.) Everything below remains between the verified core and the full `ROSTER.md` launch product.
 
 **A. Complete the League (highest launch-leverage after your signing):**
 - **Static badges service** — signed SVG performance shields keyed to server ID (the truest distribution metric; README-embeddable). Deferred with the League website.
@@ -106,7 +106,7 @@ The GitHub repository is public: `github.com/ManagementMO/roster`. No npm packag
 - **Wave 8 — the experiment swarm:** 16 charters, real models/servers/processes, 100 findings (`docs/lab/campaign-digest.md`).
 - **Wave 9 — fix rounds 1–3:** round 1 applied the real swarm findings; **round 2 was an adversarial meta-review of round 1** that caught two bugs I'd *introduced* (Ajv over-strip, unbounded script read) + two gaps I'd missed (serve connect hang, output-schema drift) + **three vacuous tests**; round 3 finished the deferred list (remove/re-add tombstone, atomic backup-dir, testable transport-death mapping). The three rebuilt tests are **mutation-verified** — each fails when its fix is reverted.
 - **Round 5 objective hardening (2026-07-30):** closed the remaining cross-process, ownership, filesystem-topology, crash-recovery, scan-completeness, and League publication/identity classes, then fixed the hosted Windows durability, E2E attribution, fail-probe false-green, dependency-audit, and CodeQL trust-path findings. Final local, mutation, and remote evidence lives in `docs/lab/review-round5-hardening.md`.
-- **Post–Round 5 closure (2026-07-30, branch `fix/post-round5-closure`, PR #11 — not PR #10):** worked the audit backlog left after PR #10 merged, then independently re-reviewed its own fixes. The follow-up closed permissive invalid-schema isolation, hash-upgrade tombstone drift, intermediate-directory verifier races, overbroad staging cleanup, and a SKILL.md symlink-warning race. Each new lock was reproduced, fixed under TDD, and mutation-checked with byte-identical restoration. Its historical gate was **366/366**; the current release-readiness branch extends that to **369/369** and remediates the dependency audit. Full claims matrix in `docs/lab/post-round5-closure.md`.
+- **Post–Round 5 closure (2026-07-30, branch `fix/post-round5-closure`, PR #11 — not PR #10):** worked the audit backlog left after PR #10 merged, then independently re-reviewed its own fixes. The follow-up closed permissive invalid-schema isolation, hash-upgrade tombstone drift, intermediate-directory verifier races, overbroad staging cleanup, and a SKILL.md symlink-warning race. Each new lock was reproduced, fixed under TDD, and mutation-checked with byte-identical restoration. Its historical gate was **366/366**; PR #13's current main gate is **369/369** and its hosted matrix is green, including the dependency audit. Full claims matrix in `docs/lab/post-round5-closure.md`.
 
 ## 7. Honest remaining gaps (nothing silent)
 
