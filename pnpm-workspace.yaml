@@ -13,6 +13,8 @@ allowBuilds:
 # those versions directly. Every override remains inside the parent's declared
 # semver range; the release audit is therefore checking the shipped graph, not
 # an ignored advisory list.
+minimumReleaseAgeExclude:
+  - "@hono/node-server@2.1.1"
 overrides:
   "@hono/node-server": 2.1.1
   adm-zip: 0.6.0
