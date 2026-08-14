@@ -15,7 +15,7 @@ export const SCRATCH = path.join(LAB, "tmp-sync-eject-fuzz");
 fs.mkdirSync(SCRATCH, { recursive: true }); // scratch is disposable; recreated on any rerun
 
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-export const cli = await import(req.resolve("@rosterhq/cli"));
+export const cli = await import(req.resolve("@roster/cli"));
 export const { syncClient, ejectClient, CLIENTS, WRITE_CLIENTS, loadConfig } = cli;
 
 /** Canonical config path for a client under a given fixture home (darwin). */
