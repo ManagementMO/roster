@@ -1,19 +1,19 @@
 # Roster — status & decision board for Mo
 
-> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-08-14**, after PR #13 merged the release-readiness pass into `main`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
+> **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-08-14**, after PR #14 synchronized the post-release status with `main`. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
-> **Current hardening delta:** PR #10's cross-process/config/eject hardening plus PR #11's bounded Playbook scan, full-contract drift identity, resumable eject, child reaping, fail-closed per-tool schema isolation, exact staging cleanup, and descriptor/path-pinned verifier reads. PR #13 then moved the CLI package to the available scoped name `@roster/cli`, pinned the audited dependency graph to patched releases, and made the minimum-release-age exception explicit for the vetted patch. Current `origin/main` is `0d0ff02` (PR #13). The current local gate reports **369/369 tests**, source-and-test typecheck clean, lint clean, League generator build clean, and no known dependency vulnerabilities at the configured audit threshold. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.
+> **Current hardening delta:** PR #10's cross-process/config/eject hardening plus PR #11's bounded Playbook scan, full-contract drift identity, resumable eject, child reaping, fail-closed per-tool schema isolation, exact staging cleanup, and descriptor/path-pinned verifier reads. PR #13 then moved the CLI package to the available scoped name `@roster/cli`, pinned the audited dependency graph to patched releases, and made the minimum-release-age exception explicit for the vetted patch. PR #14 synchronized this status page after the merge. The current local gate reports **369/369 tests**, source-and-test typecheck clean, lint clean, League generator build clean, and no known dependency vulnerabilities at the configured audit threshold. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.
 
 ---
 
 ## 1. TL;DR — where we are
 
-**The M0+ core is built; PR #10, PR #11, PR #12, and PR #13 are merged. No npm package or public League site has been published or deployed.**
+**The M0+ core is built; PR #10, PR #11, PR #12, PR #13, and PR #14 are merged. No npm package or public League site has been published or deployed.**
 
 | Gate | Status |
 |---|---|
 | Unit/integration tests | **369 passing across 14 files** in the 2026-08-14 isolated release-readiness run |
-| CI/CD workflow | PR #13 passed lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan, plus CodeQL, Semgrep, and Sourcery. |
+| CI/CD workflow | PR #13 and the docs-only PR #14 passed lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · live MiniLM · audit/secret scan, plus CodeQL, Semgrep, and Sourcery. |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
 | Combine vs real filesystem server | **8/8, deterministic** — and all 8 fail-probes reached the verifier and were rejected there (0/8); transport failures no longer satisfy the CI proof |
 | Dense rung — MiniLM + Gemma live (real inference) | **verified** end-to-end; hybrid fusion signal-adaptive; OATS moves rankings from real outcomes |
