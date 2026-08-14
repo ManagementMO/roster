@@ -2,7 +2,7 @@
 
 > **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-08-14**, after the release-readiness merge and its follow-up status corrections. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
-> **Current hardening delta:** the cross-process/config/eject, bounded Playbook, full-contract drift, resumable eject, child-reaping, schema-isolation, staging-cleanup, verifier-read, package-name, dependency-audit, and release-policy hardening is merged. The current local gate reports **369/369 tests**, source-and-test typecheck clean, lint clean, League generator build clean, and no known dependency vulnerabilities at the configured audit threshold. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.
+> **Current hardening delta:** the cross-process/config/eject, bounded Playbook, full-contract drift, resumable eject, child-reaping, schema-isolation, staging-cleanup, verifier-read, package-name, dependency-audit, pinned secret-scan installer, and release-policy hardening is merged. The current local gate reports **369/369 tests**, source-and-test typecheck clean, lint clean, League generator build clean, and no known dependency vulnerabilities at the configured audit threshold. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.
 
 ---
 
@@ -85,7 +85,7 @@ The GitHub repository is public: `github.com/ManagementMO/roster`. No npm packag
 
 **E. By explicit decision (see §2):** P8 Sixth Man auto-save; P7 precise-attribution (option c).
 
-**F. Launch mechanics (day-of checklist, small but must not be forgotten):** launch assets (GIFs, exposé, posts) · after `@roster/cli` is actually published, flip the no-global sync entry from the execPath form to `npx -y @roster/cli serve` (one line in `sync.ts`) · keep README install lines aligned with the published package · pin the TruffleHog CI step to a tagged version · complete the owner's legal/brand gate.
+**F. Launch mechanics (day-of checklist, small but must not be forgotten):** launch assets (GIFs, exposé, posts) · after `@roster/cli` is actually published, flip the no-global sync entry from the execPath form to `npx -y @roster/cli serve` (one line in `sync.ts`) · keep README install lines aligned with the published package · complete the owner's legal/brand gate.
 
 ---
 
@@ -130,7 +130,7 @@ The GitHub repository is public: `github.com/ManagementMO/roster`. No npm packag
 
 **Disclosed by the deep-review audit (2026-07-07; fixes + reasons in `docs/lab/fixes-applied.md` Round 4):** local quarantine lifts on a 24h dwell not a re-Combine, and a re-signatured tool inherits its predecessor's local rating/OATS state (methodology §6; published League scores unaffected — they re-verify) · praise-asymmetry is enforced by the human publishing gate, not code, and `signed:` is process-trust not cryptographic (v1, said out loud) · `trimSchema` depth-1 is a deliberate token/structure tradeoff · Ajv dialect false-negatives in `args_compatible` (suggest-only, advisory) · boot-order suffix identity for post-sanitization name collisions (exotic) · `markSuggestionTaken` overcounts P8 field-data on any later same-tool call · default-Gemma ~1.7–1.9 GB RSS per five-mode session · **M6: the draft-utilization harness (handoff M1 milestone) is unbuilt — restored to §4 tracking, needs real clients.**
 
-**Minor known:** non-Latin lexical tokenizer · `need_vec`/tombstone growth unbounded (tiny) · symlinked skill directories are withheld rather than traversed · sync strips config comments while synced (eject restores them) · forward-only database migration is the disclosed v1 limit · TruffleHog CI installs latest (unpinned) rather than a tagged version.
+**Minor known:** non-Latin lexical tokenizer · `need_vec`/tombstone growth unbounded (tiny) · symlinked skill directories are withheld rather than traversed · sync strips config comments while synced (eject restores them) · forward-only database migration is the disclosed v1 limit.
 
 ## 8. Evidence & repo map
 
