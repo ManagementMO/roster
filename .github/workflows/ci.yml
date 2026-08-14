@@ -146,8 +146,22 @@ jobs:
       # live against their API — no false positives on test fixtures — a fit for
       # the privacy law (credentials are never persisted anywhere in this repo).
       - name: Verified-secret scan (TruffleHog)
+        env:
+          # Pin both the installer source and the binary release. The digest
+          # turns a compromised mutable tag or raw response into a hard failure
+          # before any downloaded shell code can execute in the runner.
+          TRUFFLEHOG_INSTALL_COMMIT: bcfcf73aaf4759d4dadc2783177c245a02792318
+          TRUFFLEHOG_INSTALL_SHA256: c394defeaea8a7c48f828a2051b608a9b19f43f34b891407b66a386c3e2591e2
+          TRUFFLEHOG_VERSION: v3.97.0
         run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b "$RUNNER_TEMP/bin"
+          installer="$RUNNER_TEMP/trufflehog-install.sh"
+          curl --fail --silent --show-error --location --retry 3 \
+            --output "$installer" \
+            "https://raw.githubusercontent.com/trufflesecurity/trufflehog/${TRUFFLEHOG_INSTALL_COMMIT}/scripts/install.sh"
+          printf '%s  %s\n' "$TRUFFLEHOG_INSTALL_SHA256" "$installer" \
+            | sha256sum --check --strict
+          chmod 700 "$installer"
+          "$installer" -b "$RUNNER_TEMP/bin" "$TRUFFLEHOG_VERSION"
           "$RUNNER_TEMP/bin/trufflehog" filesystem . --only-verified --fail --no-update
       - uses: ./.github/actions/setup
       - name: Known-vulnerability audit
