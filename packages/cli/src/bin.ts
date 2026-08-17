@@ -11,7 +11,7 @@ import { init } from "./init.js";
 import { discoverClients } from "./clients.js";
 import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
 import { serve } from "./serve.js";
-import { syncClient, WRITE_CLIENTS } from "./sync.js";
+import { ownedRosterEntries, syncClient, WRITE_CLIENTS } from "./sync.js";
 import { telemetry } from "./telemetry.js";
 import { scanSkillSources, trustScan } from "@roster/playbook";
 import { loadConfig } from "./rosterfile.js";
@@ -141,7 +141,7 @@ async function main(): Promise<number> {
       const config = loadConfig();
       const skills = scanSkillSources(config.skillSources);
       const review = skills.filter((s) => trustScan(s).status === "review").length;
-      const receipt = buildReceipt(discoveries, skills, review);
+      const receipt = buildReceipt(discoveries, skills, review, config.servers, ownedRosterEntries());
       saveReceipt(receipt); // spec §6.3: "re-print/update the audit"
       process.stdout.write(`${renderReceipt(receipt)}\n`);
       return 0;

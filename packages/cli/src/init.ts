@@ -22,7 +22,7 @@ export function init(): void {
   const skills = scanSkillSources(skillSources);
   const trustReview = skills.filter((s) => trustScan(s).status === "review").length;
 
-  const receipt = buildReceipt(discoveries, skills, trustReview);
+  const receipt = buildReceipt(discoveries, skills, trustReview, config.servers, ownedRosterEntries());
   saveReceipt(receipt);
 
   process.stdout.write(`${renderReceipt(receipt)}\n\n`);
