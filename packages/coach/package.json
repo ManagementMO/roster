@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@roster/shared": "workspace:*",
-    "better-sqlite3": "^12.11.1"
+    "better-sqlite3": "^13.0.3"
   },
   "optionalDependencies": {
     "@huggingface/transformers": "^4.2.0"

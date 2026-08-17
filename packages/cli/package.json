@@ -56,7 +56,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "ajv": "^8.17.0",
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.3",
     "smol-toml": "^1.8.0",
     "yaml": "^2.6.0"
   },
