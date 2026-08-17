@@ -20,9 +20,30 @@ importers:
       '@biomejs/biome':
         specifier: 2.5.8
         version: 2.5.8
+      '@roster/coach':
+        specifier: workspace:*
+        version: link:packages/coach
+      '@roster/combine':
+        specifier: workspace:*
+        version: link:packages/combine
+      '@roster/playbook':
+        specifier: workspace:*
+        version: link:packages/playbook
+      '@roster/router':
+        specifier: workspace:*
+        version: link:packages/router
+      '@roster/shared':
+        specifier: workspace:*
+        version: link:packages/shared
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.13
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.1
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       tsx:
         specifier: ^4.23.12
         version: 4.23.12
@@ -35,7 +56,7 @@ importers:
 
   apps/league:
     dependencies:
-      '@rosterhq/combine':
+      '@roster/combine':
         specifier: workspace:*
         version: link:../../packages/combine
     devDependencies:
@@ -45,38 +66,28 @@ importers:
 
   packages/cli:
     dependencies:
+      '@huggingface/transformers':
+        specifier: ^4.2.0
+        version: 4.2.0
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
-      '@rosterhq/coach':
-        specifier: workspace:*
-        version: link:../coach
-      '@rosterhq/combine':
-        specifier: workspace:*
-        version: link:../combine
-      '@rosterhq/playbook':
-        specifier: workspace:*
-        version: link:../playbook
-      '@rosterhq/router':
-        specifier: workspace:*
-        version: link:../router
-      '@rosterhq/shared':
-        specifier: workspace:*
-        version: link:../shared
+      ajv:
+        specifier: ^8.17.0
+        version: 8.20.0
+      better-sqlite3:
+        specifier: ^12.11.1
+        version: 12.11.1
       smol-toml:
         specifier: ^1.8.0
         version: 1.8.0
       yaml:
         specifier: ^2.6.0
         version: 2.9.0
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.1
 
   packages/coach:
     dependencies:
-      '@rosterhq/shared':
+      '@roster/shared':
         specifier: workspace:*
         version: link:../shared
       better-sqlite3:
@@ -99,7 +110,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
-      '@rosterhq/shared':
+      '@roster/shared':
         specifier: workspace:*
         version: link:../shared
       yaml:
@@ -112,7 +123,7 @@ importers:
 
   packages/playbook:
     dependencies:
-      '@rosterhq/shared':
+      '@roster/shared':
         specifier: workspace:*
         version: link:../shared
       yaml:
@@ -128,13 +139,13 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
-      '@rosterhq/coach':
+      '@roster/coach':
         specifier: workspace:*
         version: link:../coach
-      '@rosterhq/playbook':
+      '@roster/playbook':
         specifier: workspace:*
         version: link:../playbook
-      '@rosterhq/shared':
+      '@roster/shared':
         specifier: workspace:*
         version: link:../shared
       ajv:
@@ -1803,11 +1814,9 @@ snapshots:
     dependencies:
       hono: 4.13.2
 
-  '@huggingface/jinja@0.5.9':
-    optional: true
+  '@huggingface/jinja@0.5.9': {}
 
-  '@huggingface/tokenizers@0.1.3':
-    optional: true
+  '@huggingface/tokenizers@0.1.3': {}
 
   '@huggingface/transformers@4.2.0':
     dependencies:
@@ -1816,10 +1825,8 @@ snapshots:
       onnxruntime-node: 1.24.3
       onnxruntime-web: 1.26.0-dev.20260416-b7804b056c
       sharp: 0.35.0
-    optional: true
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.35.0':
     optionalDependencies:
@@ -1952,34 +1959,25 @@ snapshots:
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
 
-  '@protobufjs/aspromise@1.1.2':
-    optional: true
+  '@protobufjs/aspromise@1.1.2': {}
 
-  '@protobufjs/base64@1.1.2':
-    optional: true
+  '@protobufjs/base64@1.1.2': {}
 
-  '@protobufjs/codegen@2.0.5':
-    optional: true
+  '@protobufjs/codegen@2.0.5': {}
 
-  '@protobufjs/eventemitter@1.1.1':
-    optional: true
+  '@protobufjs/eventemitter@1.1.1': {}
 
   '@protobufjs/fetch@1.1.1':
     dependencies:
       '@protobufjs/aspromise': 1.1.2
-    optional: true
 
-  '@protobufjs/float@1.0.2':
-    optional: true
+  '@protobufjs/float@1.0.2': {}
 
-  '@protobufjs/path@1.1.2':
-    optional: true
+  '@protobufjs/path@1.1.2': {}
 
-  '@protobufjs/pool@1.1.0':
-    optional: true
+  '@protobufjs/pool@1.1.0': {}
 
-  '@protobufjs/utf8@1.1.1':
-    optional: true
+  '@protobufjs/utf8@1.1.1': {}
 
   '@rollup/rollup-android-arm-eabi@4.62.4':
     optional: true
@@ -2181,8 +2179,7 @@ snapshots:
       mime-types: 3.0.2
       negotiator: 1.0.0
 
-  adm-zip@0.6.0:
-    optional: true
+  adm-zip@0.6.0: {}
 
   ajv-formats@3.0.1(ajv@8.20.0):
     optionalDependencies:
@@ -2228,8 +2225,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  boolean@3.2.0:
-    optional: true
+  boolean@3.2.0: {}
 
   buffer@5.7.1:
     dependencies:
@@ -2290,21 +2286,18 @@ snapshots:
       es-define-property: 1.0.1
       es-errors: 1.3.0
       gopd: 1.2.0
-    optional: true
 
   define-properties@1.2.1:
     dependencies:
       define-data-property: 1.1.4
       has-property-descriptors: 1.0.2
       object-keys: 1.1.1
-    optional: true
 
   depd@2.0.0: {}
 
   detect-libc@2.1.2: {}
 
-  detect-node@2.1.0:
-    optional: true
+  detect-node@2.1.0: {}
 
   dunder-proto@1.0.1:
     dependencies:
@@ -2330,8 +2323,7 @@ snapshots:
     dependencies:
       es-errors: 1.3.0
 
-  es6-error@4.1.1:
-    optional: true
+  es6-error@4.1.1: {}
 
   esbuild@0.28.2:
     optionalDependencies:
@@ -2364,8 +2356,7 @@ snapshots:
 
   escape-html@1.0.3: {}
 
-  escape-string-regexp@4.0.0:
-    optional: true
+  escape-string-regexp@4.0.0: {}
 
   estree-walker@3.0.3:
     dependencies:
@@ -2442,8 +2433,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  flatbuffers@25.9.23:
-    optional: true
+  flatbuffers@25.9.23: {}
 
   forwarded@0.2.0: {}
 
@@ -2484,23 +2474,19 @@ snapshots:
       roarr: 2.15.4
       semver: 7.8.5
       serialize-error: 7.0.1
-    optional: true
 
   globalthis@1.0.4:
     dependencies:
       define-properties: 1.2.1
       gopd: 1.2.0
-    optional: true
 
   gopd@1.2.0: {}
 
-  guid-typescript@1.0.9:
-    optional: true
+  guid-typescript@1.0.9: {}
 
   has-property-descriptors@1.0.2:
     dependencies:
       es-define-property: 1.0.1
-    optional: true
 
   has-symbols@1.1.0: {}
 
@@ -2542,11 +2528,9 @@ snapshots:
 
   json-schema-typed@8.0.2: {}
 
-  json-stringify-safe@5.0.1:
-    optional: true
+  json-stringify-safe@5.0.1: {}
 
-  long@5.3.2:
-    optional: true
+  long@5.3.2: {}
 
   magic-string@0.30.21:
     dependencies:
@@ -2555,7 +2539,6 @@ snapshots:
   matcher@3.0.0:
     dependencies:
       escape-string-regexp: 4.0.0
-    optional: true
 
   math-intrinsics@1.1.0: {}
 
@@ -2591,8 +2574,7 @@ snapshots:
 
   object-inspect@1.13.4: {}
 
-  object-keys@1.1.1:
-    optional: true
+  object-keys@1.1.1: {}
 
   obug@2.1.4: {}
 
@@ -2604,18 +2586,15 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  onnxruntime-common@1.24.0-dev.20251116-b39e144322:
-    optional: true
+  onnxruntime-common@1.24.0-dev.20251116-b39e144322: {}
 
-  onnxruntime-common@1.24.3:
-    optional: true
+  onnxruntime-common@1.24.3: {}
 
   onnxruntime-node@1.24.3:
     dependencies:
       adm-zip: 0.6.0
       global-agent: 3.0.0
       onnxruntime-common: 1.24.3
-    optional: true
 
   onnxruntime-web@1.26.0-dev.20260416-b7804b056c:
     dependencies:
@@ -2625,7 +2604,6 @@ snapshots:
       onnxruntime-common: 1.24.0-dev.20251116-b39e144322
       platform: 1.3.6
       protobufjs: 7.6.5
-    optional: true
 
   parseurl@1.3.3: {}
 
@@ -2641,8 +2619,7 @@ snapshots:
 
   pkce-challenge@5.0.1: {}
 
-  platform@1.3.6:
-    optional: true
+  platform@1.3.6: {}
 
   postcss@8.5.26:
     dependencies:
@@ -2678,7 +2655,6 @@ snapshots:
       '@protobufjs/utf8': 1.1.1
       '@types/node': 22.20.1
       long: 5.3.2
-    optional: true
 
   proxy-addr@2.0.7:
     dependencies:
@@ -2727,7 +2703,6 @@ snapshots:
       json-stringify-safe: 5.0.1
       semver-compare: 1.0.0
       sprintf-js: 1.1.3
-    optional: true
 
   rollup@4.62.4:
     dependencies:
@@ -2775,8 +2750,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  semver-compare@1.0.0:
-    optional: true
+  semver-compare@1.0.0: {}
 
   semver@7.8.5: {}
 
@@ -2799,7 +2773,6 @@ snapshots:
   serialize-error@7.0.1:
     dependencies:
       type-fest: 0.13.1
-    optional: true
 
   serve-static@2.2.1:
     dependencies:
@@ -2843,7 +2816,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.35.0
       '@img/sharp-win32-ia32': 0.35.0
       '@img/sharp-win32-x64': 0.35.0
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -2893,8 +2865,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  sprintf-js@1.1.3:
-    optional: true
+  sprintf-js@1.1.3: {}
 
   stackback@0.0.2: {}
 
@@ -2949,8 +2920,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  type-fest@0.13.1:
-    optional: true
+  type-fest@0.13.1: {}
 
   type-is@2.1.0:
     dependencies:

@@ -1,9 +1,8 @@
-import fs from "node:fs";
-import { estimateTokensFromChars } from "@rosterhq/shared";
-import { openclawInjectionChars, type ParsedSkill } from "@rosterhq/playbook";
+import { estimateTokensFromChars } from "@roster/shared";
+import { openclawInjectionChars, type ParsedSkill } from "@roster/playbook";
 import type { Discovery } from "./clients.js";
-import { receiptPath, rosterHome } from "./paths.js";
-import { serverIdentity } from "./rosterfile.js";
+import { ensureRosterHome, PRIVATE_FILE, receiptPath } from "./paths.js";
+import { atomicWriteFileSync, serverIdentity } from "./rosterfile.js";
 
 /**
  * The Day-0 receipt — numbers only, truthful by client (kill-risk K5 fix):
@@ -63,9 +62,15 @@ export function buildReceipt(discoveries: Discovery[], skills: ParsedSkill[], tr
   };
 }
 
+/**
+ * The receipt names every detected client and the absolute path of its config —
+ * the same "which clients does this person run" inventory the backups directory
+ * is kept at 0700 to protect. It was written with the default umask (0644), so
+ * it is now owner-only and atomic like every other file Roster owns (R6-01).
+ */
 export function saveReceipt(receipt: Receipt): void {
-  fs.mkdirSync(rosterHome(), { recursive: true });
-  fs.writeFileSync(receiptPath(), `${JSON.stringify(receipt, null, 2)}\n`);
+  ensureRosterHome();
+  atomicWriteFileSync(receiptPath(), `${JSON.stringify(receipt, null, 2)}\n`, PRIVATE_FILE);
 }
 
 export function renderReceipt(receipt: Receipt): string {

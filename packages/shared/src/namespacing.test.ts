@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  namespacedId,
-  normalizeBackendName,
   parseNamespacedId,
   sanitizeSegment,
   sanitizeSource,
@@ -12,12 +10,14 @@ import {
 
 describe("namespacing", () => {
   it("builds server__tool ids", () => {
-    expect(namespacedId("github", "create_issue")).toBe("github__create_issue");
+    expect(stableNamespacedId("github", "create_issue")).toBe("github__create_issue");
   });
 
   it("sanitizes hostile characters", () => {
     expect(sanitizeSegment("we!rd name/©")).toBe("we-rd-name");
-    expect(namespacedId("my server (local)", "read/file")).toBe("my-server-local__read-file");
+    expect(stableNamespacedId("my server (local)", "read/file")).toMatch(
+      /^my-server-local__read-file-[a-f0-9]{10}$/,
+    );
   });
 
   it("makes a sanitized public segment stable without collapsing distinct raw names", () => {
@@ -36,25 +36,25 @@ describe("namespacing", () => {
 
   it("never leaves the separator inside the source segment", () => {
     expect(sanitizeSource("a__b__c")).toBe("a_b_c");
-    const id = namespacedId("a__b", "tool__name");
+    const id = stableNamespacedId("a__b", "tool__name");
     const parsed = parseNamespacedId(id);
-    expect(parsed).toEqual({ source: "a_b", name: "tool__name" });
+    expect(parsed?.source).toBe("a_b");
+    expect(parsed?.name.startsWith("tool__name")).toBe(true);
   });
 
   it("a source ending in '_' can never collide with a name starting in '_'", () => {
     // Pre-fix these both minted "a___b" and routed to the wrong backend.
-    const trailing = namespacedId("a_", "b");
-    const leading = namespacedId("a", "_b");
+    const trailing = stableNamespacedId("a_", "b");
+    const leading = stableNamespacedId("a", "_b");
     expect(trailing).not.toBe(leading);
     // And each still round-trips to a non-empty, correctly-split identity.
     expect(parseNamespacedId(trailing)).toEqual({ source: "a", name: "b" });
-    expect(parseNamespacedId(leading)).toEqual({ source: "a", name: "_b" });
+    expect(parseNamespacedId(leading)?.source).toBe("a");
   });
 
-  it("normalizeBackendName delegates to the stable reserved-namespace identity", () => {
-    expect(normalizeBackendName("skill")).toBe("skill-server");
-    expect(normalizeBackendName("my server")).toBe(stableBackendName("my server"));
-    expect(normalizeBackendName("memory")).toBe("memory");
+  it("the reserved 'skill' namespace is renamed for backend identities", () => {
+    expect(stableBackendName("skill")).toBe("skill-server");
+    expect(stableBackendName("memory")).toBe("memory");
   });
 
   it("keeps backend identities stable across sanitized collisions", () => {
@@ -69,7 +69,7 @@ describe("namespacing", () => {
   });
 
   it("round-trips parse", () => {
-    const id = namespacedId("filesystem", "read_text_file");
+    const id = stableNamespacedId("filesystem", "read_text_file");
     expect(parseNamespacedId(id)).toEqual({ source: "filesystem", name: "read_text_file" });
   });
 

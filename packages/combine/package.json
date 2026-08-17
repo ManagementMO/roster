@@ -1,6 +1,7 @@
 {
-  "name": "@rosterhq/combine",
+  "name": "@roster/combine",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=22.13" },
@@ -18,7 +19,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@rosterhq/shared": "workspace:*",
+    "@roster/shared": "workspace:*",
     "yaml": "^2.6.0"
   },
   "devDependencies": {

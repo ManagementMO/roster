@@ -194,7 +194,7 @@ fs.writeFileSync(bombFile, `
 import { createRequire } from "node:module";
 import path from "node:path";
 const req = createRequire(${JSON.stringify(path.join(repo, "packages/cli/package.json"))});
-const { parseSkillMd } = await import(req.resolve("@rosterhq/playbook"));
+const { parseSkillMd } = await import(req.resolve("@roster/playbook"));
 const content = ${JSON.stringify("---\n" + bomb + "---\nbody")};
 const t = Date.now();
 let r, err = null;

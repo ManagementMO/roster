@@ -1,4 +1,4 @@
-import { summarizeResults, type LabResults, type RunSummary, type TaskResult } from "@rosterhq/combine";
+import { summarizeResults, type LabResults, type RunSummary, type TaskResult } from "@roster/combine";
 
 /** methodology.md §1: no ranked placement below this many signed tasks. */
 export const MIN_RANKED_SIGNED_N = 30;

@@ -1,6 +1,7 @@
 {
-  "name": "@rosterhq/playbook",
+  "name": "@roster/playbook",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=22.13" },
@@ -17,7 +18,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@rosterhq/shared": "workspace:*",
+    "@roster/shared": "workspace:*",
     "yaml": "^2.6.0"
   },
   "devDependencies": {

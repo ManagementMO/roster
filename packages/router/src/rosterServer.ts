@@ -7,12 +7,12 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import type { CoachStore } from "@rosterhq/coach";
-import { classifyOutcome, hashArgs, hashNeed } from "@rosterhq/coach";
-import { trustScan, type ParsedSkill } from "@rosterhq/playbook";
-import { skillInvocationResult, skillToCapabilityEntry } from "@rosterhq/playbook";
-import type { CapabilityEntry, OutcomeClass } from "@rosterhq/shared";
-import { parseNamespacedId } from "@rosterhq/shared";
+import type { CoachStore } from "@roster/coach";
+import { classifyOutcome, hashArgs, hashNeed } from "@roster/coach";
+import { trustScan, type ParsedSkill } from "@roster/playbook";
+import { skillInvocationResult, skillToCapabilityEntry } from "@roster/playbook";
+import type { CapabilityEntry, OutcomeClass } from "@roster/shared";
+import { parseNamespacedId } from "@roster/shared";
 import type { BackendManager } from "./backends.js";
 import { toCard } from "./cards.js";
 

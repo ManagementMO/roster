@@ -19,6 +19,7 @@ export {
   MATRYOSHKA_DIMS,
   TransformersEmbeddings,
   selectModelId,
+  setDenseRuntimeDir,
   truncateAndNormalize,
   type EmbeddingsProvider,
 } from "./embeddings.js";

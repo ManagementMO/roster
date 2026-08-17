@@ -87,7 +87,7 @@ const { rankedIds, hitAtK, reciprocalRank, mean, percentile, summarize } = await
 
 // ── real production code under measurement ─────────────────────────────────
 const coach = await import(
-  createRequire(path.join(REPO, "packages/cli/package.json")).resolve("@rosterhq/coach")
+  createRequire(path.join(REPO, "packages/cli/package.json")).resolve("@roster/coach")
 );
 const { CoachStore, openCoachDb, TransformersEmbeddings, MINILM_MODEL, cosine } = coach;
 

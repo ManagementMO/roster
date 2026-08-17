@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { wilsonLowerBound } = await import(req.resolve("@rosterhq/shared"));
+const { wilsonLowerBound } = await import(req.resolve("@roster/shared"));
 
 // Independent reference (fresh from the cited formula, different algebra).
 function refWilson(s, n, z = 1.96) {

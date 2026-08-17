@@ -16,8 +16,8 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { BackendManager } = await import(req.resolve("@rosterhq/router"));
-const { classifyOutcome } = await import(req.resolve("@rosterhq/coach"));
+const { BackendManager } = await import(req.resolve("@roster/router"));
+const { classifyOutcome } = await import(req.resolve("@roster/coach"));
 
 const TMP = path.join(repo, "docs/lab/tmp-classifier-realworld");
 fs.mkdirSync(TMP, { recursive: true });

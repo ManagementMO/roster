@@ -1,6 +1,7 @@
 {
-  "name": "@rosterhq/league",
+  "name": "@roster/league",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=22.13" },
@@ -17,7 +18,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@rosterhq/combine": "workspace:*"
+    "@roster/combine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.20.1"

@@ -7,12 +7,12 @@ const pkg = (name: string) =>
 export default defineConfig({
   resolve: {
     alias: {
-      "@rosterhq/shared": pkg("shared"),
-      "@rosterhq/coach": pkg("coach"),
-      "@rosterhq/playbook": pkg("playbook"),
-      "@rosterhq/router": pkg("router"),
-      "@rosterhq/combine": pkg("combine"),
-      "@rosterhq/league": fileURLToPath(new URL("./apps/league/src/index.ts", import.meta.url)),
+      "@roster/shared": pkg("shared"),
+      "@roster/coach": pkg("coach"),
+      "@roster/playbook": pkg("playbook"),
+      "@roster/router": pkg("router"),
+      "@roster/combine": pkg("combine"),
+      "@roster/league": fileURLToPath(new URL("./apps/league/src/index.ts", import.meta.url)),
     },
   },
   test: {

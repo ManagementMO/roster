@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseSuite, summarizeResults } from "@rosterhq/combine";
+import { parseSuite, summarizeResults } from "@roster/combine";
 import {
   certifyRun,
   isRankable,

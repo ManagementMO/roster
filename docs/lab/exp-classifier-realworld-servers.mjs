@@ -2,9 +2,9 @@
 /**
  * exp-classifier-realworld part (a): force REAL failures from REAL MCP servers
  * over real stdio, capture the exact wire shape (raw SDK client), then run the
- * identical call through @rosterhq/router BackendManager (exactly as
+ * identical call through @roster/router BackendManager (exactly as
  * rosterServer does, outputSchema included) and classify with the real
- * @rosterhq/coach classifyOutcome. No mocks anywhere.
+ * @roster/coach classifyOutcome. No mocks anywhere.
  *
  * Scenarios: filesystem server (nonexistent read / trigger-word filename /
  * write outside sandbox / chmod-000 read), memory server (malformed +
@@ -21,8 +21,8 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { BackendManager } = await import(req.resolve("@rosterhq/router"));
-const { classifyOutcome, isAttributable } = await import(req.resolve("@rosterhq/coach"));
+const { BackendManager } = await import(req.resolve("@roster/router"));
+const { classifyOutcome, isAttributable } = await import(req.resolve("@roster/coach"));
 const { Client } = await import(req.resolve("@modelcontextprotocol/sdk/client/index.js"));
 const { StdioClientTransport } = await import(
   req.resolve("@modelcontextprotocol/sdk/client/stdio.js"),

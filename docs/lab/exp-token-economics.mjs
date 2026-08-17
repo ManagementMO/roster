@@ -25,9 +25,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
 
-const shared = await import(req.resolve("@rosterhq/shared"));
-const coachPkg = await import(req.resolve("@rosterhq/coach"));
-const routerPkg = await import(req.resolve("@rosterhq/router"));
+const shared = await import(req.resolve("@roster/shared"));
+const coachPkg = await import(req.resolve("@roster/coach"));
+const routerPkg = await import(req.resolve("@roster/router"));
 const { Client } = await import(req.resolve("@modelcontextprotocol/sdk/client/index.js"));
 const { StdioClientTransport } = await import(req.resolve("@modelcontextprotocol/sdk/client/stdio.js"));
 const { InMemoryTransport } = await import(req.resolve("@modelcontextprotocol/sdk/inMemory.js"));

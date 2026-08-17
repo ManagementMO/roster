@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { classifyToolFailKind } = await import(req.resolve("@rosterhq/coach"));
+const { classifyToolFailKind } = await import(req.resolve("@roster/coach"));
 
 const TMP = path.join(repo, "docs/lab/tmp-classifier-realworld");
 const errtexts = JSON.parse(fs.readFileSync(path.join(TMP, "out-errtexts.json"), "utf8"));

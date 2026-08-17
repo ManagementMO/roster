@@ -8,9 +8,9 @@ import type {
   JsonSchemaValidator,
   jsonSchemaValidator as JsonSchemaValidatorProvider,
 } from "@modelcontextprotocol/sdk/validation/types";
-import type { CallEvidence } from "@rosterhq/coach";
-import type { CapabilityEntry } from "@rosterhq/shared";
-import { stableBackendName, stableNamespacedId } from "@rosterhq/shared";
+import type { CallEvidence } from "@roster/coach";
+import type { CapabilityEntry } from "@roster/shared";
+import { stableBackendName, stableNamespacedId } from "@roster/shared";
 
 /**
  * The MCP SDK compiles EVERY tool's `outputSchema` after `listTools`. A single

@@ -1,36 +1,71 @@
 {
   "name": "@roster/cli",
   "version": "0.0.1",
-  "description": "Roster — the tool router for AI agents. One MCP endpoint, the right five tools per task.",
+  "description": "Roster \u2014 the tool router for AI agents. One MCP endpoint, the right five tools per task.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "tool-router",
+    "claude",
+    "cursor",
+    "codex",
+    "llm-tools",
+    "cli"
+  ],
+  "homepage": "https://github.com/ManagementMO/roster#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ManagementMO/roster.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/ManagementMO/roster/issues"
+  },
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "bin": {
     "roster": "./dist/bin.js"
   },
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "bundle",
+    "README.md"
   ],
+  "publishConfig": {
+    "bin": {
+      "roster": "./bundle/bin.js"
+    },
+    "main": "./bundle/index.js",
+    "exports": {
+      ".": "./bundle/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "bundle": "node scripts/bundle.mjs",
+    "prepack": "pnpm run build && pnpm run bundle && node -e \"require('node:fs').copyFileSync('../../README.md','README.md')\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@rosterhq/coach": "workspace:*",
-    "@rosterhq/combine": "workspace:*",
-    "@rosterhq/playbook": "workspace:*",
-    "@rosterhq/router": "workspace:*",
-    "@rosterhq/shared": "workspace:*",
+    "ajv": "^8.17.0",
+    "better-sqlite3": "^12.11.1",
     "smol-toml": "^1.8.0",
     "yaml": "^2.6.0"
   },
-  "devDependencies": {
-    "@types/node": "^22.20.1"
+  "peerDependencies": {
+    "@huggingface/transformers": "^4.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@huggingface/transformers": {
+      "optional": true
+    }
   }
 }

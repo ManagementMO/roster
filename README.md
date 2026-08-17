@@ -49,7 +49,7 @@ The League is the show; these earn the install without it:
 
 ## Privacy
 
-- **Local-first, by law.** No account or Roster API key. State lives in `~/.roster/`. Lexical full-text retrieval works without a model download; unless disabled, the optional dense path may fetch an embedding model from Hugging Face in the background. Permanently offline machines stay in lexical mode.
+- **Local-first, by law.** No account or Roster API key. State lives in `~/.roster/`. Lexical full-text retrieval works with no model and no download, so the install is ~39 MB and Roster is useful the moment it finishes. Semantic (dense) retrieval is **opt-in**: `roster init` asks, or `roster dense enable` adds it later — it installs a ~385 MB local embedding runtime into `~/.roster/runtime` and then fetches a model from Hugging Face in the background on first use. Decline it, or stay permanently offline, and Roster runs in lexical mode forever. Nothing is uploaded either way.
 - **Your content never leaves.** Prompts, tool arguments, and results are never uploaded, persisted to the outcome database, or logged.
 - **Telemetry is OFF by default and opt-in only.** `roster telemetry status|on|off` controls it; the published schema in [docs/telemetry-schema.md](docs/telemetry-schema.md) defines exactly what could ever be sent — coarse outcome events only, with hard exclusions for prompts, args, results, embeddings, hostnames, and paths. Aggregates publish only past k-anonymity thresholds. Full schema: [docs/telemetry-schema.md](docs/telemetry-schema.md). The upload endpoint does not exist yet, so today nothing leaves your machine even if you opt in. Before launch, the OFF default gets verified by packet capture.
 

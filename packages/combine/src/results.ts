@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import os from "node:os";
-import { wilsonLowerBound } from "@rosterhq/shared";
+import { wilsonLowerBound } from "@roster/shared";
 import type { SuiteRunResult, TaskResult } from "./runner.js";
 
 export interface RunSummary {

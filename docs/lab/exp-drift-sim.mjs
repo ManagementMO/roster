@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const coach = await import(
-  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@rosterhq/coach")
+  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@roster/coach")
 );
 const {
   CoachStore, openCoachDb, TransformersEmbeddings, MINILM_MODEL,

@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { chmodSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
+import { wilsonLowerBound, type CapabilityEntry } from "@roster/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
 import { CoachStore, defHash } from "./store.js";
 import { normalize } from "./oats.js";
@@ -206,6 +206,46 @@ describe("drift identity covers safety and contract metadata", () => {
     expect(returned.changed).toEqual([]);
     expect(returned.added).toContain("fs__delete");
     expect(store2.getCapability("fs__delete")).not.toBeNull();
+  });
+});
+
+/**
+ * R6-01. The Coach DB is an inventory of the user's toolchain — every tool
+ * description and whole SKILL.md bodies — but SQLite created it with the
+ * process umask (0644). SQLite derives the -wal/-shm permissions from the main
+ * file, so the fix is to pre-create it 0600 before the first open.
+ */
+describe.skipIf(process.platform === "win32")("the coach database is owner-only on disk", () => {
+  it("creates a new database 0600 under a permissive umask", () => {
+    const previousUmask = process.umask(0o022);
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-perms-"));
+    try {
+      const file = join(directory, "coach.db");
+      const db = openCoachDb(file);
+      new CoachStore(db).recordOutcome({
+        session: "s", source: "x", capability: "x__y", outcomeClass: "success", latencyMs: 1,
+      });
+      db.close();
+      for (const name of readdirSync(directory)) {
+        expect([name, statSync(join(directory, name)).mode & 0o077]).toEqual([name, 0]);
+      }
+    } finally {
+      process.umask(previousUmask);
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("tightens a database that is already group/world-readable", () => {
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-perms-"));
+    try {
+      const file = join(directory, "coach.db");
+      openCoachDb(file).close();
+      chmodSync(file, 0o644); // e.g. written by an older build
+      openCoachDb(file).close();
+      expect(statSync(file).mode & 0o777).toBe(0o600);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 

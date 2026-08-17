@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { sha256Hex } from "@rosterhq/coach";
+import { sha256Hex } from "@roster/coach";
 import { CLIENTS, type ClientId } from "./clients.js";
 import { normalizeSpawnEntry, sameEntry, type SpawnEntry } from "./entry.js";
 import {

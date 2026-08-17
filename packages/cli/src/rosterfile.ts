@@ -1,19 +1,20 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { sha256Hex } from "@rosterhq/coach";
+import { sha256Hex } from "@roster/coach";
 import type { ImportedServer } from "./clients.js";
 import { isOwnedRosterEntry, rosterEntry, type SpawnEntry } from "./entry.js";
 import { withFileLockSync } from "./lock.js";
-import { rosterConfigPath, rosterHome } from "./paths.js";
+import { ensureRosterHome, PRIVATE_FILE, rosterConfigPath, rosterHome } from "./paths.js";
 
 /**
  * Files Roster creates can hold imported credentials (a server's `env` block), so
  * they are owner-only. Directories likewise: a 0755 backups dir lists every
- * client whose config we hold.
+ * client whose config we hold. The constants themselves live in paths.ts (the
+ * one module with no internal imports) and are re-exported here for the callers
+ * that already reach for them through this module.
  */
-export const PRIVATE_FILE = 0o600;
-export const PRIVATE_DIR = 0o700;
+export { PRIVATE_DIR, PRIVATE_FILE } from "./paths.js";
 
 export interface WriteTopology {
   sourcePath: string;
@@ -222,7 +223,7 @@ export function loadConfig(): RosterConfig {
 }
 
 export function saveConfig(config: RosterConfig): void {
-  fs.mkdirSync(rosterHome(), { recursive: true, mode: PRIVATE_DIR });
+  ensureRosterHome();
   // roster.json holds every imported server's `env` — i.e. the user's API keys.
   // It is the "one place" the README promises they live, so it is owner-only.
   const normalized = normalizeConfig(config);
