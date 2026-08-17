@@ -43,6 +43,29 @@ export function ourBinPath(): string {
   return path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
 }
 
+/** The published package name; the only name safe to hand to `npx`. */
+export const PACKAGE_NAME = "@roster/cli";
+
+/**
+ * Are we running out of an `npx` cache rather than a real installation?
+ *
+ * This matters because `npx` is the documented first command, and it makes BOTH
+ * other entry forms wrong:
+ *
+ *  - it puts `roster` on PATH for the duration of that one invocation, which
+ *    fooled `hasGlobalRoster()` into writing `{command: "roster"}`. The moment
+ *    npx exits there is no `roster`, so the client's launcher dies with ENOENT
+ *    — a dead MCP server, produced by the happy path.
+ *  - the cache directory itself is disposable (`npm cache clean`, npx's own
+ *    pruning), so writing this absolute path would break later instead.
+ *
+ * Verified end to end against a local registry: `npx -y @roster/cli sync` wrote
+ * `{command:"roster"}`, and spawning it afterwards failed `ENOENT`.
+ */
+export function runningFromNpxCache(binPath: string = ourBinPath()): boolean {
+  return binPath.split(path.sep).includes("_npx");
+}
+
 /**
  * The entry sync writes. A global `roster` that is provably ours → `roster serve`.
  * Otherwise THIS install's own entrypoint (node + absolute `dist/bin.js`):
@@ -50,12 +73,18 @@ export function ourBinPath(): string {
  * only code that is provably ours. Deliberately NOT `npx -y roster` — the npm
  * name `roster` is a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so
  * that entry would fetch and run a stranger's code on every client boot. The npx
- * form becomes the no-global default only at publish, under P1's cleared name
- * (one-line change; STATUS §4F).
+ * form is used ONLY for the scoped, published name and ONLY when we are already
+ * running from an npx cache — which proves that exact package is fetchable.
  */
-export function rosterEntry(): SpawnEntry {
+export function rosterEntry(binPath: string = ourBinPath()): SpawnEntry {
+  // Reaching this code from an npx cache proves the package is fetchable by
+  // name, so the npx form is both correct and self-healing: it re-fetches if
+  // the cache is pruned. It must be checked FIRST — npx's temporary PATH entry
+  // would otherwise satisfy `hasGlobalRoster()` and write a launcher that stops
+  // existing the moment npx exits.
+  if (runningFromNpxCache(binPath)) return { command: "npx", args: ["-y", PACKAGE_NAME, "serve"] };
   if (hasGlobalRoster()) return { command: "roster", args: ["serve"] };
-  return { command: process.execPath, args: [ourBinPath(), "serve"] };
+  return { command: process.execPath, args: [binPath, "serve"] };
 }
 
 /**

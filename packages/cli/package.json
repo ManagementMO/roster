@@ -28,30 +28,22 @@
     "node": ">=22.13"
   },
   "bin": {
-    "roster": "./dist/bin.js"
+    "roster": "./bundle/bin.js"
   },
-  "main": "./dist/index.js",
+  "main": "./bundle/index.js",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./bundle/index.js"
   },
   "files": [
     "bundle",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
-  "publishConfig": {
-    "bin": {
-      "roster": "./bundle/bin.js"
-    },
-    "main": "./bundle/index.js",
-    "exports": {
-      ".": "./bundle/index.js"
-    }
-  },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node scripts/bundle.mjs",
     "typecheck": "tsc -b",
     "bundle": "node scripts/bundle.mjs",
-    "prepack": "pnpm run build && pnpm run bundle && node -e \"require('node:fs').copyFileSync('../../README.md','README.md')\""
+    "prepack": "pnpm run build && node -e \"const f=require('node:fs');f.copyFileSync('../../README.md','README.md');f.copyFileSync('../../LICENSE','LICENSE')\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

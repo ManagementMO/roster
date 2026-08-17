@@ -193,6 +193,34 @@ try {
     if (!tarball) throw new Error("no tarball produced");
     return tarball;
   });
+
+  /**
+   * npm and pnpm do NOT pack identically — npm ignores `publishConfig`
+   * overrides for bin/main/exports while pnpm applies them. Testing only one
+   * packer is how a completely broken `npm publish` passed every check. Whoever
+   * runs the release must get the same artifact, so assert that directly.
+   */
+  await step("npm pack agrees with pnpm pack (packer parity)", () => {
+    const npmDir = path.join(workdir, "npm-pack");
+    fs.mkdirSync(npmDir, { recursive: true });
+    run("npm", ["pack", "--pack-destination", npmDir], { cwd: path.join(repo, "packages/cli") });
+    const npmTarball = path.join(npmDir, fs.readdirSync(npmDir).find((f) => f.endsWith(".tgz")));
+    const pnpmTarball = path.join(packDir, fs.readdirSync(packDir).find((f) => f.endsWith(".tgz")));
+    const listing = (t) => run("tar", ["-tzf", t]).trim().split("\n").sort().join("\n");
+    if (listing(npmTarball) !== listing(pnpmTarball)) {
+      throw new Error(
+        `npm and pnpm ship different files:\n--- npm ---\n${listing(npmTarball)}\n--- pnpm ---\n${listing(pnpmTarball)}`,
+      );
+    }
+    const manifestOf = (t) => JSON.parse(run("tar", ["-xzOf", t, "package/package.json"]));
+    const shape = (m) => JSON.stringify({ bin: m.bin, main: m.main, exports: m.exports });
+    if (shape(manifestOf(npmTarball)) !== shape(manifestOf(pnpmTarball))) {
+      throw new Error(
+        `npm and pnpm publish different entrypoints:\n  npm : ${shape(manifestOf(npmTarball))}\n  pnpm: ${shape(manifestOf(pnpmTarball))}`,
+      );
+    }
+    return "identical files and entrypoints";
+  });
   const tarball = path.join(packDir, fs.readdirSync(packDir).find((f) => f.endsWith(".tgz")));
 
   // 2. The published manifest must not reference anything unpublished — in ANY
@@ -212,6 +240,34 @@ try {
       throw new Error(`tarball declares unpublished packages: ${unpublished.join(", ")}`);
     }
     if (!manifest.bin?.roster) throw new Error("tarball declares no `roster` binary");
+    /**
+     * The manifest must point at files that are actually IN the tarball.
+     *
+     * This is not hypothetical: the package relied on `publishConfig` to
+     * repoint bin/main/exports at `bundle/`, and **npm ignores those overrides
+     * for those fields — only pnpm applies them**. A real `npm publish`
+     * therefore shipped `bin: ./dist/bin.js`; npm auto-included that one file
+     * because it is the bin target, and it imported siblings that `files`
+     * never shipped. `npx -y @roster/cli` died with ERR_MODULE_NOT_FOUND on
+     * the very first run, and no amount of `pnpm pack` testing could see it.
+     */
+    const shipped = new Set(
+      run("tar", ["-tzf", tarball])
+        .trim()
+        .split("\n")
+        .map((entry) => entry.replace(/^package\//, "")),
+    );
+    for (const [field, value] of [
+      ["bin.roster", manifest.bin.roster],
+      ["main", manifest.main],
+      ["exports['.']", typeof manifest.exports?.["."] === "string" ? manifest.exports["."] : undefined],
+    ]) {
+      if (value === undefined) continue;
+      const rel = String(value).replace(/^\.\//, "");
+      if (!shipped.has(rel)) {
+        throw new Error(`manifest ${field} points at "${value}", which the tarball does not contain`);
+      }
+    }
     // npm renders the package page from these. Without a README the listing is
     // blank; without repository/homepage/bugs it is a dead end with no source
     // link and nowhere to report a bug.

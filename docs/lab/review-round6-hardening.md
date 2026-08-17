@@ -275,3 +275,54 @@ And CI now writes a JUnit report and uploads it on every run, so the next
 intermittent failure is *named by the pipeline* instead of depending on whoever
 reads the log. That is the actual lesson of this round: a failure that cannot be
 named cannot be fixed.
+
+## Publishing for real: a local registry found two launch-breaking defects
+
+Every packaging check up to this point used `pnpm pack`. That was not enough.
+Standing up a local npm registry (Verdaccio), running an actual `npm publish`,
+and then running `npx -y @roster/cli` from a clean machine with an empty cache
+found two defects that would each have broken the very first user command.
+
+**1. `npm publish` produced an unrunnable package.** The manifest used
+`publishConfig` to repoint `bin`/`main`/`exports` at `bundle/`. **pnpm applies
+those overrides; npm does not.** A real `npm publish` therefore shipped
+`bin: ./dist/bin.js`; npm auto-included that single file because it is the bin
+target, and it imported siblings that `files` never shipped:
+
+```
+npx -y @roster/cli init
+  ERR_MODULE_NOT_FOUND  …/node_modules/@roster/cli/dist/dense.js
+```
+
+Fixed by deleting the indirection: the committed manifest now points at
+`bundle/` unconditionally and the workspace build produces the bundle, so every
+packer emits the same artifact. A packer-parity check now packs with **both**
+npm and pnpm and fails if the file lists or entrypoints differ — which
+immediately caught a second divergence: pnpm ships the workspace-root `LICENSE`,
+npm does not, so an `npm publish` would have shipped an MIT package with no
+licence file. `prepack` now stages both README and LICENSE.
+
+**2. `npx … sync` wrote a DEAD launcher into the user's client.** npx puts
+`roster` on PATH for the duration of that one invocation, which satisfied
+`hasGlobalRoster()`, so sync wrote `{command:"roster", args:["serve"]}`. The
+moment npx exits there is no `roster`:
+
+```
+spawn: roster serve
+error: ENOENT — spawnSync roster ENOENT
+→ the agent gets a dead MCP server
+```
+
+Writing the npx cache path instead would merely postpone the failure to
+whenever the cache is pruned. Reaching that code from an npx cache *proves the
+package is fetchable by name*, so `rosterEntry()` now emits
+`npx -y @roster/cli serve` in that case — checked **before** the PATH probe.
+Verified against the live registry end to end: the client launches it, the MCP
+handshake succeeds, nine real memory-server tools are proxied, it exits 0 on
+EOF, and after `rm -rf` of the entire npx cache the same entry **re-fetched and
+served — self-healed**. `eject` afterwards restored the config byte-for-byte,
+comments intact.
+
+The lesson generalises: `pnpm pack` is not a rehearsal for `npm publish`, and
+installing a tarball is not a rehearsal for `npx`. The only faithful test is a
+real registry.
