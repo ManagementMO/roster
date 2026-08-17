@@ -18,8 +18,8 @@
 The local gate reproduced exactly on the audited base: build, source+test
 typecheck, lint (67 files, no warnings), **369 tests across 14 files**, `pnpm
 audit` clean, League build (2 pages from 1 artifact), pack dry-run, clean tree.
-(After this round's remediation the same gate reports **383 tests across 15
-files** and lint checks 69 files.) All five real probes passed on
+(After this round's remediation the same gate reports **397 tests across 16
+files** and lint checks 71 files.) All five real probes passed on
 current `dist`: Router/privacy E2E, MiniLM dense-live, a fresh serve-level Gemma
 warmup (9 base vectors + 1 need vector at 256 dims, drafts served lexically
 throughout), Combine 8/8, and 8/8 fail-probes rejected at the `verify` stage.

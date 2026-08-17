@@ -12,7 +12,7 @@
 
 | Gate | Status |
 |---|---|
-| Unit/integration tests | **391 passing across 16 files** on the round-6 remediation branch (369/14 on the `9741ff6` base it audited; +14 locks for permissions, platform-neutral shutdown, and lock recovery) |
+| Unit/integration tests | **397 passing across 16 files** after round 6 (369/14 on the `9741ff6` base it audited; +28 locks for permissions, platform-neutral shutdown, receipt truthfulness, and lock recovery) |
 | CI/CD workflow | The release-readiness head and its status-only follow-ups passed lint · build-test (Ubuntu/macOS/Windows on Node 24 plus Ubuntu on the exact 22.13.x floor) · real-server E2E + fail-probes · Combine · clean external install · live MiniLM · audit/secret scan · CodeQL. Semgrep and Sourcery also passed, but they are **GitHub Apps configured outside this repo and they run on pull requests only** — they are not in `.github/workflows`, do not run on pushes to `main`, and Sourcery reports `skipped` on some runs, so they are reported here as supporting evidence, never as a repo-reproducible gate. |
 | Real-server E2E (fs + memory through the real binary) | **passing** (transcripts in `docs/verification/`) |
 | Combine vs real filesystem server | **8/8, deterministic** — and all 8 fail-probes reached the verifier and were rejected there (0/8); transport failures no longer satisfy the CI proof |
