@@ -437,18 +437,33 @@ describe("trust scan input safety", () => {
    * the command-position anchor is replaced by `\b`. 4x the input must cost ~4x
    * (linear), not ~16x (quadratic).
    */
+  /**
+   * Guards against catastrophic backtracking, which is EXPONENTIAL — on this
+   * input a vulnerable pattern does not take 10x longer, it never finishes.
+   *
+   * So the absolute backstop is the real assertion. The scaling ratio is a
+   * secondary signal, and it is measured as a median of samples against a
+   * generous bound: a single timing pair on a loaded machine is mostly
+   * scheduler noise, and a 10x bound on a 4x input step failed at 10.59 during
+   * a parallel run — a false alarm that teaches people to re-run the suite,
+   * which is precisely the habit that hides real bugs.
+   */
   it("scales linearly on flag runs that embed `rm`", () => {
-    const ms = (bytes: number): number => {
+    const medianMs = (bytes: number): number => {
       const body = `rm${" -rm".repeat(bytes / 4)} x`;
       trustScan({ body, scripts: [] }); // warm
-      const started = process.hrtime.bigint();
-      trustScan({ body, scripts: [] });
-      return Number(process.hrtime.bigint() - started) / 1e6;
+      const samples = Array.from({ length: 5 }, () => {
+        const started = process.hrtime.bigint();
+        trustScan({ body, scripts: [] });
+        return Number(process.hrtime.bigint() - started) / 1e6;
+      }).sort((a, b) => a - b);
+      return samples[2] as number;
     };
-    const small = ms(16 * 1024);
-    const large = ms(64 * 1024);
-    expect(large).toBeLessThan(500); // absolute backstop; measured ~1ms
-    expect(large / Math.max(small, 0.05)).toBeLessThan(10); // linear ~4, quadratic ~16
+    const small = medianMs(16 * 1024);
+    const large = medianMs(64 * 1024);
+    expect(large).toBeLessThan(500); // the load-bearing check; measured ~1ms
+    // 4x the input. Linear ≈ 4, quadratic ≈ 16, catastrophic ≈ never returns.
+    expect(large / Math.max(small, 0.05)).toBeLessThan(12);
   });
 
   it("bounds SKILL.md and fails closed to review rather than silently trusting a truncated scan", () => {
