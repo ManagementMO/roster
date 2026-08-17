@@ -281,6 +281,18 @@ try {
     if (!/package\/README\.md/.test(files)) {
       throw new Error("tarball ships no README — the npm package page would be blank");
     }
+    if (!/package\/LICENSE/.test(files)) {
+      throw new Error("tarball ships no LICENSE — an MIT package with no licence file");
+    }
+    // A SCOPED package is restricted by default: without this, the first real
+    // `npm publish` dies with "402 Payment Required — You must sign up for
+    // private packages". A local test registry that allows anonymous publish
+    // will never reveal it.
+    if (manifest.name.startsWith("@") && manifest.publishConfig?.access !== "public") {
+      throw new Error(
+        `${manifest.name} is scoped but does not set publishConfig.access="public"; npm would publish it as private (402)`,
+      );
+    }
     return `${deps.length} deps, bin → ${manifest.bin.roster}, README + metadata present`;
   });
 
