@@ -87,6 +87,19 @@ describe("optional dense runtime", () => {
     }
   });
 
+  it("is safe to run twice: the prefix manifest is created exclusively, not checked-then-written", () => {
+    const spawnStub = () => {
+      plantFakeRuntime();
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    };
+    expect(installDenseRuntime(spawnStub).ok).toBe(true);
+    // A second run must not throw on the already-present manifest, and must not
+    // clobber it either.
+    const before = fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8");
+    expect(installDenseRuntime(spawnStub).ok).toBe(true);
+    expect(fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8")).toBe(before);
+  });
+
   it("reports failure instead of pretending, when npm exits non-zero", () => {
     const result = installDenseRuntime(() => ({
       status: 1,

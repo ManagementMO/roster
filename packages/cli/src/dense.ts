@@ -80,13 +80,20 @@ export function installDenseRuntime(
   const dir = ensurePrivateDir(denseRuntimeDir());
   // A package.json in the prefix stops npm from walking up and installing into
   // whatever project the user happens to be standing in.
+  //
+  // Created with "wx" (exclusive) rather than exists-then-write: the check and
+  // the write are otherwise two steps with a gap between them, which is the same
+  // TOCTOU shape this codebase refuses everywhere else it touches the
+  // filesystem. EEXIST simply means a previous run already wrote it.
   const manifest = path.join(dir, "package.json");
-  if (!fs.existsSync(manifest)) {
+  try {
     fs.writeFileSync(
       manifest,
       `${JSON.stringify({ name: "roster-dense-runtime", version: "0.0.0", private: true }, null, 2)}\n`,
-      { mode: PRIVATE_FILE },
+      { mode: PRIVATE_FILE, flag: "wx" },
     );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
   }
   const result = spawn("npm", [
     "install",

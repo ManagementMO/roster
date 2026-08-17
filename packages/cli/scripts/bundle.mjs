@@ -17,7 +17,7 @@
  * The workspace keeps using `dist/` (tsc output) for tests, probes, and the lab
  * scripts; only `publishConfig` repoints the published entrypoints at `bundle/`.
  */
-import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
