@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { reclaimOwnerlessLock, reclaimStaleLock, withFileLockSync } from "./lock.js";
+import { dirVanished, reclaimOwnerlessLock, reclaimStaleLock, withFileLockSync } from "./lock.js";
 
 let home: string;
 beforeEach(() => {
@@ -123,12 +123,90 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     expect(JSON.parse(fs.readFileSync(path.join(dir, "owner.json"), "utf8"))).toEqual(live);
   });
 
+  /**
+   * A contender crashed with a raw `EINVAL … open '…/owner.json'` during the
+   * four-process race below: macOS/APFS reports EINVAL (not ENOENT) when you
+   * create a file inside a directory a competitor is concurrently renaming.
+   * The first version of this guard only recognised ENOENT, so the contender
+   * threw an errno stack at the user instead of retrying. All three codes mean
+   * "the slot we just made is no longer ours"; everything else must still
+   * surface, or a real fault would be retried into a timeout.
+   */
+  it("classifies a directory taken mid-acquire as contention, not as a fault", () => {
+    for (const code of ["ENOENT", "EINVAL", "ENOTDIR"]) {
+      expect(dirVanished(Object.assign(new Error(code), { code }))).toBe(true);
+    }
+    for (const code of ["EACCES", "EPERM", "EMFILE", "ENOSPC", "EROFS"]) {
+      expect(dirVanished(Object.assign(new Error(code), { code }))).toBe(false);
+    }
+    expect(dirVanished(new Error("no code at all"))).toBe(false);
+  });
+
   it("reclaims an ownerless directory directly, and is a safe no-op once gone", () => {
     const dir = lockDir();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    expect(reclaimOwnerlessLock(dir)).toBe("reclaimed");
+    expect(reclaimOwnerlessLock(dir, 0)).toBe("reclaimed");
     expect(fs.existsSync(dir)).toBe(false);
-    expect(reclaimOwnerlessLock(dir)).toBe("reclaimed"); // already free
+    expect(reclaimOwnerlessLock(dir, 0)).toBe("reclaimed"); // already free
+  });
+
+  /**
+   * The age gate. A contender that keeps catching *different* processes inside
+   * their mkdir-to-owner-write window used to accumulate enough "no owner"
+   * observations to move a live lock aside; the real owner then crashed at
+   * release with "ownership changed before release" — after its work had
+   * already succeeded. Debris is old, so a freshly created directory is never
+   * debris no matter how long we have been watching.
+   */
+  /**
+   * Release must ride out a contender's inspection window. Both reclaim paths
+   * move a lock aside, read it, and move it back; a holder releasing inside
+   * that window saw no owner record and threw AFTER its work had succeeded.
+   * A permanently missing directory must still fail — but only after the
+   * re-check, which is what proves the retry is really there.
+   */
+  it("re-checks before declaring the lock stolen, instead of failing on a momentary move", () => {
+    const started = Date.now();
+    expect(() =>
+      withFileLockSync("k", () => {
+        // Simulate the worst case: the directory is gone and never comes back.
+        fs.rmSync(lockDir(), { recursive: true, force: true });
+      }),
+    ).toThrow(/ownership changed before release/);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(200); // it waited, not gave up
+  });
+
+  /**
+   * Reclamation claims a lock by RENAMING it, and that rename is load-bearing —
+   * it is what stops two contenders evicting the same stale lock. The cost is
+   * that a live lock can be moved aside for a moment, and if the slot is
+   * retaken before it is renamed back, the holder's directory is left under a
+   * claim name. The holder then failed its release even though its critical
+   * section had already succeeded, and its lock leaked into the locks root.
+   *
+   * Identity is the token, not the path: a claim directory carrying our own
+   * pid+token IS our lock.
+   */
+  it("completes the release when a contender left our lock under a claim name", () => {
+    const dir = lockDir();
+    expect(() =>
+      withFileLockSync("k", () => {
+        // Exactly what a contender's rename-then-fail-to-restore leaves behind.
+        fs.renameSync(dir, `${dir}.reclaim-999999-deadbeef`);
+      }),
+    ).not.toThrow();
+    // …and nothing is left behind: no wedged slot, no growing debris.
+    const leftovers = fs
+      .readdirSync(path.dirname(dir))
+      .filter((entry) => entry.startsWith(path.basename(dir)));
+    expect(leftovers).toEqual([]);
+  });
+
+  it("never reclaims a JUST-created ownerless directory (it is someone mid-acquire)", () => {
+    const dir = lockDir();
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    expect(reclaimOwnerlessLock(dir)).toBe("occupied"); // default 1s grace
+    expect(fs.existsSync(dir)).toBe(true); // and it was left exactly where it was
   });
 
   it("refuses to treat a symlinked lock path as our lock", () => {

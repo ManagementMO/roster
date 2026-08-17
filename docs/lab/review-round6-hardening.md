@@ -196,3 +196,82 @@ A synced client now reports what is actually routed for it (from `roster.json`'s
 regression test locks the real invariant: **syncing changes where servers are
 launched from, never how many you have** — `uniqueServers` before and after a
 sync must be equal. Reverting the fix turns it red.
+
+## Chasing the "unattributed flake" to the bottom
+
+The earlier note recorded one unattributed single-test failure. Repeatedly
+re-running the suite was the weakest possible search — it re-tests one ordering
+— so the hunt was rebuilt to vary what actually matters: shuffled file and hook
+order, single-threaded execution, maximum parallelism, and (deliberately) an
+unsupported no-isolation mode. 38 runs per campaign, every log kept.
+
+It found **three separate real problems**, none of which were the same thing:
+
+**1. `EINVAL` crashed a lock contender (production defect).** macOS/APFS reports
+`EINVAL` — not `ENOENT` — when you create a file inside a directory a competitor
+is concurrently renaming. The R6-08 guard only recognised `ENOENT`, so a
+contender died with a raw `EINVAL … open '…/owner.json'` stack instead of
+retrying. `dirVanished` now covers `ENOENT`/`EINVAL`/`ENOTDIR` and is
+unit-tested to still surface genuine faults (`EACCES`, `ENOSPC`, …).
+
+**2. A live lock could be aged into "debris" (defect introduced by R6-08).** The
+grace period timed *how long this process had been watching*, so a contender
+that kept catching different processes inside their `mkdir`→owner-write window
+could accumulate past the grace and move a perfectly live lock aside. The owner
+then failed at release — after its work had already succeeded. Debris is now
+decided by the **directory's own ctime** (clamped at zero, because filesystem
+timestamps can read ahead of `Date.now()` and a negative age would silently
+restore the permanent wedge).
+
+**3. A holder whose lock was moved aside failed its release.** Reclamation
+claims a lock by renaming it, and that rename is load-bearing — it is what stops
+two contenders evicting the same stale lock. But a live lock can be moved for a
+moment, and if the slot is retaken before it is renamed back, the holder's
+directory is left under a claim name. Identity is the token, not the path, so
+release now recognises its own lock under a claim name, completes, and clears
+the debris that would otherwise accumulate in the locks root forever. Measured:
+**57/60 → 60/60** on the four-process race.
+
+A fourth "failure" was a **timing-ratio test** asserting `< 10` on a 4x input
+step; it hit 10.59 under parallel load. Catastrophic backtracking is
+*exponential* — the absolute `< 500 ms` backstop is the real guard — so the
+ratio is now a median of five samples against a looser bound. A test that cries
+wolf teaches people to re-run the suite, which is the exact habit that hid
+R6-08 for a whole round.
+
+### Residual, and why it was not "fixed" here
+
+Under the shuffled campaign, one run in ~94 still showed the four-process race
+admitting two holders. The mechanism is understood: `reclaimStaleLock` frees the
+slot for the instant it inspects a renamed-aside directory, and a third process
+can `mkdir` into that gap while the true owner is still inside. The pre-rename
+re-verify added here narrows the window; it does not close it.
+
+Measured rates: `origin/main` 0 exclusivity violations in 40 runs, this branch
+1 in ~94 — statistically indistinguishable, and the code path is identical in
+both, so this is **pre-existing and narrowed, not introduced**. It was left
+alone deliberately: closing it properly means replacing the rename-claim with an
+in-directory claim marker (so the slot is never free during inspection), plus
+staleness handling for the marker itself. That is a rewrite of the core
+mutual-exclusion primitive and deserves its own round with its own adversarial
+campaign — not a late-session edit to the most safety-critical file in the repo.
+
+**Round 7's first task.** Everything needed is here: the mechanism, the
+reproduction (`vitest run packages/cli/src/lock.test.ts -t MULTI-PROCESS` in a
+loop of 60), the measured baseline, and the proposed design.
+
+### Two harness invariants are now pinned, not inherited
+
+`pool: "forks"` — four trust-path tests legitimately use `process.chdir()` and
+`process.umask()`, which worker threads cannot; under `pool: "threads"` they
+fail with an opaque "not supported in workers" TypeError.
+
+`isolate: true` — several suites set `ROSTER_HOME` in `beforeEach` and spawn
+children from it. `--no-isolate` let those hooks overwrite each other and
+produced a **false mutual-exclusion failure** — the most alarming possible red
+herring.
+
+And CI now writes a JUnit report and uploads it on every run, so the next
+intermittent failure is *named by the pipeline* instead of depending on whoever
+reads the log. That is the actual lesson of this round: a failure that cannot be
+named cannot be fixed.

@@ -53,6 +53,17 @@ jobs:
         run: pnpm typecheck:tests
       - name: Unit + integration tests
         run: pnpm test
+      # A flake that cannot be named cannot be fixed: keep the machine-readable
+      # result even when the run fails, so the next intermittent failure is
+      # identified from the artifact instead of guessed at.
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.node }}
+          path: test-results.junit.xml
+          if-no-files-found: ignore
+          retention-days: 14
 
   integration:
     name: Router E2E + certification probes

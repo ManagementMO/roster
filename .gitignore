@@ -16,3 +16,6 @@ docs/lab/tmp-*/
 
 # generated into the CLI package at pack time (single source of truth: /README.md)
 packages/cli/README.md
+
+# vitest CI reporter output
+test-results.junit.xml

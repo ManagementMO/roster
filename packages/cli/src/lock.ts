@@ -142,6 +142,15 @@ export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" 
   } catch {
     return "reclaimed"; // vanished underneath us → free to retry
   }
+  // Re-read immediately before moving anything. The caller decided this lock
+  // was stale from an earlier poll; if a competitor has already reclaimed the
+  // slot since then, the live lock now sitting there must not be dragged
+  // through a rename at all — the round trip is safe for the LOCK, but it can
+  // make that owner's release land on a missing directory.
+  const current = readOwner(dir);
+  if (!current || current.pid !== observed.pid || current.token !== observed.token) {
+    return "occupied";
+  }
   const claim = `${dir}.reclaim-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
   try {
     fs.renameSync(dir, claim);
@@ -187,12 +196,34 @@ export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" 
  * Callers must only reach here after the grace period below, so a live holder
  * mid-`mkdir` is never mistaken for debris.
  */
-export function reclaimOwnerlessLock(dir: string): "reclaimed" | "occupied" {
+export function reclaimOwnerlessLock(
+  dir: string,
+  graceMs: number = OWNERLESS_GRACE_MS,
+): "reclaimed" | "occupied" {
+  let stat: fs.Stats;
   try {
-    if (fs.lstatSync(dir).isSymbolicLink()) return "occupied";
+    stat = fs.lstatSync(dir);
   } catch {
     return "reclaimed"; // vanished underneath us → free to retry
   }
+  if (stat.isSymbolicLink()) return "occupied";
+  /**
+   * Debris is OLD; a directory created moments ago is a competitor between its
+   * `mkdir` and its owner write. Age the DIRECTORY, don't just time how long
+   * this process has been watching: under real contention a contender can
+   * observe "no owner" again and again while catching a succession of
+   * *different* processes each in that window, accumulate past the grace
+   * period, and move a perfectly live lock aside. The owner then failed its
+   * release with "ownership changed before release" — a crash after its work
+   * had already succeeded. Tying the decision to the inode's own change time
+   * removes that entirely, and a rename-back refreshes ctime so a lock we
+   * decline is not aged toward eviction by our own inspection.
+   */
+  // Clamped at zero: filesystem timestamps can read marginally AHEAD of
+  // Date.now() (APFS granularity, or a clock adjustment), and a negative age
+  // would compare as "younger than the grace period" forever — quietly
+  // restoring the permanent wedge this whole path exists to prevent.
+  if (Math.max(0, Date.now() - stat.ctimeMs) < graceMs) return "occupied";
   const claim = `${dir}.orphan-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
   try {
     fs.renameSync(dir, claim);
@@ -218,9 +249,24 @@ export function reclaimOwnerlessLock(dir: string): "reclaimed" | "occupied" {
  */
 const OWNERLESS_GRACE_MS = 1_000;
 
-/** Our own directory was rename-claimed out from under us mid-acquire. */
-function dirVanished(error: unknown): boolean {
-  return (error as NodeJS.ErrnoException).code === "ENOENT";
+/**
+ * Our own lock directory was rename-claimed out from under us mid-acquire.
+ *
+ * ENOENT is the obvious form. macOS/APFS also reports **EINVAL** for a create
+ * inside a directory a competitor is concurrently renaming, and ENOTDIR if
+ * something that is not a directory lands at the path. All three mean the same
+ * thing: the slot we just made is no longer ours to write into.
+ *
+ * This is not theoretical — four processes racing one stale lock crashed a
+ * contender with a raw `EINVAL ... open '…/owner.json'` stack, because the
+ * first version of this guard only recognised ENOENT. Retrying stays bounded by
+ * the acquire deadline, so a genuinely persistent failure still ends in the
+ * clear "timed out waiting for Roster lock" error rather than an errno dump.
+ * Lock paths are sha256 hex, so EINVAL here can never mean a malformed name.
+ */
+export function dirVanished(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException).code;
+  return code === "ENOENT" || code === "EINVAL" || code === "ENOTDIR";
 }
 
 function acquire(key: string): { dir: string; token: string } {
@@ -291,12 +337,68 @@ function acquire(key: string): { dir: string; token: string } {
   }
 }
 
-function release(dir: string, token: string): void {
-  const owner = readOwner(dir);
-  if (!owner || owner.pid !== process.pid || owner.token !== token) {
-    throw new Error("Roster lock ownership changed before release");
+/**
+ * How long release re-checks before believing the lock was really stolen.
+ *
+ * Both reclaim paths inspect a lock by renaming it aside, reading it, and
+ * renaming it back. That window is microseconds — but a holder that tries to
+ * release inside it sees no owner record and used to throw
+ * "ownership changed before release" *after its critical section had already
+ * succeeded*, turning another process's harmless inspection into this
+ * process's crash. Re-checking costs nothing when uncontended and rides out
+ * the window when contended; a genuinely stolen lock still throws, just later.
+ */
+const RELEASE_RECHECK_MS = 250;
+
+/**
+ * Find our own lock after a contender moved it aside.
+ *
+ * Reclamation claims a lock by renaming it — that rename is load-bearing, it is
+ * what stops two processes from both evicting the same stale lock (NEW-2). The
+ * cost is that a live lock can be moved for a moment while a contender decides
+ * it is not the dead one it was looking for, and if the slot is retaken before
+ * it can be renamed back, our directory is left behind under a claim name.
+ *
+ * Identity is the token, not the path. If a claim directory carries OUR pid and
+ * token, that IS our lock: removing it completes the release and clears debris
+ * that would otherwise accumulate in the locks root forever.
+ */
+function releaseMovedLock(dir: string, token: string): boolean {
+  const root = path.dirname(dir);
+  const prefix = `${path.basename(dir)}.`;
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(root);
+  } catch {
+    return false;
   }
-  fs.rmSync(dir, RM_OPTS);
+  for (const entry of entries) {
+    if (!entry.startsWith(prefix)) continue;
+    const candidate = path.join(root, entry);
+    const owner = readOwner(candidate);
+    if (owner?.pid === process.pid && owner.token === token) {
+      fs.rmSync(candidate, RM_OPTS);
+      return true;
+    }
+  }
+  return false;
+}
+
+function release(dir: string, token: string): void {
+  const deadline = Date.now() + RELEASE_RECHECK_MS;
+  for (;;) {
+    const owner = readOwner(dir);
+    if (owner && owner.pid === process.pid && owner.token === token) {
+      fs.rmSync(dir, RM_OPTS); // only ever remove a directory we still own
+      return;
+    }
+    // Our lock may have been renamed aside mid-inspection; it is still ours.
+    if (releaseMovedLock(dir, token)) return;
+    if (Date.now() >= deadline) {
+      throw new Error("Roster lock ownership changed before release");
+    }
+    sleepSync(LOCK_POLL_MS);
+  }
 }
 
 /**
