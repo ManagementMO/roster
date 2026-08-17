@@ -5,8 +5,8 @@
   "environment": {
     "node": "v22.22.3",
     "packages": [
-      "@rosterhq/playbook (dist)",
-      "@rosterhq/shared (dist)"
+      "@roster/playbook (dist)",
+      "@roster/shared (dist)"
     ],
     "real": "real files on disk, real parser/scanner/formula — no mocks"
   },

@@ -1,5 +1,7 @@
 node_modules/
 dist/
+bundle/
+*.tgz
 *.tsbuildinfo
 .DS_Store
 coverage/
@@ -11,3 +13,6 @@ dist-site/
 # accidental review/validation artifacts (never commit)
 actionlint
 docs/lab/tmp-*/
+
+# generated into the CLI package at pack time (single source of truth: /README.md)
+packages/cli/README.md

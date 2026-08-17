@@ -18,7 +18,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",
+    "@roster/coach": "workspace:*",
+    "@roster/combine": "workspace:*",
+    "@roster/playbook": "workspace:*",
+    "@roster/router": "workspace:*",
+    "@roster/shared": "workspace:*",
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.20.1",
+    "esbuild": "0.28.2",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

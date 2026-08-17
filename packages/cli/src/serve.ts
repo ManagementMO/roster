@@ -1,10 +1,12 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CoachStore, defHash, openCoachDb, TransformersEmbeddings } from "@rosterhq/coach";
-import { normalizeBackendName } from "@rosterhq/shared";
-import { defaultSkillSources, scanSkillSources, trustScan } from "@rosterhq/playbook";
-import { BackendManager, RosterServer, type RouterMode } from "@rosterhq/router";
+import { CoachStore, defHash, openCoachDb, setDenseRuntimeDir, TransformersEmbeddings } from "@roster/coach";
+import { stableBackendName } from "@roster/shared";
+import { defaultSkillSources, scanSkillSources, trustScan } from "@roster/playbook";
+import { BackendManager, RosterServer, type RouterMode } from "@roster/router";
+import { denseModulesDir } from "./dense.js";
 import { coachDbPath, homeDir } from "./paths.js";
 import { loadConfig } from "./rosterfile.js";
+import { installGracefulShutdown } from "./shutdown.js";
 
 /**
  * `roster serve` — run the router over stdio. FTS5 serves from second zero;
@@ -12,13 +14,17 @@ import { loadConfig } from "./rosterfile.js";
  */
 export async function serve(modeOverride?: RouterMode): Promise<void> {
   const bootStarted = Date.now();
+  // The embedding runtime is opt-in and lives in a Roster-owned directory, not
+  // next to the binary (npx, global, and project installs all differ). Point
+  // the loader at it before anything asks whether dense retrieval is available.
+  setDenseRuntimeDir(denseModulesDir());
   const config = loadConfig();
   const mode = modeOverride ?? config.mode;
 
   const store = new CoachStore(openCoachDb(coachDbPath()));
   const manager = new BackendManager();
 
-  // Protect under the SAME key the router stores capabilities: normalizeBackendName
+  // Protect under the SAME key the router stores capabilities: stableBackendName
   // (sanitize + reserved-word rename), not raw sanitizeSource. The mismatch made
   // a backend configured as e.g. "skill" (stored as skill-server__*) lose ALL its
   // learned state on its first unavailable boot despite the "preserved" promise.
@@ -26,13 +32,13 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   for (const [name, entry] of Object.entries(config.servers)) {
     if (!entry.command) {
       process.stderr.write(`roster: skipping "${name}" (url backends land post-launch; stdio only for now)\n`);
-      unavailable.add(normalizeBackendName(name));
+      unavailable.add(stableBackendName(name));
       continue;
     }
     try {
       await manager.connect({ name, command: entry.command, args: entry.args, env: entry.env });
     } catch (err) {
-      unavailable.add(normalizeBackendName(name));
+      unavailable.add(stableBackendName(name));
       process.stderr.write(
         `roster: backend "${name}" failed to connect (its learned state is preserved): ${err instanceof Error ? err.message : err}\n`,
       );
@@ -95,71 +101,11 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   }
 
   const transport = new StdioServerTransport();
-  installGracefulShutdown(manager, store, roster.server);
+  installGracefulShutdown({ manager, store, server: roster.server });
   await roster.server.connect(transport);
   process.stderr.write(
     `roster: serving ${manager.allTools().length} tool(s) + ${roster.servedSkillCount()} skill(s) in ${mode} mode\n`,
   );
-}
-
-/**
- * Wire the ONE graceful-shutdown path for `roster serve`. On the reviewed base
- * `serve` connected the transport and returned, leaving `manager` and `store` as
- * unreachable locals: when the client terminated the process — stdin EOF on
- * disconnect, SIGINT, SIGTERM — the spawned backend children were orphaned and
- * the coach DB was never closed. This closes the backend manager (which SIGTERM/
- * SIGKILLs each child under BackendManager's bounded close timeout, so a backend
- * whose own close hangs cannot hang shutdown) and the DB, then exits.
- *
- * Idempotent: the first trigger wins and the rest are no-ops, so racing triggers
- * (EOF + a signal) cannot double-close or hang. Signal listeners are one-shot and
- * removed once shutdown starts. Nothing here logs tool args, results, or prompts.
- */
-function installGracefulShutdown(
-  manager: BackendManager,
-  store: CoachStore,
-  server: RosterServer["server"],
-): void {
-  let started = false;
-  const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
-  const onEof = (): void => {
-    void shutdown("client disconnected (stdin EOF)", 0);
-  };
-  const shutdown = async (reason: string, exitCode: number): Promise<void> => {
-    if (started) return;
-    started = true;
-    for (const sig of signals) process.removeListener(sig, onSignal);
-    process.stdin.removeListener("end", onEof);
-    process.stdin.removeListener("close", onEof);
-    process.stderr.write(`roster: shutting down (${reason})\n`);
-    try {
-      await manager.close();
-    } catch {
-      /* bounded close already swallows per-backend errors */
-    }
-    try {
-      store.close();
-    } catch {
-      /* DB may already be closing */
-    }
-    process.exit(exitCode);
-  };
-  const onSignal = (sig: NodeJS.Signals): void => {
-    // 128 + signal number is the conventional exit status for a signal.
-    void shutdown(sig, sig === "SIGINT" ? 130 : 143);
-  };
-  for (const sig of signals) process.once(sig, onSignal);
-  // The SDK stdio transport listens only for stdin 'data'/'error' — it never
-  // reacts to EOF — so a client disconnect would otherwise leave `serve` and its
-  // backend children alive (the orphan bug). Detect the EOF ourselves; the
-  // transport's own 'data' listener keeps stdin flowing so 'end' fires on close.
-  process.stdin.on("end", onEof);
-  process.stdin.on("close", onEof);
-  // Also honor an explicit transport/server close (defensive; e.g. a protocol
-  // error tears the transport down).
-  server.onclose = () => {
-    void shutdown("transport closed", 0);
-  };
 }
 
 /**

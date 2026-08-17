@@ -14,8 +14,8 @@ const { mkdirSync } = await import("node:fs");
 mkdirSync(scratchDir, { recursive: true });
 const cliRequire = createRequire(path.join(repo, "packages/cli/package.json"));
 
-export const coach = await import(cliRequire.resolve("@rosterhq/coach"));
-export const routerPkg = await import(cliRequire.resolve("@rosterhq/router"));
+export const coach = await import(cliRequire.resolve("@roster/coach"));
+export const routerPkg = await import(cliRequire.resolve("@roster/router"));
 
 const sdkRequire = createRequire(path.join(repo, "packages/router/package.json"));
 export const { Client } = await import(sdkRequire.resolve("@modelcontextprotocol/sdk/client/index.js"));

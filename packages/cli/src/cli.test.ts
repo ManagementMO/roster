@@ -4,10 +4,10 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { sha256Hex } from "@rosterhq/coach";
+import { CoachStore, openCoachDb, sha256Hex } from "@roster/coach";
 import { CLIENTS, discoverClients, type ClientId } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
-import { buildReceipt } from "./receipt.js";
+import { buildReceipt, saveReceipt } from "./receipt.js";
 import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
 import { createEjectJournal, hasEjectJournal } from "./ejectJournal.js";
@@ -1494,6 +1494,45 @@ args = ["-y", "late-mcp"]
         expect(mode(path.join(result.backupDir!, "original"))).toBe("600"); // verbatim copy of their config
         expect(mode(path.join(result.backupDir!, "manifest.json"))).toBe("600");
         expect(mode(path.dirname(result.backupDir!))).toBe("700"); // dir listing leaks which clients they run
+      } finally {
+        process.umask(prevUmask);
+      }
+    });
+
+    /**
+     * R6-01. The files above were hardened, but `coach.db` (every tool
+     * description + whole SKILL.md bodies) and `receipt.json` (every client and
+     * its config path) were still created 0644, and `mkdirSync(mode)` is a
+     * NO-OP on an existing directory — so a `~/.roster` that already sat at
+     * 0755 stayed traversable and exposed both to any other local user.
+     */
+    it("creates coach.db and receipt.json owner-only, and re-hardens a pre-existing ~/.roster", () => {
+      const prevUmask = process.umask(0o022);
+      try {
+        const rosterDir = path.join(home, ".roster");
+        fs.mkdirSync(rosterDir, { recursive: true });
+        fs.chmodSync(rosterDir, 0o755); // a home from an older build / restored archive
+        write(".cursor/mcp.json", JSON.stringify({ mcpServers: { gh: { command: "npx" } } }));
+
+        syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+        saveReceipt(buildReceipt(discoverClients(), [], 0));
+        new CoachStore(openCoachDb(path.join(rosterDir, "coach.db"))).close();
+
+        expect(mode(rosterDir)).toBe("700"); // re-asserted, not left as found
+        expect(mode(path.join(rosterDir, "coach.db"))).toBe("600");
+        expect(mode(path.join(rosterDir, "receipt.json"))).toBe("600");
+
+        // Nothing Roster created may be group/world-accessible.
+        const loose: string[] = [];
+        const walk = (dir: string): void => {
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const abs = path.join(dir, entry.name);
+            if ((fs.statSync(abs).mode & 0o077) !== 0) loose.push(path.relative(rosterDir, abs));
+            if (entry.isDirectory()) walk(abs);
+          }
+        };
+        walk(rosterDir);
+        expect(loose).toEqual([]);
       } finally {
         process.umask(prevUmask);
       }

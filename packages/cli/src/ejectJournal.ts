@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { sha256Hex } from "@rosterhq/coach";
+import { sha256Hex } from "@roster/coach";
 import type { ClientId } from "./clients.js";
 import type { SpawnEntry } from "./entry.js";
 import { atomicWriteFileSync, PRIVATE_DIR, PRIVATE_FILE } from "./rosterfile.js";

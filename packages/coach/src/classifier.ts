@@ -1,4 +1,4 @@
-import type { OutcomeClass, ToolFailKind } from "@rosterhq/shared";
+import type { OutcomeClass, ToolFailKind } from "@roster/shared";
 
 /**
  * Everything the router observed about one call — and nothing more.

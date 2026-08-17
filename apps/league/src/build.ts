@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { parseSuite } from "@rosterhq/combine";
+import { parseSuite } from "@roster/combine";
 import {
   certifyRun,
   latestRuns,

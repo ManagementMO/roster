@@ -31,7 +31,7 @@ import { rankedIds, hitAtK, reciprocalRank, mean, percentile } from "./metrics.m
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..", "..");
 const coach = await import(
-  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@rosterhq/coach")
+  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@roster/coach")
 );
 const { CoachStore, openCoachDb } = coach;
 

@@ -1,6 +1,6 @@
 # notes — playbook-trust (SKILL.md parsing robustness + trust-scan FP/FN)
 
-Real @rosterhq/playbook + @rosterhq/shared `dist` (no mocks). Real SKILL.md bytes
+Real @roster/playbook + @roster/shared `dist` (no mocks). Real SKILL.md bytes
 on disk, real `parseSkillMd` / `scanSkillLibrary` / `trustScan` / `openclawInjectionChars`
 / `estimateTokensFromChars`. Node v22.22.3. Raw output:
 `results-playbook-trust.json` (+ `-a-parse`, `-b-trust`, `-c-openclaw`, `-d-symlink`).

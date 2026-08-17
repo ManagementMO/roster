@@ -1,0 +1,46 @@
+{
+  "name": "main-protection",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "allowed_merge_methods": ["squash", "merge", "rebase"]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          { "context": "Lint (Biome)" },
+          { "context": "Build & test · ubuntu-latest node24" },
+          { "context": "Build & test · ubuntu-latest node22.13.x" },
+          { "context": "Build & test · macos-26 node24" },
+          { "context": "Build & test · windows-latest node24" },
+          { "context": "Router E2E + certification probes" },
+          { "context": "Combine · filesystem" },
+          { "context": "Live embedding inference (real MiniLM)" },
+          { "context": "Clean external install (packed tarball)" },
+          { "context": "Dependency audit + secret scan" },
+          { "context": "CodeQL (javascript-typescript)" }
+        ]
+      }
+    }
+  ]
+}

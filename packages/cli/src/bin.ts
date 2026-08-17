@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+import {
+  DENSE_APPROX_MB,
+  denseOffer,
+  denseStatusLine,
+  installDenseRuntime,
+  isDenseAvailable,
+} from "./dense.js";
 import { ejectClient } from "./eject.js";
 import { init } from "./init.js";
 import { discoverClients } from "./clients.js";
@@ -6,7 +13,7 @@ import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
 import { serve } from "./serve.js";
 import { syncClient, WRITE_CLIENTS } from "./sync.js";
 import { telemetry } from "./telemetry.js";
-import { scanSkillSources, trustScan } from "@rosterhq/playbook";
+import { scanSkillSources, trustScan } from "@roster/playbook";
 import { loadConfig } from "./rosterfile.js";
 import type { ClientId } from "./clients.js";
 
@@ -23,9 +30,65 @@ const HELP = `roster — the tool router for AI agents
   roster unquarantine <id>    clear a drift-quarantined capability so it can be drafted again
   roster combine run <suite.yaml> --name <server> -- <command> [args…]
                               probe a server against a Combine suite → lab-results.json
+  roster dense [status|enable]
+                              optional semantic search (~385 MB, local only); lexical works without it
   roster telemetry [status|on|off]
                               local-first, OFF by default; no endpoint exists yet
+
+  init flags: --dense installs the embedding runtime without asking, --no-dense skips the question
 `;
+
+/**
+ * Ask once, after `init`, whether to add the optional embedding runtime.
+ *
+ * Rules that matter more than the prompt itself:
+ *  - a non-interactive run (CI, a piped installer, an agent) is NEVER blocked:
+ *    no TTY means no question, just a one-line hint. A CLI that hangs waiting
+ *    for stdin during `npx` would be worse than any download size.
+ *  - `--dense` / `--no-dense` make the choice explicit for scripts.
+ *  - declining is free and repeatable: `roster dense enable` later does the same
+ *    thing, and Roster is fully functional either way.
+ */
+async function offerDenseRuntime(flags: Set<string>): Promise<void> {
+  if (flags.has("--no-dense") || isDenseAvailable()) return;
+
+  const wanted =
+    flags.has("--dense") ||
+    (process.stdin.isTTY === true && process.stdout.isTTY === true && (await askYesNo()));
+
+  if (!wanted) {
+    if (!flags.has("--dense")) {
+      process.stdout.write(
+        `\nSemantic search is off (lexical only). Enable anytime: \`roster dense enable\` (~${DENSE_APPROX_MB} MB, local only).\n`,
+      );
+    }
+    return;
+  }
+  process.stdout.write(`\ninstalling the embedding runtime (~${DENSE_APPROX_MB} MB)…\n`);
+  const result = installDenseRuntime();
+  process.stdout.write(
+    result.ok
+      ? "semantic search enabled — it warms up in the background on first use.\n"
+      : `could not install the embedding runtime: ${result.detail}\n  Roster keeps working in lexical mode; retry with \`roster dense enable\`.\n`,
+  );
+}
+
+async function askYesNo(): Promise<boolean> {
+  process.stdout.write(denseOffer());
+  const { createInterface } = await import("node:readline/promises");
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question("Install it now? [y/N] ");
+    return /^y(es)?$/i.test(answer.trim());
+  } catch {
+    // Ctrl+D (EOF) or Ctrl+C at the prompt is a decline, not a crash. Anything
+    // that ends the question without a "yes" leaves Roster exactly as it is.
+    process.stdout.write("\n");
+    return false;
+  } finally {
+    rl.close();
+  }
+}
 
 function assertWriteClient(id: string | undefined): ClientId | undefined {
   if (id === undefined) return undefined;
@@ -46,7 +109,32 @@ async function main(): Promise<number> {
   switch (command) {
     case "init":
       init();
+      await offerDenseRuntime(flags);
       return 0;
+
+    case "dense": {
+      const sub = rest.find((a) => !a.startsWith("--")) ?? "status";
+      if (sub === "status") {
+        process.stdout.write(`${denseStatusLine()}\n`);
+        return 0;
+      }
+      if (sub !== "enable") {
+        process.stdout.write("usage: roster dense [status|enable]\n");
+        return 1;
+      }
+      if (isDenseAvailable()) {
+        process.stdout.write("semantic search is already enabled\n");
+        return 0;
+      }
+      process.stdout.write(`installing the embedding runtime (~${DENSE_APPROX_MB} MB)…\n`);
+      const result = installDenseRuntime();
+      process.stdout.write(
+        result.ok
+          ? `semantic search enabled → ${result.detail}\n`
+          : `could not install the embedding runtime: ${result.detail}\n`,
+      );
+      return result.ok ? 0 : 1;
+    }
 
     case "receipt": {
       const discoveries = discoverClients();
@@ -117,7 +205,7 @@ async function main(): Promise<number> {
         process.stdout.write("usage: roster unquarantine <capability-id>\n");
         return 1;
       }
-      const { CoachStore, openCoachDb } = await import("@rosterhq/coach");
+      const { CoachStore, openCoachDb } = await import("@roster/coach");
       const { coachDbPath } = await import("./paths.js");
       const store = new CoachStore(openCoachDb(coachDbPath()));
       store.clearQuarantine(id);
@@ -155,7 +243,7 @@ async function main(): Promise<number> {
         );
         return 1;
       }
-      const { parseSuite, runSuite, buildLabResults } = await import("@rosterhq/combine");
+      const { parseSuite, runSuite, buildLabResults } = await import("@roster/combine");
       const fs = await import("node:fs");
       const suite = parseSuite(fs.readFileSync(suitePath, "utf8"));
       const name = preFlag("--name") ?? "server-under-test";

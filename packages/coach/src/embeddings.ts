@@ -1,4 +1,7 @@
+import { createRequire } from "node:module";
 import os from "node:os";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 /**
  * The retrieval ladder's dense rung. Everything here is OPTIONAL by design:
@@ -6,6 +9,36 @@ import os from "node:os";
  * Roster keeps serving from FTS5 — nothing ever blocks on this module.
  */
 export type EmbedKind = "query" | "document";
+
+/**
+ * The dense runtime is ~385 MB (onnxruntime ships a Node build AND a browser
+ * build), so `@roster/cli` does not install it by default — a 39 MB CLI that
+ * works instantly beats a 424 MB one that does the same thing on first run.
+ * When the user opts in, the CLI installs it into a Roster-owned directory
+ * (`~/.roster/runtime`) rather than into whatever tree happens to hold the
+ * binary, because `npx`, a global install, and a project install all put us
+ * somewhere different. This is where we look for that opt-in copy.
+ */
+let denseRuntimeDir: string | null = null;
+
+export function setDenseRuntimeDir(dir: string | null): void {
+  denseRuntimeDir = dir;
+}
+
+type Transformers = typeof import("@huggingface/transformers");
+
+/** Normal resolution first; the opt-in directory only as a fallback. */
+async function loadTransformers(): Promise<Transformers> {
+  try {
+    return (await import("@huggingface/transformers")) as Transformers;
+  } catch (error) {
+    if (denseRuntimeDir === null) throw error;
+    // createRequire needs a file path to resolve *from*; the file need not exist.
+    const require_ = createRequire(path.join(denseRuntimeDir, "resolve-from.js"));
+    const entry = require_.resolve("@huggingface/transformers");
+    return (await import(pathToFileURL(entry).href)) as Transformers;
+  }
+}
 
 export interface EmbeddingsProvider {
   readonly dims: number;
@@ -75,7 +108,7 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
 
   static async isAvailable(): Promise<boolean> {
     try {
-      await import("@huggingface/transformers");
+      await loadTransformers();
       return true;
     } catch {
       return false;
@@ -111,7 +144,7 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
   private async loadPipeline(): Promise<RawPipeline> {
     if (this.pipe) return this.pipe;
     if (this.disposed) throw new Error("embeddings provider disposed");
-    const { pipeline } = await import("@huggingface/transformers");
+    const { pipeline } = await loadTransformers();
     this.pipe = (await pipeline("feature-extraction", this.modelId, {
       dtype: "q8",
     })) as unknown as RawPipeline;

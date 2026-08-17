@@ -54,16 +54,7 @@ export function stableBackendName(raw: string): string {
   return name === "skill" ? "skill-server" : name;
 }
 
-/** @deprecated Use stableBackendName for all public backend identities. */
-export function normalizeBackendName(raw: string): string {
-  return stableBackendName(raw);
-}
-
 export const NAMESPACE_SEP = "__";
-
-export function namespacedId(source: string, name: string): string {
-  return `${sanitizeSource(source)}${NAMESPACE_SEP}${sanitizeSegment(name)}`;
-}
 
 /** Public capability id that remains unique across sanitizer collisions. */
 export function stableNamespacedId(source: string, rawName: string): string {

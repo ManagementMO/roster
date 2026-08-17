@@ -1,8 +1,8 @@
 import type {
   CapabilityEntry,
   OutcomeClass,
-} from "@rosterhq/shared";
-import { percentile, wilsonLowerBound } from "@rosterhq/shared";
+} from "@roster/shared";
+import { percentile, wilsonLowerBound } from "@roster/shared";
 import type { CoachDb } from "./db.js";
 import { isAttributable } from "./classifier.js";
 import { cosine, normalize, oatsAdjust } from "./oats.js";

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
-import { sha256Hex } from "@rosterhq/coach";
+import { sha256Hex } from "@roster/coach";
 import { CLIENTS, type ClientId, type ImportedServer } from "./clients.js";
 import {
   isOwnedRosterEntry,

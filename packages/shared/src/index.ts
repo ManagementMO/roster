@@ -1,8 +1,6 @@
 export * from "./types.js";
 export {
   NAMESPACE_SEP,
-  namespacedId,
-  normalizeBackendName,
   parseNamespacedId,
   sanitizeSegment,
   sanitizeSource,

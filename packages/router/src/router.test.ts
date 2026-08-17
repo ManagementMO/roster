@@ -10,9 +10,9 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { classifyOutcome, CoachStore, isAttributable, openCoachDb, type CoachDb } from "@rosterhq/coach";
-import { MAX_SKILL_MD_BYTES, scanSkillLibrary } from "@rosterhq/playbook";
-import { stableNamespacedId } from "@rosterhq/shared";
+import { classifyOutcome, CoachStore, isAttributable, openCoachDb, type CoachDb } from "@roster/coach";
+import { MAX_SKILL_MD_BYTES, scanSkillLibrary } from "@roster/playbook";
+import { stableNamespacedId } from "@roster/shared";
 import { BackendManager } from "./backends.js";
 import { RosterServer, type RouterMode } from "./rosterServer.js";
 

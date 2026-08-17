@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * identity-fuzz C — trimSchema/toCard torture: pathological real-world-shaped
- * schemas through the built @rosterhq/router dist. Measures wall time, throw
+ * schemas through the built @roster/router dist. Measures wall time, throw
  * behavior, JSON validity, and output SIZE (the trim's whole purpose is token
  * thrift — so we measure bytes that survive the trim).
  * Output: docs/lab/tmp-identity-fuzz/results-c.json
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const cliReq = createRequire(path.join(repo, "packages/cli/package.json"));
-const { trimSchema, toCard } = await import(cliReq.resolve("@rosterhq/router"));
+const { trimSchema, toCard } = await import(cliReq.resolve("@roster/router"));
 
 function timeIt(fn) {
   const t0 = process.hrtime.bigint();

@@ -8,7 +8,7 @@
  *   outcome ~ Bernoulli(p_true(t)).
  *
  * The Wilson policy calls the REAL production `wilsonLowerBound` from the built
- * @rosterhq/shared package (parity is asserted against a local mirror on a grid).
+ * @roster/shared package (parity is asserted against a local mirror on a grid).
  *
  * Common random numbers: for each seed we pre-generate (a) the candidate sets for
  * every step and (b) a u[tool][t] uniform matrix, then run EVERY policy against
@@ -27,7 +27,7 @@ const REPO = process.env.ROSTER_REPO ?? path.resolve(HERE, "..", "..");
 const OUT_JSON = path.join(HERE, "results-routing-bandit.json");
 
 const req = createRequire(path.join(REPO, "packages/cli/package.json"));
-const { wilsonLowerBound: REAL_WILSON } = await import(req.resolve("@rosterhq/shared"));
+const { wilsonLowerBound: REAL_WILSON } = await import(req.resolve("@roster/shared"));
 
 // ── parity check: local mirror vs the real production function ───────────────
 function mirrorWilson(successes, n, z = 1.96) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * identity-fuzz A — namespacedId/parseNamespacedId round-trip fuzz + collision hunt.
- * Real built @rosterhq/shared (dist), no mocks. Deterministic PRNG (seeded).
+ * Real built @roster/shared (dist), no mocks. Deterministic PRNG (seeded).
  * Output: docs/lab/tmp-identity-fuzz/results-a.json
  */
 import { createRequire } from "node:module";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const shared = await import(
-  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@rosterhq/shared")
+  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@roster/shared")
 );
 const { namespacedId, parseNamespacedId, sanitizeSource, sanitizeSegment } = shared;
 

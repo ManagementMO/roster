@@ -1,5 +1,5 @@
-import type { CapabilityEntry } from "@rosterhq/shared";
-import { stableNamespacedId } from "@rosterhq/shared";
+import type { CapabilityEntry } from "@roster/shared";
+import { stableNamespacedId } from "@roster/shared";
 import type { ParsedSkill } from "./skill.js";
 
 export const SKILL_SOURCE = "skill";

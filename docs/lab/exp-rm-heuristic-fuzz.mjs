@@ -33,7 +33,7 @@ const OUT_DIR = HERE;
 const N = Number(process.env.E3_FUZZ_N ?? 500000);
 
 const require_ = createRequire(path.join(REPO, "packages/cli/package.json"));
-const playbookEntry = require_.resolve("@rosterhq/playbook");
+const playbookEntry = require_.resolve("@roster/playbook");
 const { TRUST_RULES } = await import(`file://${path.join(path.dirname(playbookEntry), "trust.js")}`);
 const SHIPPED = TRUST_RULES.find((r) => r.id === "destructive-command").pattern;
 

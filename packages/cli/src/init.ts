@@ -1,4 +1,4 @@
-import { trustScan, defaultSkillSources, scanSkillSources } from "@rosterhq/playbook";
+import { trustScan, defaultSkillSources, scanSkillSources } from "@roster/playbook";
 import { discoverClients } from "./clients.js";
 import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
 import { mergeServers, updateConfig } from "./rosterfile.js";

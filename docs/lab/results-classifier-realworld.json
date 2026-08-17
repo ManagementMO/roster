@@ -8,7 +8,7 @@
       "@modelcontextprotocol/server-filesystem": "2026.1.14 (npx cache)",
       "@modelcontextprotocol/server-memory": "2026.1.26 (npx cache)"
     },
-    "note": "all failures real: real npx-spawned MCP servers over stdio, real OS errors (ENOENT/EACCES), real process exit mid-call, real non-MCP hanging process; classification via built dist of @rosterhq/router BackendManager + @rosterhq/coach classifyOutcome"
+    "note": "all failures real: real npx-spawned MCP servers over stdio, real OS errors (ENOENT/EACCES), real process exit mid-call, real non-MCP hanging process; classification via built dist of @roster/router BackendManager + @roster/coach classifyOutcome"
   },
   "partA_scenarios": {
     "experiment": "classifier-realworld part (a) — real wire shapes vs classifyOutcome",

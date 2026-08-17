@@ -3,7 +3,7 @@
  * identity-fuzz B — BackendManager registry under colliding config names.
  * REAL MCP servers (@modelcontextprotocol/sdk Server) over InMemoryTransport
  * (the router's own TransportBackendConfig hook), real BackendManager from
- * built @rosterhq/router, real CoachStore on a real in-memory SQLite db.
+ * built @roster/router, real CoachStore on a real in-memory SQLite db.
  * Output: docs/lab/tmp-identity-fuzz/results-b.json
  */
 import { createRequire } from "node:module";
@@ -15,9 +15,9 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const cliReq = createRequire(path.join(repo, "packages/cli/package.json"));
 const routerReq = createRequire(path.join(repo, "packages/router/package.json"));
 
-const { BackendManager } = await import(cliReq.resolve("@rosterhq/router"));
-const { CoachStore, openCoachDb } = await import(cliReq.resolve("@rosterhq/coach"));
-const { sanitizeSource } = await import(cliReq.resolve("@rosterhq/shared"));
+const { BackendManager } = await import(cliReq.resolve("@roster/router"));
+const { CoachStore, openCoachDb } = await import(cliReq.resolve("@roster/coach"));
+const { sanitizeSource } = await import(cliReq.resolve("@roster/shared"));
 const { Server } = await import(routerReq.resolve("@modelcontextprotocol/sdk/server/index.js"));
 const { InMemoryTransport } = await import(routerReq.resolve("@modelcontextprotocol/sdk/inMemory.js"));
 const { ListToolsRequestSchema, CallToolRequestSchema } = await import(

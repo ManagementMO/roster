@@ -89,6 +89,21 @@ jobs:
       - name: League site generates from the run artifact
         run: pnpm league:build
 
+  clean-install:
+    name: Clean external install (packed tarball)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Packs @roster/cli exactly as `npm publish` would, installs the tarball
+      # into an empty project OUTSIDE the workspace, and drives init/sync/eject.
+      # This is the gate that catches an unpublished dependency, an unparseable
+      # binary, or a broken publishConfig BEFORE the registry does — the failure
+      # mode is otherwise invisible until a stranger runs `npx -y @roster/cli`.
+      - name: Pack, install elsewhere, and run the real binary
+        run: node scripts/verify-clean-install.mjs
+
   combine:
     name: Combine · ${{ matrix.suite }}
     runs-on: ubuntu-latest

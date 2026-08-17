@@ -1,4 +1,4 @@
-import type { CapabilityEntry } from "@rosterhq/shared";
+import type { CapabilityEntry } from "@roster/shared";
 
 /** What draft returns per capability: enough to pick and call, nothing more. */
 export interface CapabilityCard {

@@ -1,6 +1,7 @@
 {
-  "name": "@rosterhq/router",
+  "name": "@roster/router",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=22.13" },
@@ -18,9 +19,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@rosterhq/coach": "workspace:*",
-    "@rosterhq/playbook": "workspace:*",
-    "@rosterhq/shared": "workspace:*",
+    "@roster/coach": "workspace:*",
+    "@roster/playbook": "workspace:*",
+    "@roster/shared": "workspace:*",
     "ajv": "^8.17.0"
   },
   "devDependencies": {

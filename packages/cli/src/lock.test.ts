@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { reclaimStaleLock, withFileLockSync } from "./lock.js";
+import { reclaimOwnerlessLock, reclaimStaleLock, withFileLockSync } from "./lock.js";
 
 let home: string;
 beforeEach(() => {
@@ -76,16 +76,60 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     expect(fs.existsSync(dir)).toBe(false);
   });
 
-  it("fails closed on corrupt/missing owner metadata (waits out the timeout, never steals)", () => {
+  it("fails closed on CORRUPT owner metadata (waits out the timeout, never steals)", () => {
     const dir = lockDir();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     fs.writeFileSync(path.join(dir, "owner.json"), "{ not json", { mode: 0o600 });
-    // Unreadable ownership ⇒ acquire cannot prove the holder dead ⇒ it must time
-    // out rather than reclaim. (5s lock timeout; generous outer bound.)
+    // A corrupt record still means a real holder MIGHT be running, so acquire
+    // cannot prove the holder dead ⇒ it must time out rather than reclaim.
+    // (5s lock timeout; generous outer bound.)
     const started = Date.now();
     expect(() => withFileLockSync("k", () => 0)).toThrow(/timed out waiting for Roster lock/);
     expect(Date.now() - started).toBeGreaterThanOrEqual(4_500);
   }, 15_000);
+
+  /**
+   * R6-08. A lock directory with NO owner.json is debris that no process can
+   * ever own — `reclaimStaleLock` produces it by rename-claiming a directory a
+   * competitor had just mkdir'd, finding it empty, and putting it back. It was
+   * lumped in with "unreadable ownership", so every future acquire waited the
+   * full 5s and threw. Permanently: only deleting ~/.roster/locks by hand
+   * recovered it. Found by chasing a 1-in-8 failure of the multi-process test.
+   */
+  it("recovers from an OWNERLESS lock directory instead of wedging forever", () => {
+    const dir = lockDir();
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); // no owner.json: debris
+
+    const started = Date.now();
+    expect(withFileLockSync("k", () => "work done")).toBe("work done");
+    const elapsed = Date.now() - started;
+    expect(elapsed).toBeLessThan(4_500); // reclaimed after the grace, not timed out
+    expect(fs.existsSync(dir)).toBe(false); // and released cleanly
+
+    // Still recoverable on a later attempt — the state does not re-wedge.
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    expect(withFileLockSync("k", () => "again")).toBe("again");
+  }, 20_000);
+
+  it("never treats a directory as debris while its owner is writing the record", () => {
+    // The grace period exists so a competitor a few microseconds into its own
+    // acquire is not mistaken for debris: an owner that appears before the
+    // reclaim must be preserved, not destroyed.
+    const dir = lockDir();
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    const live = { pid: process.pid, token: "T-live" };
+    fs.writeFileSync(path.join(dir, "owner.json"), `${JSON.stringify(live)}\n`, { mode: 0o600 });
+    expect(reclaimOwnerlessLock(dir)).toBe("occupied");
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "owner.json"), "utf8"))).toEqual(live);
+  });
+
+  it("reclaims an ownerless directory directly, and is a safe no-op once gone", () => {
+    const dir = lockDir();
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    expect(reclaimOwnerlessLock(dir)).toBe("reclaimed");
+    expect(fs.existsSync(dir)).toBe(false);
+    expect(reclaimOwnerlessLock(dir)).toBe("reclaimed"); // already free
+  });
 
   it("refuses to treat a symlinked lock path as our lock", () => {
     const dir = lockDir();

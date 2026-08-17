@@ -1,10 +1,14 @@
 # Roster Release Readiness
 
-Last verified: 2026-08-14
+Last verified: 2026-08-17 (round-6 clean-room review and its remediation)
 
 Repository: [ManagementMO/roster](https://github.com/ManagementMO/roster)
 
-Verified commit: [`7b0fb4862cd302cdad5fd03466a42f36b703b3c4`](https://github.com/ManagementMO/roster/commit/7b0fb4862cd302cdad5fd03466a42f36b703b3c4)
+Verified commit: the round-6 remediation branch, whose parent is
+[`9741ff60b26a299731c91495cb151dd8e3e7150b`](https://github.com/ManagementMO/roster/commit/9741ff60b26a299731c91495cb151dd8e3e7150b)
+— the `main` that round 6 audited. (The previous edition of this document cited
+`7b0fb48`, which was its own parent commit; that read as though `main` were one
+commit behind itself.)
 
 ## Executive status
 
@@ -53,7 +57,7 @@ All local commands below were run in an isolated worktree checked out at the ver
 | `pnpm build` | Passed (`tsc -b`) |
 | `pnpm typecheck` | Passed for source and tests |
 | `pnpm lint` | Passed; 67 files, no fixes or warnings |
-| `pnpm test` | Passed; 14 files, 369 tests |
+| `pnpm test` | Passed; 16 files, 391 tests (369 across 14 files on the audited base `9741ff6`) |
 | `pnpm audit --audit-level moderate` | No known vulnerabilities |
 | `pnpm league:build` | Passed; 2 pages from 1 artifact |
 | `pnpm --filter @roster/cli pack --dry-run` | Passed; `@roster/cli@0.0.1` tarball assembled |
@@ -69,7 +73,8 @@ All local commands below were run in an isolated worktree checked out at the ver
 
 - [Main CI run for `7b0fb48`](https://github.com/ManagementMO/roster/actions/runs/31850701823) passed the Ubuntu Node 22.13 floor, Ubuntu Node 24, macOS Node 24, Windows Node 24, lint, Router E2E, Combine, live embedding, dependency audit, secret scan, and League-generation jobs.
 - [Main CodeQL run for `7b0fb48`](https://github.com/ManagementMO/roster/actions/runs/31850701812) passed.
-- PR #19's complete hosted matrix also passed CodeQL, Semgrep, Sourcery, Windows, macOS, Ubuntu, Router E2E, Combine, MiniLM, audit, and secret scanning before merge.
+- PR #19's complete hosted matrix also passed Windows, macOS, Ubuntu, Router E2E, Combine, MiniLM, audit, and secret scanning before merge, plus the GitHub Advanced Security CodeQL check.
+- Semgrep (`semgrep-code-managementmo`) and Sourcery (`sourcery-ai`) also reported success on that pull request. Both are **GitHub Apps configured outside this repository**: they have no workflow file here, they run on pull requests only (a push straight to `main` gets neither), and Sourcery reports `skipped` on some runs. They are supporting evidence, not a gate this repository can reproduce or enforce on its own.
 
 ## What still needs to happen before a public Roster release
 
@@ -77,17 +82,65 @@ All local commands below were run in an isolated worktree checked out at the ver
 
 The selected package name is `@roster/cli`, and the installed executable is `roster`. It is not on npm yet.
 
-The packed CLI declares the internal workspace packages as dependencies:
+**The dependency half of this gate is now closed in code.** The packed CLI used
+to declare the five internal workspace packages (`@roster/coach|combine|
+playbook|router|shared`) as runtime dependencies — `pnpm pack` rewrites
+`workspace:*` into `0.0.1`, and none of those versions exist on the registry, so
+`npx -y @roster/cli` could never have resolved for anyone outside this repo
+(round-6 review R6-03; each name returns `E404` today).
 
-- `@rosterhq/coach`
-- `@rosterhq/combine`
-- `@rosterhq/playbook`
-- `@rosterhq/router`
-- `@rosterhq/shared`
+The published artifact now inlines exactly the code that is not published and
+nothing else:
 
-Before advertising the `npx` install path, the owner must either publish those packages in an owned scope together with the CLI or choose and implement a tested bundling/packaging strategy. Then perform a clean external install test, run `roster init`, and verify that the published no-global sync entry launches `npx -y @roster/cli serve`.
+- `packages/cli/scripts/bundle.mjs` bundles `@roster/*` into `bundle/bin.js`
+  and `bundle/index.js`, and keeps every third-party package external so native
+  builds (`better-sqlite3`), the optional model runtime
+  (`@huggingface/transformers`), and licence attribution behave unchanged;
+- `publishConfig` repoints the published `bin`/`main`/`exports` at `bundle/`,
+  while the workspace keeps using `dist/` for tests, probes, and lab scripts;
+- the five internal packages are marked `"private": true` so they can never be
+  published by accident;
+- `prepack` regenerates the bundle, so a hand-run `pnpm pack` cannot ship a
+  stale or unbundled artifact.
 
-I did not publish anything: npm organization ownership, public release timing, and legal clearance are owner-controlled actions.
+**One package, and only one.** The published tarball is exactly four files —
+`bundle/bin.js`, `bundle/index.js`, `package.json`, `LICENSE` — and the string
+no internal package name appears in any of them. Every build-only dependency (including the
+workspace packages themselves) lives in the **root** manifest, which is
+`private` and never published; the CLI manifest therefore carries no
+`devDependencies` for `pnpm pack` to rewrite into versions that do not exist on
+the registry. The published manifest's only dependencies are
+`@modelcontextprotocol/sdk`, `ajv`, `better-sqlite3`, `smol-toml`, `yaml`, and
+`@roster/cli` and gets the `roster` binary, never an internal package name.
+
+**Semantic search is opt-in, and the install says so.** `@huggingface/transformers`
+pulls ~385 MB (onnxruntime-node 212 MB, onnxruntime-web 130 MB — a browser build
+a Node CLI can never use — and sharp). As an `optionalDependency` npm installed
+it by default, making `npx -y @roster/cli` a **424 MB / 16s** download before the
+tool printed a line, which contradicts the "<60 seconds" and "zero download"
+promises. It is now an **optional peer dependency**, so npm never installs it on
+its own: the default install is **39 MB / 3s** (measured, cold cache). After
+`roster init`, an interactive terminal is asked whether to add it, quoting the
+size; a non-interactive run (CI, an agent, a Dockerfile) is never blocked — it
+prints a one-line hint and exits. `roster dense enable` does it later, and
+`--dense` / `--no-dense` decide it for scripts. The runtime installs into
+`~/.roster/runtime`, a Roster-owned directory, because `npx`, a global install,
+and a project install all put the binary somewhere different; adaptive learning
+(Coach, OATS, ratings, drift) is bundled either way and never depended on it.
+
+`scripts/verify-clean-install.mjs` proves it end to end — it packs, installs the
+tarball into an empty project outside the workspace, and runs `--help`, `init`,
+`sync`, `eject` (asserting a byte-for-byte restore) and `telemetry status`. It
+runs in CI as **Clean external install (packed tarball)**. That gate immediately
+caught a duplicated shebang in the first bundle, which would have made the
+published binary fail to parse on its very first run.
+
+What remains here is genuinely owner-only: npm organization ownership,
+publication itself, release timing, and legal clearance. After publishing, flip
+the no-global sync entry from the execPath form to `npx -y @roster/cli serve`
+(one line in `sync.ts`, tracked in STATUS §4F).
+
+I did not publish anything.
 
 ### 2. Complete the human Combine signing session
 
@@ -105,6 +158,14 @@ An agent must not perform this signing step because doing so would falsify the h
 
 ### 3. Finish the owner launch gates
 
+- **Turn the advertised CI gates into enforced ones.** `main` has no branch
+  protection and no rulesets (round-6 review R6-02: the protection API returns
+  404 and `/rulesets` returns `[]`), so nothing mechanically blocks a red merge
+  or a direct push — the integrity story rests on discipline alone, and the
+  PR-only external scanners are bypassed entirely by pushing straight to `main`.
+  The ruleset is prepared as reviewable code in `.github/rulesets/main.json`;
+  apply it with `./scripts/apply-branch-protection.sh` (owner action, requires
+  admin rights — deliberately not applied by an agent).
 - Confirm npm/GitHub organization ownership and legal/brand clearance for `@roster/cli`, `getroster.dev`, `roster.tools`, handles, and trademarks.
 - Choose the revised launch date and rollout shape.
 - Decide whether the League remains deferred for the first Roster launch or launches later as a separate reveal.
@@ -177,7 +238,14 @@ pnpm test
 pnpm audit --audit-level moderate
 pnpm league:build
 pnpm --filter @roster/cli pack --dry-run
+node scripts/verify-clean-install.mjs   # packs, installs OUTSIDE the workspace, runs the binary
 ```
+
+`@roster/cli` is the only publishable package. The `@roster/*` packages are
+`private` and are bundled into it by `packages/cli/scripts/bundle.mjs`, which
+`prepack` runs automatically. A new third-party dependency must be added to
+`packages/cli/package.json` too — the bundler fails the build if the published
+artifact would import something the manifest does not declare.
 
 For CLI and live-server probes, set `ROSTER_HOME`, `ROSTER_TEST_HOME`, and an isolated `npm_config_cache` to temporary directories first. Never run `roster sync` or `roster eject` against the real home directory during verification.
 

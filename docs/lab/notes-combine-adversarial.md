@@ -1,12 +1,12 @@
 # Combine integrity — adversarial lab (slug: combine-adversarial)
 
-**Question.** Does the Combine's real runner (`@rosterhq/combine`) + the real
+**Question.** Does the Combine's real runner (`@roster/combine`) + the real
 `@modelcontextprotocol/server-filesystem` (spawned via `npx`) actually deliver
 the integrity it claims: deterministic reruns, verifiers that reject every
 sabotaged end-state, no false-fails, path containment, and clean timeout
 handling?
 
-**Method.** Import the built `@rosterhq/combine` exactly like
+**Method.** Import the built `@roster/combine` exactly like
 `docs/verification/dense-live.mjs`. Drive the real `runSuite` against the real
 npx filesystem server, per-task fresh sandbox. Five experiments (a)-(e). Every
 number below is from code executed this run; raw output embedded in
