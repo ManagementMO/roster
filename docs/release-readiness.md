@@ -135,6 +135,12 @@ runs in CI as **Clean external install (packed tarball)**. That gate immediately
 caught a duplicated shebang in the first bundle, which would have made the
 published binary fail to parse on its very first run.
 
+The publish ceremony itself is written up in [docs/publishing.md](publishing.md):
+what the `@roster` scope is and how to claim it, why scoped packages need
+`publishConfig.access="public"` (without it the first publish dies with `402
+Payment Required`), the exact commands, and how to verify as a stranger
+afterwards.
+
 What remains here is genuinely owner-only: npm organization ownership,
 publication itself, release timing, and legal clearance. After publishing, flip
 the no-global sync entry from the execPath form to `npx -y @roster/cli serve`
