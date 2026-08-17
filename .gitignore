@@ -19,3 +19,4 @@ packages/cli/README.md
 
 # vitest CI reporter output
 test-results.junit.xml
+packages/cli/LICENSE

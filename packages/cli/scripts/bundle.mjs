@@ -39,9 +39,18 @@ const manifest = JSON.parse(readFileSync(path.join(pkgRoot, "package.json"), "ut
 const externalizeEverythingButOurPackages = {
   name: "externalize-published-deps",
   setup(build) {
-    build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) => {
-      if (args.path.startsWith("@roster/")) return null; // bundle ours
-      return { external: true };
+    // Classify by what the specifier IS, not by a regex over its first
+    // characters. A pattern like /^[^./]/ looks like "a bare specifier" on
+    // POSIX but also matches a Windows absolute path — `D:\…\bin.ts` — so on
+    // Windows esbuild was told to externalize its own entry points and failed
+    // with "The entry point … cannot be marked as external". CI's Windows
+    // runner caught it; macOS and Linux never could.
+    build.onResolve({ filter: /.*/ }, (args) => {
+      if (args.kind === "entry-point") return null; // never externalize an entry
+      if (path.isAbsolute(args.path)) return null; // "/…" and "D:\…" alike
+      if (args.path.startsWith(".")) return null; // relative: part of the bundle
+      if (args.path.startsWith("@roster/")) return null; // ours: inline it
+      return { external: true }; // a real, published dependency
     });
   },
 };

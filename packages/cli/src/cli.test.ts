@@ -12,7 +12,7 @@ import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, loadConfig, mergeServers } from "./rosterfile.js";
 import { createEjectJournal, hasEjectJournal } from "./ejectJournal.js";
 import { ejectClient } from "./eject.js";
-import { rosterEntry } from "./entry.js";
+import { rosterEntry, runningFromNpxCache } from "./entry.js";
 import { readRegularFileNoFollow } from "./safeFile.js";
 import { ownedRosterEntries, syncClient } from "./sync.js";
 
@@ -1571,6 +1571,29 @@ args = ["-y", "late-mcp"]
     // which stay unsynced and keep counting normally.)
     expect(after.uniqueServers).toBe(before.uniqueServers);
     expect(renderReceipt(after)).not.toMatch(/Unique servers across clients: 1$/m);
+  });
+
+  /**
+   * `npx -y @roster/cli` is the documented first command, and it made the happy
+   * path produce a DEAD server: npx puts `roster` on PATH only for that one
+   * invocation, so `hasGlobalRoster()` was satisfied and sync wrote
+   * `{command:"roster"}`. After npx exited the client's launcher failed ENOENT.
+   * Writing the npx cache path instead would break later, when the cache is
+   * pruned. Reaching this code from an npx cache proves the package is
+   * fetchable by name, so the self-healing npx form is the only durable answer.
+   */
+  it("writes a self-healing npx entry when running from an npx cache, never a PATH shim", () => {
+    const npxBin = path.join(home, "cache", "_npx", "abc123", "node_modules", "@roster", "cli", "bundle", "bin.js");
+    expect(runningFromNpxCache(npxBin)).toBe(true);
+    expect(rosterEntry(npxBin)).toEqual({ command: "npx", args: ["-y", "@roster/cli", "serve"] });
+
+    // A real installation is unaffected and still gets an absolute, stable path.
+    const installed = path.join(home, "lib", "node_modules", "@roster", "cli", "bundle", "bin.js");
+    expect(runningFromNpxCache(installed)).toBe(false);
+    expect(rosterEntry(installed)).toEqual({ command: process.execPath, args: [installed, "serve"] });
+
+    // "_npx" must match a real path SEGMENT, not a lookalike directory name.
+    expect(runningFromNpxCache(path.join(home, "my_npx_tools", "bin.js"))).toBe(false);
   });
 
   it("a UTF-8 BOM on a client config does not abort the sync — the server is still imported (D2)", () => {
