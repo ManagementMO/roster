@@ -164,3 +164,35 @@ re-running it; that habit is what found R6-08.
 Full gate re-run on the remediation branch, plus every probe from the review and
 a mutation check on each newly added lock. Numbers are in the commit message and
 reproducible with the commands in `docs/release-readiness.md`.
+
+## Stress + scale evaluation (post-remediation)
+
+Run against the real built binary — real child processes, real SQLite, real MCP
+wire traffic, nothing mocked. Harness: 17 checks across five areas, all passing.
+
+| Area | Result |
+|---|---|
+| **Scale** — 20 backends × 25 tools = 500 tools | boots in **683 ms**; five mode serves 2 meta-tools; draft returns 5 starters; draft latency **p50 0 ms / p95 1 ms / max 1 ms**; all 20 children reaped on EOF |
+| **Concurrency** — 6 `serve` processes on one coach.db | 72/72 drafts succeed, no `SQLITE_BUSY`, no lock timeout, 6/6 exit on EOF |
+| **Crash safety** — 40 × SIGKILL at a random point mid-`sync` | **0 corrupt configs**; 40/40 rounds end back at the original bytes after `eject` |
+| **Soak** — 400 draft+call cycles (800 requests) | RSS 86 → 110 MB (+24 MB), **no descriptor leak** (26 → 26), coach.db 184 KiB |
+| **Lock contention** — 12 concurrent `roster init` | 12/12 exit 0, **0 wedged locks** (R6-08 regression cover), roster.json valid after the race |
+
+The lock-contention row is the one that would have failed before R6-08 was
+fixed: twelve processes racing the same config lock is exactly the interleaving
+that produced ownerless debris.
+
+## One more defect found by running it like a user
+
+Re-running `roster receipt` **after** `sync` reported `Cursor 1 server(s)` and
+`Unique servers across clients: 1` to someone who still had three — because the
+receipt counted the client config verbatim, and after a sync that config holds
+exactly one entry: Roster's own proxy. So the tool counted *itself* as the
+user's server list, and the flagship flow looked like Roster had eaten the
+servers.
+
+A synced client now reports what is actually routed for it (from `roster.json`'s
+`importedFrom`), labelled "routed through Roster — originals backed up". The
+regression test locks the real invariant: **syncing changes where servers are
+launched from, never how many you have** — `uniqueServers` before and after a
+sync must be equal. Reverting the fix turns it red.

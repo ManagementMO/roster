@@ -7,14 +7,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CoachStore, openCoachDb, sha256Hex } from "@roster/coach";
 import { CLIENTS, discoverClients, type ClientId } from "./clients.js";
 import { parseJsonc } from "./jsonc.js";
-import { buildReceipt, saveReceipt } from "./receipt.js";
+import { buildReceipt, renderReceipt, saveReceipt } from "./receipt.js";
 import { withFileLockSync } from "./lock.js";
-import { atomicWriteFileSync, defaultConfig, mergeServers } from "./rosterfile.js";
+import { atomicWriteFileSync, defaultConfig, loadConfig, mergeServers } from "./rosterfile.js";
 import { createEjectJournal, hasEjectJournal } from "./ejectJournal.js";
 import { ejectClient } from "./eject.js";
 import { rosterEntry } from "./entry.js";
 import { readRegularFileNoFollow } from "./safeFile.js";
-import { syncClient } from "./sync.js";
+import { ownedRosterEntries, syncClient } from "./sync.js";
 
 let home: string;
 
@@ -1537,6 +1537,40 @@ args = ["-y", "late-mcp"]
         process.umask(prevUmask);
       }
     });
+  });
+
+  /**
+   * After `sync` every client config holds exactly ONE entry — Roster's own
+   * proxy — so counting the config verbatim told a user with three servers
+   * "Cursor 1 server(s)" and counted Roster itself as one of their tools. On
+   * the flagship path that reads like Roster ate the servers. A synced client
+   * must report what is actually routed for it.
+   */
+  it("the receipt keeps reporting real server counts after sync, and never counts Roster itself", () => {
+    write(
+      ".cursor/mcp.json",
+      JSON.stringify({
+        mcpServers: {
+          fs: { command: "npx", args: ["-y", "server-filesystem"] },
+          memory: { command: "npx", args: ["-y", "server-memory"] },
+          github: { command: "npx", args: ["-y", "server-github"] },
+        },
+      }),
+    );
+    const before = buildReceipt(discoverClients(), [], 0, loadConfig().servers, ownedRosterEntries());
+    expect(before.clients.find((c) => c.id === "cursor")?.serverCount).toBe(3);
+
+    syncClient("cursor", new Date("2026-07-05T01:00:00Z"));
+
+    const after = buildReceipt(discoverClients(), [], 0, loadConfig().servers, ownedRosterEntries());
+    const cursor = after.clients.find((c) => c.id === "cursor");
+    expect(cursor?.serverCount).toBe(3); // still three — not the one proxy entry
+    expect(cursor?.note).toMatch(/routed through Roster/);
+    // THE invariant: syncing changes where servers are launched from, never how
+    // many the user has. (The enclosing fixture also seeds codex + claude-code,
+    // which stay unsynced and keep counting normally.)
+    expect(after.uniqueServers).toBe(before.uniqueServers);
+    expect(renderReceipt(after)).not.toMatch(/Unique servers across clients: 1$/m);
   });
 
   it("a UTF-8 BOM on a client config does not abort the sync — the server is still imported (D2)", () => {

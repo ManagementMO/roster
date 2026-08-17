@@ -1,6 +1,7 @@
 import { estimateTokensFromChars } from "@roster/shared";
 import { openclawInjectionChars, type ParsedSkill } from "@roster/playbook";
 import type { Discovery } from "./clients.js";
+import { isOwnedRosterEntry, type SpawnEntry } from "./entry.js";
 import { ensureRosterHome, PRIVATE_FILE, receiptPath } from "./paths.js";
 import { atomicWriteFileSync, serverIdentity } from "./rosterfile.js";
 
@@ -28,20 +29,65 @@ export interface Receipt {
   methodology: string;
 }
 
-export function buildReceipt(discoveries: Discovery[], skills: ParsedSkill[], trustReview: number): Receipt {
+/**
+ * Servers Roster routes on a client's behalf, keyed by client id.
+ *
+ * Needed because after `roster sync` a client's config legitimately holds ONE
+ * entry — Roster's own proxy. Counting the config verbatim then reported
+ * "Cursor 1 server(s)" to someone who still has three, and counted Roster
+ * itself as if it were one of their tools. The receipt's whole promise is that
+ * every number is real, so a synced client reports what is actually routed.
+ */
+function routedByClient(routed: RoutedServers | undefined): Map<string, Set<string>> {
+  const byClient = new Map<string, Set<string>>();
+  for (const [name, server] of Object.entries(routed ?? {})) {
+    for (const client of server.importedFrom) {
+      const set = byClient.get(client) ?? new Set<string>();
+      set.add(name);
+      byClient.set(client, set);
+    }
+  }
+  return byClient;
+}
+
+export type RoutedServers = Record<string, { importedFrom: readonly string[] }>;
+
+export function buildReceipt(
+  discoveries: Discovery[],
+  skills: ParsedSkill[],
+  trustReview: number,
+  routed?: RoutedServers,
+  ownedEntries: readonly SpawnEntry[] = [],
+): Receipt {
   const identities = new Set<string>();
+  const byClient = routedByClient(routed);
   const clients = discoveries.map((d) => {
-    for (const server of d.servers) identities.add(serverIdentity(server));
+    // Roster's own entry is not one of the user's servers; never count it.
+    // Rebuild the entry with only the keys that were actually present:
+    // `normalizeSpawnEntry` refuses ownership on any unexpected key, and an
+    // explicit `env: undefined` counts as one — which silently made every
+    // synced client look unsynced.
+    const theirs = d.servers.filter((s) => {
+      const candidate: Record<string, unknown> = { command: s.command, args: s.args };
+      if (s.env !== undefined) candidate.env = s.env;
+      return !isOwnedRosterEntry(candidate, ownedEntries);
+    });
+    const synced = theirs.length < d.servers.length;
+    const routedHere = byClient.get(d.client.id) ?? new Set<string>();
+    for (const server of theirs) identities.add(serverIdentity(server));
+    if (synced) for (const name of routedHere) identities.add(`routed:${name}`);
     return {
       id: d.client.id,
       displayName: d.client.displayName,
       configPath: d.configPath,
-      serverCount: d.servers.length,
+      serverCount: synced ? routedHere.size : theirs.length,
       note: d.parseError
         ? `could not parse (${d.parseError.slice(0, 80)})`
-        : d.client.nativeToolSearch
-          ? "schemas natively deferred, not loaded — Roster adds learning, failover suggestions, and cross-client sync"
-          : "schema weight measured at first serve",
+        : synced
+          ? "routed through Roster — originals backed up; `roster eject` restores them"
+          : d.client.nativeToolSearch
+            ? "schemas natively deferred, not loaded — Roster adds learning, failover suggestions, and cross-client sync"
+            : "schema weight measured at first serve",
     };
   });
 
