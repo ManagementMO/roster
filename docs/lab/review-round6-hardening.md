@@ -239,26 +239,34 @@ ratio is now a median of five samples against a looser bound. A test that cries
 wolf teaches people to re-run the suite, which is the exact habit that hid
 R6-08 for a whole round.
 
-### Residual, and why it was not "fixed" here
+### Round 7 closure: the residual rename gap is gone (2026-08-21)
 
-Under the shuffled campaign, one run in ~94 still showed the four-process race
-admitting two holders. The mechanism is understood: `reclaimStaleLock` frees the
-slot for the instant it inspects a renamed-aside directory, and a third process
-can `mkdir` into that gap while the true owner is still inside. The pre-rename
-re-verify added here narrows the window; it does not close it.
+The residual was reproducible on the later `93cbaa2` baseline: 100 focused
+four-process runs produced 99 passes and one post-critical-section
+`Roster lock ownership changed before release` failure. The historical campaign
+had also observed one two-holder result in roughly 94 runs. Both share one root
+cause: the canonical lock directory was the mutex *and* was renamed away for
+stale-owner inspection, so its path could be free while an owner still believed
+it held the lock.
 
-Measured rates: `origin/main` 0 exclusivity violations in 40 runs, this branch
-1 in ~94 — statistically indistinguishable, and the code path is identical in
-both, so this is **pre-existing and narrowed, not introduced**. It was left
-alone deliberately: closing it properly means replacing the rename-claim with an
-in-directory claim marker (so the slot is never free during inspection), plus
-staleness handling for the marker itself. That is a rewrite of the core
-mutual-exclusion primitive and deserves its own round with its own adversarial
-campaign — not a late-session edit to the most safety-critical file in the repo.
+The lock is now a **persistent canonical slot**. Ownership is the atomic
+`owner.json` `wx` create/unlink; release removes only ownership, never the slot.
+Stale-owner replacement is serialized by one fixed `.reclaim` directory inside
+the canonical slot, whose claimant has its own pid+token metadata and must
+re-verify both the claim and the exact dead owner before unlinking anything.
+Empty, corrupt, or dead claim markers are retired by renaming only the transient
+marker inside the slot; the canonical path never moves. Corrupt canonical owner
+metadata remains fail-closed, symlinked lock paths remain untouched, and the
+legacy moved-lock release fallback remains for a pre-upgrade process.
 
-**Round 7's first task.** Everything needed is here: the mechanism, the
-reproduction (`vitest run packages/cli/src/lock.test.ts -t MULTI-PROCESS` in a
-loop of 60), the measured baseline, and the proposed design.
+Three design-invariant tests first failed on the old implementation: the
+canonical slot must survive stale reclamation, stale inspection must never rename
+it, and release must leave the slot in place. The new claim crash/dead/live tests
+then cover the transient marker's recovery states. The exact four-process
+campaign that failed on the baseline passed **200/200** after the redesign with
+zero exclusivity, release, or other failures. A second high-contention harness
+ran 16 processes through 100 acquisitions each, repeated across five waves:
+**8,000/8,000** acquisitions with zero process or exclusivity failures.
 
 ### Two harness invariants are now pinned, not inherited
 

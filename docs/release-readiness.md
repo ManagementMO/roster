@@ -1,10 +1,10 @@
 # Roster Release Readiness
 
-Last verified: 2026-08-20 (current `origin/main` plus packed-tarball fresh-install verification)
+Last verified: 2026-08-21 (fresh isolated worktree, full local gate, real-server probes, and live GitHub/npm checks)
 
 Repository: [ManagementMO/roster](https://github.com/ManagementMO/roster)
 
-Verified commit: [`bf9440aada2437e9e9f64380b544300fd1db9a91`](https://github.com/ManagementMO/roster/commit/bf9440aada2437e9e9f64380b544300fd1db9a91), the current `origin/main`. It includes the round-6 hardening audited from the `9741ff6` base plus the subsequent lock, receipt, package-bundling, and publish-policy fixes.
+Verification baseline: [`93cbaa2d1a21b28d87883b7938c03950435d16ac`](https://github.com/ManagementMO/roster/commit/93cbaa2d1a21b28d87883b7938c03950435d16ac). The lock redesign and documentation cleanup described below are part of the immediately following hardening change; the required CI checks on its merge commit are the authoritative release evidence. This wording deliberately avoids calling a historical SHA "current main" — a documentation commit cannot name its own future merge SHA without becoming stale on arrival.
 
 ## Executive status
 
@@ -16,7 +16,7 @@ Roster is not yet a public package or a live public League. The remaining launch
 
 ### Core product and trust path
 
-- The CLI lifecycle is implemented: initialization, client discovery, sync, eject, config preservation, multi-path restore, backup integrity checks, crash-recovery journaling, cross-process locking, symlink topology checks, and fail-safe refusal paths.
+- The CLI lifecycle is implemented: initialization, client discovery, sync, eject, config preservation, multi-path restore, backup integrity checks, crash-recovery journaling, cross-process locking, symlink topology checks, and fail-safe refusal paths. The final stale-lock rename gap is closed by the persistent-slot/fixed-claim protocol documented in the Round 7 closure.
 - The router supports transparent mode and five-mode `draft`/`call` operation, namespaced tool re-export, structured draft attribution, and Sixth Man suggestions without automatic alternate execution.
 - The Coach store and learning path are implemented: local SQLite outcomes, privacy-preserving derived records, classifier precedence, FTS5/hybrid retrieval, OATS adjustment, Wilson ratings, full-contract drift identity, quarantine/tombstones, embedding-model switching, and multi-process database handling.
 - The Playbook scanner has bounded descriptor reads, bounded script/resource traversal, symlink and special-file handling, fail-closed incomplete-scan behavior, review-only skill handling, and an explicit operator override for review-flagged skills.
@@ -24,9 +24,9 @@ Roster is not yet a public package or a live public League. The remaining launch
 - The League generator and artifact validation exist locally. Named scores are restricted to human-signed `signedWilsonLb` runs.
 - Telemetry remains opt-in by design, and there is still no telemetry upload endpoint.
 
-### Maintenance hardening completed in the final merge
+### Earlier dependency-maintenance hardening
 
-PR [#19](https://github.com/ManagementMO/roster/pull/19), merged as the verified commit above, completed the safe dependency-maintenance follow-up:
+PR [#19](https://github.com/ManagementMO/roster/pull/19) completed an earlier safe dependency-maintenance follow-up; it is historical evidence, not the verification commit named above:
 
 - upgraded Biome to 2.5.8 and migrated its configuration schema;
 - upgraded the grouped development/runtime dependencies represented by the Dependabot update;
@@ -34,14 +34,14 @@ PR [#19](https://github.com/ManagementMO/roster/pull/19), merged as the verified
 - replaced a deprecated `__proto__` test accessor with an own-property descriptor assertion;
 - fixed Windows lock contention where `mkdirSync` can report `EPERM`, `EACCES`, or `EBUSY` for an existing lock entry, while still surfacing real permission errors when the entry does not exist.
 
-The original duplicate Dependabot PR #9 was closed as superseded by PR #19. Draft PR #7 remains open as a historical review artifact based on an older commit; it is not current release evidence and should not be used as a present-day defect list.
+The original duplicate Dependabot PR #9 was closed as superseded by PR #19. Historical draft PR #7 is also closed; it was based on an older commit and is not present-day defect evidence. Live GitHub state on 2026-08-21 had no open pull requests.
 
 ## Verification evidence
 
 ### Local environment
 
-- OS: macOS arm64 (`darwin/arm64`)
-- Node: `v22.22.3`
+- OS: macOS 26.6.2 arm64 (`darwin/arm64`)
+- Node: `v24.14.1`
 - pnpm: `11.9.0`
 - Required project floor: Node `>=22.13`
 
@@ -53,8 +53,8 @@ All local commands below were run in an isolated worktree checked out at the ver
 | `pnpm build` | Passed (`tsc -b`) |
 | `pnpm typecheck` | Passed for source and tests |
 | `pnpm lint` | Passed; 71 files, no fixes or warnings |
-| `pnpm test` | Passed; 16 files, 398 tests (369 across 14 files on the audited base `9741ff6`) |
-| `pnpm audit --audit-level high` | No known vulnerabilities |
+| `pnpm test` | Passed; 16 files, 405 tests (369 across 14 files on the audited base `9741ff6`) |
+| `pnpm audit --audit-level moderate` | No known vulnerabilities |
 | `pnpm league:build` | Passed; 2 pages from 1 artifact |
 | `pnpm --filter @roster/cli pack --dry-run` | Passed; `@roster/cli@0.0.1` tarball assembled |
 
@@ -68,8 +68,8 @@ All local commands below were run in an isolated worktree checked out at the ver
 
 ### Hosted verification
 
-- [Main CI run for `bf9440a`](https://github.com/ManagementMO/roster/actions/runs/32078468850) passed the Ubuntu Node 22.13 floor, Ubuntu Node 24, macOS Node 24, Windows Node 24, lint, Router E2E, Combine, live embedding, dependency audit, secret scan, and League-generation jobs.
-- [Main CodeQL run for `bf9440a`](https://github.com/ManagementMO/roster/actions/runs/32078468817) passed.
+- [Main CI run for `93cbaa2`](https://github.com/ManagementMO/roster/actions/runs/32433561695) passed the Ubuntu Node 22.13 floor, Ubuntu Node 24, macOS Node 24, Windows Node 24, lint, Router E2E, Combine, clean external install, live embedding, dependency audit, secret scan, and League-generation jobs.
+- [Main CodeQL run for `93cbaa2`](https://github.com/ManagementMO/roster/actions/runs/32433561595) passed.
 - PR #19's complete hosted matrix also passed Windows, macOS, Ubuntu, Router E2E, Combine, MiniLM, audit, and secret scanning before merge, plus the GitHub Advanced Security CodeQL check.
 - Semgrep (`semgrep-code-managementmo`) and Sourcery (`sourcery-ai`) also reported success on that pull request. Both are **GitHub Apps configured outside this repository**: they have no workflow file here, they run on pull requests only (a push straight to `main` gets neither), and Sourcery reports `skipped` on some runs. They are supporting evidence, not a gate this repository can reproduce or enforce on its own.
 
@@ -93,12 +93,16 @@ nothing else:
   and `bundle/index.js`, and keeps every third-party package external so native
   builds (`better-sqlite3`), the optional model runtime
   (`@huggingface/transformers`), and licence attribution behave unchanged;
-- `publishConfig` repoints the published `bin`/`main`/`exports` at `bundle/`,
-  while the workspace keeps using `dist/` for tests, probes, and lab scripts;
+- the committed CLI manifest points `bin`/`main`/`exports` directly at `bundle/`
+  because npm ignores `publishConfig` overrides for those fields; `publishConfig`
+  is used only for `access: public`, which npm does honor;
 - the five internal packages are marked `"private": true` so they can never be
   published by accident;
 - `prepack` regenerates the bundle, so a hand-run `pnpm pack` cannot ship a
-  stale or unbundled artifact.
+  stale or unbundled artifact;
+- package-local `.npmrc` files are ignored, and the stale Verdaccio test token
+  previously committed at `packages/cli/.npmrc` has been removed. It never
+  entered the five-file tarball, but credential residue does not belong in source.
 
 **One package, and only one.** The published tarball is exactly five files —
 `bundle/bin.js`, `bundle/index.js`, `package.json`, `README.md`, and `LICENSE` — and no
@@ -139,9 +143,10 @@ Payment Required`), the exact commands, and how to verify as a stranger
 afterwards.
 
 What remains here is genuinely owner-only: npm organization ownership,
-publication itself, release timing, and legal clearance. After publishing, flip
-the no-global sync entry from the execPath form to `npx -y @roster/cli serve`
-(one line in `sync.ts`, tracked in STATUS §4F).
+publication itself, release timing, and legal clearance. No post-publish code
+flip is required: a real/global install writes the stable `roster serve` entry,
+while an npx-cache install writes the self-healing `npx -y @roster/cli serve`
+entry and re-fetches if that cache is pruned.
 
 I did not publish anything.
 
@@ -217,12 +222,11 @@ These are real enhancements, but they are not evidence that the current core is 
 ## Recommended order from here
 
 1. Complete the npm scope/name/legal clearance.
-2. Decide whether to publish the internal workspace packages or bundle the CLI.
-3. Run the human signing and provenance session.
-4. Publish the packages and test a clean external `npx` installation.
-5. Decide the launch date and whether the League is part of launch day.
-6. Recruit early testers and run the real-client adoption/draft-utilization checks.
-7. Build the League website and optional roadmap features after the core launch path is proven.
+2. Run the human signing and provenance session.
+3. Publish the single bundled `@roster/cli` package and verify `npx` from a clean external directory.
+4. Decide the launch date and whether the League is part of launch day.
+5. Recruit early testers and run the real-client adoption/draft-utilization checks.
+6. Build the League website and optional roadmap features after the core launch path is proven.
 
 ## Reproduction commands
 
@@ -252,8 +256,8 @@ For CLI and live-server probes, set `ROSTER_HOME`, `ROSTER_TEST_HOME`, and an is
 
 ## Current repository state
 
-- Remote `main` is clean at [`7b0fb48`](https://github.com/ManagementMO/roster/commit/7b0fb4862cd302cdad5fd03466a42f36b703b3c4).
-- The isolated verification worktree was clean and byte-identical to `origin/main` after the checks.
+- The 2026-08-21 verification started from clean `origin/main` at [`93cbaa2`](https://github.com/ManagementMO/roster/commit/93cbaa2d1a21b28d87883b7938c03950435d16ac); the merge commit for this hardening change is the next authoritative state.
+- The isolated verification worktree had no source diffs; real probe transcripts were generated as disposable untracked evidence.
 - The user's normal local checkout was intentionally not rewritten, rebased, cleaned, or reset.
 - Browser automation was not needed for the code verification. It would not replace npm ownership, legal clearance, human signing, or a deliberate launch decision.
 

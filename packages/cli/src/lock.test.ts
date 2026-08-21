@@ -25,6 +25,10 @@ function deadPid(): number {
   return c.pid!;
 }
 
+function wait(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 function writeLock(dir: string, owner: { pid: number; token: string }): void {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   fs.writeFileSync(path.join(dir, "owner.json"), `${JSON.stringify(owner)}\n`, { mode: 0o600 });
@@ -49,7 +53,33 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     const owner = { pid: deadPid(), token: "T1" };
     writeLock(dir, owner);
     expect(reclaimStaleLock(dir, owner)).toBe("reclaimed");
-    expect(fs.existsSync(dir)).toBe(false); // freed for a fresh acquire
+    expect(fs.existsSync(dir)).toBe(true); // persistent slot: never disappears during inspection
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false); // owner removed; next wx arbitrates
+  });
+
+  it("never renames the canonical lock directory while deciding whether an owner is stale", () => {
+    const dir = lockDir();
+    const owner = { pid: deadPid(), token: "T1" };
+    writeLock(dir, owner);
+    const realRename = fs.renameSync;
+    let canonicalMoved = false;
+    fs.renameSync = ((source: fs.PathLike, destination: fs.PathLike) => {
+      if (path.resolve(String(source)) === path.resolve(dir)) canonicalMoved = true;
+      return realRename(source, destination);
+    }) as typeof fs.renameSync;
+    try {
+      expect(reclaimStaleLock(dir, owner)).toBe("reclaimed");
+    } finally {
+      fs.renameSync = realRename;
+    }
+    expect(canonicalMoved).toBe(false);
+  });
+
+  it("release clears only ownership and leaves the canonical slot in place", () => {
+    const dir = lockDir();
+    expect(withFileLockSync("k", () => "done")).toBe("done");
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
   });
 
   it("does NOT destroy a LIVE lock that replaced the dead one between read and reclaim", () => {
@@ -70,10 +100,11 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     const owner = { pid: deadPid(), token: "T1" };
     writeLock(dir, owner);
     expect(reclaimStaleLock(dir, owner)).toBe("reclaimed"); // first frees it
-    // The slot is gone; a second reclaimer must not throw and must report the
-    // slot free (its following mkdir — the real mutex — then arbitrates).
+    // The owner is gone; a second reclaimer must report the persistent slot
+    // free. The following owner.json `wx` — not mkdir — arbitrates.
     expect(reclaimStaleLock(dir, owner)).toBe("reclaimed");
-    expect(fs.existsSync(dir)).toBe(false);
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
   });
 
   it("fails closed on CORRUPT owner metadata (waits out the timeout, never steals)", () => {
@@ -103,18 +134,17 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     const started = Date.now();
     expect(withFileLockSync("k", () => "work done")).toBe("work done");
     const elapsed = Date.now() - started;
-    expect(elapsed).toBeLessThan(4_500); // reclaimed after the grace, not timed out
-    expect(fs.existsSync(dir)).toBe(false); // and released cleanly
+    expect(elapsed).toBeLessThan(1_000); // free owner-file slot: no grace delay needed
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
 
-    // Still recoverable on a later attempt — the state does not re-wedge.
-    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    // Still recoverable on a later attempt — the persistent slot does not wedge.
     expect(withFileLockSync("k", () => "again")).toBe("again");
   }, 20_000);
 
-  it("never treats a directory as debris while its owner is writing the record", () => {
-    // The grace period exists so a competitor a few microseconds into its own
-    // acquire is not mistaken for debris: an owner that appears before the
-    // reclaim must be preserved, not destroyed.
+  it("never treats a directory with an owner as a free slot", () => {
+    // A valid owner always wins over the reusable persistent directory: only
+    // owner.json absence is free, and an existing owner is never removed here.
     const dir = lockDir();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     const live = { pid: process.pid, token: "T-live" };
@@ -142,28 +172,18 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     expect(dirVanished(new Error("no code at all"))).toBe(false);
   });
 
-  it("reclaims an ownerless directory directly, and is a safe no-op once gone", () => {
+  it("recognizes an ownerless persistent slot as free without deleting it", () => {
     const dir = lockDir();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     expect(reclaimOwnerlessLock(dir, 0)).toBe("reclaimed");
-    expect(fs.existsSync(dir)).toBe(false);
-    expect(reclaimOwnerlessLock(dir, 0)).toBe("reclaimed"); // already free
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(reclaimOwnerlessLock(dir, 0)).toBe("reclaimed");
   });
 
   /**
-   * The age gate. A contender that keeps catching *different* processes inside
-   * their mkdir-to-owner-write window used to accumulate enough "no owner"
-   * observations to move a live lock aside; the real owner then crashed at
-   * release with "ownership changed before release" — after its work had
-   * already succeeded. Debris is old, so a freshly created directory is never
-   * debris no matter how long we have been watching.
-   */
-  /**
-   * Release must ride out a contender's inspection window. Both reclaim paths
-   * move a lock aside, read it, and move it back; a holder releasing inside
-   * that window saw no owner record and threw AFTER its work had succeeded.
-   * A permanently missing directory must still fail — but only after the
-   * re-check, which is what proves the retry is really there.
+   * A permanently missing canonical directory is a legacy/malicious topology
+   * change, not a normal release. Re-check before declaring ownership lost so
+   * an older process that briefly moved the slot can put it back.
    */
   it("re-checks before declaring the lock stolen, instead of failing on a momentary move", () => {
     const started = Date.now();
@@ -177,15 +197,9 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
   });
 
   /**
-   * Reclamation claims a lock by RENAMING it, and that rename is load-bearing —
-   * it is what stops two contenders evicting the same stale lock. The cost is
-   * that a live lock can be moved aside for a moment, and if the slot is
-   * retaken before it is renamed back, the holder's directory is left under a
-   * claim name. The holder then failed its release even though its critical
-   * section had already succeeded, and its lock leaked into the locks root.
-   *
-   * Identity is the token, not the path: a claim directory carrying our own
-   * pid+token IS our lock.
+   * Compatibility with the pre-upgrade protocol: an older process may still
+   * rename the canonical directory aside. Identity is the token, not the path,
+   * so this process can finish releasing its legacy moved lock without debris.
    */
   it("completes the release when a contender left our lock under a claim name", () => {
     const dir = lockDir();
@@ -202,11 +216,59 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     expect(leftovers).toEqual([]);
   });
 
-  it("never reclaims a JUST-created ownerless directory (it is someone mid-acquire)", () => {
+  it("lets contenders atomically reuse a just-created ownerless slot", () => {
     const dir = lockDir();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    expect(reclaimOwnerlessLock(dir)).toBe("occupied"); // default 1s grace
-    expect(fs.existsSync(dir)).toBe(true); // and it was left exactly where it was
+    expect(reclaimOwnerlessLock(dir)).toBe("reclaimed");
+    expect(withFileLockSync("k", () => "owned")).toBe("owned");
+    expect(fs.existsSync(dir)).toBe(true);
+  });
+
+  it("recovers a fixed claim whose process died after mkdir but before metadata", () => {
+    const dir = lockDir();
+    fs.mkdirSync(path.join(dir, ".reclaim"), { recursive: true, mode: 0o700 });
+    wait(1_050); // abandoned empty claims are ambiguous only during this grace
+    expect(withFileLockSync("k", () => "recovered")).toBe("recovered");
+    expect(fs.existsSync(path.join(dir, ".reclaim"))).toBe(false);
+    expect(fs.existsSync(dir)).toBe(true);
+  });
+
+  it("retires a fixed claim whose recorded claimant is provably dead", () => {
+    const dir = lockDir();
+    writeLock(dir, { pid: deadPid(), token: "stale-owner" });
+    writeLock(path.join(dir, ".reclaim"), { pid: deadPid(), token: "dead-claim" });
+    expect(withFileLockSync("k", () => "recovered")).toBe("recovered");
+    expect(fs.existsSync(path.join(dir, ".reclaim"))).toBe(false);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
+  });
+
+  it("recovers when a reclaimer dies after clearing the stale owner", () => {
+    const dir = lockDir();
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    writeLock(path.join(dir, ".reclaim"), { pid: deadPid(), token: "dead-claim" });
+    expect(withFileLockSync("k", () => "recovered")).toBe("recovered");
+    expect(fs.existsSync(path.join(dir, ".reclaim"))).toBe(false);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
+  });
+
+  it("retires corrupt transient claim metadata after the grace period", () => {
+    const dir = lockDir();
+    fs.mkdirSync(path.join(dir, ".reclaim"), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(path.join(dir, ".reclaim", "owner.json"), "{not json", { mode: 0o600 });
+    wait(1_050);
+    expect(withFileLockSync("k", () => "recovered")).toBe("recovered");
+    expect(fs.existsSync(path.join(dir, ".reclaim"))).toBe(false);
+  });
+
+  it("never steals the one fixed claim from a live claimant", () => {
+    const dir = lockDir();
+    const owner = { pid: deadPid(), token: "stale-owner" };
+    writeLock(dir, owner);
+    const liveClaim = { pid: process.pid, token: "live-claim" };
+    writeLock(path.join(dir, ".reclaim"), liveClaim);
+    expect(reclaimStaleLock(dir, owner)).toBe("occupied");
+    expect(JSON.parse(fs.readFileSync(path.join(dir, ".reclaim", "owner.json"), "utf8"))).toEqual(liveClaim);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "owner.json"), "utf8"))).toEqual(owner);
   });
 
   it("refuses to treat a symlinked lock path as our lock", () => {
@@ -355,22 +417,24 @@ describe("PID reuse and platform reductions (L14)", () => {
     expect(fs.existsSync(dir)).toBe(true); // fail-closed: unreclaimable, preserved
   });
 
-  it("treats a claim-rename failure (e.g. Windows EPERM) as occupied, never a crash", () => {
-    // On Windows a losing racer's directory rename throws EPERM/EACCES/EBUSY
-    // instead of POSIX's ENOENT. reclaimStaleLock must decline (return
-    // "occupied") — not throw — so the contender falls through to the mutex.
+  it("treats a stale-claim retirement failure (e.g. Windows EPERM) as occupied", () => {
+    // A crashed reclaimer leaves the fixed `.reclaim` marker. Retiring that
+    // marker uses an atomic rename inside the canonical slot; Windows can report
+    // EPERM/EACCES/EBUSY, which must degrade to contention, never a crash.
     const dir = lockDir();
     const owner = { pid: deadPid(), token: "T1" };
     writeLock(dir, owner);
+    writeLock(path.join(dir, ".reclaim"), { pid: deadPid(), token: "claim" });
     const realRename = fs.renameSync;
     fs.renameSync = (() => {
-      throw Object.assign(new Error("simulated Windows lock-dir busy"), { code: "EPERM" });
+      throw Object.assign(new Error("simulated Windows claim-dir busy"), { code: "EPERM" });
     }) as typeof fs.renameSync;
     try {
       expect(reclaimStaleLock(dir, owner)).toBe("occupied");
     } finally {
       fs.renameSync = realRename;
     }
-    expect(fs.existsSync(dir)).toBe(true); // never destroyed by a failed claim
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(fs.existsSync(path.join(dir, ".reclaim"))).toBe(true);
   });
 });
