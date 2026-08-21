@@ -1,14 +1,10 @@
 # Roster Release Readiness
 
-Last verified: 2026-08-17 (round-6 clean-room review and its remediation)
+Last verified: 2026-08-20 (current `origin/main` plus packed-tarball fresh-install verification)
 
 Repository: [ManagementMO/roster](https://github.com/ManagementMO/roster)
 
-Verified commit: the round-6 remediation branch, whose parent is
-[`9741ff60b26a299731c91495cb151dd8e3e7150b`](https://github.com/ManagementMO/roster/commit/9741ff60b26a299731c91495cb151dd8e3e7150b)
-— the `main` that round 6 audited. (The previous edition of this document cited
-`7b0fb48`, which was its own parent commit; that read as though `main` were one
-commit behind itself.)
+Verified commit: [`bf9440aada2437e9e9f64380b544300fd1db9a91`](https://github.com/ManagementMO/roster/commit/bf9440aada2437e9e9f64380b544300fd1db9a91), the current `origin/main`. It includes the round-6 hardening audited from the `9741ff6` base plus the subsequent lock, receipt, package-bundling, and publish-policy fixes.
 
 ## Executive status
 
@@ -56,9 +52,9 @@ All local commands below were run in an isolated worktree checked out at the ver
 | `pnpm install --frozen-lockfile` | Passed; lockfile supply-chain policy passed |
 | `pnpm build` | Passed (`tsc -b`) |
 | `pnpm typecheck` | Passed for source and tests |
-| `pnpm lint` | Passed; 67 files, no fixes or warnings |
-| `pnpm test` | Passed; 16 files, 397 tests (369 across 14 files on the audited base `9741ff6`) |
-| `pnpm audit --audit-level moderate` | No known vulnerabilities |
+| `pnpm lint` | Passed; 71 files, no fixes or warnings |
+| `pnpm test` | Passed; 16 files, 398 tests (369 across 14 files on the audited base `9741ff6`) |
+| `pnpm audit --audit-level high` | No known vulnerabilities |
 | `pnpm league:build` | Passed; 2 pages from 1 artifact |
 | `pnpm --filter @roster/cli pack --dry-run` | Passed; `@roster/cli@0.0.1` tarball assembled |
 
@@ -68,11 +64,12 @@ All local commands below were run in an isolated worktree checked out at the ver
 - Dense live verification passed with real MiniLM inference. Native 384-dimensional vectors were preserved, the dense abstain gate behaved correctly, and OATS adjusted the ranking from real outcome vectors.
 - The real filesystem Combine suite passed all 8 tasks. The observed unsigned Wilson lower bound was `0.676`; signed run count remained `0`, as required before human signing.
 - All 8 fail probes reached the verifier and were rejected there. Transport or invocation failures did not count as verifier evidence.
+- A fresh-machine probe on current `origin/main` packed `@roster/cli@0.0.1`, installed it into an empty npm project, and exercised `init`, `receipt`, telemetry, Claude sync/eject (including a client-added annotation and post-sync user edits), URL-only refusal, transparent real-server calls, five-mode `draft`/`call`, and the privacy boundary. The local tarball passed end to end; the public registry package remains unpublished, so `npx -y @roster/cli` is still an owner publication gate.
 
 ### Hosted verification
 
-- [Main CI run for `7b0fb48`](https://github.com/ManagementMO/roster/actions/runs/31850701823) passed the Ubuntu Node 22.13 floor, Ubuntu Node 24, macOS Node 24, Windows Node 24, lint, Router E2E, Combine, live embedding, dependency audit, secret scan, and League-generation jobs.
-- [Main CodeQL run for `7b0fb48`](https://github.com/ManagementMO/roster/actions/runs/31850701812) passed.
+- [Main CI run for `bf9440a`](https://github.com/ManagementMO/roster/actions/runs/32078468850) passed the Ubuntu Node 22.13 floor, Ubuntu Node 24, macOS Node 24, Windows Node 24, lint, Router E2E, Combine, live embedding, dependency audit, secret scan, and League-generation jobs.
+- [Main CodeQL run for `bf9440a`](https://github.com/ManagementMO/roster/actions/runs/32078468817) passed.
 - PR #19's complete hosted matrix also passed Windows, macOS, Ubuntu, Router E2E, Combine, MiniLM, audit, and secret scanning before merge, plus the GitHub Advanced Security CodeQL check.
 - Semgrep (`semgrep-code-managementmo`) and Sourcery (`sourcery-ai`) also reported success on that pull request. Both are **GitHub Apps configured outside this repository**: they have no workflow file here, they run on pull requests only (a push straight to `main` gets neither), and Sourcery reports `skipped` on some runs. They are supporting evidence, not a gate this repository can reproduce or enforce on its own.
 
@@ -103,15 +100,15 @@ nothing else:
 - `prepack` regenerates the bundle, so a hand-run `pnpm pack` cannot ship a
   stale or unbundled artifact.
 
-**One package, and only one.** The published tarball is exactly four files —
-`bundle/bin.js`, `bundle/index.js`, `package.json`, `LICENSE` — and the string
-no internal package name appears in any of them. Every build-only dependency (including the
+**One package, and only one.** The published tarball is exactly five files —
+`bundle/bin.js`, `bundle/index.js`, `package.json`, `README.md`, and `LICENSE` — and no
+internal package name appears in any of them. Every build-only dependency (including the
 workspace packages themselves) lives in the **root** manifest, which is
 `private` and never published; the CLI manifest therefore carries no
 `devDependencies` for `pnpm pack` to rewrite into versions that do not exist on
 the registry. The published manifest's only dependencies are
-`@modelcontextprotocol/sdk`, `ajv`, `better-sqlite3`, `smol-toml`, `yaml`, and
-`@roster/cli` and gets the `roster` binary, never an internal package name.
+`@modelcontextprotocol/sdk`, `ajv`, `better-sqlite3`, `smol-toml`, and `yaml`; it
+gets the `roster` binary and never lists an internal package name.
 
 **Semantic search is opt-in, and the install says so.** `@huggingface/transformers`
 pulls ~385 MB (onnxruntime-node 212 MB, onnxruntime-web 130 MB — a browser build
@@ -164,14 +161,12 @@ An agent must not perform this signing step because doing so would falsify the h
 
 ### 3. Finish the owner launch gates
 
-- **Turn the advertised CI gates into enforced ones.** `main` has no branch
-  protection and no rulesets (round-6 review R6-02: the protection API returns
-  404 and `/rulesets` returns `[]`), so nothing mechanically blocks a red merge
-  or a direct push — the integrity story rests on discipline alone, and the
-  PR-only external scanners are bypassed entirely by pushing straight to `main`.
-  The ruleset is prepared as reviewable code in `.github/rulesets/main.json`;
-  apply it with `./scripts/apply-branch-protection.sh` (owner action, requires
-  admin rights — deliberately not applied by an agent).
+- **Branch protection ruleset:** GitHub's `main-protection` ruleset is active on
+  `main` and requires the documented CI/CodeQL checks while blocking deletion and
+  non-fast-forward updates. The classic branch-protection endpoint remains
+  unconfigured, and the ruleset currently requires zero approving reviews. The
+  PR-only external scanners remain supporting evidence rather than repository-
+  reproducible gates.
 - Confirm npm/GitHub organization ownership and legal/brand clearance for `@roster/cli`, `getroster.dev`, `roster.tools`, handles, and trademarks.
 - Choose the revised launch date and rollout shape.
 - Decide whether the League remains deferred for the first Roster launch or launches later as a separate reveal.
