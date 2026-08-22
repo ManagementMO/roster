@@ -18,9 +18,10 @@
 The local gate reproduced exactly on the audited base: build, source+test
 typecheck, lint (67 files, no warnings), **369 tests across 14 files**, `pnpm
 audit` clean, League build (2 pages from 1 artifact), pack dry-run, clean tree.
-(After this round's remediation the same gate reports **397 tests across 16
-files** and lint checks 71 files.) All five real probes passed on
-current `dist`: Router/privacy E2E, MiniLM dense-live, a fresh serve-level Gemma
+(Immediately after this round the gate reported **397 tests across 16 files**;
+later receipt, publishing, persistent-lock, and Windows-removal hardening bring
+the current gate to **407 tests**, still across 16 files and 71 linted files.)
+All five real probes passed on current `dist`: Router/privacy E2E, MiniLM dense-live, a fresh serve-level Gemma
 warmup (9 base vectors + 1 need vector at 256 dims, drafts served lexically
 throughout), Combine 8/8, and 8/8 fail-probes rejected at the `verify` stage.
 
@@ -52,7 +53,7 @@ restored byte-identically.
 |---|---|---|---|
 | R6-01 | MEDIUM | `coach.db` and `receipt.json` were created `0644`, and `mkdirSync(mode)` is a no-op on an existing directory, so a `~/.roster` already at `0755` stayed traversable — exposing the tool inventory (including whole SKILL.md bodies) and the client list to any other local user | `ensurePrivateDir`/`ensureRosterHome` in `paths.ts` re-assert `0700` on every write path; the receipt is written atomically at `0600`; `openCoachDb` pre-creates the DB `0600` so SQLite's `-wal`/`-shm` inherit it. Regression locks in `cli.test.ts` and `store.test.ts` |
 | R6-02 | MEDIUM | `main` has no branch protection and no rulesets, so no advertised gate blocks a merge or a direct push | Ruleset prepared as code (`.github/rulesets/main.json`) plus an idempotent `scripts/apply-branch-protection.sh`. **Owner action; not applied by the agent** |
-| R6-03 | HIGH | The packed CLI declared five unpublished `@roster/*` dependencies, so `npx -y @roster/cli` could never resolve for an outside user | The CLI is bundled (`scripts/bundle.mjs`), `publishConfig` repoints published entrypoints at `bundle/`, internal packages are `private: true`, and `scripts/verify-clean-install.mjs` runs in CI |
+| R6-03 | HIGH | The packed CLI declared five unpublished `@roster/*` dependencies, so `npx -y @roster/cli` could never resolve for an outside user | The CLI is bundled (`scripts/bundle.mjs`); the manifest points `bin`/`main`/`exports` directly at `bundle/` because npm ignores those `publishConfig` overrides; internal packages are `private: true`; and `scripts/verify-clean-install.mjs` runs in CI |
 | R6-04 | LOW | Semgrep/Sourcery cited as passed gates without noting they are external, PR-only GitHub Apps invisible to the repo | Qualified in STATUS and release-readiness |
 | R6-05 | LOW | The signing checklist's own commands dirtied the working tree | Step 2 writes to a temp file; the committed artifact is described as a deliberate historical record |
 | R6-06 | NIT | Dead `namespacedId`/`latencyBucket`; the deprecated `normalizeBackendName` alias was the one used on the live prune path | `namespacedId` and the deprecated alias removed, `serve.ts` moved to `stableBackendName`, tests ported to the surviving API. `latencyBucket` kept deliberately (see below) |

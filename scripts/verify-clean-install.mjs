@@ -327,14 +327,25 @@ try {
     return "optional deps omitted (the minimal install)";
   });
 
-  const bin = path.join(project, "node_modules/.bin/roster");
+  const binShim = path.join(
+    project,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "roster.cmd" : "roster",
+  );
+  const binJs = path.join(project, "node_modules", "@roster", "cli", "bundle", "bin.js");
+  if (!fs.existsSync(binShim)) throw new Error(`npm created no platform CLI shim at ${binShim}`);
+  if (!fs.existsSync(binJs)) throw new Error(`installed package has no executable bundle at ${binJs}`);
   const env = {
     ...process.env,
     ROSTER_TEST_HOME: fixtureHome,
     ROSTER_HOME: path.join(fixtureHome, ".roster"),
     ROSTER_NO_FETCH: "1",
   };
-  const roster = (...args) => run(bin, args, { cwd: project, env });
+  // Run the JS entry through Node so this gate is identical on POSIX and
+  // Windows; the platform-specific npm shim is asserted above and the real
+  // registry/npx journey separately executes that user-facing shim.
+  const roster = (...args) => run(process.execPath, [binJs, ...args], { cwd: project, env });
 
   // 5. The binary must actually parse and run.
   await step("roster --help runs from the published artifact", () => {
@@ -404,8 +415,8 @@ try {
 
   await step("the published binary boots as an MCP server and proxies a backend", async () => {
     const result = await speakMcp(
-      syncedEntry.command === "roster" ? bin : syncedEntry.command,
-      syncedEntry.command === "roster" ? ["serve"] : syncedEntry.args,
+      syncedEntry.command === "roster" ? process.execPath : syncedEntry.command,
+      syncedEntry.command === "roster" ? [binJs, "serve"] : syncedEntry.args,
       env,
       project,
     );

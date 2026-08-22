@@ -7,6 +7,8 @@ const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_POLL_MS = 20;
 const CLAIM_BASENAME = ".reclaim";
 const CLAIM_GRACE_MS = 1_000;
+const OWNER_REMOVE_RETRIES = 10;
+const TRANSIENT_REMOVE_CODES = new Set(["EBUSY", "EACCES", "EPERM", "EMFILE", "ENFILE"]);
 // Windows throws EPERM/EBUSY on mkdirSync/rmSync when another process (or a virus
 // scanner / indexer) holds a directory handle open for a moment; recursive rmSync
 // with maxRetries retries exactly those transient errors (a no-op on POSIX, where
@@ -21,6 +23,30 @@ interface LockOwner {
 
 function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Windows can transiently reject an owner-file unlink while Defender, an
+ * indexer, or another reader still has a handle open. Retrying directory
+ * cleanup via RM_OPTS but unlinking owner.json once left the release path as the
+ * one unprotected operation — an error after the critical section had already
+ * succeeded. Retry only the documented transient classes; a real permission or
+ * filesystem error still surfaces after a bounded 500ms maximum.
+ */
+function removeOwnerFile(file: string, allowMissing: boolean): boolean {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      fs.unlinkSync(file);
+      return true;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === "ENOENT" && allowMissing) return false;
+      if (!TRANSIENT_REMOVE_CODES.has(code ?? "") || attempt >= OWNER_REMOVE_RETRIES) {
+        throw error;
+      }
+      sleepSync(50);
+    }
+  }
 }
 
 function lockPath(key: string): string {
@@ -279,9 +305,9 @@ export function reclaimStaleLock(dir: string, observed: LockOwner): "reclaimed" 
     if (!sameOwner(current, observed) || processIsAlive(observed.pid)) return "occupied";
     if (!claimOwned(dir, claim) || !sameOwner(readOwner(dir), observed)) return "occupied";
     try {
-      fs.unlinkSync(ownerPath(dir));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") return "occupied";
+      removeOwnerFile(ownerPath(dir), true);
+    } catch {
+      return "occupied";
     }
     return "reclaimed";
   } finally {
@@ -382,7 +408,7 @@ function release(dir: string, token: string): void {
     const owner = readOwner(dir);
     if (owner && owner.pid === process.pid && owner.token === token) {
       try {
-        fs.unlinkSync(ownerPath(dir));
+        removeOwnerFile(ownerPath(dir), false);
         return; // The persistent canonical directory remains for the next wx.
       } catch (error) {
         if (!dirVanished(error)) throw error;

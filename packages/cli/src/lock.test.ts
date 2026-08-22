@@ -82,6 +82,41 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
   });
 
+  it("retries transient Windows owner-file removal errors before release fails", () => {
+    const dir = lockDir();
+    const realUnlink = fs.unlinkSync;
+    let attempts = 0;
+    fs.unlinkSync = ((target: fs.PathLike) => {
+      if (path.basename(String(target)) === "owner.json" && attempts++ < 2) {
+        throw Object.assign(new Error("simulated Defender handle"), { code: "EPERM" });
+      }
+      return realUnlink(target);
+    }) as typeof fs.unlinkSync;
+    try {
+      expect(withFileLockSync("k", () => "done")).toBe("done");
+    } finally {
+      fs.unlinkSync = realUnlink;
+    }
+    expect(attempts).toBe(3);
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
+  });
+
+  it("does not hide a non-transient owner-file removal error", () => {
+    const realUnlink = fs.unlinkSync;
+    let attempts = 0;
+    fs.unlinkSync = (() => {
+      attempts++;
+      throw Object.assign(new Error("simulated read-only filesystem"), { code: "EROFS" });
+    }) as typeof fs.unlinkSync;
+    try {
+      expect(() => withFileLockSync("k", () => "work already ran")).toThrow(/read-only filesystem/);
+    } finally {
+      fs.unlinkSync = realUnlink;
+    }
+    expect(attempts).toBe(1);
+  });
+
   it("does NOT destroy a LIVE lock that replaced the dead one between read and reclaim", () => {
     // The exact TOCTOU: we OBSERVED a dead owner, but by the time we act the slot
     // holds a different, live lock (a competitor already reclaimed + acquired).

@@ -53,7 +53,7 @@ All local commands below were run in an isolated worktree checked out at the ver
 | `pnpm build` | Passed (`tsc -b`) |
 | `pnpm typecheck` | Passed for source and tests |
 | `pnpm lint` | Passed; 71 files, no fixes or warnings |
-| `pnpm test` | Passed; 16 files, 405 tests (369 across 14 files on the audited base `9741ff6`) |
+| `pnpm test` | Passed; 16 files, 407 tests (369 across 14 files on the audited base `9741ff6`) |
 | `pnpm audit --audit-level moderate` | No known vulnerabilities |
 | `pnpm league:build` | Passed; 2 pages from 1 artifact |
 | `pnpm --filter @roster/cli pack --dry-run` | Passed; `@roster/cli@0.0.1` tarball assembled |
@@ -72,6 +72,7 @@ All local commands below were run in an isolated worktree checked out at the ver
 - [Main CodeQL run for `93cbaa2`](https://github.com/ManagementMO/roster/actions/runs/32433561595) passed.
 - PR #19's complete hosted matrix also passed Windows, macOS, Ubuntu, Router E2E, Combine, MiniLM, audit, and secret scanning before merge, plus the GitHub Advanced Security CodeQL check.
 - Semgrep (`semgrep-code-managementmo`) and Sourcery (`sourcery-ai`) also reported success on that pull request. Both are **GitHub Apps configured outside this repository**: they have no workflow file here, they run on pull requests only (a push straight to `main` gets neither), and Sourcery reports `skipped` on some runs. They are supporting evidence, not a gate this repository can reproduce or enforce on its own.
+- Independent meta-verification added a dedicated Windows clean-external-install job and required check. The normal Windows build/test matrix catches source and native-module regressions; the new job additionally exercises npm/pnpm pack parity, the Windows npm shim, an out-of-workspace install, and the real CLI lifecycle.
 
 ## What still needs to happen before a public Roster release
 
