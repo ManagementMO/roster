@@ -183,17 +183,19 @@ const step = async (label, fn) => {
   }
 };
 const run = (cmd, args, opts = {}) => {
-  // npm/pnpm are .cmd shims on Windows. execFileSync deliberately bypasses the
-  // shell and therefore does not append .cmd, even though the same command works
-  // in a workflow step. Resolve the trusted package-manager commands explicitly
-  // rather than enabling a shell for every argument-bearing subprocess.
-  const executable =
-    process.platform === "win32" && (cmd === "npm" || cmd === "pnpm") ? `${cmd}.cmd` : cmd;
-  return execFileSync(executable, args, {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    ...opts,
-  });
+  const base = { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts };
+  if (process.platform === "win32" && (cmd === "npm" || cmd === "pnpm")) {
+    // npm/pnpm are .cmd batch shims on Windows. execFileSync cannot execute a
+    // batch file directly (ENOENT without the suffix, EINVAL with it), so route
+    // only these two hardcoded package-manager commands through cmd.exe. Every
+    // argument is constructed inside this script; backend/user input never
+    // reaches this shell boundary.
+    const quoted = [cmd, ...args]
+      .map((part) => `"${String(part).replaceAll('"', '""')}"`)
+      .join(" ");
+    return execFileSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", quoted], base);
+  }
+  return execFileSync(cmd, args, base);
 };
 
 try {
