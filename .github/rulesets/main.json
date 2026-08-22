@@ -37,6 +37,7 @@
           { "context": "Combine · filesystem" },
           { "context": "Live embedding inference (real MiniLM)" },
           { "context": "Clean external install (packed tarball)" },
+          { "context": "Clean external install · windows-latest" },
           { "context": "Dependency audit + secret scan" },
           { "context": "CodeQL (javascript-typescript)" }
         ]

@@ -115,6 +115,20 @@ jobs:
       - name: Pack, install elsewhere, and run the real binary
         run: node scripts/verify-clean-install.mjs
 
+  clean-install-windows:
+    name: Clean external install · windows-latest
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Keep npm/pnpm tarball parity, the Windows npm shim, native dependency
+      # installation, and the real CLI lifecycle under continuous verification.
+      # A Windows-only esbuild entrypoint regression was previously caught only
+      # after publication work, so Linux coverage is not a substitute here.
+      - name: Pack, install elsewhere, and run the real binary
+        run: node scripts/verify-clean-install.mjs
+
   combine:
     name: Combine · ${{ matrix.suite }}
     runs-on: ubuntu-latest

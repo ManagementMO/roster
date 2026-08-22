@@ -182,8 +182,33 @@ const step = async (label, fn) => {
     throw error;
   }
 };
-const run = (cmd, args, opts = {}) =>
-  execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts });
+const run = (cmd, args, opts = {}) => {
+  const base = { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts };
+  if (process.platform === "win32" && (cmd === "npm" || cmd === "pnpm")) {
+    // npm/pnpm are .cmd batch shims on Windows. execFileSync cannot execute a
+    // batch file directly (ENOENT without the suffix, EINVAL with it), so route
+    // only these two hardcoded package-manager commands through cmd.exe. Every
+    // argument is constructed inside this script; backend/user input never
+    // reaches this shell boundary.
+    // `call` is required for a .cmd shim to return control to this parent cmd;
+    // without it the next quoted argument is interpreted as a new command.
+    // Quote only arguments that need it so flags remain ordinary tokens.
+    const quote = (part) => {
+      const value = String(part);
+      return /[\s"&|<>^]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+    };
+    const command = `call ${cmd} ${args.map(quote).join(" ")}`;
+    return execFileSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", command], base);
+  }
+  return execFileSync(cmd, args, base);
+};
+
+/** Normalize tar listings across GNU/BSD/Windows tar and CRLF output. */
+const tarEntries = (tarball) =>
+  run("tar", ["-tzf", tarball])
+    .split(/\r?\n/)
+    .map((entry) => entry.trim().replaceAll("\\", "/"))
+    .filter(Boolean);
 
 try {
   // 1. Pack through the real publish lifecycle (prepack builds + bundles).
@@ -206,7 +231,7 @@ try {
     run("npm", ["pack", "--pack-destination", npmDir], { cwd: path.join(repo, "packages/cli") });
     const npmTarball = path.join(npmDir, fs.readdirSync(npmDir).find((f) => f.endsWith(".tgz")));
     const pnpmTarball = path.join(packDir, fs.readdirSync(packDir).find((f) => f.endsWith(".tgz")));
-    const listing = (t) => run("tar", ["-tzf", t]).trim().split("\n").sort().join("\n");
+    const listing = (t) => tarEntries(t).sort().join("\n");
     if (listing(npmTarball) !== listing(pnpmTarball)) {
       throw new Error(
         `npm and pnpm ship different files:\n--- npm ---\n${listing(npmTarball)}\n--- pnpm ---\n${listing(pnpmTarball)}`,
@@ -252,10 +277,7 @@ try {
      * the very first run, and no amount of `pnpm pack` testing could see it.
      */
     const shipped = new Set(
-      run("tar", ["-tzf", tarball])
-        .trim()
-        .split("\n")
-        .map((entry) => entry.replace(/^package\//, "")),
+      tarEntries(tarball).map((entry) => entry.replace(/^package\//, "")),
     );
     for (const [field, value] of [
       ["bin.roster", manifest.bin.roster],
@@ -277,7 +299,7 @@ try {
     if (missing.length > 0) {
       throw new Error(`published manifest is missing npm metadata: ${missing.join(", ")}`);
     }
-    const files = run("tar", ["-tzf", tarball]);
+    const files = tarEntries(tarball).join("\n");
     if (!/package\/README\.md/.test(files)) {
       throw new Error("tarball ships no README — the npm package page would be blank");
     }
@@ -299,7 +321,7 @@ try {
   // 3. @roster/cli is the ONLY thing a user should ever see. No internal
   //    package name may survive anywhere in the shipped bytes.
   await step("no internal package name appears anywhere in the tarball", () => {
-    const files = run("tar", ["-tzf", tarball]).trim().split("\n");
+    const files = tarEntries(tarball);
     const offenders = [];
     for (const entry of files) {
       if (entry.endsWith("/")) continue;
@@ -327,14 +349,25 @@ try {
     return "optional deps omitted (the minimal install)";
   });
 
-  const bin = path.join(project, "node_modules/.bin/roster");
+  const binShim = path.join(
+    project,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "roster.cmd" : "roster",
+  );
+  const binJs = path.join(project, "node_modules", "@roster", "cli", "bundle", "bin.js");
+  if (!fs.existsSync(binShim)) throw new Error(`npm created no platform CLI shim at ${binShim}`);
+  if (!fs.existsSync(binJs)) throw new Error(`installed package has no executable bundle at ${binJs}`);
   const env = {
     ...process.env,
     ROSTER_TEST_HOME: fixtureHome,
     ROSTER_HOME: path.join(fixtureHome, ".roster"),
     ROSTER_NO_FETCH: "1",
   };
-  const roster = (...args) => run(bin, args, { cwd: project, env });
+  // Run the JS entry through Node so this gate is identical on POSIX and
+  // Windows; the platform-specific npm shim is asserted above and the real
+  // registry/npx journey separately executes that user-facing shim.
+  const roster = (...args) => run(process.execPath, [binJs, ...args], { cwd: project, env });
 
   // 5. The binary must actually parse and run.
   await step("roster --help runs from the published artifact", () => {
@@ -404,8 +437,8 @@ try {
 
   await step("the published binary boots as an MCP server and proxies a backend", async () => {
     const result = await speakMcp(
-      syncedEntry.command === "roster" ? bin : syncedEntry.command,
-      syncedEntry.command === "roster" ? ["serve"] : syncedEntry.args,
+      syncedEntry.command === "roster" ? process.execPath : syncedEntry.command,
+      syncedEntry.command === "roster" ? [binJs, "serve"] : syncedEntry.args,
       env,
       project,
     );
