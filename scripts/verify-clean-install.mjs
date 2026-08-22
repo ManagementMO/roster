@@ -203,6 +203,13 @@ const run = (cmd, args, opts = {}) => {
   return execFileSync(cmd, args, base);
 };
 
+/** Normalize tar listings across GNU/BSD/Windows tar and CRLF output. */
+const tarEntries = (tarball) =>
+  run("tar", ["-tzf", tarball])
+    .split(/\r?\n/)
+    .map((entry) => entry.trim().replaceAll("\\", "/"))
+    .filter(Boolean);
+
 try {
   // 1. Pack through the real publish lifecycle (prepack builds + bundles).
   await step("pnpm pack produces a tarball", () => {
@@ -224,7 +231,7 @@ try {
     run("npm", ["pack", "--pack-destination", npmDir], { cwd: path.join(repo, "packages/cli") });
     const npmTarball = path.join(npmDir, fs.readdirSync(npmDir).find((f) => f.endsWith(".tgz")));
     const pnpmTarball = path.join(packDir, fs.readdirSync(packDir).find((f) => f.endsWith(".tgz")));
-    const listing = (t) => run("tar", ["-tzf", t]).trim().split("\n").sort().join("\n");
+    const listing = (t) => tarEntries(t).sort().join("\n");
     if (listing(npmTarball) !== listing(pnpmTarball)) {
       throw new Error(
         `npm and pnpm ship different files:\n--- npm ---\n${listing(npmTarball)}\n--- pnpm ---\n${listing(pnpmTarball)}`,
@@ -270,10 +277,7 @@ try {
      * the very first run, and no amount of `pnpm pack` testing could see it.
      */
     const shipped = new Set(
-      run("tar", ["-tzf", tarball])
-        .trim()
-        .split("\n")
-        .map((entry) => entry.replace(/^package\//, "")),
+      tarEntries(tarball).map((entry) => entry.replace(/^package\//, "")),
     );
     for (const [field, value] of [
       ["bin.roster", manifest.bin.roster],
@@ -295,7 +299,7 @@ try {
     if (missing.length > 0) {
       throw new Error(`published manifest is missing npm metadata: ${missing.join(", ")}`);
     }
-    const files = run("tar", ["-tzf", tarball]);
+    const files = tarEntries(tarball).join("\n");
     if (!/package\/README\.md/.test(files)) {
       throw new Error("tarball ships no README — the npm package page would be blank");
     }
@@ -317,7 +321,7 @@ try {
   // 3. @roster/cli is the ONLY thing a user should ever see. No internal
   //    package name may survive anywhere in the shipped bytes.
   await step("no internal package name appears anywhere in the tarball", () => {
-    const files = run("tar", ["-tzf", tarball]).trim().split("\n");
+    const files = tarEntries(tarball);
     const offenders = [];
     for (const entry of files) {
       if (entry.endsWith("/")) continue;
