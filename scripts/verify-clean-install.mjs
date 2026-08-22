@@ -182,8 +182,19 @@ const step = async (label, fn) => {
     throw error;
   }
 };
-const run = (cmd, args, opts = {}) =>
-  execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts });
+const run = (cmd, args, opts = {}) => {
+  // npm/pnpm are .cmd shims on Windows. execFileSync deliberately bypasses the
+  // shell and therefore does not append .cmd, even though the same command works
+  // in a workflow step. Resolve the trusted package-manager commands explicitly
+  // rather than enabling a shell for every argument-bearing subprocess.
+  const executable =
+    process.platform === "win32" && (cmd === "npm" || cmd === "pnpm") ? `${cmd}.cmd` : cmd;
+  return execFileSync(executable, args, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    ...opts,
+  });
+};
 
 try {
   // 1. Pack through the real publish lifecycle (prepack builds + bundles).
