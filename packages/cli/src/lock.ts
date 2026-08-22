@@ -259,6 +259,7 @@ function tryAcquireClaim(dir: string): LockOwner | null {
       flag: "wx",
     });
   } catch (error) {
+    const contended = dirVanished(error) || mkdirWasContended(error, claimDir);
     // We just created this fixed directory and no contender will retire an empty
     // claim before the grace period, so immediate cleanup cannot delete a live
     // replacement. Leaving it behind would add an avoidable one-second stall.
@@ -267,7 +268,7 @@ function tryAcquireClaim(dir: string): LockOwner | null {
     } catch {
       /* The next contender recovers it after CLAIM_GRACE_MS. */
     }
-    if (dirVanished(error)) return null;
+    if (contended) return null;
     throw error;
   }
   return claimOwned(dir, claim) ? claim : null;
@@ -343,7 +344,13 @@ function createOwner(dir: string): LockOwner | null {
     });
     return owner;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST" || dirVanished(error)) return null;
+    if (
+      (error as NodeJS.ErrnoException).code === "EEXIST" ||
+      dirVanished(error) ||
+      mkdirWasContended(error, dir)
+    ) {
+      return null;
+    }
     throw error;
   }
 }

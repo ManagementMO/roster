@@ -82,6 +82,45 @@ describe("stale-lock reclamation is atomic (NEW-2)", () => {
     expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
   });
 
+  it("retries transient Windows owner-file create errors as contention", () => {
+    const dir = lockDir();
+    const realWrite = fs.writeFileSync;
+    let attempts = 0;
+    fs.writeFileSync = ((target: fs.PathOrFileDescriptor, data: string | NodeJS.ArrayBufferView, options?: unknown) => {
+      if (path.resolve(String(target)) === path.resolve(path.join(dir, "owner.json")) && attempts++ < 2) {
+        throw Object.assign(new Error("simulated Defender open handle"), { code: "EPERM" });
+      }
+      return realWrite(target, data, options as never);
+    }) as typeof fs.writeFileSync;
+    try {
+      expect(withFileLockSync("k", () => "done")).toBe("done");
+    } finally {
+      fs.writeFileSync = realWrite;
+    }
+    expect(attempts).toBe(3);
+    expect(fs.existsSync(dir)).toBe(true);
+    expect(fs.existsSync(path.join(dir, "owner.json"))).toBe(false);
+  });
+
+  it("does not hide a non-transient owner-file create error", () => {
+    const dir = lockDir();
+    const realWrite = fs.writeFileSync;
+    let attempts = 0;
+    fs.writeFileSync = ((target: fs.PathOrFileDescriptor, data: string | NodeJS.ArrayBufferView, options?: unknown) => {
+      if (path.resolve(String(target)) === path.resolve(path.join(dir, "owner.json"))) {
+        attempts++;
+        throw Object.assign(new Error("simulated read-only create"), { code: "EROFS" });
+      }
+      return realWrite(target, data, options as never);
+    }) as typeof fs.writeFileSync;
+    try {
+      expect(() => withFileLockSync("k", () => "never runs")).toThrow(/read-only create/);
+    } finally {
+      fs.writeFileSync = realWrite;
+    }
+    expect(attempts).toBe(1);
+  });
+
   it("retries transient Windows owner-file removal errors before release fails", () => {
     const dir = lockDir();
     const realUnlink = fs.unlinkSync;

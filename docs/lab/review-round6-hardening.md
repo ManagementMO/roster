@@ -20,7 +20,7 @@ typecheck, lint (67 files, no warnings), **369 tests across 14 files**, `pnpm
 audit` clean, League build (2 pages from 1 artifact), pack dry-run, clean tree.
 (Immediately after this round the gate reported **397 tests across 16 files**;
 later receipt, publishing, persistent-lock, and Windows-removal hardening bring
-the current gate to **407 tests**, still across 16 files and 71 linted files.)
+the current gate to **409 tests**, still across 16 files and 71 linted files.)
 All five real probes passed on current `dist`: Router/privacy E2E, MiniLM dense-live, a fresh serve-level Gemma
 warmup (9 base vectors + 1 need vector at 256 dims, drafts served lexically
 throughout), Combine 8/8, and 8/8 fail-probes rejected at the `verify` stage.

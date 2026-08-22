@@ -53,7 +53,7 @@ All local commands below were run in an isolated worktree checked out at the ver
 | `pnpm build` | Passed (`tsc -b`) |
 | `pnpm typecheck` | Passed for source and tests |
 | `pnpm lint` | Passed; 71 files, no fixes or warnings |
-| `pnpm test` | Passed; 16 files, 407 tests (369 across 14 files on the audited base `9741ff6`) |
+| `pnpm test` | Passed; 16 files, 409 tests (369 across 14 files on the audited base `9741ff6`) |
 | `pnpm audit --audit-level moderate` | No known vulnerabilities |
 | `pnpm league:build` | Passed; 2 pages from 1 artifact |
 | `pnpm --filter @roster/cli pack --dry-run` | Passed; `@roster/cli@0.0.1` tarball assembled |
