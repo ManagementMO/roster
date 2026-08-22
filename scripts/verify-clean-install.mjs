@@ -190,14 +190,15 @@ const run = (cmd, args, opts = {}) => {
     // only these two hardcoded package-manager commands through cmd.exe. Every
     // argument is constructed inside this script; backend/user input never
     // reaches this shell boundary.
-    // Leave the command name itself unquoted: cmd.exe treats a quoted bare
-    // command as the literal program name `"pnpm"`. Quote only its arguments,
-    // including temp paths that may contain spaces.
-    const quoted = [
-      cmd,
-      ...args.map((part) => `"${String(part).replaceAll('"', '""')}"`),
-    ].join(" ");
-    return execFileSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", quoted], base);
+    // `call` is required for a .cmd shim to return control to this parent cmd;
+    // without it the next quoted argument is interpreted as a new command.
+    // Quote only arguments that need it so flags remain ordinary tokens.
+    const quote = (part) => {
+      const value = String(part);
+      return /[\s"&|<>^]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+    };
+    const command = `call ${cmd} ${args.map(quote).join(" ")}`;
+    return execFileSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", command], base);
   }
   return execFileSync(cmd, args, base);
 };
