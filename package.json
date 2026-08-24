@@ -19,7 +19,7 @@
     "league:build": "node apps/league/dist/build.js"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.8",
+    "@biomejs/biome": "2.5.9",
     "@roster/coach": "workspace:*",
     "@roster/combine": "workspace:*",
     "@roster/playbook": "workspace:*",
@@ -30,6 +30,6 @@
     "esbuild": "0.28.2",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
