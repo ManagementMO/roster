@@ -1,0 +1,167 @@
+{
+  "concept": "Roster five-part R / 01 slim",
+  "geometryPieces": 5,
+  "wordmark": "Space Grotesk 700, shaped and outlined",
+  "files": [
+    {
+      "path": "roster-favicon-pearl.svg",
+      "bytes": 764,
+      "sha256": "8ad2b2c560c4160ee90c43b0234f7bb72b46dcb5467c47f2fb7ca444285d9150"
+    },
+    {
+      "path": "roster-favicon.svg",
+      "bytes": 764,
+      "sha256": "c0f3d60cd0004572e04f7316abffa7876e0c7cf9435a71bef44d2ef609e6b760"
+    },
+    {
+      "path": "roster-icon-16.png",
+      "bytes": 577,
+      "sha256": "a8f6154176dcbff6d4e7bee604e869bff77c4c2e41da36e4a9e2a814bbaf9a2c"
+    },
+    {
+      "path": "roster-icon-180.png",
+      "bytes": 5497,
+      "sha256": "06e370371164d280f1ce3863925160e0628c52f6d511fc640632b4f6260ad4a8"
+    },
+    {
+      "path": "roster-icon-32.png",
+      "bytes": 1027,
+      "sha256": "26116a4fa2a754e1f8ce84770437755229e770284a2f67204793eeeaaa1a0762"
+    },
+    {
+      "path": "roster-icon-48.png",
+      "bytes": 1492,
+      "sha256": "9c6cfe448ec832753919df5e13eebe4019452c26618694e0688865ccedba4cb5"
+    },
+    {
+      "path": "roster-icon-512.png",
+      "bytes": 16670,
+      "sha256": "610a8d34a8c14301fc97ac888661b52922b8c6282b8bca15263f43a6438cffb5"
+    },
+    {
+      "path": "roster-icon-pearl-16.png",
+      "bytes": 564,
+      "sha256": "239e43c6e2833151d662146da0a24cfdbebacf288eb0396e164a00bd038b1e44"
+    },
+    {
+      "path": "roster-icon-pearl-180.png",
+      "bytes": 5393,
+      "sha256": "7bc3f194cbf3e5da2531b52341f881d0a9e73888bae5143e9e1a453c7bfc4b22"
+    },
+    {
+      "path": "roster-icon-pearl-32.png",
+      "bytes": 1019,
+      "sha256": "24a396e83d2f3efb3dc5b1b93c1fa2dc08262a05ffea4676fddf9bb25a5952db"
+    },
+    {
+      "path": "roster-icon-pearl-48.png",
+      "bytes": 1458,
+      "sha256": "3079e348261056d42a20a8ea8f22077329cfdb552e1dc744cfcc80a329d7709e"
+    },
+    {
+      "path": "roster-icon-pearl-512.png",
+      "bytes": 16299,
+      "sha256": "fba6f50eb2bf63e6f170da043513dfe88238177f8946862abf10e8733f5ba438"
+    },
+    {
+      "path": "roster-identity-preview.png",
+      "bytes": 50051,
+      "sha256": "1ccbb87994b497125ff59e0d4ce8ff471cc64d706588e28630bb22280a2fbb7a"
+    },
+    {
+      "path": "roster-identity-preview.svg",
+      "bytes": 5477,
+      "sha256": "4aa52297a6757999f5e39cd7de81223ce1d75d7abf0b76538f86b6b25c56e513"
+    },
+    {
+      "path": "roster-lockup-cobalt.png",
+      "bytes": 55598,
+      "sha256": "330687f40dcbd1637f9770ca5c761091768d1a527b40c34883853bae93fd412e"
+    },
+    {
+      "path": "roster-lockup-cobalt.svg",
+      "bytes": 3009,
+      "sha256": "50e188196a1e7b6c24188b1a38e8a9d2555d0ad9a6c97b62169f30d3aa7cf631"
+    },
+    {
+      "path": "roster-lockup-ink.png",
+      "bytes": 55057,
+      "sha256": "5bd95629eae2c177936b95e7a8d96c51f40917285f111b2873524f9de965c58c"
+    },
+    {
+      "path": "roster-lockup-ink.svg",
+      "bytes": 3009,
+      "sha256": "1ac67c67afa148a9958cd71b7c0c16cd586f2d099fd8d0636d77c38a8d10a404"
+    },
+    {
+      "path": "roster-lockup-pearl.png",
+      "bytes": 52710,
+      "sha256": "8a90c011aac74f8ec7f05d7aec6840eeeef48a00d0ff2a891824c9ff62c863c8"
+    },
+    {
+      "path": "roster-lockup-pearl.svg",
+      "bytes": 3009,
+      "sha256": "a6f1003a1b264587cf7888f9c31c631a30c62b733e6ceda0f62aeed1b3bc62c9"
+    },
+    {
+      "path": "roster-mark-cobalt-1024.png",
+      "bytes": 25883,
+      "sha256": "bb3b41fa46440e590b345ef1f7860e1336eb929aef13d03dbbbd04104ec5f383"
+    },
+    {
+      "path": "roster-mark-cobalt-256.png",
+      "bytes": 5348,
+      "sha256": "50ffe049938d559e97d46709668a284d28068bc547c66f574814208a50b68aa6"
+    },
+    {
+      "path": "roster-mark-cobalt-512.png",
+      "bytes": 11505,
+      "sha256": "56a7e54a1f1fbefad53d49fcd25f54ffb46dd5e847a6356f4215b306101996d9"
+    },
+    {
+      "path": "roster-mark-cobalt.svg",
+      "bytes": 709,
+      "sha256": "ce1f67b62111a5c5438b61559b9212d85a6926f2b1f5c1880942c048fa2c0860"
+    },
+    {
+      "path": "roster-mark-ink-1024.png",
+      "bytes": 25643,
+      "sha256": "7d8931b5cf0dfd45980377c1c0463b9f54d90a36c5ca27e69e3ccf058f6622a3"
+    },
+    {
+      "path": "roster-mark-ink-256.png",
+      "bytes": 5299,
+      "sha256": "2002294dea90daf92f308c33aee1039dcb43de185b703e32bebfc8a4f7804189"
+    },
+    {
+      "path": "roster-mark-ink-512.png",
+      "bytes": 11419,
+      "sha256": "b8285223b396a6e31fbeb3a349e19bd790f37cb5f132236b1fe6adf94926b0b8"
+    },
+    {
+      "path": "roster-mark-ink.svg",
+      "bytes": 709,
+      "sha256": "23905ccbb8b504434594c0f0a2055d55fca0507575dbedbf66f1f793d9232d46"
+    },
+    {
+      "path": "roster-mark-pearl-1024.png",
+      "bytes": 24921,
+      "sha256": "39a5b136290999f66d83bd343160e209c0859c2297fb65b9357dca3bca57492a"
+    },
+    {
+      "path": "roster-mark-pearl-256.png",
+      "bytes": 5138,
+      "sha256": "8a287e55df8b310dae184c7f4cbde7045a8b9164cf7290495f9aeab0342f279a"
+    },
+    {
+      "path": "roster-mark-pearl-512.png",
+      "bytes": 11082,
+      "sha256": "5e2fac43310e9276e9b4898bf7e1fe2b0818efe53f339a723360fb77e03a0442"
+    },
+    {
+      "path": "roster-mark-pearl.svg",
+      "bytes": 709,
+      "sha256": "0befcdd08c120915b0add41bd2f6d3083d040bc7aa2805191353ebbb742a50ea"
+    }
+  ]
+}

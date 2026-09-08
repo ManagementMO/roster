@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roster — The starting five · Feed edition</title>
+  <script src="assets/gsap.min.js"></script>
+  <style>
+    @font-face { font-family:"Space Grotesk";src:url("assets/SpaceGrotesk-Variable.woff2") format("woff2");font-weight:300 700; }
+    @font-face { font-family:"Manrope";src:url("assets/Manrope-Variable.woff2") format("woff2");font-weight:200 800; }
+    * { box-sizing:border-box; } html,body { margin:0;padding:0;width:1080px;height:1350px;overflow:hidden; }
+    #root { position:relative;width:1080px;height:1350px;overflow:hidden;color:#F7F8FC; }
+    .clip,.seam { position:absolute;inset:0;width:1080px;height:1350px; } .seam { transform-origin:50% 50%; }
+    #stage-ground { position:absolute;inset:0;background:#151B29; }
+    #handoff-card { position:absolute;left:0;top:0;width:208px;height:228px;color:#172033;transform-origin:104px 114px; }
+    #handoff-surface { position:absolute;inset:0;width:208px;height:228px;background:#DFE7FB;transform-origin:0 0;border-radius:24px; }
+    #handoff-outline { position:absolute;inset:0;width:208px;height:228px;border:2px solid #4963DF;border-radius:24px;opacity:0; }
+    #handoff-plate { position:absolute;left:0;top:0;width:44px;height:44px;background:#F7F8FC;border-radius:9px;transform-origin:0 0; }
+    #handoff-logo { position:absolute;left:0;top:0;width:96px;height:96px;background:url("assets/brands/playwright.svg") center/contain no-repeat;transform-origin:0 0; }
+    #handoff-source { position:absolute;inset:0;width:904px;height:88px;font-family:"Manrope"; }
+    #handoff-title { position:absolute;left:92px;top:14.5px;font-size:48px;font-weight:600;line-height:58px;letter-spacing:-1.3px;white-space:nowrap; }
+    #handoff-provider { position:absolute;left:654px;top:22.5px;width:174px;font-size:30px;font-weight:500;line-height:42px;text-align:right;white-space:nowrap; }
+    #handoff-arrow { position:absolute;left:846px;top:26.5px;width:34px;height:34px; }
+    #handoff-name { position:absolute;left:0;top:152px;width:208px;font-family:"Space Grotesk";font-size:36px;font-weight:700;line-height:1;letter-spacing:-1.3px;text-align:center;white-space:nowrap;opacity:0; }
+  </style>
+</head><body>
+  <div data-hf-id="hf-bt4j" id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="120" data-width="1080" data-height="1350">
+    <div data-hf-id="hf-l5jw" id="stage-ground" class="clip" data-start="0" data-duration="15" data-track-index="0"></div>
+    
+    <div data-hf-id="hf-3hb6" id="seam-01" class="seam">
+      <div data-hf-id="hf-b3ws" id="el-01-overload" class="clip" data-composition-id="01-overload" data-composition-src="compositions/frames/01-overload.html" data-start="0" data-duration="1.875" data-track-index="1" data-width="1080" data-height="1350"></div>
+    </div>
+
+    <div data-hf-id="hf-zj75" id="seam-02" class="seam">
+      <div data-hf-id="hf-qvew" id="el-02-five" class="clip" data-composition-id="02-five" data-composition-src="compositions/frames/02-five.html" data-start="1.875" data-duration="1.875" data-track-index="1" data-width="1080" data-height="1350"></div>
+    </div>
+
+    <div data-hf-id="hf-yrjc" id="seam-03" class="seam">
+      <div data-hf-id="hf-kjpk" id="el-03-draft" class="clip" data-composition-id="03-draft" data-composition-src="compositions/frames/03-draft.html" data-start="3.75" data-duration="3.75" data-track-index="1" data-width="1080" data-height="1350"></div>
+    </div>
+
+    <div data-hf-id="hf-sltj" id="seam-04" class="seam">
+      <div data-hf-id="hf-x2bm" id="el-04-call" class="clip" data-composition-id="04-call" data-composition-src="compositions/frames/04-call.html" data-start="7.5" data-duration="2.8125" data-track-index="1" data-width="1080" data-height="1350"></div>
+    </div>
+
+    <div data-hf-id="hf-onpi" id="seam-05" class="seam">
+      <div data-hf-id="hf-awq4" id="el-05-learn" class="clip" data-composition-id="05-learn" data-composition-src="compositions/frames/05-learn.html" data-start="10.3125" data-duration="1.875" data-track-index="1" data-width="1080" data-height="1350"></div>
+    </div>
+
+    <div data-hf-id="hf-kplh" id="seam-06" class="seam">
+      <div data-hf-id="hf-ls34" id="el-06-identity" class="clip" data-composition-id="06-identity" data-composition-src="compositions/frames/06-identity.html" data-start="12.1875" data-duration="2.8125" data-track-index="1" data-width="1080" data-height="1350"></div>
+    </div>
+    <div data-hf-id="hf-tj55" id="playwright-handoff" class="clip" data-start="7.1" data-duration="1.125" data-track-index="5" data-width="1080" data-height="1350">
+      <!-- The carrier deliberately begins as a 904px row before becoming a 208px route node. -->
+      <div data-hf-id="hf-op7l" id="handoff-card" data-layout-allow-overflow="">
+        <div data-hf-id="hf-0u37" id="handoff-surface"></div><div data-hf-id="hf-y3ro" id="handoff-outline"></div><div data-hf-id="hf-ld8e" id="handoff-plate"></div>
+        <span data-hf-id="hf-9338" id="handoff-logo" role="img" aria-label="Playwright"></span>
+        <div data-hf-id="hf-46zx" id="handoff-source"><span data-hf-id="hf-py1e" id="handoff-title">Inspect page</span><span data-hf-id="hf-97rp" id="handoff-provider">Playwright</span>
+          <svg data-hf-id="hf-rqjw" id="handoff-arrow" viewBox="0 0 34 34" fill="none" aria-hidden="true"><path data-hf-id="hf-1m7f" d="M5 17H28M18 7L28 17L18 27" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </div>
+        <div data-hf-id="hf-awk8" id="handoff-name">Playwright</div>
+      </div>
+    </div>
+    <audio data-hf-id="hf-ma4s" id="premiere-score" class="clip" src="assets/audio/full-send-final.wav" data-start="0" data-duration="15" data-track-index="10" data-volume="1"></audio>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused:true });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["main"] = tl;
+    const pearl = "radial-gradient(ellipse at 88% 15%,#DCE6F9 0%,#EDF1FA 32%,#F7F8FC 72%)";
+    [0,7.5,12.1875].forEach(t => tl.set("#stage-ground", { backgroundColor:"#151B29",backgroundImage:"none" }, t));
+    [1.875,3.75,10.3125].forEach(t => tl.set("#stage-ground", { backgroundColor:"#F7F8FC",backgroundImage:pearl }, t));
+    const rowCorners = { borderTopLeftRadius:"5.522px 62.182px",borderTopRightRadius:"5.522px 62.182px",borderBottomRightRadius:"5.522px 62.182px",borderBottomLeftRadius:"5.522px 62.182px" };
+    const nodeCorners = { borderTopLeftRadius:"24px 24px",borderTopRightRadius:"24px 24px",borderBottomRightRadius:"24px 24px",borderBottomLeftRadius:"24px 24px" };
+    tl.set("#handoff-card", { x:88,y:860,rotation:0,scale:1 }, 0);
+    tl.set("#handoff-surface", { scaleX:904/208,scaleY:88/228,...rowCorners,backgroundColor:"#DFE7FB" }, 0);
+    tl.set("#handoff-plate", { x:24,y:21.5,opacity:1 }, 0);
+    tl.set("#handoff-logo", { x:27,y:24.5,scale:38/96 }, 0);
+    tl.set("#handoff-source", { opacity:1 }, 0);
+    tl.fromTo("#handoff-card", { x:88 }, { x:826,duration:.5,ease:"power3.inOut",immediateRender:false }, 7.1);
+    tl.fromTo("#handoff-card", { y:860 }, { y:534.8,duration:.46,ease:"power3.inOut",immediateRender:false }, 7.1);
+    tl.fromTo("#handoff-card", { rotation:0 }, { rotation:-.9,duration:.25,ease:"sine.inOut",immediateRender:false }, 7.1);
+    tl.to("#handoff-card", { rotation:1.7,duration:.25,ease:"sine.inOut" }, 7.35);
+    tl.fromTo("#handoff-card", { scale:1 }, { scale:1.0175,duration:.225,ease:"sine.inOut",immediateRender:false }, 7.375);
+    tl.to("#handoff-card", { y:552.8,duration:.22,ease:"sine.inOut" }, 7.56);
+    tl.to("#handoff-card", { x:802.2,rotation:-.65,scale:.995,duration:.18,ease:"sine.inOut" }, 7.6);
+    tl.to("#handoff-card", { x:809.7,y:546.6,rotation:.2,scale:1.0024,duration:.18,ease:"sine.inOut" }, 7.78);
+    tl.to("#handoff-card", { x:808,y:548,rotation:0,scale:1,duration:.24,ease:"sine.inOut" }, 7.96);
+    tl.fromTo("#handoff-surface", { scaleX:904/208,scaleY:88/228,...rowCorners,backgroundColor:"#DFE7FB" }, { scaleX:1,scaleY:1,...nodeCorners,backgroundColor:"#F7F8FC",duration:.5,ease:"power3.inOut",immediateRender:false }, 7.1);
+    tl.fromTo("#handoff-logo", { x:27,y:24.5,scale:38/96 }, { x:56,y:32,scale:1,duration:.5,ease:"power3.inOut",immediateRender:false }, 7.1);
+    tl.fromTo("#handoff-source, #handoff-plate", { opacity:1 }, { opacity:0,duration:.12,ease:"power2.in",immediateRender:false }, 7.1);
+    tl.fromTo("#handoff-name", { opacity:0,y:6 }, { opacity:1,y:0,duration:.2,ease:"power3.out",immediateRender:false }, 7.4);
+    tl.fromTo("#handoff-outline", { opacity:0 }, { opacity:1,duration:.02,ease:"none",immediateRender:false }, 7.58);
+      // <seams:auto> — generated by seam-stamp.mjs from ledger.json; do not hand-edit.
+      // Regenerate: node <motion-doctrine>/scripts/seam-stamp.mjs --ledger ledger.json --write index.html
+      gsap.set("#seam-01", { autoAlpha: 1, xPercent: 0, yPercent: 0, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" });
+      gsap.set(["#seam-02","#seam-03","#seam-04","#seam-05"], { autoAlpha: 0, xPercent: 0, yPercent: 0, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" });
+      gsap.set("#seam-06", { autoAlpha: 0, scale: 1.06, filter: "blur(0px)", xPercent: 0, yPercent: 0, transformOrigin: "50% 50%" });
+      
+      // SEAM — overload-to-five : color-preserving cut-the-curve LEFT (cut @1.875)
+      tl.fromTo("#seam-01", { xPercent: 0, autoAlpha: 1 }, { xPercent: -4.5, autoAlpha: 0, duration: 0.16, ease: "power3.in", immediateRender: false }, 1.715);
+      tl.set("#seam-01", { autoAlpha: 0 }, 1.875);
+      tl.fromTo("#seam-02", { xPercent: 3.4, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.24, ease: "power4.out", immediateRender: false }, 1.875);
+      
+      // SEAM — five-to-draft : color-preserving cut-the-curve LEFT (cut @3.75)
+      tl.fromTo("#seam-02", { xPercent: 0, autoAlpha: 1 }, { xPercent: -4.5, autoAlpha: 0, duration: 0.16, ease: "power3.in", immediateRender: false }, 3.59);
+      tl.set("#seam-02", { autoAlpha: 0 }, 3.75);
+      tl.fromTo("#seam-03", { xPercent: 3.4, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.24, ease: "power4.out", immediateRender: false }, 3.75);
+      
+      // SEAM — draft-to-call : selected Playwright row becomes the call endpoint with a damped landing (cut @7.5)
+      tl.set("#seam-03", { autoAlpha: 0 }, 7.5);
+      tl.set("#seam-04", { autoAlpha: 1 }, 7.5);
+      // morph: carrier handoff is Tier-A — author it by hand and keep the carrier row in ledger.json
+      
+      // SEAM — call-to-learn : color-preserving cut-the-curve LEFT (cut @10.3125)
+      tl.fromTo("#seam-04", { xPercent: 0, autoAlpha: 1 }, { xPercent: -4.5, autoAlpha: 0, duration: 0.16, ease: "power3.in", immediateRender: false }, 10.152);
+      tl.set("#seam-04", { autoAlpha: 0 }, 10.3125);
+      tl.fromTo("#seam-05", { xPercent: 3.4, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.24, ease: "power4.out", immediateRender: false }, 10.3125);
+      
+      // SEAM — learn-to-identity : restrained inverse zoom (cut @12.1875)
+      tl.fromTo("#seam-05", { scale: 1, filter: "blur(0px)" }, { scale: 0.96, filter: "blur(0px)", duration: 0.15, ease: "power3.in", immediateRender: false }, 12.037);
+      tl.fromTo("#seam-05", { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.15, ease: "none", immediateRender: false }, 12.037);
+      tl.set("#seam-05", { autoAlpha: 0 }, 12.1875);
+      tl.fromTo("#seam-06", { autoAlpha: 0.15, scale: 1.06, filter: "blur(0px)" }, { autoAlpha: 1, scale: 1.0, filter: "blur(0px)", duration: 0.28, ease: "expo.out", immediateRender: false }, 12.1875);
+      
+      // </seams:auto>
+  </script>
+</body></html>

@@ -1,0 +1,9 @@
+.hyperframes/
+snapshots/
+renders/
+assets/audio/music-bed.wav
+assets/audio/premiere-mix.wav
+verification/check-initial.json
+verification/preview-render.log
+verification/master-render.log
+node_modules/

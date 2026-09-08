@@ -1,0 +1,45 @@
+{
+  "sampleRate": 48000,
+  "newLandingAt": 8.2,
+  "guitarDip": [
+    8.185,
+    8.3
+  ],
+  "stems": {
+    "drums": {
+      "bitIdentical": true,
+      "changeRange": [],
+      "maxSampleDifference": 0.0
+    },
+    "bass": {
+      "bitIdentical": true,
+      "changeRange": [],
+      "maxSampleDifference": 0.0
+    },
+    "chords": {
+      "bitIdentical": false,
+      "changeRange": [
+        8.203146,
+        8.356417
+      ],
+      "maxSampleDifference": 0.043026238679885864
+    },
+    "lead": {
+      "bitIdentical": false,
+      "changeRange": [
+        8.203146,
+        8.310583
+      ],
+      "maxSampleDifference": 0.018786922097206116
+    },
+    "design": {
+      "bitIdentical": false,
+      "changeRange": [
+        8.200021,
+        8.292813
+      ],
+      "maxSampleDifference": 0.09246353060007095
+    }
+  },
+  "isolatedCuePeakDbfs": -20.68058967590332
+}

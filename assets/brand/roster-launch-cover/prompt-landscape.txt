@@ -1,0 +1,22 @@
+Use case: ads-marketing.
+Create one finished premium launch cover for Roster, a local MCP tool router for AI agents. Landscape 16:9, ideally 2560x1440 or larger at exactly 16:9. This is the final designed cover artwork, full bleed, not a presentation board or a screenshot of a cover. Make it beautifully art-directed, modern, sharp and immediately legible as a small thumbnail.
+
+Input images:
+1. The transparent pearl five-part R is the approved logo. Preserve its slender proportions and extended lower legs exactly. It has five separated geometric pieces. Never substitute a font R, widen the strokes, shorten the legs, or invent a different mark.
+2. The six-frame film contact sheet is the visual identity and original-color tool-logo reference only. Do not reproduce its grid or make a contact sheet. Use its consistent pearl/navy/cobalt identity and recognizable full-color vendor artwork.
+3. The transparent pearl Roster lockup is the exact approved brand lockup. Use it intact, small and tastefully positioned at upper left, with ample clear space.
+
+Composition:
+A decisive editorial layout. On the left roughly 58% of the image, the headline is the main event, large tightly composed geometric sans typography resembling Space Grotesk/Manrope, crisp and professionally kerned. Three lines of exact text:
+"200 tools."
+"Your starting"
+"five."
+Use pearl #F7F8FC for the first two lines. Make "five." the largest and use beautiful vivid cobalt blue around #5B75F1, optically clear on navy. The first line should be slightly smaller than the main two-line benefit; hierarchy must be very intentional, no tiny hook. Keep the headline genuinely huge and readable, with generous left margin and no awkward word breaks.
+
+On the right, exactly FIVE immaculate slightly floating pearl-white square tool tiles, arranged in a balanced, staggered constellation with a restrained sense of motion and real breathing room. One tile each for GitHub, Figma, Playwright, Linear, and PostgreSQL. No duplicate logos. Center the genuine logo on each tile: black GitHub silhouette, full multi-color Figma, red/green Playwright masks, periwinkle Linear symbol, blue PostgreSQL elephant. Flat authentic logos with accurate silhouettes; no reinvented icons, no generic file icons, no vendor-name labels needed. Cards have modern softly rounded corners, extremely subtle thin edges, short soft shadows, almost-flat porcelain surfaces and only a hint of depth. Modest rotations no more than about 8 degrees. Playwright and GitHub can be a little larger; still all five are clearly recognizable. Cards never overlap the headline or one another. Avoid a mechanical equal-sized grid; achieve a deliberate premium editorial arrangement. The constellation should feel selected and purposeful, not random confetti.
+
+Background: deep matte navy #151B29, very restrained broad cobalt ambient light behind the right-hand tiles, falling off seamlessly into navy. No vivid neon glows, no strong gradient across the headline, no busy circuit patterns. Tasteful spatial depth and impeccable negative space.
+Along the bottom left, the exact small secondary line "Your local MCP tool router." in soft pearl, clearly legible but subordinate. No URL needed on this cover.
+
+Aesthetic: confident software launch, beautifully proportioned typography, a coherent premium tech brand. The type and recognizable logos communicate the idea at a glance. Restrained, clean and visually exciting. Every element has a job.
+Constraints: exact headline spelling and punctuation; exactly one logo for each of the five vendors; exact approved Roster identity; no additional logos, words, CTA buttons, fake play icon, charts, badges, counters, watermarks, borders or mockup frames. Preserve 6% safe margins. No orange palette, no pink boxes, no dated skeuomorphic icons, no neon-on-black tiles.

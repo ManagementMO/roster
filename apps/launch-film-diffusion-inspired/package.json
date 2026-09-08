@@ -1,0 +1,18 @@
+{
+  "name": "@roster/launch-film-diffusion-inspired",
+  "private": true,
+  "type": "module",
+  "description": "Fresh Diffusion Studio launch-film experiment for Roster, inspired by restrained editorial product trailers",
+  "scripts": {
+    "studio": "node scripts/editor-inspired.mjs open",
+    "mount": "node scripts/editor-inspired.mjs mount",
+    "sound": "SCORE_OUTPUT=\"$PWD/assets/roster-launch-inspired-score.wav\" SCORE_DURATION=11.6 SCORE_PROFILE=real node scripts/make-sprint-score.mjs",
+    "check": "node scripts/editor-inspired.mjs check",
+    "typecheck": "node scripts/editor-inspired.mjs check",
+    "render:preview": "pnpm sound && node scripts/editor-inspired.mjs render preview",
+    "render:master": "pnpm sound && node scripts/editor-inspired.mjs render master",
+    "render:poster": "node scripts/editor-inspired.mjs poster",
+    "render:contact": "node scripts/editor-inspired.mjs contact",
+    "render:stills": "node scripts/editor-inspired.mjs stills"
+  }
+}

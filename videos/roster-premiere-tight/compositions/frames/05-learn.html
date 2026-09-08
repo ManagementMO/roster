@@ -1,0 +1,93 @@
+<template>
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("assets/SpaceGrotesk-Variable.woff2") format("woff2"); font-weight: 300 700; font-style: normal; }
+    @font-face { font-family: "Manrope"; src: url("assets/Manrope-Variable.woff2") format("woff2"); font-weight: 200 800; font-style: normal; }
+    #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; container-type: size; color: #172033; font-family: "Manrope"; }
+    #s05-ground { position: absolute; inset: 0; width: 1920px; height: 1080px; background: radial-gradient(ellipse at 88% 15%,#DCE6F9 0%,#EDF1FA 32%,#F7F8FC 72%); }
+    #s05-stage { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    #s05-headline { position: absolute; left: 108px; top: 103px; width: 755px; margin: 0; font-family: "Space Grotesk"; font-size: 178px; font-weight: 700; line-height: 0.94; letter-spacing: -8px; }
+    #s05-head-learns, #s05-head-what, #s05-head-works { display: block; }
+    #s05-coach { position: absolute; left: 1112px; top: 124px; width: 700px; height: 452px; border-radius: 24px; background: #151B29; color: #F7F8FC; transform-origin: 50% 50%; z-index: 2; }
+    #s05-roster-logo { position: absolute; left: 30px; top: 31px; width: 70px; height: 70px; object-fit: contain; }
+    #s05-coach-label { position: absolute; left: 110px; top: 47px; font-family: "Space Grotesk"; font-size: 42px; font-weight: 700; line-height: 1.1; letter-spacing: -1px; }
+    #s05-database { position: absolute; left: 446px; top: 166px; width: 191px; height: 216px; transform-origin: 50% 50%; }
+    #s05-success, #s05-errors, #s05-latency { position: absolute; left: 35px; width: 272px; height: 76px; display: flex; align-items: center; padding-left: 29px; box-sizing: border-box; border-radius: 24px; background: #F7F8FC; color: #172033; font-family: "Space Grotesk"; font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -0.9px; }
+    #s05-success { top: 146px; background: #92E3B4; }
+    #s05-errors { top: 238px; background: #FFA795; }
+    #s05-latency { top: 330px; background: #F7C76A; }
+    #s05-next-rail { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+    #s05-next-draft { position: absolute; left: 1480px; top: 605px; width: 332px; height: 84px; display: flex; align-items: center; justify-content: space-between; padding: 0 27px; box-sizing: border-box; border-radius: 24px; background: #4963DF; color: #F7F8FC; font-family: "Space Grotesk"; font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -1px; z-index: 3; }
+    #s05-next-arrow { width: 32px; height: 32px; }
+    #s05-machine { position: absolute; left: 108px; top: 704px; width: 1700px; margin: 0; font-family: "Space Grotesk"; font-size: 130px; font-weight: 700; line-height: 1; letter-spacing: -5.85px; white-space: nowrap; }
+    #s05-support { position: absolute; left: 114px; top: 850px; width: 1650px; margin: 0; font-family: "Manrope"; font-size: 32px; font-weight: 500; line-height: 1.2; letter-spacing: -0.45px; color: #606A7C; }
+  </style>
+  <div data-hf-id="hf-uk0f" id="s05-root" data-composition-id="05-learn" data-start="0" data-duration="1.875" data-fps="120" data-width="1920" data-height="1080" style="position:relative;width:1920px;height:1080px;overflow:hidden;container-type:size;color:#172033;font-family:Manrope;">
+    <div data-hf-id="hf-2n1t" id="s05-ground" class="clip" data-start="0" data-duration="1.875" data-track-index="0"></div>
+    <div data-hf-id="hf-94at" id="s05-stage" class="clip" data-start="0" data-duration="1.875" data-track-index="1">
+      <h1 data-hf-id="hf-5w1k" id="s05-headline">
+        <span data-hf-id="hf-mstw" id="s05-head-learns" data-layout-allow-overlap="">LEARNS</span>
+        <span data-hf-id="hf-sdg6" id="s05-head-what" data-layout-allow-overlap="">WHAT</span>
+        <span data-hf-id="hf-t2qs" id="s05-head-works" data-layout-allow-overlap="">WORKS.</span>
+      </h1>
+      <svg data-hf-id="hf-sxum" id="s05-next-rail" viewBox="0 0 1920 1080" aria-hidden="true">
+        <path data-hf-id="hf-oy8l" d="M 1462 561 L 1462 602 Q 1462 647 1507 647 L 1796 647" fill="none" stroke="#4963DF" stroke-width="4" stroke-linecap="round" />
+      </svg>
+      <div data-hf-id="hf-hauk" id="s05-coach">
+        <img data-hf-id="hf-n4fs" id="s05-roster-logo" src="assets/roster-mark-pearl.svg" alt="Roster mark">
+        <div data-hf-id="hf-bv8e" id="s05-coach-label">LOCAL COACH</div>
+        <svg data-hf-id="hf-noq6" id="s05-database" viewBox="0 0 191 216" aria-label="Local outcome storage">
+          <defs data-hf-id="hf-mh0t">
+            <lineargradient data-hf-id="hf-64j0" id="s05-db-body" x1="18" y1="110" x2="173" y2="110" gradientUnits="userSpaceOnUse">
+              <stop data-hf-id="hf-onct" offset="0" stop-color="#246C86" />
+              <stop data-hf-id="hf-nhji" offset="0.48" stop-color="#39B7BC" />
+              <stop data-hf-id="hf-qsvt" offset="1" stop-color="#157A88" />
+            </lineargradient>
+            <lineargradient data-hf-id="hf-lkdd" id="s05-db-top" x1="35" y1="7" x2="155" y2="57" gradientUnits="userSpaceOnUse">
+              <stop data-hf-id="hf-mxjj" offset="0" stop-color="#A1F2D9" />
+              <stop data-hf-id="hf-qtk1" offset="1" stop-color="#55CBD7" />
+            </lineargradient>
+          </defs>
+          <path data-hf-id="hf-y9u4" d="M 18 32 V 169 C 18 183 53 195 95.5 195 C 138 195 173 183 173 169 V 32 Z" fill="url(#s05-db-body)" stroke="#86E5DB" stroke-width="4" stroke-linejoin="round" />
+          <path data-hf-id="hf-s4at" id="s05-db-tiers" d="M 18 78 C 18 92 53 104 95.5 104 C 138 104 173 92 173 78 M 18 124 C 18 138 53 150 95.5 150 C 138 150 173 138 173 124" fill="none" stroke="#A1F2D9" stroke-width="4" stroke-linecap="round" />
+          <ellipse data-hf-id="hf-ksso" cx="95.5" cy="32" rx="77.5" ry="25" fill="url(#s05-db-top)" stroke="#B5F7E6" stroke-width="4" />
+        </svg>
+        <div data-hf-id="hf-1hd6" id="s05-success">SUCCESS</div>
+        <div data-hf-id="hf-6n78" id="s05-errors">ERRORS</div>
+        <div data-hf-id="hf-vy3m" id="s05-latency">LATENCY</div>
+      </div>
+      <div data-hf-id="hf-vdyf" id="s05-next-draft">
+        <span data-hf-id="hf-k015" id="s05-next-label">NEXT DRAFT</span>
+        <svg data-hf-id="hf-ywok" id="s05-next-arrow" viewBox="0 0 32 32" aria-hidden="true">
+          <path data-hf-id="hf-43qf" d="M 3 16 H 27 M 18 7 L 27 16 L 18 25" fill="none" stroke="#F7F8FC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h2 data-hf-id="hf-pt9j" id="s05-machine">ON YOUR MACHINE.</h2>
+      <p data-hf-id="hf-hxh7" id="s05-support">Derived outcomes. Local learning.</p>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["05-learn"] = tl;
+
+      // The benefit is readable immediately, while one short settle adds momentum.
+      // Scene boundaries remain entirely host-owned.
+      tl.fromTo("#s05-headline, #s05-machine", { y: 8, opacity: 0.8 }, { y: 0, opacity: 1, duration: 0.18, ease: "power3.out" }, 0);
+      tl.fromTo("#s05-coach", { y: 6, scale: 0.994, opacity: 0.9 }, { y: 0, scale: 1, opacity: 1, duration: 0.18, ease: "power3.out" }, 0);
+
+      // These are derived call signals. No prompt, argument, or response content enters storage.
+      tl.fromTo("#s05-success", { x: -72, opacity: 0 }, { x: 0, opacity: 1, duration: 0.27, ease: "power3.out" }, 0.2);
+      tl.fromTo("#s05-errors", { x: -72, opacity: 0 }, { x: 0, opacity: 1, duration: 0.27, ease: "power3.out" }, 0.32);
+      tl.fromTo("#s05-latency", { x: -72, opacity: 0 }, { x: 0, opacity: 1, duration: 0.27, ease: "power3.out" }, 0.43);
+      // A single restrained storage response follows the completed three-signal set.
+      tl.to("#s05-database", { scale: 1.014, duration: 0.06, ease: "power2.out" }, 0.7);
+      tl.to("#s05-database", { scale: 1, duration: 0.06, ease: "power2.out" }, 0.76);
+
+      // The route leaves toward a later draft; this does not represent model training.
+      tl.fromTo("#s05-next-rail", { opacity: 0 }, { opacity: 1, duration: 0.14, ease: "power2.out" }, 0.82);
+      tl.fromTo("#s05-next-draft", { x: -44, y: -8, scale: 0.992, opacity: 0 }, { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.28, ease: "power3.out" }, 0.82);
+      // Hold the completed composition until 1.875s for a clean benefit read.
+    })();
+  </script>
+</template>

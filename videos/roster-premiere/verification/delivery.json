@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-09-08T00:21:11.021Z",
+  "files": [
+    {
+      "path": "renders/roster-premiere-1080p.mp4",
+      "bytes": 10073922,
+      "sha256": "cda3c92b3d205b44098408aaf857e9f8aca08f067ec903e42baaab646b975c87"
+    },
+    {
+      "path": "renders/roster-premiere-preview.mp4",
+      "bytes": 1798813,
+      "sha256": "af1c65055d1e36b661e8e2a96fbfaa1096485fd14dbfc0013adf90ed0175292f"
+    },
+    {
+      "path": "renders/roster-premiere-poster.png",
+      "bytes": 186690,
+      "sha256": "1fedd667bcf2ecc9363952e73f8756ff2f824ec9c4ff25cacc3b4abcbc31cd6b"
+    },
+    {
+      "path": "renders/roster-premiere-contact-sheet.png",
+      "bytes": 397195,
+      "sha256": "0b47ea3108bbedaa69a292a537f9056be47be1bfaa4d34f48180037cfc178c10"
+    }
+  ],
+  "representativeSeconds": [
+    2.7,
+    6.75,
+    14.2,
+    19.7,
+    23.8,
+    28.8
+  ],
+  "detectedBlackSpans": [
+    "[Parsed_blackdetect_0 @ 0xa6ac2e1c0] black_start:26.183333 black_end:26.55 black_duration:0.366667"
+  ],
+  "detectedSilence": [],
+  "loudnessSummary": "Summary:\n\n  Integrated loudness:\n    I:         -14.9 LUFS\n    Threshold: -25.0 LUFS\n\n  Loudness range:\n    LRA:         1.0 LU\n    Threshold: -34.9 LUFS\n    LRA low:   -15.4 LUFS\n    LRA high:  -14.4 LUFS\n\n  True peak:\n    Peak:       -1.9 dBFS\n[out#0/null @ 0xa6ac2c300] video:745KiB audio:5628KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nframe= 1800 fps=0.0 q=-0.0 Lsize=N/A time=00:00:30.00 bitrate=N/A speed=41.8x elapsed=0:00:00.71    \n"
+}

@@ -1,0 +1,8 @@
+{
+  "sourceSha256": "c5cd451bdba2d01ea61b34c467cde0d78b19a86eded517eb1c2fc221754592d0",
+  "pictureSourceSha256": "b84474f6be57f81126e2346b7e06856d239f28a5a19f4af8160164903953f194",
+  "change": "Only the single soundtrack element is omitted from the temporary picture render; all visual code is identical.",
+  "soundtrack": "assets/audio/full-send-final.wav",
+  "duration": 15,
+  "fps": 120
+}

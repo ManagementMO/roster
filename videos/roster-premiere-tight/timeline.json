@@ -1,0 +1,50 @@
+{
+  "duration": 15,
+  "fps": 120,
+  "width": 1920,
+  "height": 1080,
+  "scenes": [
+    {
+      "id": "01-overload",
+      "src": "compositions/frames/01-overload.html",
+      "start": 0,
+      "duration": 1.875,
+      "wrapper": "seam-01"
+    },
+    {
+      "id": "02-five",
+      "src": "compositions/frames/02-five.html",
+      "start": 1.875,
+      "duration": 1.875,
+      "wrapper": "seam-02"
+    },
+    {
+      "id": "03-draft",
+      "src": "compositions/frames/03-draft.html",
+      "start": 3.75,
+      "duration": 3.75,
+      "wrapper": "seam-03"
+    },
+    {
+      "id": "04-call",
+      "src": "compositions/frames/04-call.html",
+      "start": 7.5,
+      "duration": 2.8125,
+      "wrapper": "seam-04"
+    },
+    {
+      "id": "05-learn",
+      "src": "compositions/frames/05-learn.html",
+      "start": 10.3125,
+      "duration": 1.875,
+      "wrapper": "seam-05"
+    },
+    {
+      "id": "06-identity",
+      "src": "compositions/frames/06-identity.html",
+      "start": 12.1875,
+      "duration": 2.8125,
+      "wrapper": "seam-06"
+    }
+  ]
+}

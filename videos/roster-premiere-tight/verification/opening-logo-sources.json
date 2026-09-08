@@ -1,0 +1,42 @@
+[
+  {
+    "brand": "Slack",
+    "path": "assets/brands/slack.svg",
+    "frozenSource": ".media/images/logo_002.svg",
+    "source": "https://svgl.app/library/slack.svg",
+    "brandPage": "https://slack.com/media-kit",
+    "sha256": "29734796b3a85f9d0e03150d53142fab0b7f994ae80c7e3e1efd0bef52c12f5d",
+    "bytes": 1497,
+    "treatment": "Original SVG copied byte-for-byte; CSS contain sizing only."
+  },
+  {
+    "brand": "Supabase",
+    "path": "assets/brands/supabase.svg",
+    "frozenSource": ".media/images/logo_003.svg",
+    "source": "https://svgl.app/library/supabase.svg",
+    "brandPage": "https://supabase.com/brand-assets",
+    "sha256": "1f9387ffd2d8bea4b535f13f12c34b4b4c2df7ee0e5eefe1f532bbda0a3ce969",
+    "bytes": 1082,
+    "treatment": "Original SVG copied byte-for-byte; CSS contain sizing only."
+  },
+  {
+    "brand": "PostgreSQL",
+    "path": "assets/brands/postgresql.svg",
+    "frozenSource": ".media/images/logo_004.svg",
+    "source": "https://svgl.app/library/postgresql.svg",
+    "brandPage": "https://www.postgresql.org/about/press/",
+    "sha256": "dc6bb4376a5cf235b19a8871f3219c2b98d97e4469309c8bbecb86ff1811f506",
+    "bytes": 3944,
+    "treatment": "Original SVG copied byte-for-byte; CSS contain sizing only."
+  },
+  {
+    "brand": "Brave",
+    "path": "assets/brands/brave.svg",
+    "frozenSource": ".media/images/logo_006.svg",
+    "source": "https://brave.com/static-assets/images/brave-logo-sans-text.svg",
+    "brandPage": "https://brave.com/brave-branding-assets/",
+    "sha256": "2530f80fdf2144b62f96953a81c6988c9c31a6cc7c9de72e069079485817cbe7",
+    "bytes": 4084,
+    "treatment": "Original SVG copied byte-for-byte; CSS contain sizing only."
+  }
+]

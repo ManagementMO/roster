@@ -1,0 +1,16 @@
+ROSTER
+Your agent has 200 tools. Only five get to start.
+
+Roster is a neutral, open-source, local-first tool router for AI agents. One MCP
+endpoint fronts every server and skill. Five mode exposes draft(need) and
+call(tool, args), routes to the strongest five, and records outcomes locally.
+
+The Rotation routes tools. The Coach learns from success, failure, latency, and
+drift on-device. The Playbook indexes skills alongside tools. The Combine runs
+signed task suites. The League presents controlled, PRE-SEASON rankings.
+
+The Sixth Man is suggestion-only at launch. When a drafted tool hard-fails,
+Roster attaches the next-ranked equivalent. The agent decides whether to call it.
+
+The repository is pre-release and the npm package is not yet published.
+Planned launch command: npx roster init.

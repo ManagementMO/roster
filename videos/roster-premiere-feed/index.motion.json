@@ -1,0 +1,54 @@
+{
+  "duration": 15,
+  "assertions": [
+    {
+      "kind": "appearsBy",
+      "selector": "#s01-count",
+      "bySec": 0.1
+    },
+    {
+      "kind": "before",
+      "a": "#s01-count",
+      "b": "#s02-five"
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#s03-task-chip",
+      "bySec": 4
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#s03-row-skill",
+      "bySec": 5.9
+    },
+    {
+      "kind": "before",
+      "a": "#s03-row-skill",
+      "b": "#s03-inspect-fill"
+    },
+    {
+      "kind": "before",
+      "a": "#s04-request-packet",
+      "b": "#s04-result-card"
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#s05-machine",
+      "bySec": 10.7
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#s06-word",
+      "bySec": 12.5
+    },
+    {
+      "kind": "staysInFrame",
+      "selector": "#s06-link"
+    },
+    {
+      "kind": "keepsMoving",
+      "withinSelector": "#root",
+      "maxStaticSec": 2.2
+    }
+  ]
+}

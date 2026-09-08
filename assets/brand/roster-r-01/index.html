@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roster — a new identity</title>
+  <link rel="icon" type="image/svg+xml" href="roster-favicon.svg">
+  <style>
+    @font-face{font-family:Space;src:url(fonts/SpaceGrotesk-Variable.woff2) format("woff2");font-weight:300 700;font-display:swap}
+    @font-face{font-family:Manrope;src:url(fonts/Manrope-Variable.woff2) format("woff2");font-weight:200 800;font-display:swap}
+    @font-face{font-family:Mono;src:url(fonts/JetBrainsMono-Variable.woff2) format("woff2");font-weight:100 800;font-display:swap}
+    :root{color-scheme:light;--pearl:#f7f8fc;--ink:#172033;--navy:#151b29;--cobalt:#4963df;--muted:#657087;--line:#dce2ed}
+    *{box-sizing:border-box}body{margin:0;background:var(--pearl);color:var(--ink);font-family:Manrope,sans-serif;-webkit-font-smoothing:antialiased}
+    button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #7a90f1;outline-offset:5px}
+    a{color:inherit;text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:4px}
+    .wrap{width:min(1180px,calc(100% - 80px));margin:auto}.mast{padding:32px 0 26px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+    .eyebrow{font:500 11px/1.5 Mono,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.mast a{font-size:12px}
+    .hero{--surface:var(--pearl);--foreground:var(--ink);--symbol:var(--cobalt);background:var(--surface);color:var(--foreground);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+    .hero[data-theme=ink]{--surface:var(--navy);--foreground:var(--pearl);--symbol:var(--pearl);border-color:var(--navy)}
+    .hero[data-theme=cobalt]{--surface:var(--cobalt);--foreground:var(--pearl);--symbol:var(--pearl);border-color:var(--cobalt)}
+    .hero-top{display:flex;justify-content:space-between;align-items:center;padding:28px 32px}.hero .eyebrow{color:inherit;opacity:.64}.swatches{display:flex;gap:8px}
+    .swatches button{height:26px;width:26px;padding:0;border:1px solid #939db055;border-radius:50%;background:var(--swatch);box-shadow:0 0 0 3px var(--surface)}
+    .swatches button[aria-pressed=true]{outline:1px solid currentColor;outline-offset:4px}.hero-brand{min-height:330px;display:flex;align-items:center;justify-content:center;gap:20px;padding:34px 48px 56px}
+    .mark{display:block;flex:none;color:var(--symbol,var(--cobalt))}.hero-lockup{display:block;width:min(850px,100%);height:auto}.hero-brand .mark{width:200px;height:200px}.hero-brand .word{font:700 164px/1 Space,sans-serif;letter-spacing:-9px}
+    .hero-bottom{display:flex;justify-content:space-between;gap:28px;padding:0 32px 30px;font-size:13px;opacity:.75}.hero-bottom span:last-child{font:12px Mono,monospace}
+    .intro{display:grid;grid-template-columns:1fr 1fr;gap:80px;padding:50px 0 46px;align-items:start}.intro h1{font:500 32px/1.18 Space,sans-serif;letter-spacing:-1.2px;margin:0;max-width:410px}.intro p{font-size:14px;line-height:1.8;margin:0;max-width:520px;color:var(--muted)}
+    .applications{display:grid;grid-template-columns:1fr 1.1fr;gap:24px}.label{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;min-height:24px}.label h2{font:500 11px Mono,monospace;text-transform:uppercase;letter-spacing:.08em;margin:0;color:var(--muted)}
+    .label button{border:0;background:none;padding:4px 0 4px 12px;color:var(--cobalt);font-size:12px;font-weight:650}
+    .site{background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden;min-height:292px}.site-header{height:70px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e9edf4;gap:18px}
+    .navbrand{display:flex;align-items:center;gap:7px;font:700 25px Space,sans-serif;letter-spacing:-1px}.navbrand img{width:125px;height:auto;display:block}.navbrand .mark{height:33px;width:33px}.navlinks{display:flex;gap:20px;font-size:10px;color:var(--muted)}
+    .site-body{padding:28px 30px 32px}.site-body h3{font:500 35px/1.1 Space,sans-serif;letter-spacing:-1.6px;margin:0 0 14px}.site-body h3 span{color:var(--cobalt)}.site-body p{font-size:11px;color:var(--muted);max-width:340px;line-height:1.65;margin:0}
+    .mini-command{margin-top:22px;font:11px Mono,monospace;color:var(--cobalt);display:flex;align-items:center;gap:8px}.mini-command span{width:6px;height:6px;border-radius:50%;background:var(--cobalt)}
+    .film{background:var(--navy);color:var(--pearl);border-radius:15px;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;min-height:292px}
+    .film-brand{display:flex;align-items:center;justify-content:center;gap:14px}.film .mark{width:86px;height:86px;color:var(--pearl)}.film .word{font:700 98px/1 Space,sans-serif;letter-spacing:-2px}.film-rule{width:74%;height:2px;background:#899bf4;margin-top:23px;transform-origin:center}.film p{font-size:13px;margin:19px 0 0}.film small{font:10px Mono,monospace;margin-top:15px;color:#c4cbdd}
+    .film.animate .piece{animation:assemble .72s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--delay);transform-box:fill-box;transform-origin:center}
+    .film.animate .word{animation:word-in .75s .16s cubic-bezier(.22,1,.36,1) both}.film.animate .film-rule{animation:rule-in .6s .4s cubic-bezier(.22,1,.36,1) both}
+    @keyframes assemble{0%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(.9)}70%{opacity:1;transform:translate(calc(var(--dx) * -.06),calc(var(--dy) * -.06)) rotate(0deg) scale(1.016)}100%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}}
+    @keyframes word-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes rule-in{from{transform:scaleX(.8);opacity:0}to{transform:scaleX(1);opacity:1}}
+    .details{display:grid;grid-template-columns:1fr 1.1fr;gap:24px;margin-top:30px}.size-test{display:flex;align-items:flex-end;gap:29px;min-height:135px;border-top:1px solid var(--line);padding:28px 0 0}.size{display:flex;align-items:center;flex-direction:column;gap:16px}.size .mark{width:var(--size);height:var(--size)}.size span{font:10px Mono,monospace;color:var(--muted)}
+    .color-test{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;min-height:135px}.tone{border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid #dce2ed30}.tone .mark{width:67px;height:67px;color:var(--fg)}
+    .footer{display:flex;justify-content:space-between;gap:30px;margin-top:46px;padding:24px 0 38px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.downloads{display:flex;flex-wrap:wrap;gap:18px;color:var(--ink)}
+    @media(max-width:900px){.wrap{width:calc(100% - 40px)}.hero-brand{min-height:270px;gap:10px;padding:35px 15px 55px}.hero-brand .mark{width:145px;height:145px}.hero-brand .word{font-size:122px;letter-spacing:-7px}.intro{gap:32px}.applications,.details{grid-template-columns:1fr}.site{min-height:260px}.film{min-height:0}.details{gap:32px}.size-test{justify-content:space-between}.color-test{min-height:125px}}
+    @media(max-width:520px){.wrap{width:calc(100% - 32px)}.mast{padding:23px 0 21px}.mast .eyebrow{font-size:9px}.mast a{font-size:10px}.hero{border-radius:15px}.hero-top{padding:22px}.hero-top .eyebrow{font-size:9px}.hero-brand{min-height:218px;gap:5px;padding:25px 10px 38px}.hero-brand .mark{width:95px;height:95px}.hero-brand .word{font-size:79px;letter-spacing:-4.5px}.hero-bottom{padding:0 22px 24px;display:block;font-size:11px}.hero-bottom span:last-child{display:block;margin-top:10px;font-size:10px}.intro{grid-template-columns:1fr;gap:19px;padding:32px 0}.intro h1{font-size:29px}.intro p{font-size:13px}.navlinks{gap:12px}.site-header{padding:0 17px}.site-body{padding:25px 23px}.site-body h3{font-size:31px}.film-brand{gap:9px}.film .mark{width:63px;height:63px}.film .word{font-size:57px;letter-spacing:-3px}.film-rule{margin-top:13px}.film p{font-size:11px;margin-top:13px}.film small{font-size:8px;margin-top:10px}.size-test{gap:14px}.footer{flex-direction:column;gap:17px}}
+    @media(prefers-reduced-motion:reduce){.film.animate .piece,.film.animate .word,.film.animate .film-rule{animation:none}}
+  </style>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden"><defs><symbol id="mark" viewBox="0 0 256 256" fill="currentColor">
+    <rect x="40" y="14" width="40" height="132" rx="10"/>
+    <path d="M106 14H154C187.137 14 214 40.863 214 74Q214 80 208 80H106Q96 80 96 70V24Q96 14 106 14Z"/>
+    <path d="M106 94H204Q213 94 210 104C200.5 130.5 175.5 146 147 146H106Q96 146 96 136V104Q96 94 106 94Z"/>
+    <rect x="40" y="162" width="40" height="80" rx="10"/>
+    <path d="M107 162H141Q146 162 150 166L211 232Q220 242 208 242H161Q155 242 151 238L100 174Q90 162 107 162Z"/>
+  </symbol></defs></svg>
+  <main class="wrap">
+    <header class="mast"><span class="eyebrow">Roster / Identity exploration 01</span><a href="README.md">Design &amp; assets ↗</a></header>
+    <section class="hero" data-theme="pearl" aria-label="Roster identity in different colors">
+      <div class="hero-top"><span class="eyebrow">The starting five, together.</span><div class="swatches" role="group" aria-label="Logo color preview"><button aria-label="Pearl background" aria-pressed="true" data-theme="pearl" style="--swatch:#f7f8fc"></button><button aria-label="Ink background" aria-pressed="false" data-theme="ink" style="--swatch:#151b29"></button><button aria-label="Cobalt background" aria-pressed="false" data-theme="cobalt" style="--swatch:#4963df"></button></div></div>
+      <div class="hero-brand"><img class="hero-lockup" src="roster-lockup-cobalt.svg" alt="Roster — five-part R and outlined wordmark"></div>
+      <div class="hero-bottom"><span>Five parts. One clear direction.</span><span>Local MCP tool router</span></div>
+    </section>
+    <section class="intro"><h1>A recognizable R.<br>A team within the shape.</h1><p>Five coordinated pieces become one confident initial. The open gaps suggest selection and routing, while the forward leg gives the mark its momentum. Rounded edges keep it approachable; a solid silhouette keeps it useful.</p></section>
+    <section class="applications" aria-label="Logo application tests">
+      <div><div class="label"><h2>01 / Website header</h2></div><div class="site"><div class="site-header"><div class="navbrand"><img src="roster-lockup-cobalt.svg" alt="Roster"></div><div class="navlinks"><span>How it works</span><span>Docs</span><span>GitHub ↗</span></div></div><div class="site-body"><h3>Your agent has 200 tools.<br><span>Only five get to start.</span></h3><p>A local tool router that brings your MCP servers and skills into one coordinated roster.</p><div class="mini-command"><span></span>One endpoint. Your starting five.</div></div></div></div>
+      <div><div class="label"><h2>02 / Launch identity</h2><button id="replay" type="button">Replay motion ↻</button></div><div class="film" id="film"><div class="film-brand"><svg class="mark" role="img" aria-label="Roster mark assembling from five parts" viewBox="0 0 256 256" fill="currentColor">
+        <rect class="piece" style="--delay:0s;--dx:-25px;--dy:0px;--rot:-3deg" x="40" y="14" width="40" height="132" rx="10"/>
+        <path class="piece" style="--delay:.055s;--dx:0px;--dy:-24px;--rot:3deg" d="M106 14H154C187.137 14 214 40.863 214 74Q214 80 208 80H106Q96 80 96 70V24Q96 14 106 14Z"/>
+        <path class="piece" style="--delay:.11s;--dx:24px;--dy:0px;--rot:3deg" d="M106 94H204Q213 94 210 104C200.5 130.5 175.5 146 147 146H106Q96 146 96 136V104Q96 94 106 94Z"/>
+        <rect class="piece" style="--delay:.165s;--dx:-12px;--dy:22px;--rot:-3deg" x="40" y="162" width="40" height="80" rx="10"/>
+        <path class="piece" style="--delay:.22s;--dx:22px;--dy:22px;--rot:3deg" d="M107 162H141Q146 162 150 166L211 232Q220 242 208 242H161Q155 242 151 238L100 174Q90 162 107 162Z"/>
+      </svg><span class="word">Roster</span></div><div class="film-rule"></div><p>Your local MCP tool router.</p><small>github.com/ManagementMO/roster</small></div></div>
+    </section>
+    <section class="details" aria-label="Small size and color tests">
+      <div><div class="label"><h2>03 / Small-size test</h2></div><div class="size-test"><div class="size" style="--size:16px"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span>16</span></div><div class="size" style="--size:24px"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span>24</span></div><div class="size" style="--size:32px"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span>32</span></div><div class="size" style="--size:48px"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span>48</span></div><div class="size" style="--size:64px"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span>64</span></div></div></div>
+      <div><div class="label"><h2>04 / One color, every surface</h2></div><div class="color-test"><div class="tone" style="--bg:#fff;--fg:#172033"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg></div><div class="tone" style="--bg:#151b29;--fg:#f7f8fc"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg></div><div class="tone" style="--bg:#4963df;--fg:#f7f8fc"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg></div></div></div>
+    </section>
+    <footer class="footer"><span>Roster · New identity concept · 2026</span><div class="downloads"><a href="roster-mark-cobalt.svg" download>Cobalt SVG ↓</a><a href="roster-mark-ink.svg" download>Ink SVG ↓</a><a href="roster-mark-pearl.svg" download>Pearl SVG ↓</a><a href="roster-favicon.svg" download>Favicon ↓</a></div></footer>
+  </main>
+  <script>
+    const hero=document.querySelector('.hero');
+    document.querySelectorAll('.swatches button').forEach(button=>button.addEventListener('click',()=>{hero.dataset.theme=button.dataset.theme;hero.querySelector('.hero-lockup').src=button.dataset.theme==='pearl'?'roster-lockup-cobalt.svg':'roster-lockup-pearl.svg';document.querySelectorAll('.swatches button').forEach(option=>option.setAttribute('aria-pressed',String(option===button)));}));
+    const film=document.getElementById('film');
+    function replay(){film.classList.remove('animate');requestAnimationFrame(()=>requestAnimationFrame(()=>film.classList.add('animate')));}
+    document.getElementById('replay').addEventListener('click',replay);
+    replay();
+  </script>
+</body>
+</html>

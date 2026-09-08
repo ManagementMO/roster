@@ -1,0 +1,65 @@
+{
+  "revision": "roster-r-01-slim-longer-legs",
+  "canonicalMarkSha256": "0befcdd08c120915b0add41bd2f6d3083d040bc7aa2805191353ebbb742a50ea",
+  "sourceHashes": {
+    "index.html": "c5cd451bdba2d01ea61b34c467cde0d78b19a86eded517eb1c2fc221754592d0",
+    "scripts/build.mjs": "a06171d72ade9ac988249e4b229502ccb55c49c703113bbf2e5d578fefe5ab67",
+    "compositions/frames/01-overload.html": "c9ac38505340801f079e56f5582346f0e78ff8c15cc9aecf71badf64c2bdabdd",
+    "compositions/frames/02-five.html": "732ada40bd25e2db76dfe68eb93306427b9e45f5290391be816ddbe9dbdb26d9",
+    "compositions/frames/03-draft.html": "713ca25012005b785a8cc1856e36e8f9cb94aeff850fb2c0c52fbe7556a74080",
+    "compositions/frames/04-call.html": "5c2d7c5f29f2a6e4dc986ebbb872c7dcb30c03543621afce9a3d712105365748",
+    "compositions/frames/05-learn.html": "ef58f8ed55d8efe28cab7f40a084be2cab8de09c9185cc13a323eb718c0f8f34",
+    "compositions/frames/06-identity.html": "7b89aff9821476d9c906a751513d4b69e59ea562c029eecaa10e3461cd9943f5"
+  },
+  "checks": {
+    "allStagesPass": true,
+    "report": "check-roster-r-final.json",
+    "seams": "seams-roster-r-final.log"
+  },
+  "deliveries": [
+    {
+      "path": "renders/roster-feed-120fps.mp4",
+      "bytes": 4585434,
+      "sha256": "d94b525180f451c4428fc16792f119bf95f0f82defdff0ff9b225046190e272d"
+    },
+    {
+      "path": "renders/roster-feed-60fps.mp4",
+      "bytes": 2114076,
+      "sha256": "25f96511050980daf5fbe8d71bcd2a6a6156a3ae16aa881c8cc33eb45b8062ba"
+    },
+    {
+      "path": "renders/roster-feed-preview.mp4",
+      "bytes": 1307105,
+      "sha256": "4a9283e9ff924251d15ebb8a4307a5ae0cfe2c4a9eef6304b195488de465aa4f"
+    },
+    {
+      "path": "renders/roster-feed-poster.png",
+      "bytes": 189681,
+      "sha256": "aad1b24de4d9c25e18f0df28298018f92c01a6572564682f41585a03d885dec8"
+    },
+    {
+      "path": "renders/roster-feed-contact-sheet.png",
+      "bytes": 382280,
+      "sha256": "849c3ef1ba2a1bced95b01e90f309c61f6478e4685ca2fff2b683347acfe5ded"
+    }
+  ],
+  "duration": 15,
+  "nativeFrames": 1800,
+  "shareFrames": 900,
+  "nativeMotionSample": {
+    "start": 0.12,
+    "duration": 0.2,
+    "frames": 23,
+    "distinctFrames": 23
+  },
+  "audioSourceSha256": "9acbefaf07de871f1cebc143c3b45eecc0f97cbc79bb348a6f8bb41cb67d1ab3",
+  "encodedAudioSha256": "d202924c54b501fa7fdbfebc7f39cd19e4fe7b58c525db2b7d1f98d255cbe1e9",
+  "audioUnchanged": true,
+  "openingAndDraftSourcePreserved": true,
+  "closingLogoSettledBy": 12.6725,
+  "completeClosingHoldFrom": 12.8975,
+  "holdSeconds": 2.1025,
+  "blackSpans": [],
+  "silenceSpans": [],
+  "localOnly": true
+}

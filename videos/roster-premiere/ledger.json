@@ -1,0 +1,10 @@
+{
+  "fps": 60,
+  "seams": [
+    {"id":"overload-to-five","cut":3.75,"technique":"cut-the-curve LEFT","exit":{"selector":"#seam-01","axis":"x","dir":-1},"entry":{"selector":"#seam-02","axis":"x","dir":-1}},
+    {"id":"five-to-draft","cut":7.5,"technique":"cut-the-curve LEFT","exit":{"selector":"#seam-02","axis":"x","dir":-1},"entry":{"selector":"#seam-03","axis":"x","dir":-1}},
+    {"id":"draft-to-call","cut":15,"technique":"cut-the-curve LEFT","exit":{"selector":"#seam-03","axis":"x","dir":-1},"entry":{"selector":"#seam-04","axis":"x","dir":-1}},
+    {"id":"call-to-learn","cut":20.625,"technique":"cut-the-curve LEFT","exit":{"selector":"#seam-04","axis":"x","dir":-1},"entry":{"selector":"#seam-05","axis":"x","dir":-1}},
+    {"id":"learn-to-identity","cut":24.375,"technique":"inverse zoom-through","exit":{"selector":"#seam-05","axis":"z","dir":-1},"entry":{"selector":"#seam-06","axis":"z","dir":-1,"scanRoot":"#seam-06"},"blur":10}
+  ]
+}
