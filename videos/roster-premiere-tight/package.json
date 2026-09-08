@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "audio": "uv run --with numpy==2.5.3 --with scipy==1.18.1 python scripts/compose-pop-rock.py && node scripts/mix-audio.mjs",
+    "audio": "uv run --with numpy==2.5.3 --with scipy==1.18.1 python scripts/mix-pocket-groove.py",
+    "audio:refresh": "python3 scripts/refresh-audio-deliveries.py",
     "dev": "npx --yes hyperframes@0.8.31 preview",
     "check": "npx --yes hyperframes@0.8.31 check",
     "render": "node scripts/render.mjs",

@@ -1,5 +1,13 @@
 # Asset sources for the 15-second revision
 
+## Current soundtrack — Pocket Groove, September 8
+
+The current bed is HeyGen music catalog item `42cc02db157645af90a944d8bd53e77a`, retrieved through the authenticated `heygen audio sounds list` catalog. The provider describes an upbeat jazzy instrumental with Rhodes keys, upright bass, brushed drums and muted horns. No artist credit was surfaced in its response. “Pocket Groove” is the working title for our edit, not an authorship claim over that recording. A 7.704–23.704s excerpt is frozen losslessly in `assets/audio/pocket-groove-source.flac`, with its digest and treatment in `verification/pocket-groove-mix.json`. The full retrieved recording remains in the local `.media` cache. Expiring signed download URLs and credentials are not persisted in public source notes.
+
+The 37 picture-timed effects are original synthesis in `scripts/mix-pocket-groove.py`. The master and listening copies are `pocket-groove-final.wav` and `roster-pocket-groove.m4a`; the widescreen and feed editions use identical copies of these audio assets. All references to Full Send below describe the preceding audio revision.
+
+## Artwork and earlier audio provenance
+
 - **Roster mark:** the owner-approved slim five-part R, with extended lower legs, copied from `../../assets/brand/roster-r-01/roster-mark-pearl.svg`. The closing animation uses identical native paths with scene-prefixed IDs. Its standalone outlined wordmark is extracted from the pearl lockup without changing letter geometry. The kit documents image-generation exploration and the separately refined vector source. The legacy raster remains archived; no active scene uses it.
 - **GitHub, Linear and Playwright marks:** existing SVG assets with provenance in the original production. Playwright retains the complete original red/green artwork. `linear-color.svg` preserves the existing Simple Icons geometry with Linear's `#5E6AD2` brand fill, also recorded in the earlier production's design tokens. `github-light.svg` preserves the GitHub geometry with an ivory fill for dark surfaces. No color filter or mask is applied during rendering. These identify illustrative capabilities; they do not imply endorsement.
 - **Figma mark:** the complete multicolor SVG resolved from [SVGL's Figma asset](https://svgl.app/library/figma.svg), frozen as `.media/images/logo_001.svg` and copied unchanged to `assets/brands/figma.svg`. Its provider and source URL are recorded in `.media/manifest.jsonl`. It replaces one repeated GitHub tile in the opening collection.

@@ -1,6 +1,10 @@
 # Roster launch film — final delivery review
 
-## Current identity adoption — September 8, 2026
+## Current audio revision — Pocket Groove, September 8, 2026
+
+The current Studio soundtrack and all widescreen/feed MP4s use `assets/audio/pocket-groove-final.wav`: an upbeat jazzy lo-fi catalog excerpt, fitted to the 128 BPM edit, with 37 original picture-timed effects. AAC output measures −14.03 LUFS and −2.00 dBTP, with no unexpected silence. All six exported video-stream hashes match their approved pre-change backups exactly; durations remain 15 seconds and native/share frame rates remain 120/60 fps. The current evidence is `verification/pocket-groove-mix.json` and `verification/pocket-groove-delivery.json` in the appropriate edition. Older delivery/identity reports below describe the preceding soundtrack and file hashes. The owner accepted the audio revision on September 8, 2026.
+
+## Identity adoption baseline — September 8, 2026
 
 The current exports use the owner-approved slim five-part R with longer lower legs. Stems are 40 units wide, the lower stem is 80 units long, and the diagonal extends by the same 20 units. The symbol is centered in its original 256×256 grid. The exact outlined “Roster” wordmark is preserved. All Roster marks in the film are pearl on navy.
 

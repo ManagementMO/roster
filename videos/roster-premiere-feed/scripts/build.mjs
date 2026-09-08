@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 // the widescreen film. Every layout below is composed for 1080 x 1350.
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const wide = path.resolve(project, "../roster-premiere-tight");
+const soundtrack = JSON.parse(fs.readFileSync(path.join(wide, "audio_meta.json"), "utf8")).bgm.path;
 const write = (name, data) => {
   const dest = path.join(project, name);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -23,7 +24,8 @@ for (const file of fs.readdirSync(path.join(wide, "assets"))) {
   if (/license|ofl/i.test(file) && fs.statSync(path.join(wide, "assets", file)).isFile()) copy(`assets/${file}`);
 }
 fs.cpSync(path.join(wide, "assets/brands"), path.join(project, "assets/brands"), { recursive: true });
-for (const name of ["full-send-final.wav", "full-send-score.wav", "five-in-motion.m4a", "five-in-motion-full-send.m4a"]) copy(`assets/audio/${name}`);
+for (const name of ["full-send-final.wav", "full-send-score.wav", "five-in-motion.m4a", "five-in-motion-full-send.m4a", "pocket-groove-final.wav", "roster-pocket-groove.m4a"]) copy(`assets/audio/${name}`);
+copy(soundtrack);
 for (const name of ["hyperframes.json", "ledger.json", "index.motion.json", "audio_meta.json", "scripts/seam-stamp.mjs", "scripts/verify-seams.mjs"]) copy(name);
 for (const name of ["render", "deliver"]) {
   const source = fs.readFileSync(path.join(wide, `scripts/${name}.mjs`), "utf8")
@@ -242,7 +244,7 @@ const html = `<!doctype html>
         <div id="handoff-name">Playwright</div>
       </div>
     </div>
-    <audio id="premiere-score" class="clip" src="assets/audio/full-send-final.wav" data-start="0" data-duration="15" data-track-index="10" data-volume="1"></audio>
+    <audio id="premiere-score" class="clip" src="${soundtrack}" data-start="0" data-duration="15" data-track-index="10" data-volume="1"></audio>
   </div>
   <script>
     const tl = gsap.timeline({ paused:true });

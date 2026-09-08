@@ -29,6 +29,8 @@ videos/**/.media/
 videos/**/snapshots/
 videos/**/renders/
 videos/**/verification/before-*/
+# Rebuildable unmastered sum; editable stems and delivered masters are tracked.
+videos/**/assets/audio/pocket-groove-stems/mix.wav
 assets/brand/**/verification/before-*/
 assets/brand/**/verification/website-first-browser-run/
 

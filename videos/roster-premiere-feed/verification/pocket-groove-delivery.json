@@ -1,0 +1,58 @@
+{
+  "soundtrack": "assets/audio/pocket-groove-final.wav",
+  "outputs": [
+    {
+      "file": "renders/roster-feed-120fps.mp4",
+      "pictureUnchanged": true,
+      "videoStreamHash": "0,v,SHA256=9870687ad3d4a02273d38a152d120c4ddaf34fef9e80300577403990d55ce3b7",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "120/1",
+      "dimensions": [
+        1080,
+        1350
+      ],
+      "sha256": "5ab9b1b92dca85f4926c4a4a1c32067347ed76ba151d3f16ef6e748529720eaf"
+    },
+    {
+      "file": "renders/roster-feed-60fps.mp4",
+      "pictureUnchanged": true,
+      "videoStreamHash": "0,v,SHA256=4ad833978756c6fb60e425e172d3192494465f356f91b3eb0f68dfff109d6f0c",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        1080,
+        1350
+      ],
+      "sha256": "0e9cdb4766f5dfc32515cff3c847aa1c38a5db34bf9e5f3700f4ae40c7fdf049"
+    },
+    {
+      "file": "renders/roster-feed-preview.mp4",
+      "pictureUnchanged": true,
+      "videoStreamHash": "0,v,SHA256=cb5893da5925cc96dc28907abff79474d908c28c025aed06e3607e76e8c91ae9",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        864,
+        1080
+      ],
+      "sha256": "df77e2bd33a143766aafcc648605fe838fbc60b331df4dd48bfd29659b17a8e4"
+    }
+  ],
+  "encodedAudioMeasurement": {
+    "input_i": "-14.03",
+    "input_tp": "-2.00",
+    "input_lra": "0.70",
+    "input_thresh": "-24.07",
+    "output_i": "-13.96",
+    "output_tp": "-2.00",
+    "output_lra": "0.60",
+    "output_thresh": "-23.98",
+    "normalization_type": "dynamic",
+    "target_offset": "-0.04"
+  },
+  "silenceStarts": [],
+  "method": "Replace audio with FFmpeg stream-copy picture; compare encoded video hashes with the approved backups."
+}

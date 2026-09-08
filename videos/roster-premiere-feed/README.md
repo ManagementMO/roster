@@ -1,6 +1,8 @@
 # Roster — feed edition
 
-A dedicated 15-second 4:5 launch film, composed at 1080×1350. It shares the final widescreen film's artwork, pop-rock score, pearl-and-cobalt palette and core story. Headlines, cards and product panels are rearranged for phone viewing.
+A dedicated 15-second 4:5 launch film, composed at 1080×1350. It shares the final widescreen film's artwork, Pocket Groove jazzy lo-fi soundtrack, pearl-and-cobalt palette and core story. Headlines, cards and product panels are rearranged for phone viewing.
+
+The latest audio pass replaces the soundtrack in all three feed exports without changing their encoded picture. The shared 48 kHz stereo mix measures −14.03 LUFS and −2.00 dBTP after encoding. See `verification/pocket-groove-delivery.json` and `../roster-premiere-tight/MUSIC.md`. Rebuild and refresh audio from the widescreen project with `npm run audio` and `npm run audio:refresh`.
 
 - `renders/roster-feed-60fps.mp4` — 1080×1350, 60 fps; the main feed copy.
 - `renders/roster-feed-120fps.mp4` — native 120 fps master.

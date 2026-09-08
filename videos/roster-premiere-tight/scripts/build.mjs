@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const soundtrack = JSON.parse(fs.readFileSync(path.join(project, "audio_meta.json"), "utf8")).bgm.path;
 const storyboard = fs.readFileSync(path.join(project, "STORYBOARD.md"), "utf8");
 const sections = storyboard.split(/^## Frame /m).slice(1);
 let start = 0;
@@ -71,7 +72,7 @@ ${mounts}
         <div id="handoff-name">Playwright</div>
       </div>
     </div>
-    <audio id="premiere-score" class="clip" src="assets/audio/full-send-final.wav" data-start="0" data-duration="15" data-track-index="10" data-volume="1"></audio>
+    <audio id="premiere-score" class="clip" src="${soundtrack}" data-start="0" data-duration="15" data-track-index="10" data-volume="1"></audio>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });

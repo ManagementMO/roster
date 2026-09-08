@@ -1,4 +1,27 @@
-# Five in Motion — Full Send
+# Roster — Pocket Groove
+
+The current soundtrack is a bright, relaxed jazzy lo-fi edit: Rhodes keys, upright bass, light brushed percussion and muted horn color. It uses a selected HeyGen catalog recording plus 37 original product sound cues. It replaces the previous pop-rock mix in Studio and all six widescreen/feed exports.
+
+The source is catalog item `42cc02db157645af90a944d8bd53e77a`, described by the provider as an upbeat instrumental with Rhodes, bass, brushed drums and muted horns. Its musical pulse measures approximately 125 BPM. A frozen 16-second excerpt starts at source time 7.704s; a pitch-preserving 1.024× tempo adjustment fits the established 128 BPM picture grid. The active groove starts immediately, and the closing music releases over the last 0.82s. “Pocket Groove” names this Roster edit, not an original composition of the underlying music.
+
+Sound design includes small opening-card pops, five softer capability contacts, short transition swishes, a distinct Playwright landing at 8.20s, the request at 8.35s, a two-part snapshot response at 9.05s, local outcome ticks and a rounded logo accent at 12.1875s. Brief 1–1.8 dB music dips make room for key effects. Effects are written in `scripts/mix-pocket-groove.py`; they are not a generic overlay loop.
+
+- Current 24-bit, 48 kHz stereo master: `assets/audio/pocket-groove-final.wav`.
+- Listening copy: `assets/audio/roster-pocket-groove.m4a`.
+- Editable float stems: `assets/audio/pocket-groove-stems/music.wav` and `design.wav`; `mix.wav` is their unmastered sum, regenerated locally and excluded from Git.
+- Frozen source excerpt: `assets/audio/pocket-groove-source.flac`.
+- Source metadata, digest, tempo treatment, event times and mastering settings: `verification/pocket-groove-mix.json`.
+- Export hashes and encoded-audio checks: `verification/pocket-groove-delivery.json` in both editions.
+
+The encoded outputs measure −14.03 LUFS integrated and −2.00 dBTP. No unexpected silence was detected. All six exports preserve the approved encoded video stream exactly; only the soundtrack was replaced. These checks establish timing, media integrity and levels. The owner accepted this revision on September 8, 2026.
+
+Rebuild the current music with `npm run audio`. For an audio-only revision with existing picture exports, run `npm run audio:refresh`; it copies the new master to the feed project and remuxes all formats without re-encoding video. Future full renders obtain the active soundtrack path from `audio_meta.json`.
+
+The prior explicitly named `full-send-final.wav`, `full-send-score.wav` and `five-in-motion-full-send.m4a` remain available. Generic `premiere-score.wav` and `five-in-motion.m4a` follow the current edit. Prior exports and production files are preserved locally under `verification/before-pocket-groove/` in each project.
+
+## Previous soundtrack — Five in Motion: Full Send
+
+The following is the production history of the preceding pop-rock score. Its references to the “current” master or final polish describe that earlier revision.
 
 An original 15-second pop-rock composition and arrangement for the refined Roster film. 128 BPM, 4/4, eight bars, C major. The film is exactly eight bars long at this tempo. This revision responds to the request for more exciting rock-and-roll energy and pop character.
 

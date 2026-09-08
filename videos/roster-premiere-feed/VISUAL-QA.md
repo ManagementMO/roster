@@ -1,6 +1,10 @@
 # Roster feed edition — final delivery review
 
-## Current identity adoption — September 8, 2026
+## Current audio revision — Pocket Groove, September 8, 2026
+
+All three feed exports now use the same Pocket Groove master as the widescreen film. Their encoded video streams are unchanged from the approved backups. The new 48 kHz stereo AAC track measures −14.03 LUFS and −2.00 dBTP with no unexpected gaps. `verification/pocket-groove-delivery.json` records current file/stream hashes, dimensions and 15-second durations. Source/music details are in `../roster-premiere-tight/MUSIC.md`. The identity and delivery reports below are historical evidence for the preceding audio mix. The owner accepted the new audio revision on September 8, 2026.
+
+## Identity adoption baseline — September 8, 2026
 
 The current exports use the owner-approved slim five-part R with longer lower legs. Stems are 40 units wide, the lower stem is 80 units long, and the diagonal extends by the same 20 units. The symbol is centered in its original 256×256 grid. The exact outlined “Roster” wordmark is preserved. All Roster marks in the film are pearl on navy.
 

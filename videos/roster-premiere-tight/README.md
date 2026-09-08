@@ -1,6 +1,8 @@
 # Roster — The starting five, distilled
 
-A 15-second refinement of the first launch film: native 120 fps motion, modern two-tone vector icons, a pearl-and-cobalt palette with navy contrast, natural brand colors and vibrant illustrations, and an original pop-rock arrangement composed for the cut. The original 30-second production remains in `../roster-premiere/`.
+A 15-second refinement of the first launch film: native 120 fps motion, modern two-tone vector icons, a pearl-and-cobalt palette with navy contrast, natural brand colors and vibrant illustrations, and a bright jazzy lo-fi groove with original picture-timed sound effects. The original 30-second production remains in `../roster-premiere/`.
+
+The current audio revision, **Pocket Groove**, replaces Full Send in Studio and all widescreen/feed exports. Rhodes, bass and light percussion supply a relaxed but active pulse; 37 small contacts, swishes and response sounds follow the product motion. The mix measures −14.03 LUFS and −2.00 dBTP after AAC encoding. Encoded video hashes are unchanged. See `MUSIC.md` and `verification/pocket-groove-delivery.json`; the historical notes below describe the earlier visual and pop-rock revisions.
 
 ## Watch and listen
 
@@ -9,8 +11,8 @@ A 15-second refinement of the first launch film: native 120 fps motion, modern t
 - `renders/roster-tight-preview.mp4` — smaller 1280×720 preview, also 60 fps.
 - `renders/roster-tight-poster.png` — final identity, extracted from the encoded master.
 - `renders/roster-tight-contact-sheet.png` — six frames from the encoded master.
-- `assets/audio/five-in-motion-full-send.m4a` — the revised original 15-second music and sound-design mix on its own; `five-in-motion.m4a` is the same current mix for existing links.
-- `assets/audio/full-send-final.wav` — final 24-bit 48 kHz stereo audio master, including the Playwright landing contact. `full-send-score.wav` remains an alias.
+- `assets/audio/roster-pocket-groove.m4a` — current 15-second music and sound-design mix; `five-in-motion.m4a` is the same current mix for existing links.
+- `assets/audio/pocket-groove-final.wav` — current 24-bit 48 kHz stereo master. The explicitly named Full Send assets preserve the previous score.
 - `../roster-premiere-feed/renders/roster-feed-60fps.mp4` — the separately composed 1080×1350 4:5 version for phone feeds.
 
 The 120 fps file is rendered at that rate without frame interpolation. A sampled passage of active motion contains 23 distinct adjacent frames out of 23; intentional reading holds remain still. Playback smoothness depends on the player's and display's supported refresh rate. The 60 fps copy preserves the exact same 15-second edit.
