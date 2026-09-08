@@ -154,6 +154,14 @@ ffmpeg(["-i", str(master), "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststa
     "voices": [], "sfx": [], "duration": 15,
     "note": "Pocket Groove: selected jazzy lo-fi catalog bed, adjusted from approximately 125 to 128 BPM, with original picture-timed sound effects baked into a 48 kHz stereo master."
 }, indent=2) + "\n")
+# Keep approval attached to the accepted bytes, even after an identical rebuild.
+# A changed mix cannot inherit approval from an earlier soundtrack.
+approval_path = ROOT / "verification/pocket-groove-approval.json"
+approval = json.loads(approval_path.read_text()) if approval_path.exists() else {}
+master_hash = hashlib.sha256(master.read_bytes()).hexdigest()
+listening_hash = hashlib.sha256((OUT / "roster-pocket-groove.m4a").read_bytes()).hexdigest()
+is_approved = (approval.get("masterSha256") == master_hash
+               and approval.get("listeningCopySha256") == listening_hash)
 report = {
     "title": "Roster — Pocket Groove", "duration": DURATION, "sampleRate": SR,
     "music": {"provider": "HeyGen audio catalog", "id": "42cc02db157645af90a944d8bd53e77a",
@@ -166,7 +174,10 @@ report = {
                     "events": sorted(events, key=lambda item: item["seconds"])},
     "dependencies": {"numpy": np.__version__, "scipy": scipy.__version__},
     "normalization": {"targetLufs": -14, "targetTruePeakDbtp": -2, "before": first, "after": final},
-    "listeningApproval": "Pending user audition in Studio; technical checks do not establish subjective preference."
+    "masterSha256": master_hash,
+    "listeningCopySha256": listening_hash,
+    "listeningApproval": (f"The owner accepted the Pocket Groove revision on {approval['approvedOn']}."
+                          if is_approved else "Pending user audition in Studio; this mix does not match the approved audio bytes.")
 }
 (ROOT / "verification/pocket-groove-mix.json").write_text(json.dumps(report, indent=2) + "\n")
 print(json.dumps({"master": str(master), "events": len(events), "loudness": final}, indent=2))

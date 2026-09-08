@@ -12,12 +12,20 @@ master = ROOT / meta["bgm"]["path"]
 assert master.is_file(), "Build the soundtrack first with npm run audio."
 
 
-def run(args):
-    return subprocess.run(args, capture_output=True, check=True).stdout.decode()
+def ffmpeg(args):
+    # Fixed executable and separate argv entries; no shell interprets paths or flags.
+    return subprocess.run(["ffmpeg", *args], shell=False, capture_output=True, check=True).stdout.decode()
+
+
+def probe_media(file):
+    output = subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format",
+                             "-of", "json", str(file)], shell=False,
+                            capture_output=True, check=True).stdout
+    return json.loads(output)
 
 
 def stream_hash(file, kind):
-    return run(["ffmpeg", "-v", "error", "-i", str(file), "-map", f"0:{kind}:0",
+    return ffmpeg(["-v", "error", "-i", str(file), "-map", f"0:{kind}:0",
                 "-c", "copy", "-f", "streamhash", "-hash", "sha256", "-"]).strip()
 
 
@@ -39,18 +47,21 @@ for folder, prefix in [(ROOT, "roster-tight"), (ROOT.parent / "roster-premiere-f
             shutil.copy2(file, backup)
         before_video, before_audio = stream_hash(backup, "v"), stream_hash(backup, "a")
         temporary = file.with_name(file.stem + ".audio-refresh.mp4")
-        run(["ffmpeg", "-v", "error", "-y", "-i", str(file), "-i", str(master),
-             "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac",
-             "-b:a", "256k", "-t", "15", "-movflags", "+faststart", str(temporary)])
-        after_video, after_audio = stream_hash(temporary, "v"), stream_hash(temporary, "a")
-        assert before_video == after_video, "Encoded picture changed during audio refresh."
-        # A fresh checkout may already contain this soundtrack; refreshing it is valid.
-        probe = json.loads(run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(temporary)]))
-        video = next(stream for stream in probe["streams"] if stream["codec_type"] == "video")
-        sound = next(stream for stream in probe["streams"] if stream["codec_type"] == "audio")
-        assert abs(float(probe["format"]["duration"]) - 15) < .03
-        assert sound["sample_rate"] == "48000" and sound["channels"] == 2
-        temporary.replace(file)
+        try:
+            ffmpeg(["-v", "error", "-y", "-i", str(file), "-i", str(master),
+                    "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac",
+                    "-b:a", "256k", "-t", "15", "-movflags", "+faststart", str(temporary)])
+            after_video, after_audio = stream_hash(temporary, "v"), stream_hash(temporary, "a")
+            assert before_video == after_video, "Encoded picture changed during audio refresh."
+            # A fresh checkout may already contain this soundtrack; refreshing it is valid.
+            probe = probe_media(temporary)
+            video = next(stream for stream in probe["streams"] if stream["codec_type"] == "video")
+            sound = next(stream for stream in probe["streams"] if stream["codec_type"] == "audio")
+            assert abs(float(probe["format"]["duration"]) - 15) < .03
+            assert sound["sample_rate"] == "48000" and sound["channels"] == 2
+            temporary.replace(file)
+        finally:
+            temporary.unlink(missing_ok=True)
         records.append({"file": str(file.relative_to(folder)), "pictureUnchanged": True,
                         "audioChangedFromBackup": before_audio != after_audio,
                         "videoStreamHash": after_video, "audioStreamHash": after_audio,

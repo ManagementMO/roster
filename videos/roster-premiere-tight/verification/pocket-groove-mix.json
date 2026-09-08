@@ -277,5 +277,7 @@
       "target_offset": "-0.01"
     }
   },
+  "masterSha256": "4153daa51f71e0d32346a79a5c1298c1ffd6796c388702d68f2e67813eeeea3b",
+  "listeningCopySha256": "296da6b5f027932e81b0af8977840f107cc9a022c820e2b84ed7a689a43f6c27",
   "listeningApproval": "The owner accepted the Pocket Groove revision on 2026-09-08."
 }

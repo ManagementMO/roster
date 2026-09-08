@@ -15,6 +15,8 @@ Sound design includes small opening-card pops, five softer capability contacts, 
 
 The encoded outputs measure −14.03 LUFS integrated and −2.00 dBTP. No unexpected silence was detected. All six exports preserve the approved encoded video stream exactly; only the soundtrack was replaced. These checks establish timing, media integrity and levels. The owner accepted this revision on September 8, 2026.
 
+`verification/pocket-groove-approval.json` records that acceptance against the exact master and listening-copy SHA-256 hashes. An identical rebuild retains the accepted status in `pocket-groove-mix.json`; any changed audio is marked pending until it is auditioned and accepted separately.
+
 Rebuild the current music with `npm run audio`. For an audio-only revision with existing picture exports, run `npm run audio:refresh`; it copies the new master to the feed project and remuxes all formats without re-encoding video. Future full renders obtain the active soundtrack path from `audio_meta.json`.
 
 The prior explicitly named `full-send-final.wav`, `full-send-score.wav` and `five-in-motion-full-send.m4a` remain available. Generic `premiere-score.wav` and `five-in-motion.m4a` follow the current edit. Prior exports and production files are preserved locally under `verification/before-pocket-groove/` in each project.
