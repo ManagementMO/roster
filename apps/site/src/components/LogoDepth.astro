@@ -2,26 +2,40 @@
 import Icon from "./Icon.astro";
 import CapabilityIcon from "./CapabilityIcon.astro";
 const vendors = [
-  { name: "Figma", src: "/brands/figma.svg", repeat: true },
-  { name: "Slack", src: "/brands/slack.svg", repeat: true },
-  { name: "GitLab", src: "/hero-vendors/gitlab.svg", repeat: false },
-  { name: "Atlassian", src: "/hero-vendors/atlassian.svg", repeat: false },
-  { name: "MongoDB", src: "/hero-vendors/mongodb.svg", repeat: false },
-  { name: "Playwright", src: "/brands/playwright.svg", repeat: true },
-  { name: "Supabase", src: "/brands/supabase.svg", repeat: true },
-  { name: "Brave", src: "/brands/brave.svg", repeat: true },
-  { name: "PostgreSQL", src: "/brands/postgresql.svg", repeat: true },
-  { name: "Linear", src: "/brands/linear-color.svg", repeat: true },
-  { name: "GitHub", src: "/brands/github.svg", repeat: true },
-  { name: "Cloudflare", src: "/hero-vendors/cloudflare.svg", repeat: true },
-  { name: "Discord", src: "/hero-vendors/discord.svg", repeat: true },
-  { name: "Stripe", src: "/hero-vendors/stripe.svg", repeat: true },
+  { name: "Figma", src: "/brands/figma.svg" },
+  { name: "Slack", src: "/brands/slack.svg" },
+  { name: "GitLab", src: "/hero-vendors/gitlab.svg" },
+  { name: "Atlassian", src: "/hero-vendors/atlassian.svg" },
+  { name: "MongoDB", src: "/hero-vendors/mongodb.svg" },
+  { name: "Playwright", src: "/brands/playwright.svg" },
+  { name: "Supabase", src: "/brands/supabase.svg" },
+  { name: "Brave", src: "/brands/brave.svg" },
+  { name: "PostgreSQL", src: "/brands/postgresql.svg" },
+  { name: "Linear", src: "/brands/linear-color.svg" },
+  { name: "GitHub", src: "/brands/github.svg" },
+  { name: "Cloudflare", src: "/hero-vendors/cloudflare.svg" },
+  { name: "Discord", src: "/hero-vendors/discord.svg" },
+  { name: "Stripe", src: "/hero-vendors/stripe.svg" },
+  { name: "Asana", src: "/hero-vendors/asana.svg" },
+  { name: "Docker", src: "/hero-vendors/docker.svg" },
+  { name: "Neon", src: "/hero-vendors/neon.svg" },
+  { name: "Netlify", src: "/hero-vendors/netlify.svg" },
+  { name: "PayPal", src: "/hero-vendors/paypal.svg" },
+  { name: "Shopify", src: "/hero-vendors/shopify.svg" },
+  { name: "Todoist", src: "/hero-vendors/todoist.svg" },
+  { name: "Sentry", src: "/hero-vendors/sentry.svg" },
+  { name: "ClickUp", src: "/hero-vendors/clickup.svg" },
+  { name: "Redis", src: "/hero-vendors/redis.svg" },
+  { name: "Svelte", src: "/hero-vendors/svelte.svg" },
 ];
 const slopes = [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54];
-const placements = [
-  ...vendors.map((vendor, index) => ({ vendor, index, layer: 0 })),
-  ...vendors.flatMap((vendor, index) => vendor.repeat ? [{ vendor, index, layer: 1 }] : []),
+const laneCount = slopes.length * 2;
+const slots = [
+  ...Array.from({ length: laneCount }, (_, index) => ({ index, layer: 0 })),
+  ...[0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((index) => ({ index, layer: 1 })),
 ];
+if (slots.length !== vendors.length || new Set(vendors.map(({ name }) => name)).size !== vendors.length || new Set(vendors.map(({ src }) => src)).size !== vendors.length) throw new Error("Hero brands must be unique and match the available depth slots.");
+const placements = vendors.map((vendor, slot) => ({ vendor, ...slots[slot]! }));
 ---
 <logo-depth class="logo-depth" data-motion="paused">
   <div class="logo-depth-scene" aria-hidden="true">
@@ -29,7 +43,7 @@ const placements = [
       const direction = index % 2 === 0 ? -1 : 1;
       const slope = slopes[Math.floor(index / 2)]!;
       const duration = 20 + (index % 3) * 2;
-      const delay = -(((index * 2 + 0.5) % vendors.length) / vendors.length + layer / 2) * duration;
+      const delay = -(((index * 2 + 0.5) % laneCount) / laneCount + layer / 2) * duration;
       return <span class="depth-logo" data-vendor={vendor.name} style={`--desktop-x: calc(min(43vw, 620px) * ${direction}); --desktop-y: calc(min(43vw, 620px) * ${slope}); --desktop-rest-depth: ${layer === 0 ? -400 : 0}px; --logo-rotation: ${(index * 7) % 13 - 6}deg; --logo-delay: ${delay}s; --logo-duration: ${duration}s; --mobile-x: ${(index % 3 - 1) * 116}px; --mobile-y: ${index < 3 ? -42 : 42}px`}>
         {vendor.name === "GitHub" ? <CapabilityIcon name="github" size={44} /> : <img src={vendor.src} width="44" height="44" alt="" decoding="async" />}
       </span>;
