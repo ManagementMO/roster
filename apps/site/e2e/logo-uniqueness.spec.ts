@@ -9,7 +9,7 @@ for (const theme of ["light", "dark"] as const) {
       await expect(stage).toHaveAttribute("data-motion", motion === "reduce" ? "still" : "running");
       const logos = stage.locator(".depth-logo");
       const brands = await logos.evaluateAll((elements) => elements.map((element) => element.getAttribute("data-vendor")));
-      expect(brands.length).toBeGreaterThanOrEqual(25);
+      expect(brands.length).toBe(25);
       expect(new Set(brands).size).toBe(brands.length);
       const visibleVariants = await logos.evaluateAll((elements) => elements.map((element) => [...element.querySelectorAll("img")].filter((image) => getComputedStyle(image).display !== "none").length));
       expect(visibleVariants.every((count) => count === 1)).toBe(true);
