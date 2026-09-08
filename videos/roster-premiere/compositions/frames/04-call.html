@@ -1,0 +1,110 @@
+<template>
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("assets/SpaceGrotesk-Variable.woff2") format("woff2"); font-weight: 300 700; font-style: normal; }
+    @font-face { font-family: "Manrope"; src: url("assets/Manrope-Variable.woff2") format("woff2"); font-weight: 200 800; font-style: normal; }
+    @font-face { font-family: "JetBrains Mono"; src: url("assets/JetBrainsMono-Variable.woff2") format("woff2"); font-weight: 100 800; font-style: normal; }
+    #root, #\30 4-call { position: relative; width: 1920px; height: 1080px; overflow: hidden; container-type: size; color: #F4F1E9; font-family: "Manrope"; }
+    #s04-ground { position: absolute; inset: 0; width: 1920px; height: 1080px; background: #111210; }
+    #s04-stage { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    #s04-head-call, #s04-head-result { position: absolute; left: 108px; top: 104px; width: 1700px; margin: 0; font-family: "Space Grotesk"; font-size: 178px; font-weight: 700; line-height: 0.99; letter-spacing: -8px; transform-origin: 0 50%; white-space: nowrap; }
+    #s04-illustrative { position: absolute; left: 114px; top: 310px; font-size: 30px; font-weight: 600; line-height: 1.3; letter-spacing: 2.6px; color: #B0B0B0; }
+    #s04-request-rail-left, #s04-request-rail-right { position: absolute; top: 526px; height: 8px; background: rgba(244, 241, 233, 0.28); transform-origin: 0 50%; }
+    #s04-request-rail-left { left: 322px; width: 464px; }
+    #s04-request-rail-right { left: 1120px; width: 352px; }
+    #s04-return-rail { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+    #s04-agent { position: absolute; left: 108px; top: 418px; width: 224px; height: 224px; display: flex; align-items: center; justify-content: center; border-radius: 24px; background: #F4F1E9; color: #111210; font-family: "Space Grotesk"; font-size: 47px; font-weight: 700; letter-spacing: -1.6px; z-index: 3; }
+    #s04-roster { position: absolute; left: 746px; top: 412px; width: 426px; height: 236px; border: 2px solid rgba(244, 241, 233, 0.28); border-radius: 28px; box-sizing: border-box; background: #111210; z-index: 3; }
+    #s04-logo { position: absolute; left: 38px; top: 32px; width: 128px; height: 169px; object-fit: contain; }
+    #s04-roster-name { position: absolute; left: 192px; top: 85px; font-family: "Space Grotesk"; font-size: 62px; font-weight: 700; letter-spacing: -3px; line-height: 1; }
+    #s04-playwright { position: absolute; left: 1434px; top: 412px; width: 378px; height: 236px; border-radius: 28px; background: #FF6748; color: #111210; z-index: 3; }
+    #s04-playwright-logo { position: absolute; left: 25px; top: 58px; width: 111px; height: 111px; object-fit: contain; }
+    #s04-playwright-name { position: absolute; left: 143px; top: 94px; font-family: "Space Grotesk"; font-size: 43px; font-weight: 700; line-height: 1; letter-spacing: -1.7px; }
+    #s04-request-packet { position: absolute; left: 282px; top: 509px; width: 142px; height: 42px; border-radius: 21px; background: #F4F1E9; z-index: 2; }
+    #s04-return-packet { position: absolute; left: 1542px; top: 604px; width: 142px; height: 42px; border-radius: 21px; background: #C7E8D6; z-index: 2; }
+    #s04-record-backing { position: absolute; left: 118px; top: 702px; width: 647px; height: 98px; border-radius: 18px; border: 2px solid rgba(199, 232, 214, 0.4); box-sizing: border-box; }
+    #s04-result-card { position: absolute; left: 450px; top: 692px; width: 780px; height: 118px; display: flex; align-items: center; gap: 26px; padding: 0 38px; box-sizing: border-box; border-radius: 22px; background: #C7E8D6; color: #111210; transform-origin: 0 0; z-index: 4; }
+    #s04-document { width: 44px; height: 48px; flex: 0 0 44px; }
+    #s04-payload { font-family: "Manrope"; font-size: 40px; font-weight: 600; line-height: 1.2; letter-spacing: -1px; white-space: nowrap; }
+    #s04-api { position: absolute; left: 110px; top: 846px; margin: 0; font-family: "JetBrains Mono"; font-size: 31px; font-weight: 400; line-height: 1.3; letter-spacing: -0.7px; white-space: nowrap; color: #F4F1E9; }
+    #s04-api-tool { color: #FF6748; }
+  </style>
+  <div data-hf-id="hf-h4m1" id="s04-root" data-composition-id="04-call" data-start="0" data-duration="5.625" data-fps="60" data-width="1920" data-height="1080" style="position:relative;width:1920px;height:1080px;overflow:hidden;container-type:size;color:#F4F1E9;font-family:Manrope;">
+    <div data-hf-id="hf-0u0v" id="s04-ground" class="clip" data-start="0" data-duration="5.625" data-track-index="0"></div>
+    <div data-hf-id="hf-j54b" id="s04-stage" class="clip" data-start="0" data-duration="5.625" data-track-index="1">
+      <h1 data-hf-id="hf-19y1" id="s04-head-call">MAKE THE CALL.</h1>
+      <h1 data-hf-id="hf-qfhp" id="s04-head-result">RESULT. RETURNED.</h1>
+      <div data-hf-id="hf-bpqm" id="s04-illustrative">ILLUSTRATIVE WORKFLOW</div>
+      <div data-hf-id="hf-wrhd" id="s04-request-rail-left"></div>
+      <div data-hf-id="hf-a4r0" id="s04-request-rail-right"></div>
+      <svg data-hf-id="hf-5wlo" id="s04-return-rail" viewBox="0 0 1920 1080" aria-hidden="true">
+        <path data-hf-id="hf-bmgo" d="M 1613 637 L 1613 663 Q 1613 718 1558 718 L 292 718 Q 220 718 220 648" fill="none" stroke="rgba(244,241,233,0.22)" stroke-width="8" stroke-linecap="round" />
+      </svg>
+      <div data-hf-id="hf-toax" id="s04-request-packet"></div>
+      <div data-hf-id="hf-a3ds" id="s04-return-packet"></div>
+      <div data-hf-id="hf-uhel" id="s04-agent">AGENT</div>
+      <div data-hf-id="hf-0pfo" id="s04-roster">
+        <img data-hf-id="hf-djub" id="s04-logo" src="assets/roster-logo.png" alt="Roster mark">
+        <div data-hf-id="hf-w0kr" id="s04-roster-name">Roster</div>
+      </div>
+      <div data-hf-id="hf-8b64" id="s04-playwright">
+        <img data-hf-id="hf-yncg" id="s04-playwright-logo" src="assets/brands/playwright.svg" alt="Playwright">
+        <div data-hf-id="hf-y84r" id="s04-playwright-name">Playwright</div>
+      </div>
+      <div data-hf-id="hf-eg5q" id="s04-record-backing"></div>
+      <div data-hf-id="hf-hfyx" id="s04-result-card">
+        <svg data-hf-id="hf-u6zp" id="s04-document" viewBox="0 0 44 48" aria-hidden="true">
+          <path data-hf-id="hf-8ujj" d="M 7 3 H 27 L 38 14 V 44 H 7 Z M 27 3 V 14 H 38 M 15 25 H 29 M 15 33 H 26" fill="none" stroke="#111210" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span data-hf-id="hf-4jga" id="s04-payload">Page snapshot received.</span>
+      </div>
+      <pre data-hf-id="hf-oamu" id="s04-api">call({ tool: <span data-hf-id="hf-n6ah" id="s04-api-tool">"playwright__browser_snapshot"</span> })</pre>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["04-call"] = tl;
+
+      // The host owns the frame boundary. Only the headline and route components move.
+      gsap.set("#s04-head-result", { opacity: 0 });
+      gsap.set("#s04-request-packet, #s04-return-packet, #s04-result-card, #s04-record-backing", { opacity: 0 });
+      tl.fromTo("#s04-head-call", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.44, ease: "power3.out" }, 0);
+      tl.fromTo("#s04-agent", { y: 16, scale: 0.96, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.46, ease: "power3.out" }, 0.06);
+      tl.fromTo("#s04-roster", { y: 16, scale: 0.96, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.24);
+      tl.fromTo("#s04-playwright", { y: 16, scale: 0.96, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.5);
+      tl.fromTo("#s04-request-rail-left", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.32);
+      tl.fromTo("#s04-request-rail-right", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.64);
+      tl.fromTo("#s04-illustrative", { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.36, ease: "power2.out" }, 0.76);
+
+      // The outgoing packet passes under the router and emerges on the same rail.
+      tl.fromTo("#s04-api", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.38, ease: "power2.out" }, 1.12);
+      tl.fromTo("#s04-request-packet", { opacity: 0 }, { opacity: 1, duration: 0.08, ease: "none" }, 1.2);
+      tl.to("#s04-request-packet", { x: 412, duration: 0.6, ease: "power2.in" }, 1.22);
+      tl.to("#s04-request-packet", { x: 712, duration: 0.36, ease: "none" }, 1.82);
+      tl.to("#s04-request-packet", { x: 1192, duration: 0.65, ease: "power2.out" }, 2.18);
+      tl.to("#s04-roster", { scale: 1.025, duration: 0.12, ease: "power2.out" }, 1.92);
+      tl.to("#s04-roster", { scale: 1, duration: 0.23, ease: "power2.out" }, 2.04);
+      tl.to("#s04-playwright", { scaleX: 0.973, scaleY: 1.028, duration: 0.12, ease: "power2.out" }, 2.79);
+      tl.to("#s04-playwright", { scaleX: 1, scaleY: 1, duration: 0.26, ease: "power3.out" }, 2.91);
+      tl.set("#s04-request-packet", { opacity: 0 }, 2.88);
+
+      // One inverse Z cut changes the headline at the response, with matched blur.
+      tl.to("#s04-head-call", { scale: 0.8, filter: "blur(10px)", duration: 0.2, ease: "power3.in" }, 3.08);
+      tl.to("#s04-head-call", { opacity: 0.15, duration: 0.2, ease: "none" }, 3.08);
+      tl.set("#s04-head-call", { opacity: 0 }, 3.28);
+      tl.fromTo("#s04-head-result", { scale: 1.25, filter: "blur(10px)", opacity: 0.15 }, { scale: 1, filter: "blur(0px)", opacity: 1, duration: 0.5, ease: "expo.out", immediateRender: false }, 3.28);
+      tl.fromTo("#s04-return-rail", { opacity: 0 }, { opacity: 1, duration: 0.26, ease: "power2.out" }, 3.07);
+      tl.fromTo("#s04-return-packet", { opacity: 0 }, { opacity: 1, duration: 0.06, ease: "none", immediateRender: false }, 3.2);
+      tl.to("#s04-return-packet", { y: 93, duration: 0.28, ease: "power2.in" }, 3.2);
+      tl.to("#s04-return-packet", { x: -356, duration: 0.38, ease: "none" }, 3.48);
+      tl.to("#s04-return-packet", { x: -824, duration: 0.53, ease: "power2.out" }, 3.86);
+      tl.fromTo("#s04-result-card", { x: 64, scale: 0.92, opacity: 0 }, { x: 0, scale: 1, opacity: 1, duration: 0.42, ease: "power3.out", immediateRender: false }, 4.13);
+      tl.set("#s04-return-packet", { opacity: 0 }, 4.4);
+
+      // The returned snapshot becomes a compact record, ready for the master cut.
+      tl.fromTo("#s04-record-backing", { x: 18, y: 6, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.42, ease: "power3.out", immediateRender: false }, 4.84);
+      tl.to("#s04-result-card", { x: -342, scale: 0.83, duration: 0.55, ease: "power3.inOut" }, 4.8);
+    })();
+  </script>
+</template>

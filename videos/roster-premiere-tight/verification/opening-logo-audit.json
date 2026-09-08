@@ -1,0 +1,34 @@
+{
+  "tileCount": 8,
+  "uniqueTools": 8,
+  "tools": [
+    "GitHub",
+    "Linear",
+    "Playwright",
+    "Figma",
+    "Brave",
+    "Slack",
+    "PostgreSQL",
+    "Supabase"
+  ],
+  "counts": {
+    "GitHub": 1,
+    "Linear": 1,
+    "Playwright": 1,
+    "Figma": 1,
+    "Brave": 1,
+    "Slack": 1,
+    "PostgreSQL": 1,
+    "Supabase": 1
+  },
+  "openingAnimationUnchanged": true,
+  "unchanged": {
+    "compositions/frames/04-call.html": true,
+    "compositions/frames/06-identity.html": true,
+    "compositions/frames/05-learn.html": true,
+    "compositions/frames/03-draft.html": true,
+    "compositions/frames/02-five.html": true,
+    "scripts/build.mjs": true,
+    "assets/audio/full-send-score.wav": true
+  }
+}

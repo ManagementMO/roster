@@ -1,0 +1,44 @@
+---
+import Icon from "./Icon.astro";
+interface Props { text: string; label?: string; compact?: boolean }
+const { text, label = "Copy", compact = false } = Astro.props;
+---
+<roster-copy data-value={text} data-label={label} class:list={["copy-control", { compact }]}>
+  <button type="button" class="copy-button" aria-label={label}>
+    <Icon name="copy" size={16} /><span data-copy-label>{label}</span>
+  </button>
+  <span class="copy-status sr-only" role="status" aria-live="polite"></span>
+  <textarea class="copy-fallback" aria-label="Select and copy this text" readonly hidden>{text}</textarea>
+</roster-copy>
+<script>
+  class RosterCopy extends HTMLElement {
+    private timer: ReturnType<typeof setTimeout> | undefined;
+    connectedCallback() {
+      this.querySelector("button")?.addEventListener("click", async () => {
+        const status = this.querySelector<HTMLElement>(".copy-status")!;
+        const label = this.querySelector<HTMLElement>("[data-copy-label]")!;
+        clearTimeout(this.timer);
+        try {
+          await navigator.clipboard.writeText(this.dataset.value ?? "");
+          label.textContent = "Copied";
+          status.textContent = "Copied to clipboard.";
+          this.dataset.copied = "true";
+          this.timer = setTimeout(() => {
+            label.textContent = this.dataset.label ?? "Copy";
+            delete this.dataset.copied;
+          }, 2200);
+        } catch {
+          const fallback = this.querySelector<HTMLTextAreaElement>("textarea")!;
+          fallback.hidden = false;
+          fallback.focus();
+          fallback.select();
+          label.textContent = "Select to copy";
+          status.classList.remove("sr-only");
+          status.textContent = "Clipboard unavailable. The text is selected below; use your device’s copy command.";
+        }
+      });
+    }
+    disconnectedCallback() { clearTimeout(this.timer); }
+  }
+  if (!customElements.get("roster-copy")) customElements.define("roster-copy", RosterCopy);
+</script>

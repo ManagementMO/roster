@@ -1,0 +1,23 @@
+---
+import Icon from "./Icon.astro";
+import CapabilityIcon from "./CapabilityIcon.astro";
+---
+<div class="local-router">
+  <div class="local-router-intro"><div><h2 id="router-title">Your toolkit. One entry point.</h2><p>Your tools, skills, and local learning. Connected.</p></div><span class="architecture-label"><Icon name="device-laptop" size={17} />On your machine</span></div>
+  <div class="local-machine">
+    <div class="machine-heading"><span><Icon name="device-desktop" size={17} />Your local environment</span><span>Architecture overview</span></div>
+    <div class="rotation-flow">
+      <a class="flow-node client-node" href="/docs/clients/"><span class="client-glyph"><Icon name="terminal-2" size={35} /></span><h3>Your agent</h3><p>The MCP client you use.</p><span class="node-link">Client setup<Icon name="arrow-up-right" size={14} /></span></a>
+      <div class="flow-connector" aria-hidden="true"><span>stdio</span><i></i><Icon name="chevron-right" size={15} /></div>
+      <a class="roster-core" href="/docs/modes/"><span class="core-lockup"><img src="/roster-lockup-pearl.svg" width="178" height="38" alt="Roster" /></span><span class="core-description">The local tool router</span><span class="core-default"><Icon name="arrows-exchange" size={16} />Transparent by default</span></a>
+      <div class="flow-connector" aria-hidden="true"><span>stdio</span><i></i><Icon name="chevron-right" size={15} /></div>
+      <a class="flow-node tools-node" href="/docs/configuration/#command-backed-server-entries"><span class="tool-glyphs"><span><CapabilityIcon name="github" size={25} /></span><span><CapabilityIcon name="playwright" size={28} /></span><span class="folder-glyph"><Icon name="folder" size={28} /></span></span><h3>Your MCP tools</h3><p>Your command-backed servers.</p><span class="node-link">Tool connections<Icon name="arrow-up-right" size={14} /></span></a>
+    </div>
+    <div class="local-knowledge">
+      <a href="/docs/learning/"><span class="knowledge-icon coach-knowledge"><Icon name="database" size={24} /></span><span><strong>The Coach</strong><span>Derived outcomes. Local learning.</span></span><Icon name="arrow-up-right" size={15} /></a>
+      <a href="/docs/playbook/"><span class="knowledge-icon playbook-knowledge"><Icon name="book-2" size={24} /></span><span><strong>The Playbook</strong><span>Approved instructions, on demand.</span></span><Icon name="arrow-up-right" size={15} /></a>
+    </div>
+    <div class="machine-principles"><span><Icon name="cloud-off" size={15} />No Roster cloud</span><span><Icon name="key-off" size={15} />No account or API key</span><span><Icon name="shield-check" size={15} />Telemetry off by default</span></div>
+  </div>
+  <div class="local-router-footer"><p>Sync & eject: <strong>Claude Code</strong>, <strong>Cursor</strong>, <strong>Codex</strong>, <strong>OpenClaw</strong>.</p><p>Backend tools may still contact their own services.</p></div>
+</div>

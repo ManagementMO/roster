@@ -1,0 +1,167 @@
+[
+  {
+    "id": "overload-to-five",
+    "cut": 3.75,
+    "type": "cut",
+    "rows": [
+      {
+        "check": "ledger",
+        "status": "PASS",
+        "detail": "x- both sides"
+      },
+      {
+        "check": "exit-vector",
+        "status": "PASS",
+        "detail": "-1747 px/s x-"
+      },
+      {
+        "check": "entry-vector",
+        "status": "PASS",
+        "detail": "-1119 px/s x-"
+      },
+      {
+        "check": "speed-match",
+        "status": "PASS",
+        "detail": "ratio 0.64"
+      },
+      {
+        "check": "zero-overlap",
+        "status": "PASS",
+        "detail": "one side visible per frame"
+      }
+    ]
+  },
+  {
+    "id": "five-to-draft",
+    "cut": 7.5,
+    "type": "cut",
+    "rows": [
+      {
+        "check": "ledger",
+        "status": "PASS",
+        "detail": "x- both sides"
+      },
+      {
+        "check": "exit-vector",
+        "status": "PASS",
+        "detail": "-1143 px/s x-"
+      },
+      {
+        "check": "entry-vector",
+        "status": "PASS",
+        "detail": "-1712 px/s x-"
+      },
+      {
+        "check": "speed-match",
+        "status": "PASS",
+        "detail": "ratio 1.50"
+      },
+      {
+        "check": "zero-overlap",
+        "status": "PASS",
+        "detail": "one side visible per frame"
+      }
+    ]
+  },
+  {
+    "id": "draft-to-call",
+    "cut": 15,
+    "type": "cut",
+    "rows": [
+      {
+        "check": "ledger",
+        "status": "PASS",
+        "detail": "x- both sides"
+      },
+      {
+        "check": "exit-vector",
+        "status": "PASS",
+        "detail": "-1143 px/s x-"
+      },
+      {
+        "check": "entry-vector",
+        "status": "PASS",
+        "detail": "-1712 px/s x-"
+      },
+      {
+        "check": "speed-match",
+        "status": "PASS",
+        "detail": "ratio 1.50"
+      },
+      {
+        "check": "zero-overlap",
+        "status": "PASS",
+        "detail": "one side visible per frame"
+      }
+    ]
+  },
+  {
+    "id": "call-to-learn",
+    "cut": 20.625,
+    "type": "cut",
+    "rows": [
+      {
+        "check": "ledger",
+        "status": "PASS",
+        "detail": "x- both sides"
+      },
+      {
+        "check": "exit-vector",
+        "status": "PASS",
+        "detail": "-1595 px/s x-"
+      },
+      {
+        "check": "entry-vector",
+        "status": "PASS",
+        "detail": "-1223 px/s x-"
+      },
+      {
+        "check": "speed-match",
+        "status": "PASS",
+        "detail": "ratio 0.77"
+      },
+      {
+        "check": "zero-overlap",
+        "status": "PASS",
+        "detail": "one side visible per frame"
+      }
+    ]
+  },
+  {
+    "id": "learn-to-identity",
+    "cut": 24.375,
+    "type": "cut",
+    "rows": [
+      {
+        "check": "ledger",
+        "status": "PASS",
+        "detail": "z- both sides"
+      },
+      {
+        "check": "exit-vector",
+        "status": "PASS",
+        "detail": "-0.859 es/s z-"
+      },
+      {
+        "check": "entry-vector",
+        "status": "PASS",
+        "detail": "-2.149 es/s z-"
+      },
+      {
+        "check": "speed-match",
+        "status": "PASS",
+        "detail": "ratio 2.50"
+      },
+      {
+        "check": "zero-overlap",
+        "status": "PASS",
+        "detail": "one side visible per frame"
+      },
+      {
+        "check": "z-sign-scan",
+        "status": "PASS",
+        "detail": "no sign-fighting entrances"
+      }
+    ]
+  }
+]

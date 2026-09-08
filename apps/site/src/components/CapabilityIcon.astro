@@ -1,0 +1,10 @@
+---
+import Icon from "./Icon.astro";
+interface Props { name: string; size?: number }
+const { name, size = 27 } = Astro.props;
+const brands: Record<string, string> = { playwright: "playwright", github: "github", linear: "linear-color" };
+---
+{brands[name] ? <>
+  <img class:list={["vendor-mark", { "github-on-light": name === "github" }]} src={`/brands/${brands[name]}.svg`} width={size} height={size} alt="" />
+  {name === "github" && <img class="vendor-mark github-on-dark" src="/brands/github-light.svg" width={size} height={size} alt="" />}
+</> : <Icon name={name} size={size} />}

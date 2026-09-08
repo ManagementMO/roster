@@ -1,0 +1,6 @@
+<script>
+  document.querySelectorAll<HTMLTableElement>(".sl-markdown-content table").forEach((table, index) => {
+    table.tabIndex = 0;
+    table.setAttribute("aria-label", table.caption?.textContent?.trim() || `Reference table ${index + 1}`);
+  });
+</script>

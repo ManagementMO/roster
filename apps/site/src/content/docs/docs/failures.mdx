@@ -1,0 +1,68 @@
+---
+title: Failures & drift
+description: Understand Sixth Man suggestions, outcome attribution, and the limits of local drift quarantine.
+---
+import Command from "../../../components/Command.astro";
+import { claimSources } from "../../../lib/sources.js";
+
+A tool can fail without the whole workflow being lost. Roster makes the failure visible and, in qualifying five-mode cases, can suggest another capability for the agent to consider.
+
+## The Sixth Man suggests; the agent decides
+
+For a call associated with a recent draft, transport failures, timeouts, and internal tool errors can carry a structured alternate suggestion. The candidate comes from a different backend in the same draft's ranking; skills are not selected as these alternates.
+
+An illustrative extra text payload is:
+
+```json
+{
+  "_roster": {
+    "suggested_alternate": {
+      "tool": "alternate__search",
+      "reason": "another candidate for the same need",
+      "args_compatible": false
+    }
+  }
+}
+```
+
+**Roster never executes this alternate automatically.** The agent decides whether to call it, whether a retry is authorized, and how to construct its arguments.
+
+`args_compatible` indicates whether the original arguments validate against the alternate's input schema. It is not proof that the alternate has identical semantics or will solve the task. An absent or unknown `draft_id` cannot borrow another draft's candidates.
+
+Transparent mode preserves the backend's error behavior; it is not an automatic rescue layer.
+
+## Call outcomes are narrower than task outcomes
+
+| Signal | Meaning |
+| --- | --- |
+| `success` | The call returned without a detected failure. |
+| `hard_fail:transport` | The connection failed or closed. |
+| `hard_fail:protocol` | A protocol-level fault occurred. |
+| `tool_fail:*` | A timeout, input-validation rejection, or tool-reported error was classified. |
+| `schema_drift_suspect` | Output did not satisfy its declared contract. |
+
+Auth, quota, schema, timeout, internal, and other error subtypes are heuristic labels. Caller-side schema rejections are not attributed as tool defects in the current ratings policy. An adjusted-argument retry can mark a preceding failure as a soft failure; an earlier success is not retroactively downgraded merely because a tool is used again.
+
+## Definition changes enter quarantine
+
+At connection time, Roster fingerprints a capability's full contract, including its name, description, schemas, title, annotations, execution metadata, and skill body. A detected change is recorded and removes that capability from default drafts.
+
+The fingerprint uses canonical serialization so ordinary object-key reordering is not a change. Tombstones preserve definition history across removal and re-addition, preventing a changed capability from simply returning as “new.”
+
+**This is draft quarantine, not a universal execution firewall.** It does not block every direct call by a known ID and does not narrow transparent passthrough. Keep your client's own tool permissions in place.
+
+## Review and re-admit
+
+A stable re-sighting after a 24-hour dwell can clear local quarantine. That does not mean a human certified the capability or a Combine suite ran successfully.
+
+You can deliberately clear a reviewed capability by ID:
+
+<Command name="unquarantine" />
+
+Replace the example ID with the one you reviewed. Do not clear quarantine merely to make a demo or setup check pass.
+
+Changed definitions invalidate learned vectors. Local rating history remains associated with the capability ID, which is a separate limitation from vector invalidation. Public League certification, when launched, has its own independent evidence rules.
+
+**Next:** [Troubleshoot a specific setup problem](/docs/troubleshooting/).
+
+<p class="source-note"><a href={claimSources.routing}>Suggestion conditions</a><a href={claimSources.outcomes}>Drift and outcome storage</a><a href={claimSources.methodology}>Methodology of record</a></p>

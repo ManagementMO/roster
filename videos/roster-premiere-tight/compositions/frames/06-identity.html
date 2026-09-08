@@ -1,0 +1,82 @@
+<template>
+  <div data-hf-id="hf-9db4" id="s06-root" data-composition-id="06-identity" data-start="0" data-duration="2.8125" data-fps="120" data-width="1920" data-height="1080" style="position:relative;width:1920px;height:1080px;overflow:hidden;container-type:size;">
+    <div data-hf-id="hf-5i5p" id="s06-ground" class="clip" data-start="0" data-duration="2.8125" data-track-index="0"></div>
+
+    <svg data-hf-id="hf-efxr" id="s06-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#F7F8FC" role="img" aria-label="Roster mark">
+      <g data-hf-id="hf-jryn" id="s06-mark-parts">
+        <rect data-hf-id="hf-l2ot" id="s06-upper-stem" x="40" y="14" width="40" height="132" rx="10" />
+        <path data-hf-id="hf-cmnm" id="s06-upper-bowl" d="M106 14H154C187.137 14 214 40.863 214 74Q214 80 208 80H106Q96 80 96 70V24Q96 14 106 14Z" />
+        <path data-hf-id="hf-b27c" id="s06-lower-bowl" d="M106 94H204Q213 94 210 104C200.5 130.5 175.5 146 147 146H106Q96 146 96 136V104Q96 94 106 94Z" />
+        <rect data-hf-id="hf-edvz" id="s06-lower-stem" x="40" y="162" width="40" height="80" rx="10" />
+        <path data-hf-id="hf-e9tb" id="s06-outgoing-leg" d="M107 162H141Q146 162 150 166L211 232Q220 242 208 242H161Q155 242 151 238L100 174Q90 162 107 162Z" />
+      </g>
+    </svg>
+    <img data-hf-id="hf-1u9k" id="s06-word" src="assets/roster-wordmark-pearl.svg" alt="Roster">
+    <div data-hf-id="hf-pged" id="s06-rule"></div>
+    <div data-hf-id="hf-zl09" id="s06-tagline">Your local MCP tool router.</div>
+    <div data-hf-id="hf-hq8r" id="s06-link">github.com/ManagementMO/roster</div>
+  </div>
+
+  <style>
+    @font-face {
+      font-family:"Space Grotesk";
+      src:url("assets/SpaceGrotesk-Variable.woff2") format("woff2");
+      font-weight:300 700;
+      font-style:normal;
+      font-display:block;
+    }
+    @font-face {
+      font-family:"Manrope";
+      src:url("assets/Manrope-Variable.woff2") format("woff2");
+      font-weight:200 800;
+      font-style:normal;
+      font-display:block;
+    }
+    @font-face {
+      font-family:"JetBrains Mono";
+      src:url("assets/JetBrainsMono-Variable.woff2") format("woff2");
+      font-weight:100 800;
+      font-style:normal;
+      font-display:block;
+    }
+    #s06-ground { position:absolute;inset:0;width:1920px;height:1080px;background: #151B29; }
+    #s06-mark { position:absolute;left:340px;top:277px;width:264.68px;height:264.68px;display:block;z-index:10; }
+    #s06-word { position:absolute;left:629.49px;top:277px;width:950.51px;height:264.68px;object-fit:contain;display:block; }
+    #s06-rule { position:absolute;left:390px;top:637px;width:1140px;height:6px;background:#899BF4;transform-origin:50% 50%; }
+    #s06-tagline { position:absolute;left:116px;top:704px;width:1696px;height:66px;color:#F7F8FC;font-family:"Manrope";font-weight:500;font-size:50px;line-height:66px;letter-spacing:-1.2px;text-align:center; }
+    #s06-link { position:absolute;left:116px;top:804px;width:1696px;height:64px;color:#F7F8FC;font-family:"JetBrains Mono";font-weight:500;font-size:48px;line-height:64px;letter-spacing:-0.7px;text-align:center; }
+  </style>
+
+  <script>
+    (() => {
+      const timeline = gsap.timeline({ paused: true });
+
+      // Preserve the approved vector geometry and lockup spacing. The five
+      // pieces make short staggered arrivals with a one-pixel soft catch.
+      // The master owns the incoming inverse zoom; no child scale competes.
+      const parts = [
+        ["upper-stem", -18, 0, 0],
+        ["upper-bowl", 0, -18, 0.045],
+        ["lower-bowl", 18, 0, 0.075],
+        ["lower-stem", -10, 16, 0.10],
+        ["outgoing-leg", 16, 16, 0.135],
+      ];
+      parts.forEach(([name, x, y, start]) => {
+        const selector = "#s06-" + name;
+        timeline.fromTo(selector, { x, y, opacity:0.24 }, {
+          x:-Math.sign(x), y:-Math.sign(y), opacity:1, duration:0.23, ease:"power3.out",
+        }, start);
+        timeline.to(selector, { x:0, y:0, duration:0.12, ease:"sine.inOut" }, start + 0.23);
+      });
+      timeline.fromTo("#s06-rule", { scaleX:0 }, { scaleX:1, duration:0.24, ease:"power3.out" }, 0.24);
+      timeline.fromTo("#s06-tagline", { y:12, opacity:0 }, { y:0, opacity:1, duration:0.27, ease:"power3.out" }, 0.38);
+      timeline.fromTo("#s06-link", { y:9, opacity:0 }, { y:0, opacity:1, duration:0.23, ease:"power3.out" }, 0.48);
+
+      // The larger URL arrives earlier: every property is settled by 0.71s.
+      // The root supplies a 2.1025s reading hold with no drift or outro fade.
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["06-identity"] = timeline;
+    })();
+  </script>
+</template>

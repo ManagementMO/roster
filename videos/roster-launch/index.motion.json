@@ -1,0 +1,23 @@
+{
+  "duration": 54,
+  "maxStaticSec": 2,
+  "assertions": [
+    {"kind": "appearsBy", "selector": "#hook-first", "bySec": 0.8},
+    {"kind": "before", "a": "#hook-first", "b": "#hook-five"},
+    {"kind": "appearsBy", "selector": "#terminal-wrap", "bySec": 5},
+    {"kind": "appearsBy", "selector": "#endpoint-core", "bySec": 13},
+    {"kind": "appearsBy", "selector": ".candidate:nth-child(3)", "bySec": 17.4},
+    {"kind": "appearsBy", "selector": ".survivor:nth-child(3)", "bySec": 24.8},
+    {"kind": "appearsBy", "selector": ".hero-tool:nth-child(3)", "bySec": 30.4},
+    {"kind": "before", "a": ".hero-tool:nth-child(3)", "b": ".hero-tool:nth-child(5)"},
+    {"kind": "appearsBy", "selector": "#request-packet", "bySec": 37.4},
+    {"kind": "appearsBy", "selector": "#local-stamp", "bySec": 40.8},
+    {"kind": "appearsBy", "selector": "#suggest-tool", "bySec": 43.2},
+    {"kind": "before", "a": "#suggest-tool", "b": "#accept-pill"},
+    {"kind": "appearsBy", "selector": ".league-panel", "bySec": 48.5},
+    {"kind": "appearsBy", "selector": "#final-wordmark", "bySec": 52},
+    {"kind": "staysInFrame", "selector": ".hero-tool:nth-child(3)"},
+    {"kind": "staysInFrame", "selector": "#final-tagline"},
+    {"kind": "keepsMoving", "withinSelector": "#root"}
+  ]
+}

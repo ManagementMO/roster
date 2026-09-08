@@ -1,0 +1,93 @@
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: Manrope;
+  src: url("/fonts/Manrope.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+:root {
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: Manrope, sans-serif;
+  --font-code: "JetBrains Mono", monospace;
+  --ink: #25282b;
+  --paper: #f7f8fc;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-soft: #f1f2f1;
+  --text: var(--ink);
+  --muted: #585e62;
+  --subtle: #676c70;
+  --accent: #292d30;
+  --accent-hover: #15191c;
+  --on-accent: #ffffff;
+  --accent-soft: #eceeed;
+  --accent-line: #b8bdbc;
+  --line: #e0e3e1;
+  --line-strong: #b6bcba;
+  --brand-surface: #2c3032;
+  --brand-border: #4f5557;
+  --on-brand: #f5f5f2;
+  --brand-muted: #cbd0ce;
+  --brand-divider: #555d5e;
+  --brand-shadow: 0 12px 22px -15px rgb(25 30 28 / 30%);
+  --success: #326a40;
+  --success-soft: #eef5ed;
+  --warning: #8b651d;
+  --icon-color: #4d5558;
+  --icon-surface: #f0f2f1;
+  --shadow-card: 0 3px 8px -5px rgb(25 30 28 / 12%);
+  --shadow-stage: 0 18px 44px -30px rgb(25 30 28 / 12%);
+  --shadow-control: 0 1px 3px rgb(25 30 28 / 5%);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-section: clamp(64px, 8vw, 104px);
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --duration: 180ms;
+  --layer-header: 10;
+  --layer-overlay: 20;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #191c1d;
+  --surface: #202425;
+  --surface-raised: #282c2d;
+  --surface-soft: #1c2021;
+  --text: #f0f1ed;
+  --muted: #bdc2bf;
+  --subtle: #a5ada9;
+  --accent: #eceee9;
+  --accent-hover: #ffffff;
+  --on-accent: #25292b;
+  --accent-soft: #303637;
+  --accent-line: #646e6c;
+  --line: #343b3b;
+  --line-strong: #606b68;
+  --success: #a5cba4;
+  --success-soft: #2a3a2d;
+  --warning: #d9bb7f;
+  --icon-color: #c2c9c5;
+  --icon-surface: #2b3131;
+  --shadow-card: 0 3px 10px -5px rgb(0 0 0 / 25%);
+  --shadow-stage: 0 18px 44px -30px rgb(0 0 0 / 35%);
+  --shadow-control: 0 1px 3px rgb(0 0 0 / 15%);
+  color-scheme: dark;
+}

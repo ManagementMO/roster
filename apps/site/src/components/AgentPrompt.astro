@@ -1,0 +1,17 @@
+---
+import CopyButton from "./CopyButton.astro";
+import Icon from "./Icon.astro";
+import { setupPrompt } from "../lib/site.js";
+interface Props { expanded?: boolean }
+const { expanded = false } = Astro.props;
+---
+<div class="agent-prompt not-content">
+  <div class="agent-prompt-heading"><span class="prompt-symbol"><Icon name="terminal-2" size={23} /></span><span>One good handoff.</span></div>
+  <p class="prompt-excerpt">“Help me set up Roster. Start local, preserve my configuration, and let me choose what changes.”</p>
+  <div class="prompt-actions"><CopyButton text={setupPrompt} label="Copy setup prompt" /></div>
+  <details class="prompt-details" open={expanded}>
+    <summary>Read the full prompt</summary>
+    <textarea class="prompt-text" rows="14" readonly spellcheck="false" aria-label="Full agent setup prompt">{setupPrompt}</textarea>
+  </details>
+  <p class="prompt-footnote"><Icon name="shield-check" size={16} />Checks release availability. Asks before config changes.</p>
+</div>

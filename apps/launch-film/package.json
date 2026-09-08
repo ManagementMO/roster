@@ -1,0 +1,44 @@
+{
+  "name": "@rosterhq/launch-film",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "studio": "remotion studio src/index.ts --no-open",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "pnpm typecheck",
+    "fonts:embed": "node scripts/embed-fonts.mjs",
+    "audio:generate": "node scripts/generate-audio.mjs",
+    "assets:prepare": "pnpm fonts:embed && pnpm audio:generate",
+    "render:preview": "pnpm assets:prepare && remotion render src/index.ts RosterLaunchMaster out/roster-launch-preview.mp4 --scale=0.5 --codec=h264 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=160K --crf=22 --concurrency=2 --timeout=90000",
+    "render:master": "pnpm assets:prepare && remotion render src/index.ts RosterLaunchMaster out/roster-launch-v1.mp4 --codec=h264 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=192K --crf=16 --concurrency=2 --timeout=90000",
+    "render:poster": "remotion still src/index.ts RosterLaunchPoster out/roster-launch-poster.png --image-format=png",
+    "render:teaser": "pnpm assets:prepare && remotion render src/index.ts RosterLaunchTeaser out/roster-launch-teaser.mp4 --codec=h264 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=160K --crf=18 --concurrency=2 --timeout=90000",
+    "render:square": "pnpm assets:prepare && remotion render src/index.ts RosterLaunchSquare out/roster-launch-square.mp4 --codec=h264 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=160K --crf=18 --concurrency=2 --timeout=90000",
+    "render:gif": "remotion render src/index.ts RosterLaunchTeaser out/roster-launch-readme.gif --codec=gif --frames=0-359 --every-nth-frame=3 --scale=0.35 --concurrency=2 --timeout=90000",
+    "render:stills": "node scripts/render-stills.mjs",
+    "render:contact-sheet": "node scripts/render-contact-sheet.mjs",
+    "render:redesign-preview": "pnpm assets:prepare && remotion render src/index.ts RosterLaunchMaster out/redesign/roster-launch-redesign-preview.mp4 --scale=0.5 --codec=h264 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=160K --crf=22 --concurrency=2 --timeout=90000",
+    "render:redesign-master": "pnpm assets:prepare && remotion render src/index.ts RosterLaunchMaster out/redesign/roster-launch-redesign-master.mp4 --codec=h264 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=192K --crf=16 --concurrency=2 --timeout=90000",
+    "render:redesign-poster": "remotion still src/index.ts RosterLaunchPoster out/redesign/roster-launch-redesign-poster.png --image-format=png --overwrite",
+    "render:redesign-contact": "ROSTER_FILM_OUTPUT=out/redesign node scripts/render-contact-sheet.mjs",
+    "render:redesign-stills": "ROSTER_FILM_OUTPUT=out/redesign node scripts/render-stills.mjs",
+    "render:redesign-before-after": "node scripts/render-before-after.mjs"
+  },
+  "dependencies": {
+    "@remotion/media": "4.0.496",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.496",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.496",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}

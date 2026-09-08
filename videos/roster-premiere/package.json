@@ -1,0 +1,15 @@
+{
+  "name": "roster-premiere",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "audio": "node scripts/mix-audio.mjs",
+    "dev": "npx --yes hyperframes@0.8.31 preview",
+    "check": "npx --yes hyperframes@0.8.31 check",
+    "render": "npx --yes hyperframes@0.8.31 render --fps 60 --quality high --workers 2 --output renders/roster-premiere-1080p.mp4",
+    "deliver": "node scripts/deliver.mjs",
+    "snapshots": "npx --yes hyperframes@0.8.31 snapshot --at 2.1,6.15,13.2,19.2,23.3,28.8 --output snapshots/hero",
+    "seams": "node scripts/seam-gate.mjs verify --ledger ledger.json --project . --fps 60"
+  }
+}

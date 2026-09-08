@@ -1,0 +1,11 @@
+---
+interface Props { small?: boolean; docs?: boolean }
+const { small = false, docs = false } = Astro.props;
+---
+<a class:list={["brand", { "brand-small": small }]} href="/" aria-label="Roster home">
+  <span class="brand-lockup">
+    <img class="brand-on-light" src="/roster-lockup-cobalt.svg" width="154" height="33" alt="" />
+    <img class="brand-on-dark" src="/roster-lockup-pearl.svg" width="154" height="33" alt="" />
+  </span>
+  {docs && <span class="brand-docs">Docs</span>}
+</a>

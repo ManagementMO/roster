@@ -1,0 +1,70 @@
+---
+title: Tools & the Playbook
+description: Index trusted skill instructions alongside MCP tools and understand exactly what a skill invocation returns.
+---
+import { claimSources } from "../../../lib/sources.js";
+
+**Tools do things. Skills explain how to do things.** Roster can draft both in the same lineup, but their invocation behavior stays distinct.
+
+## Tools: call the backend
+
+A tool comes from a configured command-backed MCP server. Roster lists it under a stable namespaced ID and forwards calls to that server.
+
+A file-reading tool might return text. A browser tool might return an accessibility snapshot. A write-capable tool can change state. The router does not turn a write tool into a read-only tool or replace the backend's permissions.
+
+## Skills: return instructions
+
+The Playbook discovers `SKILL.md` directories and indexes their full instruction bodies, not just their names and descriptions. In five mode, approved skills can appear alongside tools.
+
+An illustrative skill call looks like this:
+
+```json
+{
+  "name": "call",
+  "arguments": {
+    "tool": "skill__project-guide",
+    "draft_id": "d1"
+  }
+}
+```
+
+The returned payload contains:
+
+- `name` and `description`
+- `instructions`, the skill body
+- `resources`, a list of resource paths
+- `scriptsNote`, when bundled scripts are present
+
+**Roster does not execute the skill's scripts.** The agent reads the instructions and decides whether to use its own execution tools, within its existing permissions. A resource path is not the resource contents.
+
+Skill delivery is recorded for attribution but excluded from success ratings. Returning instructions reliably is not proof that the instructions solve a task.
+
+## Choose your skill sources
+
+The current default scan looks for libraries under `~/.claude/skills`, `~/.agents/skills`, `~/.openclaw/skills`, and the current project's `.claude/skills`.
+
+You can add absolute library paths to `skillSources` in the existing Roster configuration. A library contains child directories, each with its own `SKILL.md`. Keep your approved library separate from unreviewed downloads.
+
+```text
+approved-skills/
+  project-guide/
+    SKILL.md
+    references/
+      conventions.md
+```
+
+`init` merges default sources with existing configured sources. At serve time, configured sources are scanned along with current defaults. When skill slugs collide, the first discovered source wins. After changing a skill or source list, restart the client's router process to refresh the index.
+
+The OpenClaw skills-allowlist writer and native skill-directory synchronization described in older plans are not implemented by the current `sync` command.
+
+## A trust gate, not a guarantee
+
+Before a skill can be served, Roster runs local heuristics over metadata, the body, and bounded script reads. Instruction overrides, concealment, credential-exfiltration language, and suspicious commands can flag it for review.
+
+Bundled executable scripts always trigger a review finding, even when the scan finds no suspicious command. Incomplete scans, unsupported file types, symlinks, and exhausted limits also produce review findings. The primary `SKILL.md` symlink is read for dotfile-manager compatibility, but is always review-flagged. Review-flagged skills are withheld by default.
+
+An `ok` scan is **not a security certification**. Review sources and scripts yourself. The explicit operator override exists for reviewed cases, but should never be added by an agent as a silent setup shortcut.
+
+**Next:** [Understand the Coach's local learning](/docs/learning/).
+
+<p class="source-note"><a href={claimSources.skills}>Skill invocation contract</a><a href={claimSources.trust}>Trust scan</a></p>

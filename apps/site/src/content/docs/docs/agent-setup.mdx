@@ -1,0 +1,40 @@
+---
+title: Set up with your agent
+description: A copyable Roster setup prompt with explicit scope, release checks, lexical defaults, and configuration safeguards.
+---
+import AgentPrompt from "../../../components/AgentPrompt.astro";
+
+Let your coding agent do the setup legwork. Keep the decisions about configuration and downloads with you.
+
+The prompt checks for an existing installation, uses the correct scoped package, and handles the current source-only release state. It asks the agent to explain the selected client and file before changing them.
+
+<AgentPrompt expanded />
+
+## What you should expect
+
+Your agent should first identify the installation and ask which client you want to connect. Automated writers support **Claude Code, Cursor, Codex, and OpenClaw**. It should not treat broader discovery as permission to change other clients.
+
+The normal sequence is:
+
+- Inspect the official release state and choose a valid installation path.
+- Explain what `init` reads and imports, then run it within your authorized scope.
+- Review a sanitized summary of the receipt and any parse errors.
+- Keep the first run lexical, including explicitly disabling embeddings in a source checkout.
+- Explain and run a client-scoped `sync`, then let the client launch the router.
+- Report the matching scoped `eject` command and restoration behavior.
+
+This prompt is instructions for your agent, **not an installer running in the browser**. Copying it does not inspect your machine, launch a backend, or grant new permissions.
+
+## Keep sensitive material local
+
+An imported server's `env` block may contain credentials. Config backups contain original bytes. A receipt can reveal local paths. Ask the agent to inspect those locally and report only the non-sensitive facts needed for setup.
+
+There is no reason to paste a raw client config or key into this website. The interactive homepage is entirely illustrative.
+
+## Decisions that remain yours
+
+Five mode changes what the agent sees and should be a deliberate choice. Dense retrieval adds a runtime and model download. Forced restoration can overwrite newer changes. Review overrides can admit withheld skills. None of these is a silent setup default.
+
+Telemetry defaults off, and the current implementation has no upload endpoint. Leave it off during setup.
+
+**Next:** [Read the first-run guide yourself](/docs/installation/) or [compare the two routing modes](/docs/modes/).

@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Roster Launch — HyperFrames</title>
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Space Grotesk";
+        src: url("assets/SpaceGrotesk-Variable.woff2") format("woff2");
+        font-style: normal;
+        font-weight: 300 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Manrope";
+        src: url("assets/Manrope-Variable.woff2") format("woff2");
+        font-style: normal;
+        font-weight: 300 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "JetBrains Mono";
+        src: url("assets/JetBrainsMono-Variable.woff2") format("woff2");
+        font-style: normal;
+        font-weight: 300 800;
+        font-display: block;
+      }
+
+      :root {
+        --cream: #fdfae7;
+        --paper: #fffef8;
+        --ink: #111111;
+        --muted: #686868;
+        --quiet: #9a9a92;
+        --blue: #1e2bfa;
+        --blue-dark: #111cc8;
+        --blue-soft: rgba(30, 43, 250, 0.075);
+        --blue-border: rgba(30, 43, 250, 0.18);
+        --blue-shadow: rgba(30, 43, 250, 0.12);
+        --green: #059669;
+        --red: #dc2626;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: "Manrope", Arial, sans-serif;
+        text-rendering: geometricPrecision;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        isolation: isolate;
+        container-type: size;
+        background: var(--cream);
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--cream);
+      }
+
+      .scene-motion {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        transform-origin: 50% 50%;
+      }
+
+      .display {
+        font-family: "Space Grotesk", Arial, sans-serif;
+        letter-spacing: -0.055em;
+      }
+
+      .mono {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+
+      .eyebrow {
+        font-family: "Space Grotesk", Arial, sans-serif;
+        color: var(--blue);
+        font-size: 26px;
+        font-weight: 650;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .topline {
+        position: absolute;
+        top: 72px;
+        left: 104px;
+        right: 104px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 20;
+      }
+
+      .scene-index {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 24px;
+        font-weight: 560;
+      }
+
+      .scene-index::before {
+        width: 34px;
+        height: 5px;
+        border-radius: 999px;
+        background: var(--blue);
+        content: "";
+      }
+
+      .glass {
+        border: 2px solid rgba(30, 43, 250, 0.13);
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 254, 248, 0.75)),
+          var(--paper);
+        box-shadow:
+          0 34px 80px rgba(17, 17, 17, 0.075),
+          0 8px 24px rgba(30, 43, 250, 0.06),
+          inset 0 1px 0 rgba(255, 255, 255, 0.98);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 58px;
+        border: 2px solid var(--blue-border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--ink);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        white-space: nowrap;
+      }
+
+      .pill-solid {
+        border-color: var(--blue);
+        background: var(--blue);
+        color: var(--cream);
+        box-shadow: 0 20px 52px rgba(30, 43, 250, 0.2);
+      }
+
+      .glyph {
+        display: grid;
+        width: 82px;
+        height: 82px;
+        flex: 0 0 82px;
+        place-items: center;
+        border-radius: 28px;
+        background: var(--blue);
+        color: white;
+      }
+
+      .glyph svg {
+        width: 44px;
+        height: 44px;
+        overflow: visible;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 3.2;
+      }
+
+      .roster-mark {
+        position: relative;
+        width: 168px;
+        height: 168px;
+        flex: 0 0 168px;
+      }
+
+      .mark-part {
+        position: absolute;
+        left: 66px;
+        top: 30px;
+        width: 36px;
+        height: 108px;
+        border-radius: 999px;
+        background: var(--blue);
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.28);
+        transform-origin: 50% 54px;
+      }
+
+      .mark-part:nth-child(1) { transform: translateY(-22px); }
+      .mark-part:nth-child(2) { transform: translate(-42px, -2px) rotate(-56deg); }
+      .mark-part:nth-child(3) { transform: translate(42px, -2px) rotate(56deg); }
+      .mark-part:nth-child(4) { transform: translate(-31px, 38px) rotate(52deg) scaleY(0.72); }
+      .mark-part:nth-child(5) { transform: translate(31px, 38px) rotate(-52deg) scaleY(0.72); }
+
+      /* Scene 01 — hook */
+      #scene-01 {
+        background:
+          radial-gradient(circle at 74% 22%, rgba(30, 43, 250, 0.075), transparent 32%),
+          var(--cream);
+      }
+
+      .hook-cloud {
+        position: absolute;
+        inset: 0;
+        opacity: 0.82;
+      }
+
+      .hook-capsule {
+        position: absolute;
+        height: 16px;
+        border: 2px solid rgba(30, 43, 250, 0.16);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.66);
+      }
+
+      .hook-capsule.hot {
+        border-color: rgba(30, 43, 250, 0.42);
+        background: rgba(30, 43, 250, 0.16);
+      }
+
+      .hook-copy {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 5;
+      }
+
+      .hook-first {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+
+      .hook-first .preline {
+        margin-bottom: -24px;
+        color: var(--ink);
+        font-size: 42px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+      }
+
+      .hook-number {
+        color: var(--blue);
+        font-size: 370px;
+        font-weight: 700;
+        line-height: 0.95;
+        text-shadow: 0 22px 58px rgba(30, 43, 250, 0.15);
+      }
+
+      .hook-tools {
+        margin-top: -6px;
+        color: var(--ink);
+        font-size: 54px;
+        font-weight: 660;
+        letter-spacing: -0.035em;
+      }
+
+      .hook-five {
+        position: absolute;
+        left: 825px;
+        top: 232px;
+        width: 890px;
+        opacity: 0;
+      }
+
+      .only-five {
+        color: var(--ink);
+        font-size: 116px;
+        font-weight: 680;
+        line-height: 0.94;
+      }
+
+      .only-five strong {
+        color: var(--blue);
+        font-weight: 700;
+      }
+
+      .starter-dots {
+        display: flex;
+        gap: 18px;
+        margin-top: 58px;
+      }
+
+      .starter-dot {
+        width: 122px;
+        height: 76px;
+        border-radius: 999px;
+        background: var(--blue);
+        box-shadow: 0 18px 38px rgba(30, 43, 250, 0.17);
+        opacity: 0;
+      }
+
+      /* Scene 02 — terminal */
+      #scene-02 {
+        background:
+          linear-gradient(90deg, transparent 0 64%, rgba(30, 43, 250, 0.055) 64% 100%),
+          var(--cream);
+        perspective: 1400px;
+      }
+
+      .terminal-wrap {
+        position: absolute;
+        left: 124px;
+        top: 184px;
+        width: 1190px;
+        height: 720px;
+        transform-style: preserve-3d;
+      }
+
+      .terminal {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.14);
+        border-radius: 42px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 34%),
+          #121318;
+        box-shadow:
+          0 55px 110px rgba(17, 17, 17, 0.25),
+          0 20px 50px rgba(30, 43, 250, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        color: #f8f6e9;
+      }
+
+      .terminal-bar {
+        display: flex;
+        height: 84px;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+        padding: 0 38px;
+      }
+
+      .terminal-lights {
+        display: flex;
+        gap: 12px;
+      }
+
+      .terminal-light {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .terminal-title {
+        color: rgba(255, 255, 255, 0.58);
+        font-size: 22px;
+        font-weight: 520;
+        letter-spacing: 0.03em;
+      }
+
+      .terminal-body {
+        padding: 56px 64px;
+      }
+
+      .command-line {
+        display: flex;
+        align-items: center;
+        min-height: 70px;
+        font-size: 34px;
+        font-weight: 520;
+        letter-spacing: -0.03em;
+      }
+
+      .prompt {
+        margin-right: 18px;
+        color: #8190ff;
+      }
+
+      #terminal-command span {
+        display: inline-block;
+      }
+
+      .terminal-caret {
+        display: inline-block;
+        width: 17px;
+        height: 38px;
+        margin-left: 8px;
+        border-radius: 3px;
+        background: #8190ff;
+        vertical-align: -6px;
+      }
+
+      .terminal-output {
+        display: grid;
+        gap: 16px;
+        margin-top: 42px;
+      }
+
+      .terminal-row {
+        display: flex;
+        width: 100%;
+        min-height: 82px;
+        align-items: center;
+        justify-content: space-between;
+        border: 2px solid rgba(255, 255, 255, 0.075);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.045);
+        padding: 0 30px;
+        font-size: 28px;
+      }
+
+      .terminal-row span:first-child {
+        color: rgba(255, 255, 255, 0.68);
+      }
+
+      .terminal-row strong {
+        color: #fff;
+        font-weight: 540;
+      }
+
+      .terminal-ok {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #8ce0bd;
+        font-size: 24px;
+      }
+
+      .terminal-ok::before {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #8ce0bd;
+        content: "";
+      }
+
+      .escaped-tool {
+        position: absolute;
+        display: flex;
+        min-width: 220px;
+        height: 78px;
+        align-items: center;
+        gap: 18px;
+        border: 2px solid rgba(30, 43, 250, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 22px 44px rgba(30, 43, 250, 0.11);
+        padding: 0 25px;
+        color: var(--ink);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 25px;
+        font-weight: 610;
+        white-space: nowrap;
+      }
+
+      .escaped-tool::before {
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        background: var(--blue);
+        content: "";
+      }
+
+      /* Scene 03 — one endpoint */
+      #scene-03 {
+        background:
+          radial-gradient(circle at 42% 51%, rgba(30, 43, 250, 0.08), transparent 30%),
+          var(--cream);
+      }
+
+      .endpoint-stage {
+        position: absolute;
+        inset: 145px 95px 80px;
+      }
+
+      .endpoint-title {
+        position: absolute;
+        left: 610px;
+        top: 8px;
+        width: 760px;
+        text-align: center;
+      }
+
+      .endpoint-title h2 {
+        margin: 8px 0 0;
+        font-size: 72px;
+        font-weight: 670;
+      }
+
+      .route-map {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .route-map path {
+        fill: none;
+        stroke: rgba(30, 43, 250, 0.18);
+        stroke-linecap: round;
+        stroke-width: 8;
+      }
+
+      .route-map path.route-strong {
+        stroke: var(--blue);
+        stroke-width: 13;
+      }
+
+      .input-tools {
+        position: absolute;
+        left: 30px;
+        top: 190px;
+        display: grid;
+        width: 390px;
+        gap: 20px;
+      }
+
+      .input-tool {
+        display: flex;
+        height: 78px;
+        align-items: center;
+        gap: 18px;
+        border: 2px solid var(--blue-border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 0 28px;
+        color: var(--muted);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 27px;
+        font-weight: 580;
+      }
+
+      .input-tool::before {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        background: var(--blue-soft);
+        box-shadow: inset 0 0 0 3px rgba(30, 43, 250, 0.2);
+        content: "";
+      }
+
+      .endpoint-core {
+        position: absolute;
+        left: 695px;
+        top: 313px;
+        display: flex;
+        width: 410px;
+        height: 200px;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        border: 3px solid var(--blue);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 35px 80px rgba(30, 43, 250, 0.16);
+      }
+
+      .endpoint-core .roster-mark {
+        width: 168px;
+        height: 168px;
+        flex-basis: 168px;
+        transform: scale(0.67);
+        transform-origin: 50% 50%;
+      }
+
+      .endpoint-core-copy strong {
+        display: block;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 42px;
+        letter-spacing: -0.045em;
+      }
+
+      .endpoint-core-copy span {
+        color: var(--muted);
+        font-size: 24px;
+        font-weight: 560;
+      }
+
+      .agent-puck {
+        position: absolute;
+        right: 72px;
+        top: 325px;
+        display: grid;
+        width: 190px;
+        height: 190px;
+        place-items: center;
+        border: 3px solid var(--ink);
+        border-radius: 50%;
+        background: var(--ink);
+        box-shadow: 0 28px 66px rgba(17, 17, 17, 0.15);
+        color: var(--cream);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 32px;
+        font-weight: 660;
+        letter-spacing: 0.02em;
+      }
+
+      .endpoint-caption {
+        position: absolute;
+        left: 630px;
+        top: 585px;
+        width: 540px;
+        text-align: center;
+      }
+
+      .endpoint-caption strong {
+        display: block;
+        color: var(--blue);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 26px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .endpoint-caption span {
+        display: block;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 28px;
+      }
+
+      /* Scene 04 — search */
+      #scene-04 {
+        background:
+          linear-gradient(180deg, rgba(30, 43, 250, 0.035), transparent 38%),
+          var(--cream);
+      }
+
+      .search-head {
+        position: absolute;
+        left: 104px;
+        top: 76px;
+        z-index: 10;
+      }
+
+      .search-head h2 {
+        width: 930px;
+        margin: 8px 0 0;
+        font-size: 78px;
+        font-weight: 680;
+        line-height: 0.98;
+      }
+
+      .search-field {
+        position: absolute;
+        left: 70px;
+        right: 70px;
+        top: 308px;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 22px;
+        perspective: 1200px;
+      }
+
+      .candidate {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        height: 420px;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        border: 2px solid var(--blue-border);
+        border-radius: 34px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 28px;
+        transform-origin: 50% 80%;
+      }
+
+      .candidate::after {
+        position: absolute;
+        right: -55px;
+        bottom: -55px;
+        width: 155px;
+        height: 155px;
+        border-radius: 50%;
+        background: var(--blue-soft);
+        content: "";
+      }
+
+      .candidate-icon {
+        display: grid;
+        width: 68px;
+        height: 68px;
+        place-items: center;
+        border-radius: 24px;
+        background: var(--blue-soft);
+        color: var(--blue);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 30px;
+        font-weight: 700;
+      }
+
+      .candidate-name {
+        position: relative;
+        z-index: 2;
+      }
+
+      .candidate-name strong {
+        display: block;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 33px;
+        font-weight: 650;
+        letter-spacing: -0.035em;
+      }
+
+      .candidate-name span {
+        display: block;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 22px;
+        line-height: 1.25;
+      }
+
+      .search-lens {
+        position: absolute;
+        left: -340px;
+        top: 254px;
+        z-index: 7;
+        width: 410px;
+        height: 568px;
+        border: 3px solid rgba(30, 43, 250, 0.42);
+        border-radius: 50px;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.28), rgba(30, 43, 250, 0.1), rgba(255, 255, 255, 0.42));
+        box-shadow: 0 26px 62px rgba(30, 43, 250, 0.12);
+      }
+
+      .search-lens::after {
+        position: absolute;
+        right: 24px;
+        top: 28px;
+        width: 7px;
+        height: 512px;
+        border-radius: 999px;
+        background: var(--blue);
+        content: "";
+      }
+
+      .eval-readout {
+        position: absolute;
+        left: 104px;
+        bottom: 72px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .eval-readout .eval-index {
+        display: grid;
+        width: 64px;
+        height: 64px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--blue);
+        color: white;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 25px;
+        font-weight: 650;
+      }
+
+      .eval-stack {
+        position: relative;
+        width: 420px;
+        height: 64px;
+        overflow: hidden;
+      }
+
+      .eval-word {
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--ink);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 36px;
+        font-weight: 650;
+        letter-spacing: 0.035em;
+      }
+
+      /* Scene 05 — clearing */
+      #scene-05 {
+        background:
+          linear-gradient(108deg, rgba(30, 43, 250, 0.045) 0 23%, transparent 23% 100%),
+          var(--cream);
+      }
+
+      .clear-head {
+        position: absolute;
+        left: 110px;
+        top: 90px;
+      }
+
+      .clear-head h2 {
+        width: 740px;
+        margin: 6px 0 0;
+        font-size: 78px;
+        font-weight: 680;
+      }
+
+      .clear-field {
+        position: absolute;
+        inset: 265px 100px 86px;
+        perspective: 1300px;
+      }
+
+      .clear-route {
+        position: absolute;
+        left: 0;
+        top: 250px;
+        width: 100%;
+        height: 220px;
+        overflow: visible;
+      }
+
+      .clear-route path {
+        fill: none;
+        stroke: rgba(30, 43, 250, 0.18);
+        stroke-linecap: round;
+        stroke-width: 8;
+      }
+
+      .reject-card {
+        position: absolute;
+        display: flex;
+        width: 220px;
+        height: 122px;
+        align-items: center;
+        gap: 18px;
+        overflow: hidden;
+        border: 2px solid var(--blue-border);
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 20px 24px;
+        color: var(--muted);
+        transform-origin: 0 50%;
+      }
+
+      .reject-card::before {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        border-radius: 17px;
+        background: var(--blue-soft);
+        content: "";
+      }
+
+      .reject-card strong {
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 25px;
+        font-weight: 610;
+      }
+
+      .schema-ribbon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: flex;
+        gap: 12px;
+        opacity: 0;
+      }
+
+      .schema-bit {
+        display: block;
+        width: 92px;
+        height: 16px;
+        border-radius: 999px;
+        background: rgba(30, 43, 250, 0.18);
+      }
+
+      .survivors {
+        position: absolute;
+        left: 750px;
+        right: 20px;
+        top: 210px;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+      }
+
+      .survivor {
+        display: grid;
+        height: 176px;
+        place-items: center;
+        border: 3px solid var(--blue);
+        border-radius: 42px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 28px 58px rgba(30, 43, 250, 0.11);
+        color: var(--blue);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 30px;
+        font-weight: 670;
+      }
+
+      .bench-label {
+        position: absolute;
+        left: 22px;
+        bottom: 20px;
+        color: var(--muted);
+        font-size: 25px;
+        font-weight: 600;
+      }
+
+      /* Scene 06 — starting five */
+      #scene-06 {
+        background:
+          radial-gradient(ellipse at 50% 78%, rgba(30, 43, 250, 0.16), transparent 42%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.65), transparent 58%),
+          var(--cream);
+      }
+
+      .lineup-head {
+        position: absolute;
+        top: 76px;
+        left: 50%;
+        width: 1000px;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+
+      .lineup-head h2 {
+        margin: 4px 0 0;
+        font-size: 88px;
+        font-weight: 700;
+      }
+
+      .hero-lineup {
+        position: absolute;
+        left: 50%;
+        bottom: 112px;
+        display: grid;
+        width: 1700px;
+        grid-template-columns: 270px 300px 340px 300px 270px;
+        align-items: end;
+        gap: 24px;
+        transform: translateX(-50%);
+        perspective: 1600px;
+      }
+
+      .hero-tool {
+        position: relative;
+        display: flex;
+        height: 390px;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        border: 2px solid rgba(30, 43, 250, 0.16);
+        border-radius: 42px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 248, 255, 0.83)),
+          var(--paper);
+        box-shadow:
+          0 42px 80px rgba(17, 17, 17, 0.09),
+          0 18px 36px rgba(30, 43, 250, 0.09),
+          inset 0 1px 0 white;
+        padding: 28px;
+        transform-style: preserve-3d;
+      }
+
+      .hero-tool:nth-child(1),
+      .hero-tool:nth-child(5) {
+        height: 330px;
+        opacity: 0.94;
+      }
+
+      .hero-tool:nth-child(2),
+      .hero-tool:nth-child(4) {
+        height: 360px;
+      }
+
+      .hero-tool:nth-child(3) {
+        height: 430px;
+        border-color: var(--blue);
+        box-shadow:
+          0 48px 90px rgba(17, 17, 17, 0.1),
+          0 22px 50px rgba(30, 43, 250, 0.17),
+          inset 0 1px 0 white;
+      }
+
+      .starter-id {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--blue);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .starter-id::after {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--blue);
+        content: "";
+      }
+
+      .hero-tool-copy strong {
+        display: block;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 42px;
+        font-weight: 680;
+        letter-spacing: -0.045em;
+      }
+
+      .hero-tool-copy span {
+        display: block;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 23px;
+        line-height: 1.32;
+      }
+
+      .hero-route {
+        position: absolute;
+        left: 50%;
+        bottom: 54px;
+        width: 1540px;
+        height: 150px;
+        transform: translateX(-50%);
+        overflow: visible;
+      }
+
+      .hero-route path {
+        fill: none;
+        stroke: var(--blue);
+        stroke-linecap: round;
+        stroke-width: 12;
+      }
+
+      /* Scene 07 — call path */
+      #scene-07 {
+        background:
+          linear-gradient(90deg, rgba(30, 43, 250, 0.055) 0 33%, transparent 33% 100%),
+          var(--cream);
+      }
+
+      .call-title {
+        position: absolute;
+        left: 110px;
+        top: 84px;
+      }
+
+      .call-title h2 {
+        width: 910px;
+        margin: 6px 0 0;
+        font-size: 78px;
+        font-weight: 680;
+      }
+
+      .call-map {
+        position: absolute;
+        inset: 256px 112px 124px;
+      }
+
+      .call-route {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .call-route path {
+        fill: none;
+        stroke: rgba(30, 43, 250, 0.17);
+        stroke-linecap: round;
+        stroke-width: 18;
+      }
+
+      .call-route path.return-line {
+        stroke: rgba(30, 43, 250, 0.08);
+        stroke-width: 11;
+      }
+
+      .call-node {
+        position: absolute;
+        display: grid;
+        width: 310px;
+        height: 310px;
+        place-items: center;
+        border: 3px solid var(--blue-border);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 34px 70px rgba(17, 17, 17, 0.08);
+        text-align: center;
+      }
+
+      .call-node strong {
+        display: block;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 42px;
+        font-weight: 680;
+      }
+
+      .call-node span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 23px;
+      }
+
+      .call-agent { left: 25px; top: 130px; border-color: var(--ink); }
+      .call-roster { left: 692px; top: 38px; border-color: var(--blue); }
+      .call-tool { right: 24px; top: 130px; }
+
+      .call-roster .roster-mark {
+        margin: -22px auto -16px;
+        transform: scale(0.62);
+      }
+
+      .call-packet {
+        position: absolute;
+        left: 246px;
+        top: 258px;
+        z-index: 8;
+        display: grid;
+        width: 178px;
+        height: 76px;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--blue);
+        box-shadow: 0 22px 44px rgba(30, 43, 250, 0.22);
+        color: white;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 23px;
+        font-weight: 650;
+      }
+
+      .result-packet {
+        top: 338px;
+        background: white;
+        color: var(--blue);
+        box-shadow: inset 0 0 0 3px var(--blue), 0 18px 36px rgba(30, 43, 250, 0.12);
+      }
+
+      .local-stamp {
+        position: absolute;
+        left: 50%;
+        bottom: 44px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 3px solid var(--green);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.93);
+        padding: 18px 30px;
+        color: var(--green);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 25px;
+        font-weight: 670;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        transform: translateX(-50%) rotate(-2deg);
+      }
+
+      .local-stamp::before {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--green);
+        color: white;
+        content: "✓";
+      }
+
+      /* Scene 08 — sixth man */
+      #scene-08 {
+        background:
+          linear-gradient(108deg, transparent 0 58%, rgba(30, 43, 250, 0.055) 58% 100%),
+          var(--cream);
+      }
+
+      .sixth-title {
+        position: absolute;
+        left: 106px;
+        top: 84px;
+      }
+
+      .sixth-title h2 {
+        width: 900px;
+        margin: 6px 0 0;
+        font-size: 78px;
+        font-weight: 680;
+      }
+
+      .sixth-stage {
+        position: absolute;
+        inset: 260px 110px 95px;
+      }
+
+      .failed-tool,
+      .suggest-tool {
+        position: absolute;
+        display: flex;
+        width: 470px;
+        height: 320px;
+        flex-direction: column;
+        justify-content: space-between;
+        border: 3px solid var(--blue-border);
+        border-radius: 48px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 34px 72px rgba(17, 17, 17, 0.08);
+        padding: 36px;
+      }
+
+      .failed-tool { left: 62px; top: 100px; }
+      .suggest-tool { right: 74px; top: 84px; border-color: var(--blue); }
+
+      .tool-state {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 23px;
+        font-weight: 670;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .failed-tool .tool-state { color: var(--red); }
+      .suggest-tool .tool-state { color: var(--blue); }
+
+      .failed-tool h3,
+      .suggest-tool h3 {
+        margin: 0;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 60px;
+        font-weight: 680;
+        letter-spacing: -0.05em;
+      }
+
+      .failed-tool p,
+      .suggest-tool p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 25px;
+        line-height: 1.35;
+      }
+
+      .broken-route,
+      .suggest-route {
+        position: absolute;
+        left: 490px;
+        top: 224px;
+        width: 690px;
+        height: 170px;
+        overflow: visible;
+      }
+
+      .broken-route path {
+        fill: none;
+        stroke: var(--red);
+        stroke-dasharray: 28 22;
+        stroke-linecap: round;
+        stroke-width: 11;
+      }
+
+      .suggest-route path {
+        fill: none;
+        stroke: var(--blue);
+        stroke-linecap: round;
+        stroke-width: 12;
+      }
+
+      .accept-pill {
+        position: absolute;
+        left: 50%;
+        bottom: 28px;
+        z-index: 10;
+        display: inline-flex;
+        height: 80px;
+        align-items: center;
+        gap: 16px;
+        border: 3px solid var(--blue);
+        border-radius: 999px;
+        background: var(--blue);
+        box-shadow: 0 24px 52px rgba(30, 43, 250, 0.2);
+        padding: 0 34px;
+        color: white;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 27px;
+        font-weight: 680;
+        letter-spacing: 0.05em;
+        transform: translateX(-50%);
+      }
+
+      .accept-pill::before {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 50%;
+        background: white;
+        color: var(--blue);
+        content: "✓";
+      }
+
+      .suggestion-note {
+        position: absolute;
+        right: 92px;
+        bottom: 34px;
+        color: var(--muted);
+        font-size: 25px;
+        font-weight: 580;
+      }
+
+      /* Scene 09 — Coach and League */
+      #scene-09 {
+        background:
+          linear-gradient(180deg, rgba(30, 43, 250, 0.04), transparent 52%),
+          var(--cream);
+      }
+
+      .learning-head {
+        position: absolute;
+        left: 110px;
+        top: 80px;
+      }
+
+      .learning-head h2 {
+        width: 1050px;
+        margin: 5px 0 0;
+        font-size: 76px;
+        font-weight: 680;
+      }
+
+      .learning-grid {
+        position: absolute;
+        left: 110px;
+        right: 110px;
+        top: 322px;
+        bottom: 70px;
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 42px;
+      }
+
+      .coach-panel,
+      .league-panel {
+        position: relative;
+        overflow: hidden;
+        border: 2px solid var(--blue-border);
+        border-radius: 42px;
+        background: rgba(255, 255, 255, 0.76);
+        padding: 38px;
+      }
+
+      .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 30px;
+        font-weight: 650;
+      }
+
+      .panel-title span {
+        color: var(--blue);
+        font-size: 23px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .outcome-chips {
+        display: flex;
+        gap: 14px;
+        margin-top: 34px;
+      }
+
+      .outcome-chip {
+        min-width: 150px;
+        border: 2px solid var(--blue-border);
+        border-radius: 999px;
+        background: var(--paper);
+        padding: 14px 20px;
+        color: var(--muted);
+        font-size: 21px;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .coach-chart {
+        position: absolute;
+        left: 36px;
+        right: 36px;
+        bottom: 36px;
+        height: 260px;
+      }
+
+      .coach-chart svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .coach-gridline {
+        stroke: rgba(30, 43, 250, 0.1);
+        stroke-width: 3;
+      }
+
+      .coach-curve {
+        fill: none;
+        stroke: var(--blue);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 12;
+      }
+
+      .coach-area {
+        fill: rgba(30, 43, 250, 0.07);
+      }
+
+      .league-list {
+        display: grid;
+        gap: 15px;
+        margin-top: 34px;
+      }
+
+      .league-row {
+        display: grid;
+        grid-template-columns: 52px 1fr auto;
+        min-height: 82px;
+        align-items: center;
+        gap: 14px;
+        border-radius: 24px;
+        background: var(--blue-soft);
+        padding: 0 20px;
+        font-size: 24px;
+        font-weight: 610;
+      }
+
+      .league-row.mover {
+        background: var(--blue);
+        color: white;
+      }
+
+      .league-rank {
+        color: inherit;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 30px;
+        font-weight: 700;
+      }
+
+      .league-move {
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .league-note {
+        position: absolute;
+        left: 38px;
+        right: 38px;
+        bottom: 30px;
+        color: var(--muted);
+        font-size: 22px;
+        line-height: 1.35;
+      }
+
+      /* Scene 10 — identity */
+      #scene-10 {
+        background:
+          radial-gradient(circle at 50% 47%, rgba(30, 43, 250, 0.11), transparent 29%),
+          var(--cream);
+      }
+
+      .final-rings {
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        width: 850px;
+        height: 850px;
+        transform: translate(-50%, -50%);
+      }
+
+      .final-ring {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border: 2px solid rgba(30, 43, 250, 0.11);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .final-ring:nth-child(1) { width: 390px; height: 390px; }
+      .final-ring:nth-child(2) { width: 590px; height: 590px; }
+      .final-ring:nth-child(3) { width: 790px; height: 790px; }
+
+      .final-lockup {
+        position: absolute;
+        left: 50%;
+        top: 168px;
+        display: flex;
+        width: 1100px;
+        flex-direction: column;
+        align-items: center;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+
+      .final-fliers {
+        position: absolute;
+        left: 50%;
+        top: 168px;
+        z-index: 8;
+        width: 168px;
+        height: 168px;
+        transform: translateX(-50%);
+      }
+
+      .final-flier {
+        position: absolute;
+        width: 36px;
+        height: 108px;
+      }
+
+      .final-flier:nth-child(1) { left: 66px; top: 8px; }
+      .final-flier:nth-child(2) { left: 24px; top: 28px; }
+      .final-flier:nth-child(3) { left: 108px; top: 28px; }
+      .final-flier:nth-child(4) { left: 35px; top: 68px; }
+      .final-flier:nth-child(5) { left: 97px; top: 68px; }
+
+      .flier-shape {
+        display: block;
+        width: 36px;
+        height: 108px;
+        border-radius: 999px;
+        background: var(--blue);
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.28);
+      }
+
+      .final-flier:nth-child(2) .flier-shape { transform: rotate(-56deg); }
+      .final-flier:nth-child(3) .flier-shape { transform: rotate(56deg); }
+      .final-flier:nth-child(4) .flier-shape { transform: rotate(52deg) scaleY(0.72); }
+      .final-flier:nth-child(5) .flier-shape { transform: rotate(-52deg) scaleY(0.72); }
+
+      .final-brand {
+        display: flex;
+        align-items: center;
+        gap: 44px;
+      }
+
+      .final-wordmark {
+        font-size: 144px;
+        font-weight: 700;
+        letter-spacing: -0.07em;
+      }
+
+      .final-tagline {
+        width: 960px;
+        margin-top: 34px;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 52px;
+        font-weight: 620;
+        line-height: 1.13;
+        letter-spacing: -0.04em;
+      }
+
+      .final-tagline strong {
+        color: var(--blue);
+        font-weight: 690;
+      }
+
+      .command-lockup {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        margin-top: 48px;
+      }
+
+      .command-label {
+        color: var(--muted);
+        font-family: "Space Grotesk", Arial, sans-serif;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-align: right;
+        text-transform: uppercase;
+      }
+
+      .command-pill {
+        display: flex;
+        height: 82px;
+        align-items: center;
+        border: 3px solid var(--blue);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 24px 52px rgba(30, 43, 250, 0.12);
+        padding: 0 34px;
+        color: var(--ink);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 29px;
+        font-weight: 560;
+        letter-spacing: -0.025em;
+      }
+
+      .command-pill::before {
+        margin-right: 18px;
+        color: var(--blue);
+        content: "$";
+      }
+    </style>
+  </head>
+  <body>
+    <main data-hf-id="hf-u3vh" id="root" data-composition-id="main" data-start="0" data-duration="54" data-width="1920" data-height="1080">
+      <section data-hf-id="hf-x7k1" id="scene-01" class="scene clip" data-start="0" data-duration="4" data-track-index="1">
+        <div data-hf-id="hf-1rzb" id="scene-01-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-bp4u" id="hook-cloud" class="hook-cloud"></div>
+          <div data-hf-id="hf-o5lv" class="topline">
+            <div data-hf-id="hf-hj1n" class="eyebrow">Roster · Draft intelligence</div>
+            <div data-hf-id="hf-1cc2" class="scene-index">01 / 10</div>
+          </div>
+          <div data-hf-id="hf-wnn3" class="hook-copy" data-layout-allow-overlap="" data-layout-allow-occlusion="">
+            <div data-hf-id="hf-jkfa" id="hook-first" class="hook-first">
+              <div data-hf-id="hf-chcx" class="preline display">YOUR AGENT HAS</div>
+              <div data-hf-id="hf-rh2j" class="hook-number display">200</div>
+              <div data-hf-id="hf-or9e" class="hook-tools display">TOOLS.</div>
+            </div>
+            <div data-hf-id="hf-p03m" id="hook-five" class="hook-five">
+              <div data-hf-id="hf-zbi2" class="only-five display">ONLY <strong data-hf-id="hf-rnaa">FIVE</strong><br data-hf-id="hf-x5px">GET TO START.</div>
+              <div data-hf-id="hf-st7v" class="starter-dots" aria-hidden="true">
+                <div data-hf-id="hf-tpu3" class="starter-dot"></div><div data-hf-id="hf-xrvv" class="starter-dot"></div><div data-hf-id="hf-xdku" class="starter-dot"></div><div data-hf-id="hf-wz9t" class="starter-dot"></div><div data-hf-id="hf-wkys" class="starter-dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-wznr" id="scene-02" class="scene clip" data-start="4" data-duration="6" data-track-index="2">
+        <div data-hf-id="hf-4a82" id="scene-02-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-pz6r" class="topline">
+            <div data-hf-id="hf-643r" class="eyebrow">One task enters</div>
+            <div data-hf-id="hf-gys9" class="scene-index">02 / 10</div>
+          </div>
+          <div data-hf-id="hf-j6bk" id="terminal-wrap" class="terminal-wrap">
+            <div data-hf-id="hf-1ms0" class="terminal">
+              <div data-hf-id="hf-b8ww" class="terminal-bar">
+                <div data-hf-id="hf-g46a" class="terminal-lights"><span data-hf-id="hf-70ey" class="terminal-light"></span><span data-hf-id="hf-wmwu" class="terminal-light"></span><span data-hf-id="hf-x17v" class="terminal-light"></span></div>
+                <div data-hf-id="hf-1nuw" class="terminal-title mono">local workspace · roster</div>
+                <div data-hf-id="hf-sttl" class="terminal-title mono">five mode</div>
+              </div>
+              <div data-hf-id="hf-lf8u" class="terminal-body mono">
+                <div data-hf-id="hf-yvwa" class="command-line"><span data-hf-id="hf-99ip" class="prompt">$</span><span data-hf-id="hf-hwfi" id="terminal-command"></span><span data-hf-id="hf-6ltf" id="terminal-caret" class="terminal-caret"></span></div>
+                <div data-hf-id="hf-pzti" class="terminal-output">
+                  <div data-hf-id="hf-hi8v" class="terminal-row"><span data-hf-id="hf-iaew">endpoint</span><strong data-hf-id="hf-ieph">roster</strong><span data-hf-id="hf-k7fb" class="terminal-ok">local</span></div>
+                  <div data-hf-id="hf-mpsv" class="terminal-row"><span data-hf-id="hf-1ciy">meta-tools</span><strong data-hf-id="hf-9pcc">draft · call</strong><span data-hf-id="hf-sc2j" class="terminal-ok">ready</span></div>
+                  <div data-hf-id="hf-mbhu" class="terminal-row"><span data-hf-id="hf-goqr">rotation</span><strong data-hf-id="hf-euyu">five starters</strong><span data-hf-id="hf-wlwr" class="terminal-ok">observing</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div data-hf-id="hf-yw90" id="escaped-tools" data-layout-allow-overlap="" data-layout-allow-occlusion="" data-layout-allow-overflow="" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-m3cu" id="scene-03" class="scene clip" data-start="10" data-duration="6" data-track-index="3">
+        <div data-hf-id="hf-17eh" id="scene-03-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-0uye" class="endpoint-stage">
+            <div data-hf-id="hf-9nny" class="endpoint-title"><div data-hf-id="hf-yy71" class="eyebrow">Roster enters</div><h2 data-hf-id="hf-5xxv" class="display">Many connections.<br data-hf-id="hf-rsrt">One clean endpoint.</h2></div>
+            <svg data-hf-id="hf-t8xw" class="route-map" viewBox="0 0 1730 855" aria-hidden="true">
+              <path data-hf-id="hf-941k" class="endpoint-route" d="M360 250 C560 250 560 355 760 410" />
+              <path data-hf-id="hf-ljfx" class="endpoint-route" d="M360 350 C565 350 590 385 760 410" />
+              <path data-hf-id="hf-ejv5" class="endpoint-route" d="M360 450 C560 450 590 430 760 410" />
+              <path data-hf-id="hf-rlq9" class="endpoint-route" d="M360 550 C560 550 590 465 760 410" />
+              <path data-hf-id="hf-oxd1" class="route-strong" d="M1065 410 C1280 410 1395 418 1535 418" />
+            </svg>
+            <div data-hf-id="hf-zd5q" class="input-tools">
+              <div data-hf-id="hf-fidb" class="input-tool">Repository access</div>
+              <div data-hf-id="hf-ynlc" class="input-tool">Browser automation</div>
+              <div data-hf-id="hf-wptb" class="input-tool">Issue tracking</div>
+              <div data-hf-id="hf-qzg0" class="input-tool">Structured data</div>
+            </div>
+            <div data-hf-id="hf-8t8s" id="endpoint-core" class="endpoint-core">
+              <div data-hf-id="hf-fu8e" class="roster-mark" aria-hidden="true"><i data-hf-id="hf-bbfr" class="mark-part"></i><i data-hf-id="hf-hsg7" class="mark-part"></i><i data-hf-id="hf-he56" class="mark-part"></i><i data-hf-id="hf-gzu5" class="mark-part"></i><i data-hf-id="hf-jrzc" class="mark-part"></i></div>
+              <div data-hf-id="hf-vzbp" class="endpoint-core-copy"><strong data-hf-id="hf-aa6t">Roster</strong><span data-hf-id="hf-7why">the Rotation</span></div>
+            </div>
+            <div data-hf-id="hf-x7o8" class="agent-puck">AGENT</div>
+            <div data-hf-id="hf-8u96" class="endpoint-caption"><strong data-hf-id="hf-plnj">Local-first · telemetry off by default</strong><span data-hf-id="hf-8fxk">One endpoint observes what the task needs.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-w3ab" id="scene-04" class="scene clip" data-start="16" data-duration="7" data-track-index="4">
+        <div data-hf-id="hf-8vz8" id="scene-04-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-5xhv" class="search-head"><div data-hf-id="hf-cai2" class="eyebrow">Search the field</div><h2 data-hf-id="hf-vc5c" class="display">Resolve signal<br data-hf-id="hf-szow">from the noise.</h2></div>
+          <div data-hf-id="hf-sda7" class="search-field">
+            <article data-hf-id="hf-uhcb" class="candidate" data-selected="true"><div data-hf-id="hf-ef9v" class="candidate-icon">R</div><div data-hf-id="hf-labl" class="candidate-name"><strong data-hf-id="hf-8bwq">Repository</strong><span data-hf-id="hf-bgv1">Code and history</span></div></article>
+            <article data-hf-id="hf-16mw" class="candidate"><div data-hf-id="hf-2we2" class="candidate-icon">M</div><div data-hf-id="hf-ahsl" class="candidate-name"><strong data-hf-id="hf-f6sm">Messages</strong><span data-hf-id="hf-g2z0">Team communication</span></div></article>
+            <article data-hf-id="hf-yvmz" class="candidate" data-selected="true"><div data-hf-id="hf-6h5b" class="candidate-icon">F</div><div data-hf-id="hf-bopo" class="candidate-name"><strong data-hf-id="hf-5h1p">Files</strong><span data-hf-id="hf-7rtl">Local workspace</span></div></article>
+            <article data-hf-id="hf-yhby" class="candidate" data-selected="true"><div data-hf-id="hf-82df" class="candidate-icon">B</div><div data-hf-id="hf-baen" class="candidate-name"><strong data-hf-id="hf-fotq">Browser</strong><span data-hf-id="hf-okeg">Web automation</span></div></article>
+            <article data-hf-id="hf-y30x" class="candidate" data-selected="true"><div data-hf-id="hf-4hm6" class="candidate-icon">I</div><div data-hf-id="hf-chbq" class="candidate-name"><strong data-hf-id="hf-h9fi">Issues</strong><span data-hf-id="hf-9l71">Work tracking</span></div></article>
+            <article data-hf-id="hf-6l2o" class="candidate"><div data-hf-id="hf-3ap3" class="candidate-icon">N</div><div data-hf-id="hf-c30p" class="candidate-name"><strong data-hf-id="hf-xkin">Notes</strong><span data-hf-id="hf-fejd">Knowledge capture</span></div></article>
+            <article data-hf-id="hf-xopw" class="candidate" data-selected="true"><div data-hf-id="hf-5oj9" class="candidate-icon">D</div><div data-hf-id="hf-d9xs" class="candidate-name"><strong data-hf-id="hf-lkuy">Data</strong><span data-hf-id="hf-fufk">Structured records</span></div></article>
+          </div>
+          <div data-hf-id="hf-q3wz" id="search-lens" class="search-lens" data-layout-allow-overflow=""></div>
+          <div data-hf-id="hf-idt5" class="eval-readout"><div data-hf-id="hf-iku2" class="eval-index">01</div><div data-hf-id="hf-t37w" class="eval-stack" data-layout-allow-overflow=""><div data-hf-id="hf-t8q5" class="eval-word">TASK FIT</div><div data-hf-id="hf-i0fx" class="eval-word">RELIABILITY</div><div data-hf-id="hf-y7p7" class="eval-word">LATENCY</div><div data-hf-id="hf-8577" class="eval-word">LOCAL OUTCOMES</div></div></div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-mcoo" id="scene-05" class="scene clip" data-start="23" data-duration="6" data-track-index="5">
+        <div data-hf-id="hf-6u1v" id="scene-05-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-jgm6" class="clear-head"><div data-hf-id="hf-aqrq" class="eyebrow">The Rotation focuses</div><h2 data-hf-id="hf-cggi" class="display">Everything else<br data-hf-id="hf-sldv">takes the bench.</h2></div>
+          <div data-hf-id="hf-co3i" id="clear-field" class="clear-field">
+            <svg data-hf-id="hf-4ucy" class="clear-route" viewBox="0 0 1720 220" aria-hidden="true">
+              <path data-hf-id="hf-n7b3" class="retract-route" d="M25 118 C360 30 560 30 835 110" />
+              <path data-hf-id="hf-huty" class="retract-route" d="M25 118 C390 190 590 195 835 110" />
+              <path data-hf-id="hf-coe0" class="retract-route" d="M25 118 C390 110 610 110 835 110" />
+            </svg>
+            <div data-hf-id="hf-u3tp" id="reject-cards" aria-hidden="true"></div>
+            <div data-hf-id="hf-0q9v" id="schema-ribbon" class="schema-ribbon" aria-hidden="true"><span data-hf-id="hf-17ee" class="schema-bit"></span><span data-hf-id="hf-zehm" class="schema-bit"></span><span data-hf-id="hf-zssn" class="schema-bit"></span><span data-hf-id="hf-073o" class="schema-bit"></span><span data-hf-id="hf-0lep" class="schema-bit"></span></div>
+            <div data-hf-id="hf-1yx5" class="survivors">
+              <div data-hf-id="hf-5036" class="survivor">REPO</div><div data-hf-id="hf-ru8x" class="survivor">FILES</div><div data-hf-id="hf-0b36" class="survivor">BROWSER</div><div data-hf-id="hf-naiq" class="survivor">ISSUES</div><div data-hf-id="hf-l032" class="survivor">DATA</div>
+            </div>
+            <div data-hf-id="hf-oege" class="bench-label">BENCH · ranked, still available</div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-vl0l" id="scene-06" class="scene clip" data-start="29" data-duration="7" data-track-index="6">
+        <div data-hf-id="hf-nxr2" id="scene-06-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-qpwo" class="lineup-head"><div data-hf-id="hf-m3r2" class="eyebrow">The Rotation</div><h2 data-hf-id="hf-1fha" class="display">THE STARTING FIVE</h2></div>
+          <svg data-hf-id="hf-2hux" class="hero-route" viewBox="0 0 1540 150" aria-hidden="true"><path data-hf-id="hf-o8gc" id="lineup-route" d="M65 100 C330 35 470 115 610 78 C720 48 820 48 930 78 C1070 115 1210 35 1475 100" /></svg>
+          <div data-hf-id="hf-lnao" class="hero-lineup">
+            <article data-hf-id="hf-y1hg" class="hero-tool">
+              <div data-hf-id="hf-69yf" class="starter-id">Starter 01</div>
+              <div data-hf-id="hf-4k1m" class="glyph"><svg data-hf-id="hf-g3ih" viewBox="0 0 48 48"><path data-hf-id="hf-rqc7" d="M8 14h14l5 5h13v20H8z" /><path data-hf-id="hf-c5fl" d="M8 14v25" /></svg></div>
+              <div data-hf-id="hf-imk3" class="hero-tool-copy"><strong data-hf-id="hf-kkf2">REPO</strong><span data-hf-id="hf-09s9">Repository access</span></div>
+            </article>
+            <article data-hf-id="hf-tt18" class="hero-tool">
+              <div data-hf-id="hf-5vne" class="starter-id">Starter 02</div>
+              <div data-hf-id="hf-ocny" class="glyph"><svg data-hf-id="hf-1j99" viewBox="0 0 48 48"><path data-hf-id="hf-3v7r" d="M13 8h17l6 6v26H13z" /><path data-hf-id="hf-vxok" d="M30 8v8h8" /><path data-hf-id="hf-3han" d="M19 25h11M19 31h11" /></svg></div>
+              <div data-hf-id="hf-ahhv" class="hero-tool-copy"><strong data-hf-id="hf-evnx">FILES</strong><span data-hf-id="hf-ph0t">Local workspace</span></div>
+            </article>
+            <article data-hf-id="hf-sm45" class="hero-tool">
+              <div data-hf-id="hf-5hcd" class="starter-id">Starter 03</div>
+              <div data-hf-id="hf-oqyz" class="glyph"><svg data-hf-id="hf-2q6c" viewBox="0 0 48 48"><rect data-hf-id="hf-3qk8" x="7" y="9" width="34" height="30" rx="7" /><path data-hf-id="hf-bs72" d="M7 18h34" /><path data-hf-id="hf-wkbt" d="M14 13h.1M20 13h.1" /><path data-hf-id="hf-ro5m" d="M18 29l5 5 9-12" /></svg></div>
+              <div data-hf-id="hf-a36u" class="hero-tool-copy"><strong data-hf-id="hf-dzxq">BROWSER</strong><span data-hf-id="hf-0qm8">Web automation</span></div>
+            </article>
+            <article data-hf-id="hf-t0f6" class="hero-tool">
+              <div data-hf-id="hf-89hk" class="starter-id">Starter 04</div>
+              <div data-hf-id="hf-p5a0" class="glyph"><svg data-hf-id="hf-2bvb" viewBox="0 0 48 48"><rect data-hf-id="hf-83e3" x="10" y="8" width="28" height="32" rx="6" /><path data-hf-id="hf-edcn" d="M17 17h14M17 24h14M17 31h8" /><path data-hf-id="hf-3dwz" d="M6 16h7M6 24h7" /></svg></div>
+              <div data-hf-id="hf-9ovt" class="hero-tool-copy"><strong data-hf-id="hf-npzy">ISSUES</strong><span data-hf-id="hf-ma4h">Work tracking</span></div>
+            </article>
+            <article data-hf-id="hf-uzyb" class="hero-tool">
+              <div data-hf-id="hf-7v6j" class="starter-id">Starter 05</div>
+              <div data-hf-id="hf-md4t" class="glyph"><svg data-hf-id="hf-3ise" viewBox="0 0 48 48"><ellipse data-hf-id="hf-hd4d" cx="24" cy="12" rx="15" ry="6" /><path data-hf-id="hf-8dbk" d="M9 12v12c0 3 7 6 15 6s15-3 15-6V12M9 24v12c0 3 7 6 15 6s15-3 15-6V24" /></svg></div>
+              <div data-hf-id="hf-9aks" class="hero-tool-copy"><strong data-hf-id="hf-58hm">DATA</strong><span data-hf-id="hf-wnu0">Structured records</span></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-6ler" id="scene-07" class="scene clip" data-start="36" data-duration="5" data-track-index="7">
+        <div data-hf-id="hf-4t4l" id="scene-07-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-sqr1" class="call-title"><div data-hf-id="hf-01cq" class="eyebrow">One clean call</div><h2 data-hf-id="hf-oawl" class="display">Request in.<br data-hf-id="hf-qluq">Useful result back.</h2></div>
+          <div data-hf-id="hf-6xcd" class="call-map">
+            <svg data-hf-id="hf-xiea" class="call-route" viewBox="0 0 1696 700" aria-hidden="true"><path data-hf-id="hf-f8cy" d="M300 285 C520 40 745 50 850 195 C980 25 1230 45 1390 285" /><path data-hf-id="hf-aax4" class="return-line" d="M1390 375 C1190 585 975 555 850 420 C720 575 505 575 300 375" /></svg>
+            <div data-hf-id="hf-einr" class="call-node call-agent"><div data-hf-id="hf-yeow"><strong data-hf-id="hf-iyyn">AGENT</strong><span data-hf-id="hf-tosx">task request</span></div></div>
+            <div data-hf-id="hf-624t" class="call-node call-roster"><div data-hf-id="hf-y7yw"><div data-hf-id="hf-4jiq" class="roster-mark" aria-hidden="true"><i data-hf-id="hf-jdob" class="mark-part"></i><i data-hf-id="hf-izda" class="mark-part"></i><i data-hf-id="hf-il29" class="mark-part"></i><i data-hf-id="hf-ld7g" class="mark-part"></i><i data-hf-id="hf-kywf" class="mark-part"></i></div><strong data-hf-id="hf-bc39">ROSTER</strong><span data-hf-id="hf-lq1t">local route</span></div></div>
+            <div data-hf-id="hf-7b6q" class="call-node call-tool"><div data-hf-id="hf-x11t"><div data-hf-id="hf-mrfu" class="glyph"><svg data-hf-id="hf-34hd" viewBox="0 0 48 48"><rect data-hf-id="hf-0owg" x="7" y="9" width="34" height="30" rx="7" /><path data-hf-id="hf-t6qq" d="M7 18h34" /><path data-hf-id="hf-pozy" d="M18 29l5 5 9-12" /></svg></div><strong data-hf-id="hf-t73m">BROWSER</strong><span data-hf-id="hf-q48e">selected capability</span></div></div>
+            <div data-hf-id="hf-ny8w" id="request-packet" class="call-packet">REQUEST</div>
+            <div data-hf-id="hf-jzio" id="result-packet" class="call-packet result-packet">RESULT</div>
+            <div data-hf-id="hf-kzev" id="local-stamp" class="local-stamp">Outcome saved locally</div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-levx" id="scene-08" class="scene clip" data-start="41" data-duration="5" data-track-index="8">
+        <div data-hf-id="hf-l8v4" id="scene-08-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-bzs9" class="sixth-title"><div data-hf-id="hf-mdgw" class="eyebrow">The Sixth Man</div><h2 data-hf-id="hf-78ib" class="display">Failure becomes<br data-hf-id="hf-q7jp">a useful next step.</h2></div>
+          <div data-hf-id="hf-tbyl" class="sixth-stage">
+            <article data-hf-id="hf-sxfz" id="failed-tool" class="failed-tool"><div data-hf-id="hf-2uns" class="tool-state">Connection lost <span data-hf-id="hf-v48y">×</span></div><h3 data-hf-id="hf-cgcs">BROWSER</h3><p data-hf-id="hf-pj4z">The starter remains visible, but its route is broken.</p></article>
+            <svg data-hf-id="hf-fph8" id="broken-route" class="broken-route" viewBox="0 0 690 170" aria-hidden="true"><path data-hf-id="hf-e5j6" d="M0 86 C120 30 220 48 315 83" /></svg>
+            <svg data-hf-id="hf-qq7w" id="suggest-route" class="suggest-route" viewBox="0 0 690 170" aria-hidden="true"><path data-hf-id="hf-sznd" d="M365 84 C470 118 555 116 690 82" /></svg>
+            <article data-hf-id="hf-t6gn" id="suggest-tool" class="suggest-tool"><div data-hf-id="hf-m93o" class="tool-state">Next best option <span data-hf-id="hf-o14f">06</span></div><h3 data-hf-id="hf-fs0i">WEB</h3><p data-hf-id="hf-8mds">Suggested equivalent from the ranked bench.</p></article>
+            <div data-hf-id="hf-dqn2" id="accept-pill" class="accept-pill">Agent accepts suggestion</div>
+            <div data-hf-id="hf-t2dh" class="suggestion-note">Suggestion only · no silent substitution</div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-8qn7" id="scene-09" class="scene clip" data-start="46" data-duration="4" data-track-index="9">
+        <div data-hf-id="hf-vf67" id="scene-09-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-931d" class="learning-head"><div data-hf-id="hf-bamp" class="eyebrow">Coach + League</div><h2 data-hf-id="hf-j75a" class="display">Learn locally.<br data-hf-id="hf-regs">Measure openly.</h2></div>
+          <div data-hf-id="hf-qdvv" class="learning-grid">
+            <article data-hf-id="hf-bq5s" class="coach-panel">
+              <div data-hf-id="hf-hcmr" class="panel-title">Coach <span data-hf-id="hf-dvb5">Local outcomes</span></div>
+              <div data-hf-id="hf-l2vu" class="outcome-chips"><div data-hf-id="hf-b8p2" class="outcome-chip">SUCCESS</div><div data-hf-id="hf-q32z" class="outcome-chip">FAILURE</div><div data-hf-id="hf-62yb" class="outcome-chip">LATENCY</div><div data-hf-id="hf-3zem" class="outcome-chip">DRIFT</div></div>
+              <div data-hf-id="hf-n315" class="coach-chart">
+                <svg data-hf-id="hf-ng75" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
+                  <path data-hf-id="hf-clbq" class="coach-gridline" d="M0 215 H1000 M0 145 H1000 M0 75 H1000" />
+                  <path data-hf-id="hf-twpo" class="coach-area" d="M10 230 C190 222 260 178 380 188 C520 199 560 118 690 130 C810 140 855 65 980 36 L980 250 L10 250 Z" />
+                  <path data-hf-id="hf-czmy" id="coach-curve" class="coach-curve" d="M10 230 C190 222 260 178 380 188 C520 199 560 118 690 130 C810 140 855 65 980 36" />
+                </svg>
+              </div>
+            </article>
+            <article data-hf-id="hf-nfyb" class="league-panel">
+              <div data-hf-id="hf-c7au" class="panel-title">League <span data-hf-id="hf-92w0">Pre-season</span></div>
+              <div data-hf-id="hf-4y54" class="league-list">
+                <div data-hf-id="hf-8o0s" class="league-row"><span data-hf-id="hf-xgie" class="league-rank">01</span><span data-hf-id="hf-3ckh">Repository</span><span data-hf-id="hf-c610" class="league-move">—</span></div>
+                <div data-hf-id="hf-k5cb" class="league-row mover"><span data-hf-id="hf-xutf" class="league-rank">02</span><span data-hf-id="hf-k8e3">Browser</span><span data-hf-id="hf-9w3k" class="league-move">↑ 1</span></div>
+                <div data-hf-id="hf-76ac" class="league-row"><span data-hf-id="hf-y94g" class="league-rank">03</span><span data-hf-id="hf-lrch">Data</span><span data-hf-id="hf-2p12" class="league-move">↓ 1</span></div>
+              </div>
+              <div data-hf-id="hf-ln3w" class="league-note">A static pre-season view of tool performance—not a live public service yet.</div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-o1je" id="scene-10" class="scene clip" data-start="50" data-duration="4" data-track-index="10">
+        <div data-hf-id="hf-0azp" id="scene-10-motion" class="scene-motion" data-layout-allow-overflow="">
+          <div data-hf-id="hf-ubr9" class="final-rings" aria-hidden="true"><i data-hf-id="hf-q0p3" class="final-ring"></i><i data-hf-id="hf-u693" class="final-ring"></i><i data-hf-id="hf-try2" class="final-ring"></i></div>
+          <div data-hf-id="hf-8c2l" class="final-fliers" aria-hidden="true"><i data-hf-id="hf-56x9" class="final-flier"><b data-hf-id="hf-g37t" class="flier-shape"></b></i><i data-hf-id="hf-hu2p" class="final-flier"><b data-hf-id="hf-wwfx" class="flier-shape"></b></i><i data-hf-id="hf-j0zs" class="final-flier"><b data-hf-id="hf-y3d0" class="flier-shape"></b></i><i data-hf-id="hf-imor" class="final-flier"><b data-hf-id="hf-xp1z" class="flier-shape"></b></i><i data-hf-id="hf-gn5m" class="final-flier"><b data-hf-id="hf-yvz2" class="flier-shape"></b></i></div>
+          <div data-hf-id="hf-gcvj" class="final-lockup">
+            <div data-hf-id="hf-x6k0" class="final-brand">
+              <div data-hf-id="hf-2w0y" id="final-mark" class="roster-mark" aria-hidden="true"><i data-hf-id="hf-ifdh" class="mark-part"></i><i data-hf-id="hf-itoi" class="mark-part"></i><i data-hf-id="hf-j7zj" class="mark-part"></i><i data-hf-id="hf-jmak" class="mark-part"></i><i data-hf-id="hf-k0ll" class="mark-part"></i></div>
+              <div data-hf-id="hf-o9f3" id="final-wordmark" class="final-wordmark display">ROSTER</div>
+            </div>
+            <div data-hf-id="hf-c6h7" id="final-tagline" class="final-tagline">Your agent has 200 tools.<br data-hf-id="hf-r05r"><strong data-hf-id="hf-1thx">Only five get to start.</strong></div>
+            <div data-hf-id="hf-ovgi" id="command-lockup" class="command-lockup"><div data-hf-id="hf-73fq" class="command-label">Launch command<br data-hf-id="hf-p0mm">coming soon</div><div data-hf-id="hf-wrxm" class="command-pill">npx roster init</div></div>
+          </div>
+        </div>
+      </section>
+
+      <audio data-hf-id="hf-lg85" id="score" class="clip" data-start="0" data-duration="54" data-track-index="20" src="assets/audio/roster-score-master.wav"></audio>
+    </main>
+
+    <script>
+      const command = "roster serve --five";
+      const commandNode = document.querySelector("#terminal-command");
+      for (const character of command) {
+        const span = document.createElement("span");
+        span.textContent = character === " " ? "\u00a0" : character;
+        commandNode.appendChild(span);
+      }
+
+      const hookCloud = document.querySelector("#hook-cloud");
+      for (let index = 0; index < 78; index += 1) {
+        const capsule = document.createElement("i");
+        capsule.className = `hook-capsule${index % 11 === 0 ? " hot" : ""}`;
+        capsule.style.left = `${72 + ((index * 179) % 1760)}px`;
+        capsule.style.top = `${92 + ((index * 113) % 865)}px`;
+        capsule.style.width = `${38 + ((index * 17) % 82)}px`;
+        capsule.style.transform = `rotate(${((index * 23) % 30) - 15}deg)`;
+        hookCloud.appendChild(capsule);
+      }
+
+      const escapedNames = ["repository", "filesystem", "browser", "issues", "database", "messages", "search", "deploy"];
+      const escapedHost = document.querySelector("#escaped-tools");
+      for (let index = 0; index < escapedNames.length; index += 1) {
+        const tool = document.createElement("div");
+        tool.className = "escaped-tool";
+        tool.textContent = escapedNames[index];
+        tool.style.left = "1450px";
+        tool.style.top = `${154 + index * 96}px`;
+        tool.style.zIndex = String(20 + index);
+        escapedHost.appendChild(tool);
+      }
+
+      const rejectNames = ["calendar", "billing", "weather", "maps", "email", "notes", "alerts", "crm"];
+      const rejectHost = document.querySelector("#reject-cards");
+      for (let index = 0; index < rejectNames.length; index += 1) {
+        const card = document.createElement("div");
+        card.className = "reject-card";
+        card.innerHTML = `<strong>${rejectNames[index]}</strong>`;
+        card.style.left = `${28 + (index % 3) * 232}px`;
+        card.style.top = `${60 + Math.floor(index / 3) * 132}px`;
+        card.style.transform = `scale(${0.82 + (index % 3) * 0.08}) rotate(${((index * 9) % 10) - 5}deg)`;
+        rejectHost.appendChild(card);
+      }
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+      const reveal = (selector, from, to, at) => tl.fromTo(selector, from, {...to, immediateRender: false}, at);
+
+      // Explicit scene-start state makes every seek independent of playback history.
+      tl.set("#scene-02 .topline, #terminal-wrap, .terminal-row, .escaped-tool, #terminal-command span", {opacity: 0}, 4);
+      tl.set(".endpoint-title, .input-tool, #endpoint-core, .agent-puck, .endpoint-caption", {opacity: 0}, 10);
+      tl.set(".endpoint-route", {strokeDasharray: 800, strokeDashoffset: 800}, 10);
+      tl.set(".route-strong", {strokeDasharray: 700, strokeDashoffset: 700}, 10);
+      tl.set(".search-head, .candidate, .eval-readout, .eval-word", {opacity: 0}, 16);
+      tl.set(".clear-head, .reject-card, .survivor, .bench-label, #schema-ribbon", {opacity: 0}, 23);
+      tl.set(".lineup-head, .hero-tool, .hero-tool .glyph, .hero-tool-copy, .starter-id", {opacity: 0}, 29);
+      tl.set("#lineup-route", {strokeDasharray: 1800, strokeDashoffset: 1800}, 29);
+      tl.set(".call-title, .call-node, #request-packet, #result-packet, #local-stamp", {opacity: 0}, 36);
+      tl.set(".call-route path", {strokeDasharray: 1700, strokeDashoffset: 1700}, 36);
+      tl.set(".sixth-title, #failed-tool, #suggest-tool, #accept-pill, .suggestion-note", {opacity: 0}, 41);
+      tl.set("#broken-route path", {strokeDasharray: 900, strokeDashoffset: 900}, 41);
+      tl.set("#suggest-route path", {strokeDasharray: 900, strokeDashoffset: 900}, 41);
+      tl.set(".learning-head, .coach-panel, .outcome-chip, .league-panel, .league-row, .league-note, .coach-area", {opacity: 0}, 46);
+      tl.set("#coach-curve", {strokeDasharray: 1800, strokeDashoffset: 1800}, 46);
+      tl.set(".final-ring, .final-flier, #final-mark, #final-wordmark, #final-tagline, #command-lockup", {opacity: 0}, 50);
+      tl.set(".final-fliers", {visibility: "visible"}, 50);
+      tl.set(".flier-shape", {opacity: 1}, 50);
+
+      // Scene 01 — kinetic hook.
+      reveal("#scene-01 .topline", {opacity: 0, y: -24}, {opacity: 1, y: 0, duration: 0.42}, 0.02);
+      reveal("#hook-first .preline", {opacity: 0, y: 28}, {opacity: 1, y: 0, duration: 0.38}, 0.08);
+      reveal("#hook-first .hook-number", {opacity: 0, scale: 0.62, y: 48}, {opacity: 1, scale: 1, y: 0, duration: 0.72, ease: "back.out(1.28)"}, 0.18);
+      reveal("#hook-first .hook-tools", {opacity: 0, y: 35}, {opacity: 1, y: 0, duration: 0.42}, 0.48);
+      reveal(".hook-capsule", {opacity: 0, scale: 0.2, x: 0, y: 0}, {opacity: 1, scale: 1, duration: 0.65, stagger: {each: 0.008, from: "center"}, ease: "back.out(1.2)"}, 0.3);
+      tl.to("#hook-first", {x: -315, scale: 0.68, duration: 0.58, ease: "power4.inOut"}, 1.55);
+      reveal("#hook-five", {opacity: 0, x: 135, scale: 0.84}, {opacity: 1, x: 0, scale: 1, duration: 0.58, ease: "back.out(1.24)"}, 1.86);
+      reveal(".starter-dot", {opacity: 0, scaleX: 0.2, y: 26}, {opacity: 1, scaleX: 1, y: 0, duration: 0.42, stagger: 0.08, ease: "back.out(1.45)"}, 2.12);
+      tl.to(".hook-capsule", {x: -60, duration: 1.15, stagger: {each: 0.004, from: "end"}, ease: "power1.inOut"}, 2.65);
+
+      // Scene 02 — terminal and spatial escape.
+      reveal("#scene-02 .topline", {opacity: 0, y: -22}, {opacity: 1, y: 0, duration: 0.42}, 4.04);
+      reveal("#terminal-wrap", {opacity: 0, y: 118, scale: 0.9, rotationX: 8, rotationY: -5}, {opacity: 1, y: 0, scale: 1, rotationX: 0, rotationY: 0, duration: 0.82, ease: "back.out(1.18)"}, 4.08);
+      reveal("#terminal-command span", {opacity: 0}, {opacity: 1, duration: 0.01, stagger: 0.055, ease: "none"}, 4.7);
+      for (let time = 4.62, visible = false; time < 6.25; time += 0.25) {
+        visible = !visible;
+        tl.set("#terminal-caret", {opacity: visible ? 1 : 0}, time);
+      }
+      tl.set("#terminal-caret", {opacity: 0}, 6.28);
+      reveal(".terminal-row", {opacity: 0, y: 28, scale: 0.98}, {opacity: 1, y: 0, scale: 1, duration: 0.38, stagger: 0.22, ease: "back.out(1.12)"}, 6.05);
+      reveal(".escaped-tool", {opacity: 0, scale: 0.5, x: -120, y: 120, rotation: 7}, {opacity: 1, scale: 1, x: 0, y: 0, rotation: 0, duration: 0.65, stagger: 0.12, ease: "back.out(1.32)"}, 7.35);
+      tl.to("#terminal-wrap", {x: -82, scale: 1.025, rotationY: 2, duration: 1.6, ease: "power2.inOut"}, 7.9);
+      tl.to(".escaped-tool", {x: -240, y: (index) => (index % 2 === 0 ? -70 : 70), rotation: (index) => (index % 2 === 0 ? -4 : 4), duration: 1.45, stagger: 0.05, ease: "power3.inOut"}, 8.35);
+
+      // Scene 03 — route compression.
+      reveal(".endpoint-title", {opacity: 0, y: -30}, {opacity: 1, y: 0, duration: 0.55}, 10.08);
+      reveal(".input-tool", {opacity: 0, x: -140, scale: 0.86}, {opacity: 1, x: 0, scale: 1, duration: 0.54, stagger: 0.13, ease: "back.out(1.2)"}, 10.35);
+      reveal(".endpoint-route", {strokeDasharray: 800, strokeDashoffset: 800}, {strokeDashoffset: 0, duration: 1.05, stagger: 0.11, ease: "power2.inOut"}, 11.2);
+      reveal("#endpoint-core", {opacity: 0, scale: 0.62}, {opacity: 1, scale: 1, duration: 0.68, ease: "back.out(1.32)"}, 11.75);
+      reveal("#endpoint-core .mark-part", {opacity: 0, scaleY: 0.18}, {opacity: 1, scaleY: 1, duration: 0.44, stagger: 0.08, ease: "back.out(1.35)"}, 12.1);
+      reveal(".route-strong", {strokeDasharray: 700, strokeDashoffset: 700}, {strokeDashoffset: 0, duration: 1.0, ease: "power2.inOut"}, 12.72);
+      reveal(".agent-puck", {opacity: 0, x: 120, scale: 0.75}, {opacity: 1, x: 0, scale: 1, duration: 0.62, ease: "back.out(1.22)"}, 13.05);
+      reveal(".endpoint-caption", {opacity: 0, y: 28}, {opacity: 1, y: 0, duration: 0.48}, 13.68);
+      tl.to(".input-tool", {x: 38, duration: 1.1, stagger: 0.05, ease: "power1.inOut"}, 14.3);
+
+      // Scene 04 — evaluation scan.
+      reveal(".search-head", {opacity: 0, x: -60}, {opacity: 1, x: 0, duration: 0.58}, 16.05);
+      reveal(".candidate", {opacity: 0, y: 95, rotationY: -7, scale: 0.9}, {opacity: 1, y: 0, rotationY: 0, scale: 1, duration: 0.58, stagger: 0.07, ease: "back.out(1.2)"}, 16.28);
+      reveal(".eval-readout", {opacity: 0, y: 24}, {opacity: 1, y: 0, duration: 0.42}, 16.75);
+      tl.set(".eval-word", {opacity: 0, y: 32}, 16.0);
+      tl.to(".eval-word:nth-child(1)", {opacity: 1, y: 0, duration: 0.32}, 17.0);
+      tl.to("#search-lens", {x: 425, duration: 1.12, ease: "power2.inOut"}, 16.92);
+      tl.to(".eval-word:nth-child(1)", {opacity: 0, y: -28, duration: 0.22}, 18.05);
+      tl.to(".eval-word:nth-child(2)", {opacity: 1, y: 0, duration: 0.3}, 18.12);
+      tl.to("#search-lens", {x: 880, duration: 1.15, ease: "power2.inOut"}, 18.05);
+      tl.to(".eval-index", {scale: 1.12, duration: 0.16, ease: "power2.out"}, 18.18);
+      tl.to(".eval-index", {scale: 1, duration: 0.22, ease: "back.out(1.4)"}, 18.34);
+      tl.to(".eval-word:nth-child(2)", {opacity: 0, y: -28, duration: 0.22}, 19.38);
+      tl.to(".eval-word:nth-child(3)", {opacity: 1, y: 0, duration: 0.3}, 19.44);
+      tl.to("#search-lens", {x: 1310, duration: 1.12, ease: "power2.inOut"}, 19.35);
+      tl.to(".eval-index", {scale: 1.12, duration: 0.16, ease: "power2.out"}, 19.5);
+      tl.to(".eval-index", {scale: 1, duration: 0.22, ease: "back.out(1.4)"}, 19.66);
+      tl.to(".eval-word:nth-child(3)", {opacity: 0, y: -28, duration: 0.22}, 20.65);
+      tl.to(".eval-word:nth-child(4)", {opacity: 1, y: 0, duration: 0.3}, 20.72);
+      tl.to("#search-lens", {x: 1720, duration: 1.16, ease: "power2.inOut"}, 20.62);
+      tl.to(".eval-index", {scale: 1.12, duration: 0.16, ease: "power2.out"}, 20.78);
+      tl.to(".eval-index", {scale: 1, duration: 0.22, ease: "back.out(1.4)"}, 20.94);
+      tl.to(".candidate:not([data-selected='true'])", {opacity: 0.28, scale: 0.9, y: 34, duration: 0.7, ease: "power3.out"}, 20.82);
+      tl.to(".candidate[data-selected='true']", {borderColor: "#1e2bfa", backgroundColor: "rgba(255,255,255,0.94)", y: -18, duration: 0.55, stagger: 0.06, ease: "back.out(1.18)"}, 20.88);
+
+      // Scene 05 — authored focus transformation.
+      reveal(".clear-head", {opacity: 0, x: -50}, {opacity: 1, x: 0, duration: 0.52}, 23.05);
+      reveal(".reject-card", {opacity: 0, scale: 0.72, x: -55}, {opacity: 1, scale: 1, x: 0, duration: 0.46, stagger: 0.055, ease: "back.out(1.16)"}, 23.2);
+      reveal(".survivor", {opacity: 0, y: 55, scale: 0.82}, {opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.08, ease: "back.out(1.26)"}, 23.65);
+      reveal(".retract-route", {strokeDasharray: 900, strokeDashoffset: 0}, {strokeDashoffset: 900, duration: 0.9, stagger: 0.08, ease: "power3.in"}, 24.05);
+      tl.to(".reject-card", {scaleX: 0.05, x: -110, opacity: 0, duration: 0.58, stagger: 0.055, ease: "power3.in"}, 24.55);
+      reveal("#schema-ribbon", {opacity: 0, x: 250, y: 335, scaleX: 0.4}, {opacity: 1, x: 0, y: 335, scaleX: 1, duration: 0.52}, 25.0);
+      tl.to("#schema-ribbon", {x: -720, y: 420, scale: 0.38, opacity: 0.2, duration: 1.35, ease: "power3.inOut"}, 25.55);
+      tl.to(".survivor", {y: -22, borderColor: "#1e2bfa", backgroundColor: "rgba(255,255,255,1)", duration: 0.5, stagger: 0.07, ease: "back.out(1.18)"}, 26.48);
+      reveal(".bench-label", {opacity: 0, x: -20}, {opacity: 1, x: 0, duration: 0.4}, 26.95);
+
+      // Scene 06 — five hero arrivals, then secondary content.
+      reveal(".lineup-head", {opacity: 0, scale: 0.78, y: -22}, {opacity: 1, scale: 1, y: 0, duration: 0.65, ease: "back.out(1.22)"}, 29.06);
+      const heroStarts = [30.12, 30.82, 29.45, 31.52, 32.22];
+      const heroFrom = [
+        {opacity: 0, x: -420, y: 160, rotation: -12, rotationY: 18, scale: 0.72},
+        {opacity: 0, x: -240, y: -170, rotation: -8, rotationY: 12, scale: 0.75},
+        {opacity: 0, x: 0, y: 260, rotation: 0, rotationY: 0, scale: 0.64},
+        {opacity: 0, x: 240, y: -170, rotation: 8, rotationY: -12, scale: 0.75},
+        {opacity: 0, x: 420, y: 160, rotation: 12, rotationY: -18, scale: 0.72},
+      ];
+      document.querySelectorAll(".hero-tool").forEach((tool, index) => {
+        reveal(tool, heroFrom[index], {opacity: 1, x: 0, y: 0, rotation: 0, rotationY: 0, scale: 1, duration: 0.78, ease: "back.out(1.28)"}, heroStarts[index]);
+        reveal(tool.querySelector(".glyph"), {opacity: 0, scale: 0.25, rotation: -16}, {opacity: 1, scale: 1, rotation: 0, duration: 0.42, ease: "back.out(1.5)"}, heroStarts[index] + 0.4);
+        reveal(tool.querySelector(".hero-tool-copy"), {opacity: 0, y: 22}, {opacity: 1, y: 0, duration: 0.34}, heroStarts[index] + 0.55);
+        reveal(tool.querySelector(".starter-id"), {opacity: 0, y: -12}, {opacity: 1, y: 0, duration: 0.3}, heroStarts[index] + 0.5);
+      });
+      reveal("#lineup-route", {strokeDasharray: 1800, strokeDashoffset: 1800}, {strokeDashoffset: 0, duration: 1.0, ease: "power2.inOut"}, 33.12);
+      tl.to(".hero-tool", {y: (index) => (index === 2 ? -10 : index % 2 === 0 ? 4 : -3), duration: 0.5, stagger: 0.04, ease: "power2.out"}, 34.05);
+
+      // Scene 07 — one route, one request, one result.
+      reveal(".call-title", {opacity: 0, x: -50}, {opacity: 1, x: 0, duration: 0.52}, 36.04);
+      reveal(".call-node", {opacity: 0, scale: 0.72, y: 55}, {opacity: 1, scale: 1, y: 0, duration: 0.58, stagger: 0.18, ease: "back.out(1.22)"}, 36.22);
+      reveal(".call-route path", {strokeDasharray: 1700, strokeDashoffset: 1700}, {strokeDashoffset: 0, duration: 0.85, stagger: 0.14, ease: "power2.inOut"}, 36.5);
+      reveal("#request-packet", {opacity: 0, scale: 0.55}, {opacity: 1, scale: 1, duration: 0.28, ease: "back.out(1.35)"}, 36.78);
+      tl.to("#request-packet", {x: 520, y: -150, duration: 0.68, ease: "power2.inOut"}, 37.0);
+      tl.to("#request-packet", {x: 940, y: 5, duration: 0.74, ease: "power2.inOut"}, 37.72);
+      tl.to(".call-tool", {scale: 1.06, borderColor: "#1e2bfa", duration: 0.18, ease: "power2.out"}, 38.48);
+      tl.to(".call-tool", {scale: 1, duration: 0.34, ease: "back.out(1.4)"}, 38.66);
+      tl.to("#request-packet", {opacity: 0, scale: 0.7, duration: 0.2}, 38.55);
+      reveal("#result-packet", {opacity: 0, scale: 0.5, x: 940, y: -28}, {opacity: 1, scale: 1, x: 940, y: -28, duration: 0.25, ease: "back.out(1.3)"}, 38.75);
+      tl.to("#result-packet", {x: 515, y: 118, duration: 0.65, ease: "power2.inOut"}, 39.02);
+      tl.to("#result-packet", {x: 0, y: 0, duration: 0.68, ease: "power2.inOut"}, 39.72);
+      tl.to("#result-packet", {opacity: 0, scale: 0.7, duration: 0.2}, 40.3);
+      reveal("#local-stamp", {opacity: 0, y: 38, scale: 0.72, rotation: -8}, {opacity: 1, y: 0, scale: 1, rotation: -2, duration: 0.46, ease: "back.out(1.48)"}, 40.18);
+
+      // Scene 08 — truthful suggestion-only recovery.
+      reveal(".sixth-title", {opacity: 0, x: -48}, {opacity: 1, x: 0, duration: 0.5}, 41.04);
+      reveal("#failed-tool", {opacity: 0, x: -120, scale: 0.86}, {opacity: 1, x: 0, scale: 1, duration: 0.58, ease: "back.out(1.18)"}, 41.18);
+      reveal("#broken-route path", {strokeDasharray: 900, strokeDashoffset: 900}, {strokeDashoffset: 0, duration: 0.5, ease: "power2.inOut"}, 41.52);
+      tl.to("#failed-tool", {x: -14, rotation: -1.5, opacity: 0.68, borderColor: "rgba(220,38,38,0.35)", duration: 0.34, ease: "power2.out"}, 41.84);
+      reveal("#suggest-tool", {opacity: 0, x: 160, y: 165, scale: 0.72, rotation: 6}, {opacity: 1, x: 0, y: 0, scale: 1, rotation: 0, duration: 0.72, ease: "back.out(1.3)"}, 42.12);
+      reveal(".suggestion-note", {opacity: 0, y: 20}, {opacity: 1, y: 0, duration: 0.42}, 43.0);
+      reveal("#accept-pill", {opacity: 0, y: 70, scale: 0.7}, {opacity: 1, y: 0, scale: 1, duration: 0.48, ease: "back.out(1.38)"}, 43.55);
+      tl.to("#accept-pill", {scale: 0.9, y: 5, duration: 0.12, ease: "power2.in"}, 44.02);
+      tl.to("#accept-pill", {scale: 1, y: 0, duration: 0.28, ease: "back.out(1.6)"}, 44.14);
+      reveal("#suggest-route path", {strokeDasharray: 900, strokeDashoffset: 900}, {strokeDashoffset: 0, duration: 0.72, ease: "power2.inOut"}, 44.36);
+      tl.to("#suggest-tool", {y: -10, duration: 0.34, ease: "back.out(1.28)"}, 44.72);
+
+      // Scene 09 — Coach and pre-season League glimpse.
+      reveal(".learning-head", {opacity: 0, x: -50}, {opacity: 1, x: 0, duration: 0.46}, 46.03);
+      reveal(".coach-panel", {opacity: 0, y: 80, scale: 0.94}, {opacity: 1, y: 0, scale: 1, duration: 0.52, ease: "back.out(1.16)"}, 46.16);
+      reveal(".outcome-chip", {opacity: 0, y: 25, scale: 0.82}, {opacity: 1, y: 0, scale: 1, duration: 0.34, stagger: 0.12, ease: "back.out(1.3)"}, 46.52);
+      reveal("#coach-curve", {strokeDasharray: 1800, strokeDashoffset: 1800}, {strokeDashoffset: 0, duration: 1.05, ease: "power2.inOut"}, 46.9);
+      reveal(".coach-area", {opacity: 0}, {opacity: 1, duration: 0.65}, 47.45);
+      reveal(".league-panel", {opacity: 0, x: 130, scale: 0.93}, {opacity: 1, x: 0, scale: 1, duration: 0.55, ease: "back.out(1.16)"}, 47.75);
+      reveal(".league-row", {opacity: 0, x: 50}, {opacity: 1, x: 0, duration: 0.38, stagger: 0.12, ease: "back.out(1.15)"}, 48.1);
+      reveal(".league-note", {opacity: 0, y: 18}, {opacity: 1, y: 0, duration: 0.38}, 48.72);
+      tl.to(".league-row.mover", {y: -8, duration: 0.34, ease: "back.out(1.5)"}, 49.0);
+
+      // Scene 10 — the five become the identity.
+      reveal(".final-ring", {opacity: 0, scale: 0.38}, {opacity: 1, scale: 1, duration: 0.8, stagger: 0.08, ease: "power3.out"}, 50.02);
+      const finalParts = document.querySelectorAll(".final-flier");
+      const finalOffsets = [
+        {x: 0, y: -330, rotation: 0},
+        {x: -390, y: -80, rotation: 0},
+        {x: 390, y: -80, rotation: 0},
+        {x: -330, y: 250, rotation: 0},
+        {x: 330, y: 250, rotation: 0},
+      ];
+      finalParts.forEach((part, index) => {
+        reveal(part, {opacity: 0, x: finalOffsets[index].x, y: finalOffsets[index].y, rotation: finalOffsets[index].rotation, scale: 1.4}, {opacity: 1, x: 0, y: 0, rotation: 0, scale: 1, duration: 0.72, ease: "back.out(1.25)"}, 50.12 + index * 0.08);
+      });
+      tl.to(".final-flier", {opacity: 0, scale: 0.82, duration: 0.14, ease: "power2.in"}, 50.92);
+      tl.to(".flier-shape", {opacity: 0, duration: 0.14, ease: "power2.in"}, 50.92);
+      tl.set(".final-fliers", {visibility: "hidden"}, 51.08);
+      reveal("#final-mark", {opacity: 0, scale: 0.78}, {opacity: 1, scale: 1, duration: 0.38, ease: "back.out(1.26)"}, 51.0);
+      reveal("#final-wordmark", {opacity: 0, x: -80, scaleX: 0.82}, {opacity: 1, x: 0, scaleX: 1, duration: 0.56, ease: "back.out(1.18)"}, 51.28);
+      reveal("#final-tagline", {opacity: 0, y: 28}, {opacity: 1, y: 0, duration: 0.46}, 51.68);
+      reveal("#command-lockup", {opacity: 0, y: 38, scale: 0.92}, {opacity: 1, y: 0, scale: 1, duration: 0.48, ease: "back.out(1.2)"}, 52.12);
+
+      window.__timelines["main"] = tl;
+
+      // <seams:auto> — generated by seam-stamp.mjs from ledger.json; do not hand-edit.
+      // Regenerate: node <motion-doctrine>/scripts/seam-stamp.mjs --ledger ledger.json --write index.html
+      gsap.set("#scene-01-motion", { autoAlpha: 1, xPercent: 0, yPercent: 0, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" });
+      gsap.set(["#scene-02-motion","#scene-03-motion","#scene-04-motion","#scene-05-motion","#scene-07-motion","#scene-08-motion","#scene-09-motion"], { autoAlpha: 0, xPercent: 0, yPercent: 0, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" });
+      gsap.set("#scene-06-motion", { autoAlpha: 0, scale: 1.25, filter: "blur(16px)", xPercent: 0, yPercent: 0, transformOrigin: "50% 50%" });
+      gsap.set("#scene-10-motion", { autoAlpha: 0, scale: 1.25, filter: "blur(16px)", xPercent: 0, yPercent: 0, transformOrigin: "50% 50%" });
+      
+      // SEAM — hook-to-terminal : cut-the-curve LEFT (cut @4)
+      tl.to("#scene-01-motion", { xPercent: -12, autoAlpha: 0, duration: 0.28, ease: "power3.in" }, 3.72);
+      tl.set("#scene-01-motion", { autoAlpha: 0 }, 4);
+      tl.fromTo("#scene-02-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.4, ease: "power4.out", immediateRender: false }, 4);
+      
+      // SEAM — terminal-to-endpoint : cut-the-curve LEFT (cut @10)
+      tl.to("#scene-02-motion", { xPercent: -12, autoAlpha: 0, duration: 0.3, ease: "power3.in" }, 9.7);
+      tl.set("#scene-02-motion", { autoAlpha: 0 }, 10);
+      tl.fromTo("#scene-03-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 10);
+      
+      // SEAM — endpoint-to-search : cut-the-curve LEFT (cut @16)
+      tl.to("#scene-03-motion", { xPercent: -12, autoAlpha: 0, duration: 0.3, ease: "power3.in" }, 15.7);
+      tl.set("#scene-03-motion", { autoAlpha: 0 }, 16);
+      tl.fromTo("#scene-04-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 16);
+      
+      // SEAM — search-to-focus : cut-the-curve LEFT (cut @23)
+      tl.to("#scene-04-motion", { xPercent: -12, autoAlpha: 0, duration: 0.3, ease: "power3.in" }, 22.7);
+      tl.set("#scene-04-motion", { autoAlpha: 0 }, 23);
+      tl.fromTo("#scene-05-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 23);
+      
+      // SEAM — focus-to-lineup : inverse zoom-through ARRIVAL (cut @29)
+      tl.to("#scene-05-motion", { scale: 0.8, filter: "blur(16px)", duration: 0.2, ease: "power3.in" }, 28.8);
+      tl.to("#scene-05-motion", { autoAlpha: 0, duration: 0.2, ease: "none" }, 28.8);
+      tl.set("#scene-05-motion", { autoAlpha: 0 }, 29);
+      tl.fromTo("#scene-06-motion", { autoAlpha: 0.15, scale: 1.25, filter: "blur(16px)" }, { autoAlpha: 1, scale: 1.0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, 29);
+      
+      // SEAM — lineup-to-call : cut-the-curve LEFT (cut @36)
+      tl.to("#scene-06-motion", { xPercent: -12, autoAlpha: 0, duration: 0.3, ease: "power3.in" }, 35.7);
+      tl.set("#scene-06-motion", { autoAlpha: 0 }, 36);
+      tl.fromTo("#scene-07-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 36);
+      
+      // SEAM — call-to-sixth : cut-the-curve LEFT (cut @41)
+      tl.to("#scene-07-motion", { xPercent: -12, autoAlpha: 0, duration: 0.28, ease: "power3.in" }, 40.72);
+      tl.set("#scene-07-motion", { autoAlpha: 0 }, 41);
+      tl.fromTo("#scene-08-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.4, ease: "power4.out", immediateRender: false }, 41);
+      
+      // SEAM — sixth-to-coach : cut-the-curve LEFT (cut @46)
+      tl.to("#scene-08-motion", { xPercent: -12, autoAlpha: 0, duration: 0.28, ease: "power3.in" }, 45.72);
+      tl.set("#scene-08-motion", { autoAlpha: 0 }, 46);
+      tl.fromTo("#scene-09-motion", { xPercent: 8, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.4, ease: "power4.out", immediateRender: false }, 46);
+      
+      // SEAM — coach-to-roster : inverse zoom-through ARRIVAL (cut @50)
+      tl.to("#scene-09-motion", { scale: 0.8, filter: "blur(16px)", duration: 0.2, ease: "power3.in" }, 49.8);
+      tl.to("#scene-09-motion", { autoAlpha: 0, duration: 0.2, ease: "none" }, 49.8);
+      tl.set("#scene-09-motion", { autoAlpha: 0 }, 50);
+      tl.fromTo("#scene-10-motion", { autoAlpha: 0.15, scale: 1.25, filter: "blur(16px)" }, { autoAlpha: 1, scale: 1.0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, 50);
+      
+      // </seams:auto>
+    </script>
+  </body>
+</html>

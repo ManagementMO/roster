@@ -1,0 +1,54 @@
+[
+  {
+    "id": "cobalt",
+    "name": "Pearl + cobalt",
+    "tag": "Recommended",
+    "accent": "#4963DF",
+    "canvas": "#F7F8FC",
+    "ink": "#172033",
+    "panel": "#151B29",
+    "pale": "#DFE7FB",
+    "syntax": "#AEBEFF",
+    "ground": "radial-gradient(ellipse at 88% 15%,#DCE6F9 0%,#EDF1FA 32%,#F7F8FC 72%)",
+    "description": "A pearl surface with a soft wash of blue. Cobalt gives FIVE its emphasis; the task and selected row use pale blue. Clean, bright and still energetic."
+  },
+  {
+    "id": "jade",
+    "name": "Ivory + jade",
+    "tag": "Warmer / calmer",
+    "accent": "#28745D",
+    "canvas": "#F4F3EB",
+    "ink": "#1A2822",
+    "panel": "#171F1C",
+    "pale": "#D8EBE1",
+    "syntax": "#A9D7C3",
+    "ground": "radial-gradient(ellipse at 87% 12%,#DDEBE1 0%,#EDF0E6 37%,#F4F3EB 76%)",
+    "description": "Warm ivory with a soft green undertone. Deep jade feels grounded and distinctive, while the original vendor and capability colors remain vivid."
+  },
+  {
+    "id": "apricot",
+    "name": "Soft apricot",
+    "tag": "Closest to the current film",
+    "accent": "#A9563C",
+    "canvas": "#F4E5DB",
+    "ink": "#312520",
+    "panel": "#211B18",
+    "pale": "#F1D4C2",
+    "syntax": "#EDB49A",
+    "ground": "radial-gradient(ellipse at 90% 8%,#F1CFBC 0%,#F3DCCB 36%,#F7EEE5 79%)",
+    "description": "A much softer version of the warm direction. The hue becomes a light surface rather than a full-strength orange field; accents shift toward terracotta."
+  },
+  {
+    "id": "current",
+    "name": "Current coral",
+    "tag": "Original for comparison",
+    "accent": "#FF6748",
+    "canvas": "#F4F1E9",
+    "ink": "#111210",
+    "panel": "#111210",
+    "pale": "#FF6748",
+    "syntax": "#FF6748",
+    "ground": "#FF6748",
+    "description": "The current exported film. Useful for comparing how much attention the large orange field and the two orange bars attract."
+  }
+]

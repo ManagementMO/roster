@@ -1,0 +1,10 @@
+{
+  "bgm": {
+    "path": "assets/audio/full-send-final.wav",
+    "volume": 1
+  },
+  "voices": [],
+  "sfx": [],
+  "duration": 15,
+  "note": "Original Full Send pop-rock arrangement, with a dry Playwright contact at 8.20s and a restrained guitar dip; 15-second 48 kHz stereo master."
+}

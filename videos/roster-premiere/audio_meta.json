@@ -1,0 +1,10 @@
+{
+  "bgm": {
+    "path": "assets/audio/premiere-score.wav",
+    "volume": 1
+  },
+  "voices": [],
+  "sfx": [],
+  "duration": 30,
+  "note": "Music and effects are pre-mixed to a measured 30-second master."
+}

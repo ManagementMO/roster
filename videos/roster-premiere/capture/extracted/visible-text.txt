@@ -1,0 +1,7 @@
+Source: local README.md, STATUS-FOR-MO.md, packages/router/src/rosterServer.ts, packages/coach/src/store.ts, packages/cli/src/serve.ts; current public README inspected 2026-09-07.
+Your agent has 200 tools. Only five get to start.
+One local endpoint for your tools and approved skills.
+Five mode: draft({need}) returns the best up to five capabilities, call({tool,args,draft_id}) invokes one.
+Derived outcomes improve routing through local maintenance.
+No hosted Roster service is involved. Backends retain their own networking behavior.
+Pre-release. Explore github.com/ManagementMO/roster.

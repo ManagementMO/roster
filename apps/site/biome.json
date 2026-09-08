@@ -1,0 +1,10 @@
+{
+  "root": false,
+  "extends": ["../../biome.json"],
+  "files": {
+    "includes": ["src/**", "test/**", "e2e/**", "scripts/**", "*.ts", "*.mjs"]
+  },
+  "html": {
+    "experimentalFullSupportEnabled": true
+  }
+}

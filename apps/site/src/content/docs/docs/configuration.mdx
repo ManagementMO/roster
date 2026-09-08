@@ -1,0 +1,81 @@
+---
+title: Configuration
+description: Roster's local configuration fields, stdio server entries, state locations, and safe editing practices.
+---
+import { claimSources } from "../../../lib/sources.js";
+
+Roster keeps its configuration in `~/.roster/roster.json`. Start with `init` to discover existing servers, then inspect the file locally.
+
+**Do not replace an existing configuration with this empty example.** It shows the shape and defaults, not a migration command:
+
+```json
+{
+  "version": 1,
+  "mode": "transparent",
+  "servers": {},
+  "skillSources": [],
+  "telemetry": { "enabled": false },
+  "embeddings": "auto"
+}
+```
+
+## Main fields
+
+| Field | Meaning |
+| --- | --- |
+| `version` | Configuration schema version; currently `1`. |
+| `mode` | `"transparent"` or `"five"`. Default: transparent. |
+| `servers` | A map of backend names to server definitions. |
+| `skillSources` | Additional local skill-library directories. Defaults are merged by init and serve. |
+| `telemetry.enabled` | Local consent flag; false by default. No uploader exists. |
+| `embeddings` | `"auto"` permits an available runtime; `"off"` disables the dense path. |
+
+`"auto"` does not install the optional runtime by itself. However, a source checkout already includes that runtime, so explicitly choose `"off"` if you do not want a first-use model download.
+
+There is no persistent `k` field in this configuration. Request a candidate count from 1 to 10 in each `draft` call.
+
+## Command-backed server entries
+
+An illustrative entry inside `servers`:
+
+```json
+{
+  "local-files": {
+    "command": "/absolute/path/to/server-executable",
+    "args": ["/absolute/path/to/authorized-project"],
+    "importedFrom": []
+  }
+}
+```
+
+Use a real executable and the arguments its own documentation requires. `command` starts a stdio backend. `args` is an array of strings. An optional `env` object carries explicitly configured string environment values. `importedFrom` tracks discovery provenance.
+
+Keep secrets in the local file, not in examples, screenshots, chat, or Git. The environment object may already have been imported from your client configuration.
+
+URL-only definitions can be discovered and represented, but the current router cannot serve them. Sync refuses a selected URL-only client config, while serve skips entries without a command. General MCP protocol support does not imply HTTP backend support here.
+
+## Change a mode safely
+
+Stop or disconnect the relevant client router process, edit only the intended field, save valid JSON, then reconnect. For five mode, set `mode` to `"five"`; for lexical-only retrieval, set `embeddings` to `"off"`.
+
+Avoid simultaneous manual edits and CLI mutations. The CLI serializes its own configuration operations across processes, but an editor is not participating in that lock.
+
+The config is JSON, not JSONC. Do not add comments or trailing commas. Malformed fields are rejected rather than silently replaced with defaults.
+
+## Advanced environment controls
+
+| Variable | Purpose |
+| --- | --- |
+| `ROSTER_HOME` | Override the location of Roster's state directory. Keep it private and consistent across your CLI and client launcher. |
+| `ROSTER_NO_FETCH=1` | Disable the dense path for that process. It is not an offline sandbox for backend tools. |
+| `ROSTER_ALLOW_REVIEW_SKILLS=1` | Explicitly serve review-flagged skills. Never a normal setup default. |
+
+Testing hooks such as `ROSTER_TEST_HOME` and launcher-detection overrides are for controlled fixtures, not ordinary setup. Do not use them to bypass ownership checks.
+
+## Config is not the whole local state
+
+The same private directory also contains backups, the receipt, Coach storage, locks, and recovery data. Eject restores clients; it does not delete all this state.
+
+**Next:** [See what is stored and what can contact the network](/docs/privacy/).
+
+<p class="source-note"><a href={claimSources.config}>Configuration validation</a><a href={claimSources.backends}>Backend connection behavior</a></p>

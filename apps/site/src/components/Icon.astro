@@ -1,0 +1,8 @@
+---
+import collection from "@iconify-json/tabler/icons.json";
+interface Props { name: string; size?: number; class?: string }
+const { name, size = 20, class: className } = Astro.props;
+const icon = collection.icons[name as keyof typeof collection.icons];
+if (!icon) throw new Error(`Unknown interface icon: ${name}`);
+---
+<svg width={size} height={size} viewBox="0 0 24 24" class={className} aria-hidden="true" focusable="false" set:html={icon.body} />

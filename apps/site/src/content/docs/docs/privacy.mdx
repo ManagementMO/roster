@@ -1,0 +1,67 @@
+---
+title: Privacy & local state
+description: What Roster stores locally, what telemetry does today, and why downstream tools can still use the network.
+---
+import Command from "../../../components/Command.astro";
+import { claimSources } from "../../../lib/sources.js";
+
+Roster's routing state and learning live on your machine. There is no Roster account, hosted routing service, or Roster API key.
+
+That does **not** mean every tool runs offline. A backend you invoke can still send requests to its normal services. The agent and client keep their own data policies too.
+
+## What is stored locally?
+
+| Location | Contents |
+| --- | --- |
+| `~/.roster/roster.json` | Server definitions, imported environment values, skill sources, mode, and consent settings. |
+| `~/.roster/backups/` | Original client config bytes, manifests, and restoration-era records. |
+| `~/.roster/receipt.json` | Discovered client/server/skill inventory, including config paths. |
+| `~/.roster/coach.db` | Capability definitions and skill bodies, derived outcomes, ratings, drift, suggestions, and optional vectors. |
+| `~/.roster/runtime/` | The optional embedding runtime, when installed through `dense enable`. |
+
+The Coach database is **not only anonymous counters**. Capability descriptions, skill instructions, and local paths can be sensitive. Config files and backups can contain credentials. Roster uses owner-only file permissions on supported systems; Windows permissions have different semantics.
+
+## The outcome log does not keep the conversation
+
+Outcome rows record structural facts such as the capability, call class, latency, session, and hashes for need/argument linkage. Raw prompts, tool arguments, and result bodies are not persisted in the outcome log.
+
+During routing, content exists in process memory so it can be forwarded, classified, or embedded locally. Recent draft context is held in memory. Hashing is for linkage, not a promise that low-entropy content can never be inferred.
+
+When dense retrieval is enabled, local need vectors and capability vectors are stored. They are not uploaded by Roster.
+
+## What can use the network?
+
+- Installing dependencies uses the package registry.
+- Optional dense setup installs a runtime, and first use may fetch model weights from Hugging Face.
+- Configured backend tools can contact their usual APIs, subject to their own behavior and permissions.
+- Your AI client may communicate with its model provider independently of Roster.
+
+Lexical retrieval itself needs no model download. Setting `ROSTER_NO_FETCH` or disabling embeddings is not a network firewall for downstream tools.
+
+## Telemetry is off
+
+<Command name="telemetry" />
+
+A fresh configuration has telemetry consent disabled. At this revision, even enabling consent only changes a local setting: **there is no event builder or upload endpoint**.
+
+The <a href={claimSources.telemetry}>telemetry schema of record</a> defines the proposed future boundary, including coarse outcome fields and hard exclusions for prompts, needs, arguments, results, embeddings, hostnames, and paths. Its aggregation thresholds are a design contract, not a running public telemetry service.
+
+Do not opt into telemetry just to complete setup. No current router feature requires it.
+
+## Leaving Roster
+
+[Scoped eject](/docs/clients/#leave-with-eject) restores the client's configuration. It does not uninstall Roster or erase its local state. Preserve backups and finish any pending recovery before considering removal of state files. Deleting the whole directory is not an eject substitute.
+
+## This website
+
+The launch site has no analytics or hosted agent service. The demonstration uses bundled illustrative fixtures and never reads your configuration or calls your tools. Fonts and artwork are local assets.
+
+The theme preference is stored in your browser's local storage. Copy buttons write the selected command or setup prompt to your clipboard only when clicked. Search is a static, locally served documentation index. Following an external link is subject to that destination's policies.
+
+## Development transparency
+
+Roster is built with substantial AI assistance. The <a href={claimSources.provenance}>provenance record</a> explains the required human reviews and their log. At the documented revision the human-review table is still empty; an automated test pass is not a completed human security review.
+
+**Next:** [Read the evidence rules for Combine and League](/docs/methodology/).
+
+<p class="source-note"><a href={claimSources.localState}>Database schema</a><a href={claimSources.telemetry}>Authoritative telemetry contract</a><a href={claimSources.provenance}>Review log</a></p>

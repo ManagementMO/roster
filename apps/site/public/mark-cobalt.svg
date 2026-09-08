@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#4963DF" role="img" aria-labelledby="title">
+  <title id="title">Roster</title>
+  <g id="roster-mark">
+    <rect id="upper-stem" x="40" y="14" width="40" height="132" rx="10"/>
+    <path id="upper-bowl" d="M106 14H154C187.137 14 214 40.863 214 74Q214 80 208 80H106Q96 80 96 70V24Q96 14 106 14Z"/>
+    <path id="lower-bowl" d="M106 94H204Q213 94 210 104C200.5 130.5 175.5 146 147 146H106Q96 146 96 136V104Q96 94 106 94Z"/>
+    <rect id="lower-stem" x="40" y="162" width="40" height="80" rx="10"/>
+    <path id="outgoing-leg" d="M107 162H141Q146 162 150 166L211 232Q220 242 208 242H161Q155 242 151 238L100 174Q90 162 107 162Z"/>
+  </g>
+</svg>

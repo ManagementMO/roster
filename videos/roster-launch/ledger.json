@@ -1,0 +1,70 @@
+{
+  "fps": 60,
+  "seams": [
+    {
+      "id": "hook-to-terminal",
+      "cut": 4,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-01-motion", "axis": "x", "dir": -1, "dur": 0.28 },
+      "entry": { "selector": "#scene-02-motion", "axis": "x", "dir": -1, "dur": 0.4, "travel": 8 }
+    },
+    {
+      "id": "terminal-to-endpoint",
+      "cut": 10,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-02-motion", "axis": "x", "dir": -1, "dur": 0.3 },
+      "entry": { "selector": "#scene-03-motion", "axis": "x", "dir": -1, "dur": 0.42, "travel": 8 }
+    },
+    {
+      "id": "endpoint-to-search",
+      "cut": 16,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-03-motion", "axis": "x", "dir": -1, "dur": 0.3 },
+      "entry": { "selector": "#scene-04-motion", "axis": "x", "dir": -1, "dur": 0.42, "travel": 8 }
+    },
+    {
+      "id": "search-to-focus",
+      "cut": 23,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-04-motion", "axis": "x", "dir": -1, "dur": 0.3 },
+      "entry": { "selector": "#scene-05-motion", "axis": "x", "dir": -1, "dur": 0.42, "travel": 8 }
+    },
+    {
+      "id": "focus-to-lineup",
+      "cut": 29,
+      "technique": "inverse zoom-through ARRIVAL",
+      "blur": 16,
+      "exit": { "selector": "#scene-05-motion", "axis": "z", "dir": -1, "dur": 0.2 },
+      "entry": { "selector": "#scene-06-motion", "axis": "z", "dir": -1, "dur": 0.5 }
+    },
+    {
+      "id": "lineup-to-call",
+      "cut": 36,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-06-motion", "axis": "x", "dir": -1, "dur": 0.3 },
+      "entry": { "selector": "#scene-07-motion", "axis": "x", "dir": -1, "dur": 0.42, "travel": 8 }
+    },
+    {
+      "id": "call-to-sixth",
+      "cut": 41,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-07-motion", "axis": "x", "dir": -1, "dur": 0.28 },
+      "entry": { "selector": "#scene-08-motion", "axis": "x", "dir": -1, "dur": 0.4, "travel": 8 }
+    },
+    {
+      "id": "sixth-to-coach",
+      "cut": 46,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#scene-08-motion", "axis": "x", "dir": -1, "dur": 0.28 },
+      "entry": { "selector": "#scene-09-motion", "axis": "x", "dir": -1, "dur": 0.4, "travel": 8 }
+    },
+    {
+      "id": "coach-to-roster",
+      "cut": 50,
+      "technique": "inverse zoom-through ARRIVAL",
+      "blur": 16,
+      "exit": { "selector": "#scene-09-motion", "axis": "z", "dir": -1, "dur": 0.2 },
+      "entry": { "selector": "#scene-10-motion", "axis": "z", "dir": -1, "dur": 0.5 }
+    }
+  ]
+}

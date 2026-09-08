@@ -1,0 +1,122 @@
+---
+import { capabilities, presets, initialDemoState, exampleCall } from "../lib/demo.js";
+import Icon from "./Icon.astro";
+import CapabilityIcon from "./CapabilityIcon.astro";
+---
+<roster-demo class="draft-board" data-called="false">
+  <div class="board-heading">
+    <div class="board-title"><img src="/favicon.svg" width="28" height="28" alt="" /><h2 id="demo-title">The starting five</h2></div>
+    <div class="board-meta"><span>Five mode</span><span class="example-label">Interactive example</span></div>
+  </div>
+  <fieldset class="task-picker">
+    <legend>Choose a task</legend>
+    <div class="task-options">{presets.map((preset, index) => <label>
+      <input class="sr-only" type="radio" name="example-task" value={index} checked={index === 0} />
+      <span><Icon name={index === 0 ? "browser" : index === 1 ? "code" : "book-2"} size={17} />{preset.label}</span>
+    </label>)}</div>
+  </fieldset>
+  <div class="need-row"><span class="need-label">THE TASK</span><p data-need>{presets[0].need}</p><span class="draft-ready"><Icon name="check" size={15} />Lineup drafted</span></div>
+  <div class="lineup-stage">
+    {presets.map((preset, index) => <fieldset class="lineup" data-lineup={index} hidden={index !== 0}>
+      <legend class="sr-only">Choose a capability for {preset.label}</legend>
+      {preset.lineup.map((id, slot) => {
+        const capability = capabilities[id]!;
+        return <label class="starter">
+          <input class="sr-only" type="radio" name={`lineup-${index}`} value={id} checked={slot === 0} />
+          <span class="starter-card" data-color={capability.color} style={`--slot: ${slot}`}>
+            <span class="starter-top"><span class="capability-icon"><CapabilityIcon name={capability.icon} /></span><span class="capability-kind">{capability.kind === "skill" ? "Skill" : "Tool"}</span></span>
+            <span class="starter-name">{capability.label}</span>
+            <span class="starter-description">{capability.description}</span>
+            <span class="starter-bottom"><span>{capability.provider}</span><Icon name="arrow-up-right" size={17} /></span>
+          </span>
+        </label>;
+      })}
+    </fieldset>)}
+    <p class="lineup-hint"><Icon name="hand-click" size={15} />Select a starter to look inside. Your agent makes this choice.</p>
+  </div>
+  <div class="inspection-area">
+    {Object.values(capabilities).map((capability) => <article class="capability-detail" data-detail={capability.id} hidden={capability.id !== initialDemoState.selected}>
+      <div class="capability-context">
+        <div class="detail-label"><span data-color={capability.color} class="small-capability-icon"><CapabilityIcon name={capability.icon} size={18} /></span><span>{capability.provider}<span class="detail-divider">/</span>{capability.kind}</span></div>
+        <h3>{capability.label}</h3>
+        <p>{capability.reason}</p>
+        <button type="button" class="button button-primary run-example" data-run><Icon name="player-play" size={16} /><span>{capability.kind === "skill" ? "Get example instructions" : "Run example call"}</span></button>
+        <p class="invocation-note">{capability.kind === "skill" ? "Returns instructions and resource paths. No scripts run." : "A curated fixture, not a connection to your tools."}</p>
+      </div>
+      <div class="result-pane">
+        <div class="result-heading"><span><Icon name={capability.kind === "skill" ? "book-2" : "arrow-back-up"} size={16} />{capability.kind === "skill" ? "SKILL INSTRUCTIONS" : "CALL RESULT"}</span><span data-result-badge>Ready when you are</span></div>
+        <div class="result-waiting" data-waiting>
+          <div class="call-route" aria-hidden="true"><span class="route-agent"><Icon name="terminal-2" size={24} /></span><span class="route-line"></span><span class="route-roster"><img src="/mark-white.svg" width="36" height="36" alt="" /></span><span class="route-line"></span><span class="route-tool" data-color={capability.color}><CapabilityIcon name={capability.icon} size={27} /></span></div>
+          <h4>One choice. One useful call.</h4>
+          <p>{capability.kind === "skill" ? "Ask for this play to see what your agent receives." : "Try the example to see what this tool returns."}</p>
+        </div>
+        <div class="result-returned" data-returned hidden>
+          <h4>{capability.resultTitle}</h4>
+          <pre>{capability.result}</pre>
+          {capability.resources && <div class="skill-resources"><span>Resources for the agent</span>{capability.resources.map((resource) => <code>{resource.replace("/example/skills/", "")}</code>)}</div>}
+        </div>
+      </div>
+    </article>)}
+  </div>
+  <div class="coach-strip">
+    <span class="coach-icon"><Icon name="database" size={22} /></span>
+    <div class="coach-copy"><strong data-coach-title>The Coach keeps the outcome, not the conversation.</strong><p data-coach-note>Call class and latency stay local. Raw prompts, arguments, and results are not stored in the outcome log.</p></div>
+    <span class="outcome-status" data-outcome-status><Icon name="point" size={15} /><span data-outcome-text>Waiting for a call</span></span>
+  </div>
+  <details class="protocol-details">
+    <summary>Under the hood <Icon name="code" size={16} /></summary>
+    <p>Illustrative MCP arguments using Roster’s real contract. A draft returns compact cards; the agent chooses a call. No visitor tools or configs are accessed.</p>
+    <div class="protocol-grid"><div><h4>draft</h4><textarea data-draft-code rows="7" readonly wrap="off" spellcheck="false" aria-label="Draft arguments">{JSON.stringify({ need: presets[0].need, k: 5 }, null, 2)}</textarea></div><div><h4>call</h4><textarea data-call-code rows="7" readonly wrap="off" spellcheck="false" aria-label="Call arguments">{JSON.stringify(exampleCall(initialDemoState), null, 2)}</textarea></div></div>
+    <p class="protocol-scope">This is five mode, explicitly enabled. Transparent passthrough is Roster’s default. Five mode returns up to five candidates by default; K is configurable from 1 to 10. The lineups and example outputs are illustrative, not measured rankings.</p>
+  </details>
+  <div class="sr-only" aria-live="polite" aria-atomic="true" data-demo-announcement></div>
+  <noscript><p class="no-script">Enable JavaScript to change this example. <a href="/docs/modes/">Read how draft and call work.</a></p></noscript>
+</roster-demo>
+<script>
+  import { capabilities, presets, initialDemoState, reduceDemo, exampleCall, type DemoAction } from "../lib/demo.js";
+  class RosterDemo extends HTMLElement {
+    private state = { ...initialDemoState };
+    connectedCallback() {
+      this.addEventListener("change", (event) => {
+        if (!(event.target instanceof HTMLInputElement)) return;
+        const input = event.target;
+        this.update(input.name === "example-task"
+          ? { type: "preset", index: Number(input.value) }
+          : { type: "select", id: input.value });
+      });
+      this.addEventListener("click", (event) => {
+        if (event.target instanceof Element && event.target.closest("[data-run]")) this.update({ type: "call" });
+      });
+    }
+    private update(action: DemoAction) {
+      this.state = reduceDemo(this.state, action);
+      const { preset, selected, called } = this.state;
+      const task = presets[preset]!;
+      const capability = capabilities[selected]!;
+      this.dataset.called = String(called);
+      this.querySelectorAll<HTMLElement>("[data-lineup]").forEach((lineup) => {
+        lineup.hidden = Number(lineup.dataset.lineup) !== preset;
+        if (!lineup.hidden) lineup.querySelectorAll<HTMLInputElement>("input").forEach((radio) => { radio.checked = radio.value === selected; });
+      });
+      this.querySelectorAll<HTMLElement>("[data-detail]").forEach((detail) => {
+        detail.hidden = detail.dataset.detail !== selected;
+        detail.querySelector<HTMLElement>("[data-waiting]")!.hidden = called;
+        detail.querySelector<HTMLElement>("[data-returned]")!.hidden = !called;
+        detail.querySelector<HTMLElement>("[data-result-badge]")!.textContent = called ? "Returned" : "Ready when you are";
+      });
+      this.text("[data-need]", task.need);
+      this.text("[data-coach-title]", called ? (capability.kind === "skill" ? "Instructions delivered. Not a task-success rating." : "Call returned. A local signal for the Coach.") : "The Coach keeps the outcome, not the conversation.");
+      this.text("[data-coach-note]", called ? capability.outcomeNote : "Call class and latency stay local. Raw prompts, arguments, and results are not stored in the outcome log.");
+      this.text("[data-outcome-text]", called ? (capability.kind === "skill" ? "Excluded from ratings" : "success") : "Waiting for a call");
+      this.text("[data-draft-code]", JSON.stringify({ need: task.need, k: 5 }, null, 2));
+      this.text("[data-call-code]", JSON.stringify(exampleCall(this.state), null, 2));
+      this.text("[data-demo-announcement]", called ? `${capability.resultTitle}. ${capability.outcomeNote}` : action.type === "preset" ? `${task.label}: five example capabilities drafted. ${capability.label} selected.` : `${capability.label} selected. Its details are shown below the lineup.`);
+    }
+    private text(selector: string, value: string) {
+      const element = this.querySelector(selector)!;
+      if (element instanceof HTMLTextAreaElement) element.value = value;
+      else element.textContent = value;
+    }
+  }
+  if (!customElements.get("roster-demo")) customElements.define("roster-demo", RosterDemo);
+</script>

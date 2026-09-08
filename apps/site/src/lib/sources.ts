@@ -1,0 +1,25 @@
+import { source } from "./site.js";
+
+export const claimSources = {
+  routing: source("packages/router/src/rosterServer.ts"),
+  cards: source("packages/router/src/cards.ts"),
+  backends: source("packages/router/src/backends.ts"),
+  outcomes: source("packages/coach/src/store.ts"),
+  localState: source("packages/coach/src/db.ts"),
+  skills: source("packages/playbook/src/entry.ts"),
+  trust: source("packages/playbook/src/trust.ts"),
+  discovery: source("packages/cli/src/clients.ts"),
+  sync: source("packages/cli/src/sync.ts"),
+  eject: source("packages/cli/src/eject.ts"),
+  dense: source("packages/cli/src/dense.ts"),
+  commands: source("packages/cli/src/bin.ts"),
+  config: source("packages/cli/src/rosterfile.ts"),
+  telemetry: source("docs/telemetry-schema.md"),
+  methodology: source("docs/methodology.md"),
+  provenance: source("docs/PROVENANCE.md"),
+  status: source("STATUS-FOR-MO.md"),
+  verification: source("docs/verification/2026-08-17-m0-e2e.md"),
+  denseVerification: source("docs/verification/2026-08-17-dense-live.md"),
+  limitations: source("docs/lab/notes-gap-experiments.md"),
+  certification: source("apps/league/src/artifact.ts"),
+};

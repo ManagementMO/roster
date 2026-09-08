@@ -1,0 +1,17 @@
+{
+  "name": "roster-launch",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.7.108 preview",
+    "check": "npx --yes hyperframes@0.7.108 check",
+    "render": "npx --yes hyperframes@0.7.108 render",
+    "render:preview": "npx --yes hyperframes@0.7.108 render --quality draft --fps 30 --output renders/roster-launch-preview.mp4 --browser-timeout 120",
+    "render:master": "npx --yes hyperframes@0.7.108 render --quality high --fps 60 --output renders/roster-launch-master.mp4 --browser-timeout 120",
+    "snapshot:qa": "npx --yes hyperframes@0.7.108 snapshot --at 2.5,7.2,13.2,19.5,26,30,33.2,35.5,38.6,43.8,48.2,52.4 --no-end --output snapshots/qa",
+    "publish": "npx --yes hyperframes@0.7.108 publish"
+  },
+  "dependencies": {
+    "gsap": "3.14.2"
+  }
+}

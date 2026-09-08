@@ -1,0 +1,58 @@
+---
+title: Local learning
+description: Understand lexical retrieval, local outcome maintenance, and Roster's optional dense embedding runtime.
+---
+import Command from "../../../components/Command.astro";
+import { claimSources } from "../../../lib/sources.js";
+
+The Coach uses evidence from individual calls to inform local routing. It does not retrain your language model, and it does not need a hosted Roster service.
+
+## Useful before a model download
+
+Lexical retrieval uses SQLite FTS5 over capability names, descriptions, and skill bodies. It works without an embedding model. When direct matches are sparse, the draft can fill remaining positions from a local rating-based fallback.
+
+This is a small shortlist for the agent to judge, not a promise that every candidate is relevant. State your immediate need clearly and re-draft when that need changes.
+
+## What a call teaches the Coach
+
+The local outcome record includes a call class, latency, capability identity, and hashes used for attribution. Raw prompts, call arguments, and results are not persisted in the outcome log.
+
+A call returning without detected failure is classified `success`. Transport faults, protocol errors, tool-reported errors, and output-schema problems are separate classes. Error subtypes use heuristics, so a label is not infallible diagnosis.
+
+Caller-side input-validation failures are excluded from attributable ratings under the current policy. Skill instruction delivery is also excluded. Local call statistics are not certified League results.
+
+## Maintenance, not instant retraining
+
+At router startup, opportunistic maintenance checks whether it is due, with an approximately **20-hour debounce**. It recomputes local ratings and can refine stored capability vectors through OATS when suitable need vectors and outcome evidence exist.
+
+OATS uses a trailing 90-day window, bounded evidence, and a minimum positive-signal requirement. It adjusts routing vectors; it does not change the underlying embedding model's weights. A single click in the homepage example does not trigger model training.
+
+The current approach has limits, including single-centroid learning and imperfect fallback behavior. The repository records these as <a href={claimSources.limitations}>measured limitations</a>, rather than hiding them behind an accuracy promise.
+
+## Optional dense retrieval
+
+Check runtime availability:
+
+<Command name="denseStatus" />
+
+Add the optional runtime only if you want semantic matching:
+
+<Command name="denseEnable" />
+
+The runtime is approximately **385 MB** in the recorded clean-install measurement. A model download is additional and happens in the background on first use. Network conditions and cache state affect the actual footprint and first warmup.
+
+A fresh packaged installation does not automatically install this optional peer dependency. The enabled runtime is stored under `~/.roster/runtime`. A runtime already available through a source workspace can also be used.
+
+**If you previously set `embeddings` to `"off"`, `dense enable` does not change that field.** After consenting to model use, set it to `"auto"` in the existing config, preserve the other fields, and restart your client's router process. `dense status` reports runtime availability, not that a model is already warm or that configuration permits it.
+
+The default model selection uses EmbeddingGemma on machines with at least 8 GiB RAM and MiniLM below that. Drafts keep using lexical results while warmup is incomplete or unavailable. These are local embedding models, not a choice of which AI agent model handles your conversation.
+
+## Stay lexical
+
+Set `embeddings` to `"off"` to disable the dense path persistently. There is no `dense disable` subcommand. `ROSTER_NO_FETCH=1` also disables the dense path for that process, including cached-model use.
+
+Source builds deserve special care: their workspace includes the runtime, so declining the installation question alone does not prevent first-use fetching. The [first-run guide](/docs/installation/#keep-the-first-run-lexical) explains the explicit lexical setup.
+
+**Next:** [Read about failures and drift](/docs/failures/).
+
+<p class="source-note"><a href={claimSources.outcomes}>Retrieval and maintenance</a><a href={claimSources.dense}>Runtime setup</a><a href={claimSources.denseVerification}>Recorded live inference check</a></p>

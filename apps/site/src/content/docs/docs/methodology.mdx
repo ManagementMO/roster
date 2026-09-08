@@ -1,0 +1,60 @@
+---
+title: Combine & League
+description: Understand Roster's reproducible task harness, human-signed evidence requirements, and why unsigned results are not rankings.
+---
+import Command from "../../../components/Command.astro";
+import { claimSources } from "../../../lib/sources.js";
+
+The **Combine** runs reproducible task suites. The **League** is the separate public presentation of eligible results under a published methodology.
+
+The harness and static League generator exist in the repository. The public League website, deployment, badges, and named signed scores remain deferred. This launch site explains the system; it does not publish standings or certify tools.
+
+## What the Combine checks
+
+A suite declares initial files, a tool invocation, and programmatic checks of its result or final filesystem state. Checks include file equality, containment, existence, absence, directory existence, and expected result text. Each task receives a fresh server process and temporary sandbox.
+
+This is evidence about the **declared check**, not an LLM's opinion of the result and not blanket proof that a server is correct or safe.
+
+To exercise the repository's synthetic filesystem fixture:
+
+<Command name="combine" />
+
+This runs local fixture calls and produces `lab-results.json`. It is not a real vendor comparison. A backend command can do what its own permissions allow, so use an authorized test server and isolated data; the verifier's path containment is not an operating-system sandbox for arbitrary server code.
+
+## An artifact is a claim until validated
+
+The League generator validates timestamps, environment metadata, digest syntax, task rows, and summaries. It re-derives the summary from the rows rather than trusting the numbers in a file.
+
+It then binds the run to the **exact authoritative suite and version**, checking category, task membership, and signing flags. Contradictions are rejected. If the authority is unavailable or ambiguous, signed credit is removed. A JSON row asserting `signed: true` cannot grant itself certification.
+
+The current environment digest identifies runtime and suite information, not the complete target command or build identity. The <a href={claimSources.methodology}>methodology of record</a> discloses that reproduction-provenance limit.
+
+## When can a named result rank?
+
+The methodology requires human-signed tasks. Signing means a human reviewed and exercised the task's pass and deliberately failing cases, with provenance recorded. An agent cannot supply that human act.
+
+Ranked placements require at least **30 distinct human-signed tasks** in an identical `(category, suite, suite version)` comparison set. The named ranking key is `signedWilsonLb`, the Wilson lower bound over the signed task results.
+
+Repeating a fixed suite does not create new distinct tasks. Unsigned pre-season artifacts do not become certified rankings because they pass, look polished, or are displayed on a website.
+
+This website intentionally has no synthetic scores, named winners, badges, or live-traffic standings.
+
+## Lab and Street are different evidence
+
+**Lab** is controlled suite evidence. **Street** is the planned observational telemetry layer. They must remain separately labeled and must not be mixed into one ranking.
+
+There is no current telemetry uploader or public Street table. Its proposed anonymity thresholds and exclusions are a contract in the <a href={claimSources.telemetry}>telemetry schema</a>, not evidence of live traffic.
+
+## Follow the authoritative records
+
+Rather than maintain another full copy of the methodology here, use the versioned records:
+
+- <a href={claimSources.methodology}>League methodology v0.1, including limits and pending work</a>
+- <a href={claimSources.provenance}>Development provenance and human-review log</a>
+- <a href={claimSources.status}>Current product and owner-gated status</a>
+- <a href={claimSources.verification}>Recorded real filesystem/memory routing verification</a>
+- <a href={claimSources.certification}>Artifact validation and certification implementation</a>
+
+These distinguish implemented behavior, recorded automated evidence, and remaining human or publication gates. A local build of the marketing site changes none of those gates.
+
+**Next:** [Try the local router](/docs/installation/). You do not need a public League to use Roster.
