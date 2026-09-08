@@ -1,0 +1,16 @@
+{
+  "duration": 30,
+  "maxStaticSec": 2.1,
+  "assertions": [
+    {"kind":"appearsBy","selector":"#s01-count","bySec":0.1},
+    {"kind":"before","a":"#s01-count","b":"#s02-five"},
+    {"kind":"appearsBy","selector":"#s03-task-chip","bySec":8.2},
+    {"kind":"appearsBy","selector":"#s03-row-skill","bySec":13.6},
+    {"kind":"before","a":"#s03-row-skill","b":"#s03-inspect-fill"},
+    {"kind":"before","a":"#s04-request-packet","b":"#s04-result-card"},
+    {"kind":"appearsBy","selector":"#s05-machine","bySec":23.8},
+    {"kind":"appearsBy","selector":"#s06-word","bySec":27.3},
+    {"kind":"staysInFrame","selector":"#s06-link"},
+    {"kind":"keepsMoving","withinSelector":"#root"}
+  ]
+}

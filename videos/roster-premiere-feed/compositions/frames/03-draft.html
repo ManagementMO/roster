@@ -1,0 +1,365 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      src: url("assets/SpaceGrotesk-Variable.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/Manrope-Variable.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 200 800;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "JetBrains Mono";
+      src: url("assets/JetBrainsMono-Variable.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 100 800;
+      font-display: block;
+    }
+
+    #root,
+    #s03-root {
+      position: relative;
+      width:1080px;
+      height:1350px;
+      overflow: hidden;
+      container-type: size;
+      color: #172033;
+      font-family: "Manrope";
+    }
+    #s03-ground,
+    #s03-content {
+      position: absolute;
+      inset: 0;
+      width:1080px;
+      height:1350px;
+    }
+    #s03-ground {
+      background: radial-gradient(ellipse at 88% 15%,#DCE6F9 0%,#EDF1FA 32%,#F7F8FC 72%);
+    }
+    #s03-content,
+    #s03-content * {
+      box-sizing: border-box;
+    }
+    #s03-mode {
+      position: absolute;
+      left: 1500px;
+      top: 96px;
+      width: 324px;
+      height: 48px;
+      font-family: "Manrope";
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 48px;
+      letter-spacing: 1.4px;
+      text-align: right;
+    }
+    #s03-one-task {
+      position: absolute;
+      left: 96px;
+      top: 127px;
+      margin: 0;
+      width: 1360px;
+      height: 192px;
+      font-family: "Space Grotesk";
+      font-size: 186px;
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: -8.37px;
+      transform-origin: 0 0;
+    }
+    #s03-panel-surface {
+      position: absolute;
+      left: 800px;
+      top: 190px;
+      width: 1024px;
+      height: 682px;
+      border: 1px solid rgba(247, 248, 252, 0.13);
+      border-radius: 24px;
+      background: #151B29;
+      transform-origin: 0 0;
+    }
+    #s03-task-chip {
+      position: absolute;
+      left: 96px;
+      top: 342px;
+      width: 1728px;
+      height: 148px;
+      border-radius: 24px;
+      background: #DFE7FB;
+      color: #172033;
+      transform-origin: 0 0;
+    }
+    #s03-task-text {
+      position: absolute;
+      left: 48px;
+      top: 24px;
+      width: 1510px;
+      height: 100px;
+      white-space: nowrap;
+      font-family: "Space Grotesk";
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 100px;
+      letter-spacing: -2.3px;
+    }
+    .s03-task-char {
+      display: inline-block;
+      white-space: pre;
+    }
+    #s03-submit {
+      position: absolute;
+      right: 42px;
+      top: 39px;
+      width: 70px;
+      height: 70px;
+      color: #172033;
+    }
+    #s03-api {
+      position: absolute;
+      left: 838px;
+      top: 326px;
+      margin: 0;
+      width: 938px;
+      height: 44px;
+      color: #F7F8FC;
+      white-space: nowrap;
+      font-family: "JetBrains Mono";
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 44px;
+      letter-spacing: -0.3px;
+      transform-origin: 0 0;
+    }
+    .s03-api-function {
+      color: #AEBEFF;
+    }
+    .s03-api-string {
+      color: #F7F8FC;
+    }
+    #s03-right-tools {
+      position: absolute;
+      left: 96px;
+      top: 312px;
+      width: 648px;
+      height: 438px;
+      margin: 0;
+      font-family: "Space Grotesk";
+      font-size: 148px;
+      font-weight: 700;
+      line-height: 0.9;
+      letter-spacing: -6.66px;
+    }
+    .s03-title-line {
+      display: block;
+      width: 648px;
+      height: 136px;
+    }
+    #s03-candidates {
+      position: absolute;
+      left: 824px;
+      top: 398px;
+      width: 976px;
+      height: 430px;
+    }
+    .s03-row {
+      position: absolute;
+      left: 0;
+      width: 976px;
+      height: 78px;
+      display: grid;
+      grid-template-columns: 50px 1fr 192px 34px;
+      align-items: center;
+      gap: 18px;
+      padding: 0 24px;
+      border-bottom: 1px solid rgba(247, 248, 252, 0.19);
+      color: #F7F8FC;
+    }
+    #s03-row-code { top: 0; }
+    #s03-row-files { top: 88px; }
+    #s03-row-inspect { top: 176px; }
+    #s03-row-issues { top: 264px; }
+    #s03-row-skill { top: 352px; border-bottom: 0; }
+    .s03-row-icon {
+      position: relative;
+      width: 44px;
+      height: 44px;
+    }
+    .s03-row-icon img,
+    .s03-row-icon svg {
+      position: absolute;
+      inset: 0;
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+    #s03-row-files .s03-row-icon { color: #F7C76A; }
+    #s03-row-skill .s03-row-icon { color: #B4BFFF; }
+    #s03-playwright-light {
+      padding: 3px;
+      border-radius: 9px;
+      background: #F7F8FC;
+    }
+    .s03-row-title {
+      position: relative;
+      width: 514px;
+      font-family: "Manrope";
+      font-size: 48px;
+      font-weight: 600;
+      line-height: 58px;
+      letter-spacing: -1.3px;
+      white-space: nowrap;
+    }
+    .s03-row-provider {
+      position: relative;
+      font-family: "Manrope";
+      font-size: 30px;
+      font-weight: 500;
+      line-height: 42px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #s03-skill-provider {
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+    #s03-inspect-fill {
+      position: absolute;
+      inset: 0;
+      width: 976px;
+      height: 78px;
+      border-radius: 24px;
+      background: #DFE7FB;
+    }
+    #s03-selection-arrow {
+      position: relative;
+      width: 34px;
+      height: 34px;
+    }
+    #s03-workflow-note {
+      position: absolute;
+      left: 100px;
+      top: 836px;
+      width: 640px;
+      height: 48px;
+      font-family: "Manrope";
+      font-size: 30px;
+      font-weight: 600;
+      line-height: 48px;
+      letter-spacing: 1.1px;
+    }
+  
+/* Dedicated feed composition. */
+
+  #s03-mode { left:676px;top:74px;width:332px;height:44px;font-size:30px;line-height:44px; }
+  #s03-one-task { left:68px;top:150px;width:946px;height:170px;font-size:148px;letter-spacing:-6.5px; }
+  #s03-panel-surface { left:68px;top:440px;width:944px;height:744px; }
+  #s03-task-chip { left:88px;top:472px;width:904px;height:100px;border-radius:18px; }
+  #s03-task-text { left:26px;top:18px;width:790px;height:64px;font-size:48px;line-height:64px;letter-spacing:-1.5px; }
+  #s03-submit { right:24px;top:28px;width:44px;height:44px; }
+  #s03-api { left:100px;top:596px;width:868px;height:44px;font-size:27px;line-height:44px; }
+  #s03-right-tools { left:68px;top:150px;width:944px;height:270px;font-size:126px;line-height:1;letter-spacing:-5.5px; }
+  .s03-title-line { width:auto;height:132px; }
+  #s03-title-the, #s03-title-right { display:inline-block; }
+  #s03-title-the { margin-right:24px; }
+  #s03-title-tools { display:block; }
+  #s03-candidates { left:100px;top:660px;width:904px;height:488px; }
+  .s03-row { width:904px;height:88px;grid-template-columns:50px 1fr 174px 34px; }
+  #s03-row-code { top:0; } #s03-row-files { top:100px; } #s03-row-inspect { top:200px; }
+  #s03-row-issues { top:300px; } #s03-row-skill { top:400px; }
+  .s03-row-title { width:500px;font-size:48px;line-height:58px; }
+  .s03-row-provider { font-size:30px;line-height:42px; }
+  #s03-inspect-fill { width:904px;height:88px; }
+  #s03-workflow-note { left:76px;top:1244px;width:900px;font-size:28px;line-height:40px; }
+
+</style>
+
+  <div data-hf-id="hf-gdnd" id="s03-root" data-composition-id="03-draft" data-start="0" data-duration="3.75" data-fps="120" data-width="1080" data-height="1350" style="position:relative;width:1080px;height:1350px;overflow:hidden;container-type:size;color:#172033;font-family:Manrope;">
+    <div data-hf-id="hf-w89w" id="s03-ground" class="clip" data-start="0" data-duration="3.75" data-track-index="0"></div>
+    <div data-hf-id="hf-ds6j" id="s03-content" class="clip" data-start="0" data-duration="3.75" data-track-index="1">
+      <div data-hf-id="hf-qjmk" id="s03-mode">FIVE MODE</div>
+      <h2 data-hf-id="hf-f4nk" id="s03-one-task">ONE TASK.</h2>
+      <div data-hf-id="hf-z6g0" id="s03-panel-surface"></div>
+      <div data-hf-id="hf-0njy" id="s03-task-chip">
+        <div data-hf-id="hf-vi10" id="s03-task-text" aria-label="Find the checkout bug"><span data-hf-id="hf-j6rq" class="s03-task-char">F</span><span data-hf-id="hf-rj7b" class="s03-task-char">i</span><span data-hf-id="hf-sq4e" class="s03-task-char">n</span><span data-hf-id="hf-wp6o" class="s03-task-char">d</span><span data-hf-id="hf-kj50" class="s03-task-char"> </span><span data-hf-id="hf-qca8" class="s03-task-char">t</span><span data-hf-id="hf-rxic" class="s03-task-char">h</span><span data-hf-id="hf-wavn" class="s03-task-char">e</span><span data-hf-id="hf-vj4s" class="s03-task-char"> </span><span data-hf-id="hf-tx1h" class="s03-task-char">c</span><span data-hf-id="hf-hmvw" class="s03-task-char">h</span><span data-hf-id="hf-okmr" class="s03-task-char">e</span><span data-hf-id="hf-twpl" class="s03-task-char">c</span><span data-hf-id="hf-qql9" class="s03-task-char">k</span><span data-hf-id="hf-sbtd" class="s03-task-char">o</span><span data-hf-id="hf-pxz7" class="s03-task-char">u</span><span data-hf-id="hf-eljc" class="s03-task-char">t</span><span data-hf-id="hf-uc7p" class="s03-task-char"> </span><span data-hf-id="hf-ubci" class="s03-task-char">b</span><span data-hf-id="hf-f6pv" class="s03-task-char">u</span><span data-hf-id="hf-vi9l" class="s03-task-char">g</span></div>
+        <svg data-hf-id="hf-cd25" id="s03-submit" viewBox="0 0 70 70" fill="none" aria-hidden="true"><path data-hf-id="hf-lort" d="M12 35H57M37 15L57 35L37 55" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </div>
+      <pre data-hf-id="hf-8y9j" id="s03-api"><span data-hf-id="hf-93us" class="s03-api-function">draft</span>({ need: <span data-hf-id="hf-62mg" class="s03-api-string">"Find the checkout bug"</span> })</pre>
+      <h2 data-hf-id="hf-13nj" id="s03-right-tools"><span data-hf-id="hf-3hi9" id="s03-title-the" class="s03-title-line" data-layout-allow-overlap="">THE</span><span data-hf-id="hf-61r9" id="s03-title-right" class="s03-title-line" data-layout-allow-overlap="">RIGHT</span><span data-hf-id="hf-7l0l" id="s03-title-tools" class="s03-title-line" data-layout-allow-overlap="">TOOLS.</span></h2>
+      <div data-hf-id="hf-irhy" id="s03-candidates">
+        <div data-hf-id="hf-n7ei" id="s03-row-code" class="s03-row">
+          <div data-hf-id="hf-cfeb" class="s03-row-icon"><img data-hf-id="hf-spzk" class="s03-brand" src="assets/brands/github-light.svg" alt="GitHub"></div>
+          <span data-hf-id="hf-ozm6" class="s03-row-title">Search code</span>
+          <span data-hf-id="hf-vr59" class="s03-row-provider">GitHub</span>
+          <span data-hf-id="hf-uckh"></span>
+        </div>
+        <div data-hf-id="hf-8dhm" id="s03-row-files" class="s03-row">
+          <div data-hf-id="hf-ezwz" class="s03-row-icon"><svg data-hf-id="hf-ivhk" viewBox="0 0 44 44" fill="none" aria-hidden="true"><path data-hf-id="hf-659j" d="M6 15H18L22 19H38V33C38 35.2 36.2 37 34 37H10C7.8 37 6 35.2 6 33V15Z" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /><path data-hf-id="hf-y176" d="M6 15V11C6 8.8 7.8 7 10 7H18L22 11H34C36.2 11 38 12.8 38 15V19" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+          <span data-hf-id="hf-qsuq" class="s03-row-title">Read files</span>
+          <span data-hf-id="hf-bq3t" class="s03-row-provider">Filesystem</span>
+          <span data-hf-id="hf-l73p"></span>
+        </div>
+        <div data-hf-id="hf-560b" id="s03-row-inspect" class="s03-row">
+          <div data-hf-id="hf-mu46" id="s03-inspect-fill"></div>
+          <div data-hf-id="hf-elly" class="s03-row-icon"><img data-hf-id="hf-k2y7" id="s03-playwright-light" class="s03-brand" src="assets/brands/playwright.svg" alt="Playwright"></div>
+          <span data-hf-id="hf-93j3" id="s03-inspect-title" class="s03-row-title"><span data-hf-id="hf-qqqw" id="s03-inspect-title-light">Inspect page</span></span>
+          <span data-hf-id="hf-1127" id="s03-inspect-provider" class="s03-row-provider"><span data-hf-id="hf-jkdp" id="s03-inspect-provider-light">Playwright</span></span>
+          <svg data-hf-id="hf-ps4n" id="s03-selection-arrow" viewBox="0 0 34 34" fill="none" aria-hidden="true"><path data-hf-id="hf-abuw" d="M5 17H28M18 7L28 17L18 27" stroke="#172033" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </div>
+        <div data-hf-id="hf-9ojh" id="s03-row-issues" class="s03-row">
+          <div data-hf-id="hf-e7ax" class="s03-row-icon"><img data-hf-id="hf-x0mi" class="s03-brand" src="assets/brands/linear-color.svg" alt="Linear"></div>
+          <span data-hf-id="hf-aoeu" class="s03-row-title">Find issues</span>
+          <span data-hf-id="hf-zs1j" class="s03-row-provider">Linear</span>
+          <span data-hf-id="hf-me0s"></span>
+        </div>
+        <div data-hf-id="hf-g9xo" id="s03-row-skill" class="s03-row">
+          <div data-hf-id="hf-dszw" class="s03-row-icon"><svg data-hf-id="hf-h6n4" viewBox="0 0 44 44" fill="none" aria-hidden="true"><path data-hf-id="hf-150k" d="M12 5H26L35 14V36C35 37.7 33.7 39 32 39H12C10.3 39 9 37.7 9 36V8C9 6.3 10.3 5 12 5Z" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /><path data-hf-id="hf-oxo6" d="M26 5V14H35M15 22L18 25L23 20M26 23H29M15 31H29" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+          <span data-hf-id="hf-6sw9" class="s03-row-title">Debug workflow</span>
+          <span data-hf-id="hf-yfjn" id="s03-skill-provider" class="s03-row-provider">SKILL</span>
+          <span data-hf-id="hf-lzpr"></span>
+        </div>
+      </div>
+      <div data-hf-id="hf-ztgv" id="s03-workflow-note">ILLUSTRATIVE WORKFLOW</div>
+    </div>
+  </div>
+
+  <script>
+
+(() => {
+  const timeline = gsap.timeline({ paused:true });
+  window.__timelines = window.__timelines || {};
+  window.__timelines["03-draft"] = timeline;
+  // The input remains one object as it settles into the full-width shortlist.
+  gsap.set("#s03-panel-surface", { opacity:0, y:190, scaleY:.2 });
+  gsap.set("#s03-api", { opacity:0 });
+  gsap.set("#s03-task-chip", { y:160 });
+  timeline.fromTo("#s03-one-task", { y:234, opacity:.6 }, { y:220, opacity:1, duration:.22, ease:"power3.out" }, 0);
+  timeline.fromTo(".s03-task-char", { opacity:0, x:2 }, { opacity:1, x:0, duration:.11, stagger:.008, ease:"power2.out" }, .06);
+  timeline.to("#s03-submit", { x:8, duration:.08, ease:"power2.in" }, .82);
+  timeline.to("#s03-submit", { x:0, duration:.22, ease:"power3.out" }, .90);
+  timeline.to("#s03-task-chip", { y:0, duration:.60, ease:"power3.inOut" }, .82);
+  timeline.set("#s03-panel-surface", { opacity:1 }, .82);
+  timeline.to("#s03-panel-surface", { y:0, scaleY:1, duration:.60, ease:"power3.inOut" }, .82);
+  timeline.to("#s03-api", { opacity:1, duration:.20, ease:"power3.out" }, 1.16);
+  timeline.to("#s03-one-task", { y:196, opacity:0, duration:.20, ease:"power2.in" }, .84);
+  ["the","right","tools"].forEach((name,i) => timeline.fromTo("#s03-title-"+name,
+    { x:18,y:12,opacity:0 }, { x:0,y:0,opacity:1,duration:.18,ease:"power3.out" }, 1.10+i*.085));
+  const rows = ["code","files","inspect","issues","skill"];
+  const cues = [1.45,1.56,1.66,1.75,1.83];
+  rows.forEach((row,i) => timeline.fromTo("#s03-row-"+row, { x:18,y:8,opacity:0 }, { x:0,y:0,opacity:1,duration:.30,ease:"power3.out" }, cues[i]));
+  timeline.fromTo("#s03-inspect-fill", { opacity:0,scaleX:.98 }, { opacity:1,scaleX:1,duration:.24,ease:"power3.out" }, 2.60);
+  timeline.to("#s03-inspect-title-light, #s03-inspect-provider-light", { color:"#172033",duration:.20,ease:"power2.out" }, 2.60);
+  timeline.to("#s03-row-inspect", { x:-12,duration:.30,ease:"power3.out" }, 2.60);
+  timeline.to("#s03-row-code .s03-row-title, #s03-row-code .s03-row-provider, #s03-row-files .s03-row-title, #s03-row-files .s03-row-provider, #s03-row-issues .s03-row-title, #s03-row-issues .s03-row-provider, #s03-row-skill .s03-row-title, #s03-row-skill .s03-row-provider", { opacity:.68,duration:.24,ease:"power2.out" }, 2.62);
+  timeline.fromTo("#s03-workflow-note", { y:8,opacity:0 }, { y:0,opacity:1,duration:.24,ease:"power3.out" }, 1.16);
+  timeline.fromTo("#s03-selection-arrow", { x:-8,opacity:0 }, { x:0,opacity:1,duration:.18,ease:"power3.out" }, 2.70);
+  timeline.set("#s03-row-inspect", { opacity:0 }, 3.35);
+  timeline.to("#s03-row-code, #s03-row-files, #s03-row-issues, #s03-row-skill", { x:-8,opacity:0,duration:.17,ease:"power2.in" }, 3.35);
+})();
+</script>
+</template>

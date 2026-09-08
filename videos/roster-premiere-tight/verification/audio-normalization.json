@@ -1,0 +1,30 @@
+{
+  "target": {
+    "integratedLufs": -13,
+    "truePeakDbtp": -2
+  },
+  "measuredBefore": {
+    "input_i": "-11.86",
+    "input_tp": "5.52",
+    "input_lra": "3.20",
+    "input_thresh": "-22.01",
+    "output_i": "-13.19",
+    "output_tp": "-2.00",
+    "output_lra": "0.70",
+    "output_thresh": "-23.33",
+    "normalization_type": "dynamic",
+    "target_offset": "0.19"
+  },
+  "final": {
+    "input_i": "-11.86",
+    "input_tp": "5.52",
+    "input_lra": "3.20",
+    "input_thresh": "-22.01",
+    "output_i": "-13.04",
+    "output_tp": "-2.00",
+    "output_lra": "0.70",
+    "output_thresh": "-23.18",
+    "normalization_type": "dynamic",
+    "target_offset": "0.04"
+  }
+}

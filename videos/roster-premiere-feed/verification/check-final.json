@@ -1,0 +1,125 @@
+{
+  "ok": true,
+  "strict": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "filesScanned": 7
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 1,
+    "findings": [
+      {
+        "code": "container_overflow",
+        "severity": "info",
+        "time": 12.25,
+        "selector": "#s06-mark-parts",
+        "message": "Element extends outside a clipping layout container.",
+        "rect": {
+          "left": 413.55,
+          "top": 232.83,
+          "right": 672.72,
+          "bottom": 570.53,
+          "width": 259.17,
+          "height": 337.71
+        },
+        "containerSelector": "#s06-mark",
+        "fixHint": "Resize/reposition the child or container, or mark intentional overflow with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 374.84,
+          "top": 237.63,
+          "right": 705.16,
+          "bottom": 567.95,
+          "width": 330.32,
+          "height": 330.32
+        },
+        "overflow": {
+          "top": 4.8,
+          "bottom": 2.58
+        },
+        "dataAttributes": {
+          "data-hf-id": "hf-jryn"
+        },
+        "sourceFile": "compositions/frames/06-identity.html",
+        "bbox": {
+          "x": 413.55,
+          "y": 232.83,
+          "width": 259.17,
+          "height": 337.71
+        },
+        "firstSeen": 12.25,
+        "lastSeen": 12.25,
+        "occurrences": 1,
+        "heldMs": 0
+      }
+    ],
+    "duration": 15,
+    "samples": [
+      1.35,
+      3.05,
+      6.85,
+      9.75,
+      11.6,
+      12.25,
+      12.5,
+      12.75,
+      14.1
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 1,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "specPath": "/Users/mo/Downloads/roster/videos/roster-premiere-feed/index.motion.json",
+    "samples": 300
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      1.35,
+      6.85,
+      11.6,
+      12.5,
+      14.1
+    ],
+    "checked": 54,
+    "passed": 54
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  },
+  "_meta": {
+    "version": "0.8.31",
+    "latestVersion": "0.8.31",
+    "updateAvailable": false
+  }
+}

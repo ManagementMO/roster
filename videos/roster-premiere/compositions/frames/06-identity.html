@@ -1,0 +1,92 @@
+<template>
+  <div data-hf-id="hf-9db4" id="s06-root" data-composition-id="06-identity" data-start="0" data-duration="5.625" data-fps="60" data-width="1920" data-height="1080" style="position:relative;width:1920px;height:1080px;overflow:hidden;container-type:size;">
+    <div data-hf-id="hf-5i5p" id="s06-ground" class="clip" data-start="0" data-duration="5.625" data-track-index="0"></div>
+
+    <div data-hf-id="hf-yxz0" id="s06-intro-heading">ONE LOCAL ENDPOINT.</div>
+    <div data-hf-id="hf-56wo" id="s06-clients-label">MCP CLIENTS</div>
+    <div data-hf-id="hf-uxe2" id="s06-client-claude" class="s06-client" style="left:118px;">Claude Code</div>
+    <div data-hf-id="hf-mlp8" id="s06-client-codex" class="s06-client" style="left:546px;">Codex</div>
+    <div data-hf-id="hf-u37n" id="s06-client-cursor" class="s06-client" style="left:974px;">Cursor</div>
+    <div data-hf-id="hf-nbhw" id="s06-client-openclaw" class="s06-client" style="left:1402px;">OpenClaw</div>
+
+    <img data-hf-id="hf-efxr" id="s06-mark" src="assets/roster-logo.png" alt="Roster mark">
+    <div data-hf-id="hf-1u9k" id="s06-word">Roster</div>
+    <div data-hf-id="hf-pged" id="s06-rule"></div>
+    <div data-hf-id="hf-zl09" id="s06-tagline">Bring your tools. Build your roster.</div>
+    <div data-hf-id="hf-hq8r" id="s06-link">github.com/ManagementMO/roster</div>
+    <div data-hf-id="hf-j32u" id="s06-status">PRE-RELEASE · OPEN SOURCE</div>
+  </div>
+
+  <style>
+    @font-face {
+      font-family:"Space Grotesk";
+      src:url("assets/SpaceGrotesk-Variable.woff2") format("woff2");
+      font-weight:300 700;
+      font-style:normal;
+      font-display:block;
+    }
+    @font-face {
+      font-family:"Manrope";
+      src:url("assets/Manrope-Variable.woff2") format("woff2");
+      font-weight:200 800;
+      font-style:normal;
+      font-display:block;
+    }
+    @font-face {
+      font-family:"JetBrains Mono";
+      src:url("assets/JetBrainsMono-Variable.woff2") format("woff2");
+      font-weight:100 800;
+      font-style:normal;
+      font-display:block;
+    }
+    #s06-ground { position:absolute;inset:0;width:1920px;height:1080px;background:#111210; }
+    #s06-intro-heading { position:absolute;left:116px;top:186px;width:1696px;height:142px;color:#F4F1E9;font-family:"Space Grotesk";font-weight:700;font-size:112px;line-height:1.08;letter-spacing:-0.045em;text-align:center; }
+    #s06-clients-label { position:absolute;left:118px;top:353px;width:1684px;height:43px;color:#B0B0B0;font-family:"Manrope";font-weight:600;font-size:30px;line-height:43px;letter-spacing:1.4px;text-align:center; }
+    .s06-client { position:absolute;top:427px;width:400px;height:150px;box-sizing:border-box;border:2px solid rgba(244,241,233,0.31);border-radius:25px;background:#111210;color:#F4F1E9;font-family:"Manrope";font-weight:600;font-size:43px;line-height:146px;letter-spacing:-1.3px;text-align:center; }
+    .s06-client::after { content:"";position:absolute;inset:7px;border:1px solid rgba(244,241,233,0.07);border-radius:18px;pointer-events:none; }
+    #s06-mark { position:absolute;left:854px;top:367px;width:211px;height:270px;object-fit:contain;z-index:10; }
+    #s06-word { position:absolute;left:646px;top:264px;width:1040px;height:328px;color:#F4F1E9;font-family:"Space Grotesk";font-weight:700;font-size:304px;line-height:1.05;letter-spacing:-0.045em; }
+    #s06-rule { position:absolute;left:390px;top:637px;width:1140px;height:6px;background:#FF6748;transform-origin:50% 50%; }
+    #s06-tagline { position:absolute;left:116px;top:704px;width:1696px;height:66px;color:#F4F1E9;font-family:"Manrope";font-weight:500;font-size:50px;line-height:66px;letter-spacing:-1.2px;text-align:center; }
+    #s06-link { position:absolute;left:116px;top:818px;width:1696px;height:52px;color:#F4F1E9;font-family:"JetBrains Mono";font-weight:400;font-size:34px;line-height:52px;letter-spacing:-0.7px;text-align:center; }
+    #s06-status { position:absolute;left:116px;top:891px;width:1696px;height:39px;color:#B0B0B0;font-family:"Manrope";font-weight:600;font-size:26px;line-height:39px;letter-spacing:2px;text-align:center; }
+  </style>
+
+  <script>
+    (() => {
+      const timeline = gsap.timeline({ paused: true });
+      const clients = [
+        { id:"#s06-client-claude", dx:642 },
+        { id:"#s06-client-codex", dx:214 },
+        { id:"#s06-client-cursor", dx:-214 },
+        { id:"#s06-client-openclaw", dx:-642 },
+      ];
+
+      // The master owns the inverse zoom. The opening stays completely composed for its first 1.5s.
+      timeline.to("#s06-intro-heading", { y:-28, opacity:0, duration:0.30, ease:"power2.in" }, 1.50);
+      timeline.to("#s06-clients-label", { y:-18, opacity:0, duration:0.24, ease:"power2.in" }, 1.50);
+
+      // All four client centers meet the supplied mark at (960, 502), on one shared impact.
+      clients.forEach((client) => {
+        timeline.to(client.id, { x:client.dx, scale:0.12, duration:0.48, ease:"power3.in" }, 1.50);
+        timeline.set(client.id, { opacity:0 }, 1.98);
+      });
+      timeline.fromTo("#s06-mark", { scale:0.42, opacity:0 }, { scale:1, opacity:1, duration:0.21, ease:"power2.out" }, 1.77);
+
+      // The mark becomes the left edge of a single, oversized identity lockup.
+      timeline.to("#s06-mark", { x:-475, y:-89, duration:0.55, ease:"power3.inOut" }, 2.02);
+      timeline.fromTo("#s06-word", { x:74, opacity:0 }, { x:0, opacity:1, duration:0.48, ease:"power3.out" }, 2.16);
+      timeline.fromTo("#s06-rule", { scaleX:0 }, { scaleX:1, duration:0.35, ease:"power3.out" }, 2.39);
+
+      timeline.fromTo("#s06-tagline", { y:19, opacity:0 }, { y:0, opacity:1, duration:0.43, ease:"power3.out" }, 2.82);
+      timeline.fromTo("#s06-link", { y:14, opacity:0 }, { y:0, opacity:1, duration:0.38, ease:"power3.out" }, 3.12);
+      timeline.fromTo("#s06-status", { y:10, opacity:0 }, { y:0, opacity:1, duration:0.38, ease:"power3.out" }, 3.37);
+
+      // All properties are settled at 3.75s. This duration-only hold keeps the last 1.875s truly still.
+      timeline.to("#s06-status", { opacity:1, duration:1.875, ease:"none" }, 3.75);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["06-identity"] = timeline;
+    })();
+  </script>
+</template>

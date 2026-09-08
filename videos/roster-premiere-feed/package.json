@@ -1,0 +1,13 @@
+{
+  "name": "roster-premiere-feed",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npx --yes hyperframes@0.8.31 preview",
+    "check": "npx --yes hyperframes@0.8.31 check",
+    "seams": "node scripts/verify-seams.mjs",
+    "render": "node scripts/render.mjs",
+    "deliver": "node scripts/deliver.mjs"
+  }
+}

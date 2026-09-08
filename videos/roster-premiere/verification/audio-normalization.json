@@ -1,0 +1,314 @@
+{
+  "target": {
+    "integratedLufs": -15,
+    "truePeakDbtp": -1.5
+  },
+  "measuredBefore": {
+    "input_i": "-17.88",
+    "input_tp": "-5.34",
+    "input_lra": "0.80",
+    "input_thresh": "-27.96",
+    "output_i": "-15.08",
+    "output_tp": "-2.74",
+    "output_lra": "0.70",
+    "output_thresh": "-25.12",
+    "normalization_type": "dynamic",
+    "target_offset": "0.08"
+  },
+  "final": {
+    "input_i": "-17.70",
+    "input_tp": "-5.51",
+    "input_lra": "0.80",
+    "input_thresh": "-27.74",
+    "output_i": "-14.82",
+    "output_tp": "-2.63",
+    "output_lra": "0.80",
+    "output_thresh": "-24.86",
+    "normalization_type": "linear",
+    "target_offset": "-0.18"
+  },
+  "cues": [
+    {
+      "kind": "impact",
+      "at": 0.05,
+      "gain": 0.21,
+      "duration": 0.85
+    },
+    {
+      "kind": "click",
+      "at": 0.16,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 0.34,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 0.8,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 1,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 1.19,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 1.43,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 1.66,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 1.87,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 2.05,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 2.2,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "click",
+      "at": 2.57,
+      "gain": 0.1,
+      "duration": 0.18
+    },
+    {
+      "kind": "whoosh",
+      "at": 3.45,
+      "gain": 0.16,
+      "duration": 0.63
+    },
+    {
+      "kind": "whoosh",
+      "at": 7.2,
+      "gain": 0.16,
+      "duration": 0.63
+    },
+    {
+      "kind": "whoosh",
+      "at": 14.7,
+      "gain": 0.16,
+      "duration": 0.63
+    },
+    {
+      "kind": "whoosh",
+      "at": 20.325,
+      "gain": 0.16,
+      "duration": 0.63
+    },
+    {
+      "kind": "whoosh",
+      "at": 24.075,
+      "gain": 0.16,
+      "duration": 0.63
+    },
+    {
+      "kind": "impact",
+      "at": 4.53,
+      "gain": 0.13,
+      "duration": 0.55
+    },
+    {
+      "kind": "impact",
+      "at": 4.95,
+      "gain": 0.13,
+      "duration": 0.55
+    },
+    {
+      "kind": "impact",
+      "at": 5.29,
+      "gain": 0.13,
+      "duration": 0.55
+    },
+    {
+      "kind": "impact",
+      "at": 5.54,
+      "gain": 0.13,
+      "duration": 0.55
+    },
+    {
+      "kind": "impact",
+      "at": 5.73,
+      "gain": 0.13,
+      "duration": 0.55
+    },
+    {
+      "kind": "click",
+      "at": 7.9,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.05,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.18,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.31,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.44,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.57,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.7,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.83,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 8.96,
+      "gain": 0.09,
+      "duration": 0.12
+    },
+    {
+      "kind": "click",
+      "at": 11.1,
+      "gain": 0.14,
+      "duration": 0.19
+    },
+    {
+      "kind": "click",
+      "at": 11.58,
+      "gain": 0.14,
+      "duration": 0.19
+    },
+    {
+      "kind": "click",
+      "at": 12.06,
+      "gain": 0.14,
+      "duration": 0.19
+    },
+    {
+      "kind": "click",
+      "at": 12.54,
+      "gain": 0.14,
+      "duration": 0.19
+    },
+    {
+      "kind": "click",
+      "at": 13.02,
+      "gain": 0.14,
+      "duration": 0.19
+    },
+    {
+      "kind": "click",
+      "at": 13.7,
+      "gain": 0.14,
+      "duration": 0.19
+    },
+    {
+      "kind": "whoosh",
+      "at": 16.2,
+      "gain": 0.13,
+      "duration": 0.9
+    },
+    {
+      "kind": "impact",
+      "at": 17.79,
+      "gain": 0.12,
+      "duration": 0.7
+    },
+    {
+      "kind": "whoosh",
+      "at": 18.2,
+      "gain": 0.11,
+      "duration": 0.85
+    },
+    {
+      "kind": "click",
+      "at": 19.13,
+      "gain": 0.15,
+      "duration": 0.22
+    },
+    {
+      "kind": "click",
+      "at": 21.525,
+      "gain": 0.14,
+      "duration": 0.2
+    },
+    {
+      "kind": "click",
+      "at": 21.935,
+      "gain": 0.14,
+      "duration": 0.2
+    },
+    {
+      "kind": "click",
+      "at": 22.345,
+      "gain": 0.14,
+      "duration": 0.2
+    },
+    {
+      "kind": "click",
+      "at": 22.775,
+      "gain": 0.14,
+      "duration": 0.2
+    },
+    {
+      "kind": "whoosh",
+      "at": 25.8,
+      "gain": 0.17,
+      "duration": 0.75
+    },
+    {
+      "kind": "impact",
+      "at": 26.355,
+      "gain": 0.22,
+      "duration": 1.4
+    }
+  ]
+}

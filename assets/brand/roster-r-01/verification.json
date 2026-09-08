@@ -1,0 +1,66 @@
+{
+  "revision": "01-slim-longer-legs",
+  "marks": [
+    {
+      "asset": "roster-mark-cobalt-1024.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": true,
+      "bounds": [
+        160,
+        56,
+        860,
+        968
+      ],
+      "components": 5
+    },
+    {
+      "asset": "roster-mark-ink-1024.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": true,
+      "bounds": [
+        160,
+        56,
+        860,
+        968
+      ],
+      "components": 5
+    },
+    {
+      "asset": "roster-mark-pearl-1024.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": true,
+      "bounds": [
+        160,
+        56,
+        860,
+        968
+      ],
+      "components": 5
+    }
+  ],
+  "wordmarksAreOutlined": true,
+  "wordmarkGeometryUnchanged": true,
+  "stemWidthReductionPercent": 20,
+  "silhouetteWidthReductionPercent": 13.15,
+  "filledAreaReductionPercent": 14.19,
+  "primaryPalette": [
+    "#4963DF",
+    "#172033",
+    "#151B29",
+    "#F7F8FC"
+  ],
+  "originalGeneratedImagesPreserved": true,
+  "silhouetteHeightIncreasePercent": 9.62,
+  "lowerStemLength": 80,
+  "previousSlimLowerStemLength": 60,
+  "lowerLegExtension": 20
+}

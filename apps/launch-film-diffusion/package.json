@@ -1,0 +1,26 @@
+{
+  "name": "@roster/launch-film-diffusion",
+  "private": true,
+  "type": "module",
+  "description": "Diffusion Studio production source for the Roster launch film",
+  "scripts": {
+    "studio": "node scripts/editor.mjs open",
+    "mount": "node scripts/editor.mjs mount",
+    "sound": "node scripts/make-sprint-score.mjs",
+    "sound:real": "node scripts/make-real-score.mjs",
+    "assets:brands": "node scripts/make-brand-paths.mjs",
+    "sound:spectacle": "node scripts/make-spectacle-score.mjs",
+    "sound:legacy": "node scripts/make-sound-design.mjs",
+    "check": "node scripts/editor.mjs check",
+    "check:real": "node scripts/check-real.mjs",
+    "check:sprint": "node scripts/check-sprint.mjs",
+    "typecheck": "node scripts/editor.mjs check",
+    "render:preview": "pnpm sound:real && node scripts/editor.mjs render preview",
+    "render:master": "pnpm sound:real && node scripts/editor.mjs render master",
+    "render:poster": "node scripts/editor.mjs poster",
+    "render:contact": "node scripts/editor.mjs contact",
+    "render:contact-sheet": "node scripts/editor.mjs contact",
+    "render:stills": "node scripts/editor.mjs stills",
+    "render:before-after": "node scripts/editor.mjs before-after"
+  }
+}

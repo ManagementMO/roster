@@ -1,0 +1,13 @@
+EDIT IMAGE 1 ON ITS EXISTING CANVAS. Preserve its exact 1080-pixel width by 1350-pixel height and 4:5 aspect ratio. The width must be 80% of the height. This is a SHORT portrait social-feed cover, only 25% taller than it is wide. Do not produce a tall narrow banner.
+
+Replace the contents of image 1 with a portrait recomposition of the Roster launch cover shown in image 2. Image 3 is the authoritative pearl Roster lockup. Image 1 supplies ONLY the target canvas dimensions and aspect ratio; use image 2 for the actual new design and headline.
+
+Create a polished premium software launch cover on this 1080x1350 canvas:
+- Deep matte navy background, with subtle broad cobalt illumination only behind the bottom card group.
+- Accurate small pearl Roster lockup at x≈75,y≈65, keeping the approved slim R and its longer legs.
+- Large left-aligned headline, entirely above the midpoint, exact text on THREE lines: "200 tools." then "Your starting" then "five." Pearl first two lines, vivid cobalt last line. Match the typography of image 2. Make the three-line headline occupy approximately y=200 through y=655. The brand lockup stays clearly separated from it. No added fourth line.
+- Exactly FIVE pearl-white tool tiles, approximately 180x180px each, in a compact staggered 3-across upper row and 2-across lower row, entirely within x=100..980 and y=735..1160. The five brands are GitHub, Figma, Playwright, Linear and PostgreSQL, exactly once each, in their true original colors and logo silhouettes. Keep all five recognizable and all cards fully on canvas. Use the same subtle depth, edges and restrained rotations as image 2. Cards may be relatively small; headline is the hero.
+- One small footer at x≈75,y≈1240, exact text "Your local MCP tool router." in pearl.
+- Preserve generous margins and space between all elements. No clipping, overlap or distortion.
+
+A cohesive campaign adaptation of image 2. Do not retain the big central R, large central Roster wordmark, underline or GitHub URL from image 1. Do not add other text, badges, borders, play icons or logos. Keep the output canvas EXACTLY 1080x1350 (4:5), NOT 9:16, NOT 2:5, and NOT an extra-tall poster.

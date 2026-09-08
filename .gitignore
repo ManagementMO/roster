@@ -9,6 +9,47 @@ coverage/
 .roster-tmp/
 docs/verification/tmp/
 dist-site/
+apps/launch-film/out/
+apps/launch-film-diffusion/out/
+apps/launch-film-diffusion/.dapi
+
+# Installed agent tooling and local creative-session state.
+.agents/skills/
+.claude/skills/
+skills-lock.json
+**/.dapi
+**/.Rhistory
+**/__pycache__/
+*.pyc
+apps/launch-film-diffusion-inspired/out/
+videos/**/.hyperframes/
+videos/**/.thumbnails/
+videos/**/.waveform-cache/
+videos/**/.media/
+videos/**/snapshots/
+videos/**/renders/
+videos/**/verification/before-*/
+assets/brand/**/verification/before-*/
+assets/brand/**/verification/website-first-browser-run/
+
+# The final, approved video deliveries are explicitly tracked. Intermediate
+# renders, picture-only passes and rollback copies stay local.
+
+# Website build and browser-test scratch output.
+apps/site/.astro/
+apps/site/playwright-report/
+apps/site/test-results/
+
+# Downloaded stock audio for the earlier Diffusion experiments is acquired
+# separately under its source license; keep the scripts and source notes.
+apps/launch-film-diffusion*/assets/music/*.mp3
+apps/launch-film-diffusion*/assets/sfx/mixkit/
+apps/launch-film-diffusion*/assets/roster-launch-sfx.wav
+apps/launch-film-diffusion*/assets/roster-launch-real-score.wav
+
+# Captured renderer internals and one-off debugging scratch.
+videos/**/verification/runtime-current.js
+videos/**/verification/seam-diagnostic.mjs
 
 # accidental review/validation artifacts (never commit)
 actionlint

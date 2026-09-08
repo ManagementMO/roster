@@ -16,9 +16,9 @@ const resolveFile = (pathname) => {
 };
 for (const [file, html] of documents) {
   const route = `/${path.relative(root, file).replaceAll(path.sep, "/").replace(/index\.html$/, "")}`;
-  const ids = new Set([...html.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]));
-  for (const tag of html.matchAll(/<(?:a|link|img|script|source)\b[^>]*>/g)) {
-    for (const attribute of tag[0].matchAll(/(?:href|src)=["']([^"']+)["']/g)) {
+  const ids = new Set([...html.matchAll(/\bid=["']([^"']+)["']/gi)].map((match) => match[1]));
+  for (const tag of html.matchAll(/<(?:a|link|img|script|source)\b[^>]*>/gi)) {
+    for (const attribute of tag[0].matchAll(/(?:href|src)=["']([^"']+)["']/gi)) {
       const href = attribute[1].replaceAll("&amp;", "&");
       const target = new URL(href, `https://site.invalid${route}`);
       if (target.origin !== "https://site.invalid") continue;
@@ -26,7 +26,7 @@ for (const [file, html] of documents) {
       const found = resolveFile(target.pathname);
       if (!found) { errors.push(`${route}: missing ${href}`); continue; }
       if (target.hash && found.endsWith(".html")) {
-        const targetIds = found === file ? ids : new Set([...(documents.get(found) ?? "").matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]));
+        const targetIds = found === file ? ids : new Set([...(documents.get(found) ?? "").matchAll(/\bid=["']([^"']+)["']/gi)].map((match) => match[1]));
         if (!targetIds.has(decodeURIComponent(target.hash.slice(1)))) errors.push(`${route}: missing anchor ${href}`);
       }
     }

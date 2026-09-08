@@ -1,0 +1,2501 @@
+{
+  "title": "Five in Motion \u2014 Full Send",
+  "composition": "Original pop-rock composition and arrangement using CC0 recorded instrument one-shots",
+  "bpm": 128,
+  "meter": "4/4",
+  "bars": 8,
+  "tonality": "C major",
+  "duration": 15.0,
+  "sampleRate": 48000,
+  "seed": 20260909,
+  "dependencies": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1"
+  },
+  "externalSamples": {
+    "license": "CC0-1.0",
+    "count": 96,
+    "manifest": "assets/audio/samples/manifest.json"
+  },
+  "stems": {
+    "drums": {
+      "peak": 1.0912992145913585,
+      "rms": 0.08811302121106843
+    },
+    "bass": {
+      "peak": 0.4884162213931402,
+      "rms": 0.0681490260129873
+    },
+    "chords": {
+      "peak": 0.9922738054941216,
+      "rms": 0.1459231565415735
+    },
+    "lead": {
+      "peak": 0.1778814182472831,
+      "rms": 0.029195581201979952
+    },
+    "design": {
+      "peak": 0.19112633149751898,
+      "rms": 0.008626653665358973
+    }
+  },
+  "rawPeak": 1.8823646784516677,
+  "pictureAnchors": {
+    "five": 1.875,
+    "task": 3.75,
+    "call": 7.5,
+    "playwrightSettled": 8.2,
+    "requestArrival": 8.35,
+    "learning": 10.3125,
+    "logoDrop": 12.1875,
+    "resolve": 14.0625
+  },
+  "finalPolish": {
+    "landingTapSeconds": 0.048,
+    "landingTapGain": 0.18,
+    "guitarDipDb": 1.2,
+    "guitarDipRange": [
+      8.185,
+      8.3
+    ],
+    "logoBreathSeconds": 0.055
+  },
+  "events": [
+    {
+      "at": 0.0,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 0.0,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 0.0,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 0.0,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 0.0,
+      "stem": "lead",
+      "event": "pop guitar hook 76",
+      "gain": 0.16
+    },
+    {
+      "at": 0,
+      "stem": "drums",
+      "event": "opening crash",
+      "gain": 0.21
+    },
+    {
+      "at": 0.008,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 0.08,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.17,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.234375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 0.234375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 0.234375,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 0.242375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 0.25,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.34,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.351562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 0.351562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 0.351562,
+      "stem": "lead",
+      "event": "pop guitar hook 74",
+      "gain": 0.16
+    },
+    {
+      "at": 0.359563,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 0.43,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.46875,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 0.46875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 0.46875,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 0.47375,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 0.51,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.6,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.68,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 0.703125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 0.703125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 0.703125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 0.703125,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 0.703125,
+      "stem": "lead",
+      "event": "pop guitar hook 72",
+      "gain": 0.16
+    },
+    {
+      "at": 0.711125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 0.9375,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 0.9375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 0.9375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 0.9375,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 0.9455,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 1.171875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 1.171875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 1.171875,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 1.171875,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.16
+    },
+    {
+      "at": 1.179875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 1.289062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 1.40625,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 1.40625,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 1.40625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 1.40625,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 1.40625,
+      "stem": "lead",
+      "event": "pop guitar hook 69",
+      "gain": 0.16
+    },
+    {
+      "at": 1.41125,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 1.41425,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 1.640625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 1.640625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 1.640625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5642
+    },
+    {
+      "at": 1.640625,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 1.640625,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.16
+    },
+    {
+      "at": 1.640625,
+      "stem": "drums",
+      "event": "transition tom",
+      "gain": 0.28
+    },
+    {
+      "at": 1.648625,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5303
+    },
+    {
+      "at": 1.695,
+      "stem": "design",
+      "event": "short transition air",
+      "gain": 0.085
+    },
+    {
+      "at": 1.757812,
+      "stem": "drums",
+      "event": "transition floor tom",
+      "gain": 0.36
+    },
+    {
+      "at": 1.875,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 1.875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 1.875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 1.875,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 1.875,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.16
+    },
+    {
+      "at": 1.875,
+      "stem": "drums",
+      "event": "section crash",
+      "gain": 0.22
+    },
+    {
+      "at": 1.883,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 2.055,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 2.109375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 2.109375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 2.109375,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 2.117375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 2.135,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 2.205,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 2.226562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 2.226562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 2.234563,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 2.265,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 2.315,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 2.34375,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 2.34375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 2.34375,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 2.34375,
+      "stem": "lead",
+      "event": "pop guitar hook 69",
+      "gain": 0.16
+    },
+    {
+      "at": 2.34875,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 2.578125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 2.578125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 2.578125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 2.578125,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 2.578125,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.16
+    },
+    {
+      "at": 2.586125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 2.8125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 2.8125,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 2.8125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 2.8125,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 2.8205,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 3.046875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 3.046875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 3.046875,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 3.046875,
+      "stem": "lead",
+      "event": "pop guitar hook 62",
+      "gain": 0.16
+    },
+    {
+      "at": 3.054875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 3.164062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 3.28125,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 3.28125,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 3.28125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 3.28125,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 3.28125,
+      "stem": "lead",
+      "event": "pop guitar hook 64",
+      "gain": 0.16
+    },
+    {
+      "at": 3.28625,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 3.28925,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 3.515625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 3.515625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 3.515625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5642
+    },
+    {
+      "at": 3.515625,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 3.515625,
+      "stem": "drums",
+      "event": "transition tom",
+      "gain": 0.28
+    },
+    {
+      "at": 3.523625,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5303
+    },
+    {
+      "at": 3.57,
+      "stem": "design",
+      "event": "short transition air",
+      "gain": 0.085
+    },
+    {
+      "at": 3.632812,
+      "stem": "drums",
+      "event": "transition floor tom",
+      "gain": 0.36
+    },
+    {
+      "at": 3.75,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 3.75,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 3.75,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 3.75,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.58
+    },
+    {
+      "at": 3.75,
+      "stem": "lead",
+      "event": "pop guitar hook 72",
+      "gain": 0.19
+    },
+    {
+      "at": 3.75,
+      "stem": "drums",
+      "event": "section crash",
+      "gain": 0.22
+    },
+    {
+      "at": 3.758,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 3.984375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 3.984375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 3.984375,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.49
+    },
+    {
+      "at": 3.992375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 4.101562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 4.101562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 4.109563,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 4.21875,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 4.21875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 4.21875,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.58
+    },
+    {
+      "at": 4.21875,
+      "stem": "lead",
+      "event": "pop guitar hook 76",
+      "gain": 0.19
+    },
+    {
+      "at": 4.22375,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 4.453125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 4.453125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 4.453125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 4.453125,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.49
+    },
+    {
+      "at": 4.461125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 4.57,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 4.570312,
+      "stem": "lead",
+      "event": "pop guitar hook 74",
+      "gain": 0.19
+    },
+    {
+      "at": 4.6875,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 4.6875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 4.6875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 4.6875,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.58
+    },
+    {
+      "at": 4.6955,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 4.921875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 4.921875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 4.921875,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.49
+    },
+    {
+      "at": 4.921875,
+      "stem": "lead",
+      "event": "pop guitar hook 72",
+      "gain": 0.19
+    },
+    {
+      "at": 4.929875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 5.039062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 5.15625,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 5.15625,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 5.15625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 5.15625,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.58
+    },
+    {
+      "at": 5.16125,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 5.16425,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 5.2,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 5.31,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 5.390625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 5.390625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 5.390625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5642
+    },
+    {
+      "at": 5.390625,
+      "stem": "bass",
+      "event": "picked bass 33",
+      "gain": 0.49
+    },
+    {
+      "at": 5.390625,
+      "stem": "lead",
+      "event": "pop guitar hook 69",
+      "gain": 0.19
+    },
+    {
+      "at": 5.398625,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5303
+    },
+    {
+      "at": 5.41,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 5.5,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 5.58,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 5.625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 5.625,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 5.625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 5.625,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.58
+    },
+    {
+      "at": 5.625,
+      "stem": "lead",
+      "event": "pop guitar hook 65",
+      "gain": 0.19
+    },
+    {
+      "at": 5.633,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 5.859375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 5.859375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 5.859375,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.49
+    },
+    {
+      "at": 5.867375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 5.976562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 5.976562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 5.984563,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 6.09375,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 6.09375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 6.09375,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.58
+    },
+    {
+      "at": 6.09375,
+      "stem": "lead",
+      "event": "pop guitar hook 69",
+      "gain": 0.19
+    },
+    {
+      "at": 6.09875,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 6.328125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 6.328125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 6.328125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 6.328125,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.49
+    },
+    {
+      "at": 6.336125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 6.35,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 6.5625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 6.5625,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 6.5625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 6.5625,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.58
+    },
+    {
+      "at": 6.5625,
+      "stem": "lead",
+      "event": "pop guitar hook 72",
+      "gain": 0.19
+    },
+    {
+      "at": 6.5705,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 6.796875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 6.796875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 6.796875,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.49
+    },
+    {
+      "at": 6.804875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 6.914062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 7.03125,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 7.03125,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 7.03125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 7.03125,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.58
+    },
+    {
+      "at": 7.03125,
+      "stem": "lead",
+      "event": "pop guitar hook 74",
+      "gain": 0.19
+    },
+    {
+      "at": 7.03625,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 7.03925,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 7.265625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 7.265625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 7.265625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5642
+    },
+    {
+      "at": 7.265625,
+      "stem": "bass",
+      "event": "picked bass 29",
+      "gain": 0.49
+    },
+    {
+      "at": 7.265625,
+      "stem": "drums",
+      "event": "transition tom",
+      "gain": 0.28
+    },
+    {
+      "at": 7.273625,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5303
+    },
+    {
+      "at": 7.32,
+      "stem": "design",
+      "event": "short transition air",
+      "gain": 0.085
+    },
+    {
+      "at": 7.382812,
+      "stem": "drums",
+      "event": "transition floor tom",
+      "gain": 0.36
+    },
+    {
+      "at": 7.5,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 7.5,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 7.5,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 7.5,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 7.5,
+      "stem": "lead",
+      "event": "pop guitar hook 76",
+      "gain": 0.19
+    },
+    {
+      "at": 7.5,
+      "stem": "drums",
+      "event": "section crash",
+      "gain": 0.22
+    },
+    {
+      "at": 7.508,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 7.734375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 7.734375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 7.734375,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 7.742375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 7.851562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 7.851562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 7.851562,
+      "stem": "lead",
+      "event": "pop guitar hook 74",
+      "gain": 0.19
+    },
+    {
+      "at": 7.859563,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 7.96875,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 7.96875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 7.96875,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 7.97375,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 8.2,
+      "stem": "design",
+      "event": "Playwright settled contact",
+      "gain": 0.18
+    },
+    {
+      "at": 8.203125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 8.203125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 8.203125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 8.203125,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 8.203125,
+      "stem": "lead",
+      "event": "pop guitar hook 72",
+      "gain": 0.19
+    },
+    {
+      "at": 8.211125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 8.35,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 8.4375,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 8.4375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 8.4375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 8.4375,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 8.4455,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 8.671875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 8.671875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 8.671875,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 8.671875,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.19
+    },
+    {
+      "at": 8.679875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 8.789062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 8.90625,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 8.90625,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 8.90625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 8.90625,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 8.90625,
+      "stem": "lead",
+      "event": "pop guitar hook 69",
+      "gain": 0.19
+    },
+    {
+      "at": 8.91125,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 8.91425,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 9.05,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 9.140625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 9.140625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 9.140625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5642
+    },
+    {
+      "at": 9.140625,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 9.140625,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.19
+    },
+    {
+      "at": 9.148625,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5303
+    },
+    {
+      "at": 9.375,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 9.375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 9.375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 9.375,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 9.375,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.19
+    },
+    {
+      "at": 9.383,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 9.609375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 9.609375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 9.609375,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 9.617375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 9.726562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 9.726562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 9.734562,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 9.84375,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 9.84375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 9.84375,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 9.84375,
+      "stem": "lead",
+      "event": "pop guitar hook 69",
+      "gain": 0.19
+    },
+    {
+      "at": 9.84875,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 10.078125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 10.078125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 10.078125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 10.078125,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 10.078125,
+      "stem": "lead",
+      "event": "pop guitar hook 67",
+      "gain": 0.19
+    },
+    {
+      "at": 10.086125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 10.1325,
+      "stem": "design",
+      "event": "short transition air",
+      "gain": 0.085
+    },
+    {
+      "at": 10.3125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 10.3125,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 10.3125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 10.3125,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 10.3205,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 10.5125,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 10.546875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 10.546875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 10.546875,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.49
+    },
+    {
+      "at": 10.546875,
+      "stem": "lead",
+      "event": "pop guitar hook 62",
+      "gain": 0.19
+    },
+    {
+      "at": 10.554875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 10.6325,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 10.65,
+      "stem": "design",
+      "event": "logo lift",
+      "gain": 0.075
+    },
+    {
+      "at": 10.664062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 10.7425,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 10.78125,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 10.78125,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 10.78125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 10.78125,
+      "stem": "bass",
+      "event": "picked bass 31",
+      "gain": 0.58
+    },
+    {
+      "at": 10.78125,
+      "stem": "lead",
+      "event": "ascending guitar pickup",
+      "gain": 0.15
+    },
+    {
+      "at": 10.78625,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 10.78925,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 11.015625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 11.015625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 11.015625,
+      "stem": "lead",
+      "event": "ascending guitar pickup",
+      "gain": 0.162
+    },
+    {
+      "at": 11.1325,
+      "stem": "design",
+      "event": "interface tick",
+      "gain": 0.06
+    },
+    {
+      "at": 11.25,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 11.25,
+      "stem": "lead",
+      "event": "ascending guitar pickup",
+      "gain": 0.174
+    },
+    {
+      "at": 11.25,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.25
+    },
+    {
+      "at": 11.255,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.06
+    },
+    {
+      "at": 11.367188,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.285
+    },
+    {
+      "at": 11.372188,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.0684
+    },
+    {
+      "at": 11.484375,
+      "stem": "lead",
+      "event": "ascending guitar pickup",
+      "gain": 0.186
+    },
+    {
+      "at": 11.484375,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.32
+    },
+    {
+      "at": 11.489375,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.0768
+    },
+    {
+      "at": 11.601562,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.355
+    },
+    {
+      "at": 11.606563,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.0852
+    },
+    {
+      "at": 11.71875,
+      "stem": "lead",
+      "event": "ascending guitar pickup",
+      "gain": 0.198
+    },
+    {
+      "at": 11.71875,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.39
+    },
+    {
+      "at": 11.72375,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.0936
+    },
+    {
+      "at": 11.835938,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.425
+    },
+    {
+      "at": 11.840938,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.102
+    },
+    {
+      "at": 11.953125,
+      "stem": "lead",
+      "event": "ascending guitar pickup",
+      "gain": 0.21
+    },
+    {
+      "at": 11.953125,
+      "stem": "drums",
+      "event": "snare build",
+      "gain": 0.46
+    },
+    {
+      "at": 11.958125,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1104
+    },
+    {
+      "at": 12.0075,
+      "stem": "design",
+      "event": "short transition air",
+      "gain": 0.085
+    },
+    {
+      "at": 12.070312,
+      "stem": "drums",
+      "event": "fill landing",
+      "gain": 0.48
+    },
+    {
+      "at": 12.1875,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 12.1875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 12.1875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 12.1875,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 12.1875,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.98
+    },
+    {
+      "at": 12.1875,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 12.1875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.92
+    },
+    {
+      "at": 12.1875,
+      "stem": "bass",
+      "event": "C bass resolve",
+      "gain": 0.68
+    },
+    {
+      "at": 12.1875,
+      "stem": "drums",
+      "event": "logo crash",
+      "gain": 0.32
+    },
+    {
+      "at": 12.1925,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 12.1955,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 12.1955,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.8648
+    },
+    {
+      "at": 12.1995,
+      "stem": "lead",
+      "event": "C add9 final guitar",
+      "gain": 0.12
+    },
+    {
+      "at": 12.1995,
+      "stem": "lead",
+      "event": "C add9 final guitar",
+      "gain": 0.12
+    },
+    {
+      "at": 12.1995,
+      "stem": "lead",
+      "event": "C add9 final guitar",
+      "gain": 0.12
+    },
+    {
+      "at": 12.421875,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 12.421875,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 12.421875,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 12.429875,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 12.539062,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 12.65625,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 12.65625,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 12.65625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5456
+    },
+    {
+      "at": 12.65625,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 12.66125,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 12.66425,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5129
+    },
+    {
+      "at": 12.890625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 12.890625,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 12.890625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5642
+    },
+    {
+      "at": 12.890625,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 12.898625,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5303
+    },
+    {
+      "at": 13.125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.88
+    },
+    {
+      "at": 13.125,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 13.125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.62
+    },
+    {
+      "at": 13.125,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 13.133,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 13.359375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.15
+    },
+    {
+      "at": 13.359375,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.4216
+    },
+    {
+      "at": 13.359375,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 13.367375,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3963
+    },
+    {
+      "at": 13.476562,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 13.476562,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.403
+    },
+    {
+      "at": 13.484562,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.3788
+    },
+    {
+      "at": 13.59375,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 13.59375,
+      "stem": "drums",
+      "event": "hat",
+      "gain": 0.21
+    },
+    {
+      "at": 13.59375,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.58
+    },
+    {
+      "at": 13.59875,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 13.828125,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.72
+    },
+    {
+      "at": 13.828125,
+      "stem": "drums",
+      "event": "open-hat",
+      "gain": 0.26
+    },
+    {
+      "at": 13.828125,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.5828
+    },
+    {
+      "at": 13.828125,
+      "stem": "bass",
+      "event": "picked bass 36",
+      "gain": 0.49
+    },
+    {
+      "at": 13.836125,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.5478
+    },
+    {
+      "at": 14.0625,
+      "stem": "drums",
+      "event": "acoustic kick",
+      "gain": 0.98
+    },
+    {
+      "at": 14.0625,
+      "stem": "drums",
+      "event": "rock backbeat",
+      "gain": 0.72
+    },
+    {
+      "at": 14.0625,
+      "stem": "chords",
+      "event": "left electric guitar",
+      "gain": 0.74
+    },
+    {
+      "at": 14.0625,
+      "stem": "bass",
+      "event": "C bass resolve",
+      "gain": 0.68
+    },
+    {
+      "at": 14.0625,
+      "stem": "drums",
+      "event": "logo crash",
+      "gain": 0.32
+    },
+    {
+      "at": 14.0675,
+      "stem": "drums",
+      "event": "snare overhead",
+      "gain": 0.1728
+    },
+    {
+      "at": 14.0705,
+      "stem": "chords",
+      "event": "right electric guitar",
+      "gain": 0.6956
+    },
+    {
+      "at": 14.0745,
+      "stem": "lead",
+      "event": "C add9 final guitar",
+      "gain": 0.12
+    },
+    {
+      "at": 14.0745,
+      "stem": "lead",
+      "event": "C add9 final guitar",
+      "gain": 0.12
+    },
+    {
+      "at": 14.0745,
+      "stem": "lead",
+      "event": "C add9 final guitar",
+      "gain": 0.12
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "before": {
+    "frames": 66,
+    "distinctFrames": 36,
+    "adjacentChanges": 65
+  },
+  "after": {
+    "frames": 66,
+    "distinctFrames": 66,
+    "adjacentChanges": 65
+  },
+  "interval": [
+    7.6,
+    8.15
+  ],
+  "crop": {
+    "x": 1490,
+    "y": 440,
+    "width": 300,
+    "height": 160,
+    "purpose": "Interior of the Playwright card, excluding the moving request rail and headline."
+  },
+  "interpretation": "Distinct encoded frame hashes include compression variation. This is a non-repetition check; frame uniqueness alone does not establish geometric motion or perceived smoothness."
+}

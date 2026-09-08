@@ -1,0 +1,97 @@
+{
+  "verifiedAt": "2026-09-08T06:43:04.658948+00:00",
+  "projects": {
+    "roster-premiere-tight": {
+      "media": [
+        {
+          "file": "renders/roster-tight-120fps.mp4",
+          "width": 1920,
+          "height": 1080,
+          "fps": 120,
+          "frames": 1800,
+          "duration": 15
+        },
+        {
+          "file": "renders/roster-tight-60fps.mp4",
+          "width": 1920,
+          "height": 1080,
+          "fps": 60,
+          "frames": 900,
+          "duration": 15
+        }
+      ],
+      "allDeliveredHashesMatch": true,
+      "masterSourceSha256": "ca8a88d2bb03a719fca48df67c870b33c4e97b594e125dc075cdf28f169a0f33",
+      "openingBrands": [
+        "GitHub",
+        "Linear",
+        "Playwright",
+        "Figma",
+        "Brave",
+        "Slack",
+        "PostgreSQL",
+        "Supabase"
+      ],
+      "checkFindings": 0,
+      "contrastPassed": 76,
+      "motionSamples": 300,
+      "nativeMotionSample": {
+        "start": 0.12,
+        "duration": 0.2,
+        "frames": 23,
+        "distinctFrames": 23
+      },
+      "blackSpans": [],
+      "silenceSpans": [],
+      "masteredAudioSha256": "9acbefaf07de871f1cebc143c3b45eecc0f97cbc79bb348a6f8bb41cb67d1ab3"
+    },
+    "roster-premiere-feed": {
+      "media": [
+        {
+          "file": "renders/roster-feed-120fps.mp4",
+          "width": 1080,
+          "height": 1350,
+          "fps": 120,
+          "frames": 1800,
+          "duration": 15
+        },
+        {
+          "file": "renders/roster-feed-60fps.mp4",
+          "width": 1080,
+          "height": 1350,
+          "fps": 60,
+          "frames": 900,
+          "duration": 15
+        }
+      ],
+      "allDeliveredHashesMatch": true,
+      "masterSourceSha256": "c5cd451bdba2d01ea61b34c467cde0d78b19a86eded517eb1c2fc221754592d0",
+      "openingBrands": [
+        "GitHub",
+        "Linear",
+        "Playwright",
+        "Figma",
+        "Brave",
+        "Slack",
+        "PostgreSQL",
+        "Supabase"
+      ],
+      "checkFindings": 0,
+      "contrastPassed": 59,
+      "motionSamples": 300,
+      "nativeMotionSample": {
+        "start": 0.12,
+        "duration": 0.2,
+        "frames": 23,
+        "distinctFrames": 23
+      },
+      "blackSpans": [],
+      "silenceSpans": [],
+      "masteredAudioSha256": "9acbefaf07de871f1cebc143c3b45eecc0f97cbc79bb348a6f8bb41cb67d1ab3"
+    }
+  },
+  "encodedSoundtrackIdenticalAcrossFormats": true,
+  "encodedAudioPacketHash": "SHA256=d202924c54b501fa7fdbfebc7f39cd19e4fe7b58c525db2b7d1f98d255cbe1e9",
+  "original30SecondMasterUnchanged": true,
+  "originalMasterSha256": "cda3c92b3d205b44098408aaf857e9f8aca08f067ec903e42baaab646b975c87"
+}

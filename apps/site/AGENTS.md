@@ -21,4 +21,4 @@ No `SITE_URL` means no fabricated canonical origin or sitemap. Starlight's skipp
 
 The build finishes with the official Pagefind CLI and validates its metadata: on the inspected macOS environment, Starlight's Node API left `pagefind-entry.json` empty despite reporting success. Do not remove that completion step without a production search regression check. Function-valued code-block configuration stays in `ec.config.mjs` so the reusable Code component can load it.
 
-A 2026-09-07 audit found six advisories in the baseline's unchanged `fast-uri@3.1.5` and `qs@6.15.3`. This is a separate product-release follow-up; do not weaken or silently change repository security overrides as part of website work.
+A 2026-09-07 audit found six advisories in the baseline's `fast-uri@3.1.5` and `qs@6.15.3`. The 2026-09-08 merge preparation updates the shared overrides to patched `fast-uri@3.1.6` and `qs@6.16.0`, with a clean dependency audit. Do not weaken repository security overrides or bypass the audit as part of website work.

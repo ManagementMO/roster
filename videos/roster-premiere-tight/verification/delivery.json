@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-09-08T07:51:44.428Z",
+  "files": [
+    {
+      "path": "renders/roster-tight-120fps.mp4",
+      "bytes": 5746173,
+      "sha256": "171e3fe007fbf2eeea0db701ebb0b83df13bdc58e4b8b63b558eb483c1e5b15a"
+    },
+    {
+      "path": "renders/roster-tight-60fps.mp4",
+      "bytes": 2568614,
+      "sha256": "baa05bfd831b284bf7d6d209c7ea3ae0abc67d389bd3795210d3f35bd25226c7"
+    },
+    {
+      "path": "renders/roster-tight-preview.mp4",
+      "bytes": 1269834,
+      "sha256": "85742df1f631491a1be9af997d19f8f28ca694ec30b5c41fcd231c80b10aa2cd"
+    },
+    {
+      "path": "renders/roster-tight-poster.png",
+      "bytes": 187738,
+      "sha256": "c88bd6bf6a7d40aadcd24eb237229d5cac78447055a5d52f9797a61f39f2ddeb"
+    },
+    {
+      "path": "renders/roster-tight-contact-sheet.png",
+      "bytes": 440080,
+      "sha256": "d66a892b468620d2c7e29395b763cb249b2dc1a4282ef6458e209180ba15351a"
+    },
+    {
+      "path": "assets/audio/five-in-motion.m4a",
+      "bytes": 502130,
+      "sha256": "221250a73e9e1fe723e63d8ca2fc44fecf61c761fab81d2dd64a8202bc0f725e"
+    },
+    {
+      "path": "assets/audio/five-in-motion-full-send.m4a",
+      "bytes": 502130,
+      "sha256": "221250a73e9e1fe723e63d8ca2fc44fecf61c761fab81d2dd64a8202bc0f725e"
+    }
+  ],
+  "representativeSeconds": [
+    1.35,
+    3.05,
+    6.85,
+    9.75,
+    11.6,
+    14.1
+  ],
+  "nativeMotionSample": {
+    "start": 0.12,
+    "duration": 0.2,
+    "frames": 23,
+    "distinctFrames": 23
+  },
+  "detectedBlackSpans": [],
+  "detectedSilence": [],
+  "loudnessSummary": "Summary:\n\n  Integrated loudness:\n    I:         -13.0 LUFS\n    Threshold: -23.2 LUFS\n\n  Loudness range:\n    LRA:         1.3 LU\n    Threshold: -33.2 LUFS\n    LRA low:   -14.1 LUFS\n    LRA high:  -12.8 LUFS\n\n  True peak:\n    Peak:       -1.8 dBFS\n[out#0/null @ 0xb5ac24300] video:745KiB audio:2816KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nframe= 1800 fps=0.0 q=-0.0 Lsize=N/A time=00:00:15.00 bitrate=N/A speed=22.9x elapsed=0:00:00.65    \n"
+}
