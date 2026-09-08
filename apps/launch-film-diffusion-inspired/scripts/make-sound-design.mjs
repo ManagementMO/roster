@@ -69,7 +69,6 @@ function addSweep(start, duration, from, to, amplitude, pan = 0) {
   for (let i = begin; i < end; i += 1) {
     const t = (i - begin) / SAMPLE_RATE;
     const progress = t / duration;
-    const frequency = from + (to - from) * progress;
     const phase = 2 * Math.PI * (from * t + (to - from) * t * progress * 0.5);
     addSample(i, Math.sin(phase) * amplitude * envelope(t, 0.05, 0.35, duration), pan);
   }

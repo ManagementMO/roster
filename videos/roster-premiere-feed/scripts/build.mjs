@@ -51,7 +51,7 @@ function frame(id, overrides, transform = (html) => html, timeline = null) {
     .replaceAll('viewBox="0 0 1920 1080"', 'viewBox="0 0 1080 1350"');
   html = transform(html);
   html = html.replace("</style>", `\n/* Dedicated feed composition. */\n${overrides}\n</style>`);
-  if (timeline) html = html.replace(/<script>[\s\S]*?<\/script>/, `<script>\n${timeline}\n</script>`);
+  if (timeline) html = html.replace(/<script>[\s\S]*?<\/script>/i, `<script>\n${timeline}\n</script>`);
   write(`compositions/frames/${id}.html`, html);
 }
 function position(html, id, styles) {

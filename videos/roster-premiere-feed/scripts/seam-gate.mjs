@@ -71,8 +71,8 @@ async function ensureServer() {
     const port = 5380 + Math.floor(Math.random() * 20);
     const env = { ...process.env };
     delete env.HYPERFRAME_RUNTIME_URL; // wrong value fails silently as 200 HTML
-    const cmd = flag("server-cmd", `npx --yes hyperframes preview --no-open --port ${port}`);
-    const child = spawn("sh", ["-c", cmd.replace(/\{port\}/g, String(port))], {
+    // Custom servers can be started separately and supplied through --url.
+    const child = spawn("npx", ["--yes", "hyperframes", "preview", "--no-open", "--port", String(port)], {
       cwd: project,
       env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -336,14 +336,13 @@ const HARNESS = `window.__seamGate = {
 const sgn = (v) => (v > 0 ? 1 : v < 0 ? -1 : 0);
 const visible = (m) => !!m && m.op > VIS && m.w * m.h > 16 && m.onscreen !== false;
 function velocity(m1, m2, dt, axis) {
-  if (!m1 || !m2) return null;
   if (axis === "x") return (m2.cx - m1.cx) / dt;
   if (axis === "y") return (m2.cy - m1.cy) / dt;
   return (m2.es - m1.es) / dt; // z
 }
 const eps = (axis) => (axis === "z" ? EPS_Z : EPS_XY);
 const fmtV = (v, axis) =>
-  v === null ? "n/a" : axis === "z" ? v.toFixed(3) + " es/s" : v.toFixed(0) + " px/s";
+  axis === "z" ? v.toFixed(3) + " es/s" : v.toFixed(0) + " px/s";
 
 // ---------- verify ----------
 async function verify() {

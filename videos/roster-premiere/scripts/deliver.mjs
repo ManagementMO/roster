@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -62,11 +62,11 @@ const audit = run("ffmpeg", [
   "-f", "null", "-",
 ], "encoded-master-audit.log");
 
-const files = [master, preview, poster, contact].map((path) => ({
-  path,
-  bytes: statSync(path).size,
-  sha256: createHash("sha256").update(readFileSync(path)).digest("hex"),
-}));
+const files = [master, preview, poster, contact].map((path) => {
+  // The size and digest describe the same bytes, even if the file is replaced.
+  const content = readFileSync(path);
+  return { path, bytes: content.length, sha256: createHash("sha256").update(content).digest("hex") };
+});
 const report = {
   generatedAt: new Date().toISOString(),
   files,

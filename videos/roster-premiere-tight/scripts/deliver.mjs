@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -40,9 +40,11 @@ const audit=run("ffmpeg",["-hide_banner","-i",master,"-vf","blackdetect=d=0.10:p
 const hashes=run("ffmpeg",["-hide_banner","-ss","0.12","-i",master,"-t","0.2","-an","-f","framemd5","-"],"native-rate-audit.log").stdout;
 writeFileSync("verification/native-rate.framemd5",hashes);
 const sampled=hashes.split("\n").filter(line=>line.trim() && !line.startsWith("#")).map(line=>line.split(",").at(-1).trim());
-const files=[master,share,preview,poster,contact,"assets/audio/five-in-motion.m4a","assets/audio/five-in-motion-full-send.m4a"].map(path=>({
-  path,bytes:statSync(path).size,sha256:createHash("sha256").update(readFileSync(path)).digest("hex"),
-}));
+const files=[master,share,preview,poster,contact,"assets/audio/five-in-motion.m4a","assets/audio/five-in-motion-full-send.m4a"].map(path=>{
+  // The size and digest describe the same bytes, even if the file is replaced.
+  const content=readFileSync(path);
+  return {path,bytes:content.length,sha256:createHash("sha256").update(content).digest("hex")};
+});
 const report={
   generatedAt:new Date().toISOString(),files,representativeSeconds:frameIndices.map(frame=>frame/120),
   nativeMotionSample:{start:.12,duration:.2,frames:sampled.length,distinctFrames:new Set(sampled).size},
