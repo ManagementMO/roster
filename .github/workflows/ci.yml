@@ -32,7 +32,7 @@ jobs:
         # every OS on the current Node, plus the engines floor (>=22.13) on Linux.
         include:
           - { os: ubuntu-latest, node: "24" }
-          - { os: ubuntu-latest, node: "22" } # engines floor: pnpm 11.9 needs Node >=22.13
+          - { os: ubuntu-latest, node: "22.13.x" } # exact engines floor minor, not latest Node 22
           - { os: macos-26, node: "24" } # macos-latest is mid-migration to macOS 26
           - { os: windows-latest, node: "24" }
     runs-on: ${{ matrix.os }}
@@ -46,8 +46,24 @@ jobs:
       # and would miss cross-package type errors). Fail fast on compile.
       - name: Build (tsc project references)
         run: pnpm build
+      # The build tsconfigs EXCLUDE *.test.ts, so a bad import or type error in a
+      # test would otherwise surface only at vitest runtime (esbuild does not
+      # typecheck). This no-emit pass typechecks every test file and its imports.
+      - name: Typecheck tests (no-emit)
+        run: pnpm typecheck:tests
       - name: Unit + integration tests
         run: pnpm test
+      # A flake that cannot be named cannot be fixed: keep the machine-readable
+      # result even when the run fails, so the next intermittent failure is
+      # identified from the artifact instead of guessed at.
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.node }}
+          path: test-results.junit.xml
+          if-no-files-found: ignore
+          retention-days: 14
 
   integration:
     name: Router E2E + certification probes
@@ -66,21 +82,52 @@ jobs:
       # state, so a correct verifier must CATCH all of them (0/8 passed). A
       # single leak would mean a verifier can bless a wrong outcome.
       - name: Fail-probes (verifiers must catch wrongness — expect 0/8)
+        env:
+          FP_ARTIFACT: ${{ runner.temp }}/fp.json
         run: |
           set +e
           node packages/cli/dist/bin.js combine run docs/signing/fail-probes.yaml \
-            --name failprobe --out "$RUNNER_TEMP/fp.json" \
+            --name failprobe --out "$FP_ARTIFACT" \
             -- npx -y @modelcontextprotocol/server-filesystem '{{sandbox}}'
           code=$?
           set -e
-          passes=$(node -e "console.log(require('$RUNNER_TEMP/fp.json').runs[0].summary.passes)")
-          if [ "$code" -eq 0 ] || [ "$passes" != "0" ]; then
-            echo "::error::fail-probe LEAK — a verifier blessed a sabotaged end state ($passes/8 passed)"
+          if [ "$code" -eq 0 ]; then
+            echo "::error::fail-probe LEAK — every sabotaged task unexpectedly passed"
             exit 1
           fi
-          echo "OK: all fail-probes correctly caught (0/8 passed)"
+          node docs/verification/check-fail-probes.mjs \
+            docs/signing/fail-probes.yaml "$FP_ARTIFACT"
       - name: League site generates from the run artifact
         run: pnpm league:build
+
+  clean-install:
+    name: Clean external install (packed tarball)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Packs @roster/cli exactly as `npm publish` would, installs the tarball
+      # into an empty project OUTSIDE the workspace, and drives init/sync/eject.
+      # This is the gate that catches an unpublished dependency, an unparseable
+      # binary, or a broken publishConfig BEFORE the registry does — the failure
+      # mode is otherwise invisible until a stranger runs `npx -y @roster/cli`.
+      - name: Pack, install elsewhere, and run the real binary
+        run: node scripts/verify-clean-install.mjs
+
+  clean-install-windows:
+    name: Clean external install · windows-latest
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Keep npm/pnpm tarball parity, the Windows npm shim, native dependency
+      # installation, and the real CLI lifecycle under continuous verification.
+      # A Windows-only esbuild entrypoint regression was previously caught only
+      # after publication work, so Linux coverage is not a substitute here.
+      - name: Pack, install elsewhere, and run the real binary
+        run: node scripts/verify-clean-install.mjs
 
   combine:
     name: Combine · ${{ matrix.suite }}
@@ -139,8 +186,22 @@ jobs:
       # live against their API — no false positives on test fixtures — a fit for
       # the privacy law (credentials are never persisted anywhere in this repo).
       - name: Verified-secret scan (TruffleHog)
+        env:
+          # Pin both the installer source and the binary release. The digest
+          # turns a compromised mutable tag or raw response into a hard failure
+          # before any downloaded shell code can execute in the runner.
+          TRUFFLEHOG_INSTALL_COMMIT: bcfcf73aaf4759d4dadc2783177c245a02792318
+          TRUFFLEHOG_INSTALL_SHA256: c394defeaea8a7c48f828a2051b608a9b19f43f34b891407b66a386c3e2591e2
+          TRUFFLEHOG_VERSION: v3.97.0
         run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b "$RUNNER_TEMP/bin"
+          installer="$RUNNER_TEMP/trufflehog-install.sh"
+          curl --fail --silent --show-error --location --retry 3 \
+            --output "$installer" \
+            "https://raw.githubusercontent.com/trufflesecurity/trufflehog/${TRUFFLEHOG_INSTALL_COMMIT}/scripts/install.sh"
+          printf '%s  %s\n' "$TRUFFLEHOG_INSTALL_SHA256" "$installer" \
+            | sha256sum --check --strict
+          chmod 700 "$installer"
+          "$installer" -b "$RUNNER_TEMP/bin" "$TRUFFLEHOG_VERSION"
           "$RUNNER_TEMP/bin/trufflehog" filesystem . --only-verified --fail --no-update
       - uses: ./.github/actions/setup
       - name: Known-vulnerability audit

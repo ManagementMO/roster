@@ -1,8 +1,10 @@
 {
-  "name": "@rosterhq/coach",
+  "name": "@roster/coach",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "license": "MIT",
+  "engines": { "node": ">=22.13" },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,7 +18,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@rosterhq/shared": "workspace:*",
+    "@roster/shared": "workspace:*",
     "better-sqlite3": "^12.11.1"
   },
   "optionalDependencies": {
@@ -24,6 +26,6 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
-    "@types/node": "^22.20.0"
+    "@types/node": "^22.20.1"
   }
 }

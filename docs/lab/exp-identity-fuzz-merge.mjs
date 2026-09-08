@@ -19,7 +19,7 @@ const merged = {
     node: process.version,
     ajv: "8.20.0 (packages/router/node_modules)",
     realComponents: [
-      "built dist of @rosterhq/shared, @rosterhq/router, @rosterhq/coach",
+      "built dist of @roster/shared, @roster/router, @roster/coach",
       "real @modelcontextprotocol/sdk Server+Client over InMemoryTransport (router's own TransportBackendConfig hook)",
       "real npx @modelcontextprotocol/server-filesystem OS process over stdio (experiment E)",
       "real SQLite via openCoachDb(':memory:')",

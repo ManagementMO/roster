@@ -219,7 +219,7 @@ const drawLogoStroke = (ctx, points, progress) => {
 };
 
 const drawSuppliedRosterLogo = (ctx, x, y, size, alpha, progress, logoSurface = false, logoSurfaceScale = 1.3) => {
-  if (!ROSTER_LOGO_IMAGE || !ROSTER_LOGO_IMAGE.complete || !ROSTER_LOGO_IMAGE.naturalWidth) return false;
+  if (!ROSTER_LOGO_IMAGE?.complete || !ROSTER_LOGO_IMAGE.naturalWidth) return false;
   const amount = clamp(progress);
   if (amount <= 0) return true;
   const reveal = ease.out5(amount);

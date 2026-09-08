@@ -14,7 +14,7 @@ export const tmpDir = path.join(repo, "docs/lab/tmp-embed-torture");
 
 export async function loadCoach() {
   return import(
-    createRequire(path.join(repo, "packages/cli/package.json")).resolve("@rosterhq/coach")
+    createRequire(path.join(repo, "packages/cli/package.json")).resolve("@roster/coach")
   );
 }
 

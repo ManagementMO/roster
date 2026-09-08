@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { CoachStore, openCoachDb } = await import(req.resolve("@rosterhq/coach"));
+const { CoachStore, openCoachDb } = await import(req.resolve("@roster/coach"));
 
 // Independent references (fresh from cited formulas).
 function refWilson(s, n, z = 1.96) {

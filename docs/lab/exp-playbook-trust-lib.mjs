@@ -1,6 +1,6 @@
 /**
  * Shared harness for the playbook-trust experiments (slug: playbook-trust).
- * Imports the REAL built @rosterhq/playbook + @rosterhq/shared dist exactly like
+ * Imports the REAL built @roster/playbook + @roster/shared dist exactly like
  * docs/verification/dense-live.mjs. No mocks: real files on disk, real parser,
  * real trust scanner, real openclaw accounting, real token estimator.
  */
@@ -14,8 +14,8 @@ export const LAB = path.join(repo, "docs", "lab");
 export const SCRATCH = path.join(LAB, "tmp-playbook-trust");
 
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-export const playbook = await import(req.resolve("@rosterhq/playbook"));
-export const shared = await import(req.resolve("@rosterhq/shared"));
+export const playbook = await import(req.resolve("@roster/playbook"));
+export const shared = await import(req.resolve("@roster/shared"));
 
 export const {
   parseSkillMd,

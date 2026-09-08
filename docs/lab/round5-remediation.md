@@ -2,6 +2,51 @@
 
 Clean-room remediation of the Round 5 review (`docs/lab/review-round5.md`).
 
+> **Historical report with a current addendum.** The original branch/HEAD,
+> counts, and mutation statements below describe the July 2026 remediation at
+> that point in time. The 2026-07-29 objective-hardening work supersedes the
+> affected implementation details; it does not rewrite the historical evidence.
+
+## 2026-07-29 objective-hardening addendum
+
+The local `review/round5-hardening` branch now closes the objective deferred and
+sibling classes that did not require an owner decision. The current local gate
+at the time of this addendum is `pnpm build` clean, `pnpm lint` clean, and
+**297/297 tests**; the final mutation record belongs in
+`docs/lab/review-round5-hardening.md`.
+
+- R5-01 no longer has a structural legacy-ownership fallback. Ownership is the
+  exact current entry or an exact entry from an intact active manifest; foreign
+  `roster serve`, foreign `bin.js`, `npx … serve`, and user-added environment
+  fields remain user-owned.
+- R5-02 is now multi-path and crash-recoverable. Eject plans every active
+  `sourcePath`, journals hashes plus private desired bytes before any config
+  write, resumes idempotently after process death, closes the exact planned
+  boundary, and makes integrity failure a nonzero CLI result.
+- R5-09/R5-15 now fail closed when discovery is incomplete. Hidden scripts and
+  executable extensionless files are scanned; directory symlinks are not
+  followed; unreadable/unsupported entries and cap exhaustion become review
+  findings that the server withholds by default.
+- R5-12 is fixed with cross-process client/config locks and strict
+  read-modify-write serialization. A real two-process regression keeps every
+  imported server.
+- R5-13 is fixed: both warm-boot presence checks and vector loads share one
+  transactional validation/repair path, so an invalid base becomes
+  backfill-eligible and an invalid adjustment falls back to its valid base.
+- R5-14 is fixed with adversarial quoted-diagnostic and path-literal locks.
+- R5-19 is bounded: connect/list/close deadlines, repeated-cursor rejection, and
+  a configured maximum tool count stop a backend from growing discovery
+  without bound.
+- R5-16 remains disclosed: `environmentDigest` still identifies the runtime and
+  suite/version set, not the exact target command/build. It is not used as a
+  named score, but reproducibility provenance should gain a separate target
+  identity before public publication.
+- League certification now binds category, signing, and descriptions to the
+  exact authoritative suite/version tuple. Latest-run keys are structured,
+  different suite versions rank in separate tables, lossy names receive
+  SHA-256-suffixed box filenames, metadata is strict, and publication swaps a
+  fully rendered staging directory into place.
+
 ## Header
 
 - **Branch:** `fix/round5-trust`, off `main` at `a747c0d` (round 4c).

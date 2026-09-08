@@ -1,4 +1,4 @@
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { ConnectionRibbon } from "../components/ConnectionRibbon";
 import { SceneTitle } from "../components/SceneTitle";
 import { ToolUniverse } from "../components/ToolUniverse";
@@ -16,10 +16,10 @@ export const ToolOverloadScene = ({ durationInFrames, frameOffset = 0, worldFram
   const tension = rangeProgress(frame, 30, durationInFrames - 24);
   const agent = { x: width * 0.86, y: height * 0.51 };
   const sources = [
-    { x: width * 0.04, y: height * 0.22 },
-    { x: width * 0.08, y: height * 0.42 },
-    { x: width * 0.04, y: height * 0.68 },
-    { x: width * 0.22, y: height * 0.86 },
+    { id: "upper", x: width * 0.04, y: height * 0.22 },
+    { id: "middle", x: width * 0.08, y: height * 0.42 },
+    { id: "lower", x: width * 0.04, y: height * 0.68 },
+    { id: "bottom", x: width * 0.22, y: height * 0.86 },
   ];
 
   return (
@@ -27,7 +27,7 @@ export const ToolOverloadScene = ({ durationInFrames, frameOffset = 0, worldFram
       <ToolUniverse mode="overload" durationInFrames={durationInFrames} worldFrameOffset={worldFrameOffset} />
       {sources.map((source, index) => (
         <ConnectionRibbon
-          key={index}
+          key={source.id}
           from={source}
           to={agent}
           progress={enter(frame, 34 + index * 14, 64)}

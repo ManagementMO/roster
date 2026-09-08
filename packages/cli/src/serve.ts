@@ -1,10 +1,12 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CoachStore, openCoachDb, TransformersEmbeddings } from "@rosterhq/coach";
-import { normalizeBackendName } from "@rosterhq/shared";
-import { defaultSkillSources, scanSkillSources, trustScan } from "@rosterhq/playbook";
-import { BackendManager, RosterServer, type RouterMode } from "@rosterhq/router";
+import { CoachStore, defHash, openCoachDb, setDenseRuntimeDir, TransformersEmbeddings } from "@roster/coach";
+import { stableBackendName } from "@roster/shared";
+import { defaultSkillSources, scanSkillSources, trustScan } from "@roster/playbook";
+import { BackendManager, RosterServer, type RouterMode } from "@roster/router";
+import { denseModulesDir } from "./dense.js";
 import { coachDbPath, homeDir } from "./paths.js";
 import { loadConfig } from "./rosterfile.js";
+import { installGracefulShutdown } from "./shutdown.js";
 
 /**
  * `roster serve` — run the router over stdio. FTS5 serves from second zero;
@@ -12,13 +14,17 @@ import { loadConfig } from "./rosterfile.js";
  */
 export async function serve(modeOverride?: RouterMode): Promise<void> {
   const bootStarted = Date.now();
+  // The embedding runtime is opt-in and lives in a Roster-owned directory, not
+  // next to the binary (npx, global, and project installs all differ). Point
+  // the loader at it before anything asks whether dense retrieval is available.
+  setDenseRuntimeDir(denseModulesDir());
   const config = loadConfig();
   const mode = modeOverride ?? config.mode;
 
   const store = new CoachStore(openCoachDb(coachDbPath()));
   const manager = new BackendManager();
 
-  // Protect under the SAME key the router stores capabilities: normalizeBackendName
+  // Protect under the SAME key the router stores capabilities: stableBackendName
   // (sanitize + reserved-word rename), not raw sanitizeSource. The mismatch made
   // a backend configured as e.g. "skill" (stored as skill-server__*) lose ALL its
   // learned state on its first unavailable boot despite the "preserved" promise.
@@ -26,13 +32,13 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   for (const [name, entry] of Object.entries(config.servers)) {
     if (!entry.command) {
       process.stderr.write(`roster: skipping "${name}" (url backends land post-launch; stdio only for now)\n`);
-      unavailable.add(normalizeBackendName(name));
+      unavailable.add(stableBackendName(name));
       continue;
     }
     try {
       await manager.connect({ name, command: entry.command, args: entry.args, env: entry.env });
     } catch (err) {
-      unavailable.add(normalizeBackendName(name));
+      unavailable.add(stableBackendName(name));
       process.stderr.write(
         `roster: backend "${name}" failed to connect (its learned state is preserved): ${err instanceof Error ? err.message : err}\n`,
       );
@@ -95,9 +101,10 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   }
 
   const transport = new StdioServerTransport();
+  installGracefulShutdown({ manager, store, server: roster.server });
   await roster.server.connect(transport);
   process.stderr.write(
-    `roster: serving ${manager.allTools().length} tool(s) + ${skills.length} skill(s) in ${mode} mode\n`,
+    `roster: serving ${manager.allTools().length} tool(s) + ${roster.servedSkillCount()} skill(s) in ${mode} mode\n`,
   );
 }
 
@@ -127,9 +134,10 @@ function makeLazyEmbedder(
     }
     provider ??= new TransformersEmbeddings();
     await provider.embed(["roster warmup"]);
+    const modelId = provider.modelId;
     // Model-switch guard: stale OATS vectors from a different embedding space
     // are wiped before we backfill in this one.
-    store.ensureEmbeddingModel(provider.modelId);
+    store.ensureEmbeddingModel(modelId);
     // Backfill base vectors only for what's NOT already embedded in this
     // model's space — a warm coach.db re-embeds nothing (audit D4). This skip
     // is only sound because BOTH invalidators delete vec rows outright: the
@@ -147,7 +155,12 @@ function makeLazyEmbedder(
       const vecs = await provider.embed(texts, "document");
       batch.forEach((entry, j) => {
         const vec = vecs[j];
-        if (vec) store.storeBaseVec(entry.id, vec);
+        if (vec) {
+          store.storeBaseVec(entry.id, vec, Date.now(), {
+            defHash: defHash(entry),
+            modelId,
+          });
+        }
       });
     }
     warm = true;

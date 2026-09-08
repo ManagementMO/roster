@@ -14,9 +14,9 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const cliReq = createRequire(path.join(repo, "packages/cli/package.json"));
-const { BackendManager } = await import(cliReq.resolve("@rosterhq/router"));
-const { CoachStore, openCoachDb } = await import(cliReq.resolve("@rosterhq/coach"));
-const { sanitizeSource } = await import(cliReq.resolve("@rosterhq/shared"));
+const { BackendManager } = await import(cliReq.resolve("@roster/router"));
+const { CoachStore, openCoachDb } = await import(cliReq.resolve("@roster/coach"));
+const { sanitizeSource } = await import(cliReq.resolve("@roster/shared"));
 
 const sandbox = path.join(repo, "docs/lab/tmp-identity-fuzz/fs-sandbox");
 fs.mkdirSync(sandbox, { recursive: true });

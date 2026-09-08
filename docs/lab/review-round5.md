@@ -5,8 +5,8 @@
 - **HEAD reviewed:** `a747c0d168542dd9a8a988c943f1300c461de24f` on local branch `review/round5`.
 - **Date:** 2026-07-12 (America/Toronto).
 - **Environment:** macOS 26.5.2 arm64 / Darwin 25.5.0; Node `v24.14.1`; pnpm `11.9.0`.
-- **Commands run:** `git status --short --branch`, `git rev-parse HEAD`, `node --version`, `pnpm --version`, `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm --filter @rosterhq/coach rebuild better-sqlite3`, selected `vitest` mutation runs, `pnpm league:build`, targeted hermetic repro scripts under `docs/lab/tmp-review-round5/`, and `node docs/lab/exp-token-economics.mjs`.
-- **Baseline repair:** the first full test run had 49 `better-sqlite3` ABI failures because installed native bindings targeted Node ABI 127 while this review used ABI 137. Rebuilding only `@rosterhq/coach`'s binding restored the test environment; the final full run was `161/161`.
+- **Commands run:** `git status --short --branch`, `git rev-parse HEAD`, `node --version`, `pnpm --version`, `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm --filter @roster/coach rebuild better-sqlite3`, selected `vitest` mutation runs, `pnpm league:build`, targeted hermetic repro scripts under `docs/lab/tmp-review-round5/`, and `node docs/lab/exp-token-economics.mjs`.
+- **Baseline repair:** the first full test run had 49 `better-sqlite3` ABI failures because installed native bindings targeted Node ABI 127 while this review used ABI 137. Rebuilding only `@roster/coach`'s binding restored the test environment; the final full run was `161/161`.
 - **Network boundary:** no web browsing, publication, registry, deployment, or intentional package installation was performed. The token-economics local harness invoked its documented fixture command; no package or repository was intentionally fetched or published by this review.
 
 ## Executive summary

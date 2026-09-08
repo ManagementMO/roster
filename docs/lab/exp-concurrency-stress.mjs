@@ -21,7 +21,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
 const { CoachStore, openCoachDb, TransformersEmbeddings, MINILM_MODEL } = await import(
-  req.resolve("@rosterhq/coach")
+  req.resolve("@roster/coach")
 );
 const { TOOLS } = await import(pathToFileURL(path.join(here, "corpus.mjs")).href);
 const { NEEDS } = await import(pathToFileURL(path.join(here, "needs.mjs")).href);

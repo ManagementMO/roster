@@ -6,7 +6,12 @@ export interface ParsedSkill {
   slug: string;
   name: string;
   description: string;
-  /** Markdown body with frontmatter stripped — indexed WHOLE (SkillRouter finding). */
+  /**
+   * Markdown body with frontmatter stripped — indexed WHOLE up to the
+   * MAX_SKILL_MD_BYTES read cap (SkillRouter finding). A file past the cap is
+   * truncated here AND carries a `skill-md-truncated:` scanWarning, so it can
+   * never pass as fully scanned; it is never silently truncated-and-trusted.
+   */
   body: string;
   /** Absolute path to the skill directory. */
   dir: string;
@@ -14,6 +19,8 @@ export interface ParsedSkill {
   resources: string[];
   /** Subset of resources that are executable scripts. */
   scripts: string[];
+  /** Fail-closed warnings emitted when filesystem discovery was incomplete or unsafe. */
+  scanWarnings: string[];
   /** Raw frontmatter for forward-compat fields (license, allowed-tools, …). */
   frontmatter: Record<string, unknown>;
 }
@@ -34,7 +41,7 @@ export function parseSkillMd(
   content: string,
   slug: string,
   dir: string,
-): Omit<ParsedSkill, "resources" | "scripts"> | null {
+): Omit<ParsedSkill, "resources" | "scripts" | "scanWarnings"> | null {
   // A leading UTF-8 BOM sits before the "---", so ^--- never matches and the
   // ENTIRE frontmatter is silently voided (name→slug, description→""). Strip it
   // before parsing; String.trim() later hides the BOM, so this is invisible otherwise.

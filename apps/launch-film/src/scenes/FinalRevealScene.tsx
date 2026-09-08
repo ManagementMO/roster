@@ -8,6 +8,8 @@ import { EASE } from "../motion/easings";
 import { enter } from "../motion/timing";
 import type { SceneProps } from "./types";
 
+const REVEAL_PARTS = ["top", "upper-right", "lower-right", "lower-left", "upper-left"];
+
 export const FinalRevealScene = ({ frameOffset = 0 }: SceneProps) => {
   const local = useCurrentFrame();
   const frame = local + frameOffset;
@@ -22,14 +24,14 @@ export const FinalRevealScene = ({ frameOffset = 0 }: SceneProps) => {
   return (
     <AbsoluteFill>
       <div style={{ position: "absolute", left: center.x, top: center.y, width: 620 * fit, height: 620 * fit, translate: "-50% -50%", borderRadius: "50%", background: "radial-gradient(circle, rgba(79,124,255,0.14), rgba(91,203,255,0.07) 42%, transparent 72%)", filter: "blur(18px)", opacity: identity }} />
-      {Array.from({ length: 5 }, (_, index) => {
+      {REVEAL_PARTS.map((part, index) => {
         const angle = (-90 + index * 72) * Math.PI / 180;
         const radius = interpolate(converge, [0, 1], [Math.max(width, height) * 0.56, 104 * fit], { easing: EASE.inOut, extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         const x = center.x + Math.cos(angle) * radius;
         const y = center.y + Math.sin(angle) * radius;
         return (
           <div
-            key={index}
+            key={part}
             style={{
               position: "absolute",
               left: x,

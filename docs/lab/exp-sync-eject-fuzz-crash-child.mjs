@@ -41,7 +41,7 @@ function arm(name) {
 }
 arm("writeFileSync"); arm("renameSync"); arm("mkdirSync");
 
-const cli = await import(createRequire(path.join(repo, "packages/cli/package.json")).resolve("@rosterhq/cli"));
+const cli = await import(createRequire(path.join(repo, "packages/cli/package.json")).resolve("@roster/cli"));
 
 let outcome;
 try {

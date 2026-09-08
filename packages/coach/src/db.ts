@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import Database from "better-sqlite3";
 
 export type CoachDb = Database.Database;
@@ -17,11 +18,35 @@ export type CoachDb = Database.Database;
 const SCHEMA_VERSION = "1";
 
 /**
+ * Create (or tighten) the database file owner-only BEFORE SQLite opens it.
+ *
+ * The Coach DB is not just counters: `capability` stores every tool name and
+ * description and whole SKILL.md bodies, plus the drift ledger and outcome
+ * history — an inventory of the user's entire toolchain. SQLite creates the
+ * file with the process umask (0644 by default) and derives the `-wal`/`-shm`
+ * sibling permissions from the main file, so pre-creating it at 0600 covers all
+ * three (round-6 review R6-01). Best effort by design: Windows has no POSIX
+ * mode bits, and a permission hiccup must never stop the router from serving.
+ */
+function ensureOwnerOnlyDbFile(file: string): void {
+  if (file === ":memory:" || file === "") return;
+  try {
+    fs.closeSync(fs.openSync(file, "a", 0o600));
+    const current = fs.statSync(file).mode & 0o777;
+    if ((current & 0o077) !== 0) fs.chmodSync(file, current & 0o700);
+  } catch {
+    // Unwritable path, exotic filesystem, or Windows — the open below reports
+    // any real problem with a far better error than we could here.
+  }
+}
+
+/**
  * Open (and migrate) the coach database. Pass ":memory:" for tests.
  * WAL keeps concurrent reader/writer behavior sane when the router and CLI
  * touch the same file; both live on the user's machine only.
  */
 export function openCoachDb(path: string): CoachDb {
+  ensureOwnerOnlyDbFile(path);
   const db = new Database(path);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
@@ -137,4 +162,20 @@ function migrate(db: CoachDb): void {
   db.prepare("INSERT OR IGNORE INTO meta(key, value) VALUES('schema_version', ?)").run(
     SCHEMA_VERSION,
   );
+  // Additive column migration (forward-only, idempotent). The capability table
+  // predates safety/contract metadata; a change to `annotations`
+  // (destructiveHint/readOnlyHint/…), `execution`, or `title` is drift a client
+  // acts on, so it must be persisted and hashed. ADD COLUMN is cheap and only
+  // appends; a DB written by a newer binary already has these, and one written
+  // by an older binary gains them here with NULL defaults (== "absent").
+  addColumnIfMissing(db, "capability", "title", "TEXT");
+  addColumnIfMissing(db, "capability", "annotations", "TEXT");
+  addColumnIfMissing(db, "capability", "execution", "TEXT");
+}
+
+/** Idempotent `ALTER TABLE ADD COLUMN` — a no-op when the column already exists. */
+function addColumnIfMissing(db: CoachDb, table: string, column: string, decl: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (cols.some((c) => c.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
 }

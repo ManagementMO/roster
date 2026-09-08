@@ -18,8 +18,8 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const cliReq = createRequire(path.join(repo, "packages/cli/package.json"));
 const routerReq = createRequire(path.join(repo, "packages/router/package.json"));
 
-const { BackendManager, RosterServer } = await import(cliReq.resolve("@rosterhq/router"));
-const { CoachStore, openCoachDb } = await import(cliReq.resolve("@rosterhq/coach"));
+const { BackendManager, RosterServer } = await import(cliReq.resolve("@roster/router"));
+const { CoachStore, openCoachDb } = await import(cliReq.resolve("@roster/coach"));
 const { Ajv2020 } = await import(routerReq.resolve("ajv/dist/2020.js"));
 const { Server } = await import(routerReq.resolve("@modelcontextprotocol/sdk/server/index.js"));
 const { Client } = await import(routerReq.resolve("@modelcontextprotocol/sdk/client/index.js"));

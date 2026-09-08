@@ -5,6 +5,7 @@
  * docs/verification/*.md records. Run from repo root: node docs/verification/e2e.mjs
  */
 import { createRequire } from "node:module";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -39,6 +40,9 @@ const home = fs.mkdtempSync(path.join(os.tmpdir(), "roster-e2e-home-"));
 // dirs (macOS /var → /private/var), so hand it the resolved form up front.
 const sandbox = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "roster-e2e-fs-")));
 const rosterHome = path.join(home, ".roster");
+const npxEnv = process.env.npm_config_cache
+  ? { npm_config_cache: process.env.npm_config_cache }
+  : undefined;
 fs.mkdirSync(rosterHome, { recursive: true });
 fs.writeFileSync(
   path.join(rosterHome, "roster.json"),
@@ -50,11 +54,13 @@ fs.writeFileSync(
         filesystem: {
           command: "npx",
           args: ["-y", "@modelcontextprotocol/server-filesystem", sandbox],
+          env: npxEnv,
           importedFrom: ["e2e"],
         },
         memory: {
           command: "npx",
           args: ["-y", "@modelcontextprotocol/server-memory"],
+          env: npxEnv,
           importedFrom: ["e2e"],
         },
       },
@@ -95,6 +101,7 @@ await direct.connect(
   new StdioClientTransport({
     command: "npx",
     args: ["-y", "@modelcontextprotocol/server-filesystem", sandbox],
+    env,
     stderr: "ignore",
   }),
 );
@@ -147,9 +154,10 @@ const five = await connect(["serve", "--five"]);
 const fiveTools = (await five.listTools()).tools.map((t) => t.name).sort();
 assert(fiveTools.join(",") === "call,draft", "five mode exposes exactly draft+call");
 
+const fileNeed = "read the contents of a text file from disk";
 const draftRes = await five.callTool({
   name: "draft",
-  arguments: { need: "read the contents of a text file from disk" },
+  arguments: { need: fileNeed },
 });
 const draftPayload = JSON.parse(draftRes.content[0].text);
 const starterIds = draftPayload.starters.map((s) => s.id);
@@ -158,12 +166,25 @@ assert(starterIds.includes("filesystem__read_text_file"), "draft ranks read_text
 
 const fiveCall = await five.callTool({
   name: "call",
-  arguments: { tool: "filesystem__read_text_file", args: { path: path.join(sandbox, "e2e.txt") } },
+  arguments: {
+    tool: "filesystem__read_text_file",
+    args: { path: path.join(sandbox, "e2e.txt") },
+    draft_id: draftPayload.draft_id,
+  },
 });
 assert(
   (fiveCall.content ?? []).map((c) => c.text ?? "").join("").includes(secret),
   "five-mode call executes the drafted tool",
 );
+const fiveOutcome = db
+  .prepare("SELECT need_hash, class FROM outcome ORDER BY id DESC LIMIT 1")
+  .get();
+const expectedNeedHash = crypto.createHash("sha256").update(fileNeed).digest("hex");
+assert(
+  fiveOutcome?.need_hash === expectedNeedHash,
+  "five-mode outcome carries the exact draft need hash",
+);
+assert(fiveOutcome?.class === "success", "five-mode outcome is classified success");
 
 const memDraft = await five.callTool({
   name: "draft",
@@ -172,11 +193,6 @@ const memDraft = await five.callTool({
 const memIds = JSON.parse(memDraft.content[0].text).starters.map((s) => s.id);
 say(`  memory-need starters: ${memIds.join(", ")}`);
 assert(memIds.some((id) => id.startsWith("memory__")), "draft crosses servers by need");
-
-const lastOutcome = db
-  .prepare("SELECT need_hash, class FROM outcome WHERE need_hash IS NOT NULL ORDER BY id DESC LIMIT 1")
-  .get();
-assert(lastOutcome && /^[0-9a-f]{64}$/.test(lastOutcome.need_hash), "five-mode outcomes carry need hashes");
 await five.close();
 await direct.close();
 

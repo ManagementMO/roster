@@ -9,15 +9,20 @@ export interface CapabilityEntry {
   source: string;
   name: string;
   description: string;
-  /** Human-facing title, when the backend supplies one (MCP `tool.title`). */
+  /** Human-facing title (MCP `tool.title`). Definition text the agent is shown;
+   *  participates in the Coach drift fingerprint (a change quarantines). */
   title?: string;
-  /** Tool behavior hints (readOnlyHint/destructiveHint/…) — safety-relevant; passed through verbatim. */
+  /** Tool behavior hints (readOnlyHint/destructiveHint/idempotentHint/openWorldHint).
+   *  Safety-relevant: clients gate confirmations on these, so they are passed
+   *  through verbatim AND participate in the Coach drift fingerprint — a backend
+   *  flipping destructiveHint true→false is drift (quarantine + event). */
   annotations?: Record<string, unknown>;
-  /** JSON Schema for tool inputs. Absent for skills. */
+  /** JSON Schema for tool inputs. Absent for skills. Part of the drift fingerprint. */
   inputSchema?: Record<string, unknown>;
-  /** Declared output schema, when the backend provides one. */
+  /** Declared output schema, when the backend provides one. Part of the drift fingerprint. */
   outputSchema?: Record<string, unknown>;
-  /** MCP `tool.execution` capability hints — passed through verbatim in transparent mode. */
+  /** MCP `tool.execution` capability hints (task-support). Passed through verbatim
+   *  in transparent mode AND part of the drift fingerprint (contract change). */
   execution?: Record<string, unknown>;
   /** Full SKILL.md body (frontmatter stripped). Present for skills only — indexed whole, per SkillRouter. */
   body?: string;

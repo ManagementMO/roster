@@ -38,6 +38,7 @@ export const ConnectionRibbon = ({ from, to, progress = 1, state = "dormant", cu
 
   return (
     <svg width={width} height={height} style={{ position: "absolute", inset: 0, overflow: "visible", pointerEvents: "none" }}>
+      <title>Tool connection</title>
       <defs>
         <linearGradient id={`${id}-ribbon`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor={color} stopOpacity="0.18" />

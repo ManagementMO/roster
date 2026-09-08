@@ -1,8 +1,10 @@
 {
-  "name": "@rosterhq/router",
+  "name": "@roster/router",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
   "license": "MIT",
+  "engines": { "node": ">=22.13" },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,13 +18,13 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "@rosterhq/coach": "workspace:*",
-    "@rosterhq/playbook": "workspace:*",
-    "@rosterhq/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@roster/coach": "workspace:*",
+    "@roster/playbook": "workspace:*",
+    "@roster/shared": "workspace:*",
     "ajv": "^8.17.0"
   },
   "devDependencies": {
-    "@types/node": "^22.20.0"
+    "@types/node": "^22.20.1"
   }
 }

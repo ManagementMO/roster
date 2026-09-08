@@ -23,7 +23,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const cfg = JSON.parse(process.argv[2]);
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { CoachStore, openCoachDb } = await import(req.resolve("@rosterhq/coach"));
+const { CoachStore, openCoachDb } = await import(req.resolve("@roster/coach"));
 const { TOOLS } = await import(pathToFileURL(path.join(repo, "docs/lab/corpus.mjs")).href);
 
 const db = openCoachDb(cfg.dbPath);

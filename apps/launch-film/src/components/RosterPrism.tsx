@@ -4,6 +4,8 @@ import { COLORS } from "../design/colors";
 import { FONT_MONO } from "../design/typography";
 import { pulse } from "../motion/timing";
 
+const PRISM_PARTS = ["top", "upper-right", "lower-right", "lower-left", "upper-left"];
+
 export type PrismState =
   | "idle"
   | "listening"
@@ -59,6 +61,7 @@ export const RosterPrism = ({
       }}
     >
       <svg width={size} height={size} viewBox="0 0 100 100" style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+        <title>Roster routing prism</title>
         <defs>
           <linearGradient id={`${id}-glass`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.98" />
@@ -76,14 +79,14 @@ export const RosterPrism = ({
           </filter>
         </defs>
         <circle cx="50" cy="50" r={25 + breathe * 1.8} fill={signal} opacity={0.05 + breathe * 0.035} filter={`url(#${id}-glow)`} />
-        {Array.from({ length: 5 }, (_, index) => {
+        {PRISM_PARTS.map((part, index) => {
           const angle = -90 + index * 72 + spin;
           const radius = state === "listening" ? 15 + breathe * 2 : 18;
           const x = 50 + Math.cos((angle * Math.PI) / 180) * radius;
           const y = 50 + Math.sin((angle * Math.PI) / 180) * radius;
           return (
             <rect
-              key={index}
+              key={part}
               x={x - 7}
               y={y - 18}
               width="14"

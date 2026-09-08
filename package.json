@@ -3,11 +3,14 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "packageManager": "pnpm@11.9.0",
   "scripts": {
-    "build": "tsc -b",
-    "typecheck": "tsc -b",
+    "build": "tsc -b && pnpm --filter @roster/cli bundle",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome lint --error-on-warnings",
@@ -44,10 +47,17 @@
     "film:inspired-stills": "pnpm --filter @roster/launch-film-diffusion-inspired render:stills"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
-    "@types/node": "^22.10.0",
-    "tsx": "^4.19.0",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "@biomejs/biome": "2.5.8",
+    "@roster/coach": "workspace:*",
+    "@roster/combine": "workspace:*",
+    "@roster/playbook": "workspace:*",
+    "@roster/router": "workspace:*",
+    "@roster/shared": "workspace:*",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.20.1",
+    "esbuild": "0.28.2",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

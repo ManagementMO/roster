@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { percentile, latencyBucket } = await import(req.resolve("@rosterhq/shared"));
+const { percentile, latencyBucket } = await import(req.resolve("@roster/shared"));
 
 // Independent nearest-rank reference (Wikipedia nearest-rank method):
 // rank = ceil(p/100 * N), 1-based; clamped into [1, N].

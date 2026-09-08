@@ -8,11 +8,14 @@ import { enter, exit } from "../motion/timing";
 import type { SceneProps } from "./types";
 
 const FIELD = Array.from({ length: 40 }, (_, index) => ({
+  id: `field-${index}`,
   x: 5 + ((index * 47) % 91),
   y: 8 + ((index * 71) % 82),
   width: 34 + ((index * 29) % 100),
   depth: 0.35 + (index % 7) * 0.09,
 }));
+
+const STARTER_MARKS = ["code", "files", "browser", "issues", "skills"];
 
 export const HookScene = ({ frameOffset = 0 }: SceneProps) => {
   const local = useCurrentFrame();
@@ -31,7 +34,7 @@ export const HookScene = ({ frameOffset = 0 }: SceneProps) => {
         const distance = 1 - firstExit;
         return (
           <div
-            key={index}
+            key={item.id}
             style={{
               position: "absolute",
               left: `${50 + (item.x - 50) * distance}%`,
@@ -91,12 +94,12 @@ export const HookScene = ({ frameOffset = 0 }: SceneProps) => {
         </div>
       </div>
 
-      {Array.from({ length: 5 }, (_, index) => {
+      {STARTER_MARKS.map((mark, index) => {
         const x = interpolate(spread, [0, 1], [width * 0.5, width * (0.39 + index * 0.055)], { easing: EASE.impact, extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         const y = height * 0.82 + Math.abs(index - 2) * 11 * fit;
         return (
           <div
-            key={index}
+            key={mark}
             style={{
               position: "absolute",
               left: x,

@@ -14,7 +14,7 @@ const cfg = JSON.parse(process.argv[2]);
 process.env.ROSTER_TEST_HOME = cfg.home;
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { loadConfig, mergeServers, saveConfig } = await import(req.resolve("@rosterhq/cli"));
+const { loadConfig, mergeServers, saveConfig } = await import(req.resolve("@roster/cli"));
 
 while (!fs.existsSync(cfg.goFile)) await new Promise((r) => setTimeout(r, 2));
 

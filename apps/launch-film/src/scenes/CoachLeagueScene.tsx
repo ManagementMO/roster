@@ -32,6 +32,7 @@ export const CoachLeagueScene = ({ frameOffset = 0 }: SceneProps) => {
 
       <div style={{ position: "absolute", left: width * 0.26, top: height * 0.60, translate: "-50% -50%", width: 660 * fit, height: 380 * fit, borderRadius: 44 * fit, ...MATERIALS.heroGlass, opacity: enter(frame, 0, 28) }}>
         <svg width="100%" height="100%" viewBox="0 0 660 380" style={{ position: "absolute", inset: 0 }}>
+          <title>Illustrative local outcome trend</title>
           <path d="M80 270 C190 260, 225 160, 330 190 C425 220, 470 92, 585 104" fill="none" stroke={COLORS.line} strokeWidth="10" strokeLinecap="round" />
           <path d="M80 270 C190 260, 225 160, 330 190 C425 220, 470 92, 585 104" fill="none" stroke={COLORS.success} strokeWidth="8" strokeLinecap="round" pathLength={1} strokeDasharray={`${learn} 1`} />
           {OUTCOMES.map(([label, color], index) => {

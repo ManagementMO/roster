@@ -5,6 +5,11 @@ import { FONT_DISPLAY, FONT_MONO, FONT_UI } from "../design/typography";
 import { rangeProgress } from "../motion/timing";
 import type { SceneProps } from "./types";
 
+const DEBRIS = Array.from({ length: 16 }, (_, ordinal) => ({
+  id: `debris-${ordinal}`,
+  ordinal,
+}));
+
 export const ClearFieldScene = ({ durationInFrames, frameOffset = 0, worldFrameOffset = 0 }: SceneProps) => {
   const local = useCurrentFrame();
   const frame = local + frameOffset;
@@ -28,12 +33,12 @@ export const ClearFieldScene = ({ durationInFrames, frameOffset = 0, worldFrameO
         </div>
       </div>
 
-      {Array.from({ length: 16 }, (_, index) => {
+      {DEBRIS.map(({ id, ordinal: index }) => {
         const phase = Math.max(0, Math.min(1, clear * 1.38 - index * 0.035));
         const side = index % 2 === 0 ? -1 : 1;
         return (
           <div
-            key={index}
+            key={id}
             style={{
               position: "absolute",
               left: sweepX - 80 * fit + side * phase * (100 + (index % 5) * 34) * fit,

@@ -9,3 +9,17 @@ allowBuilds:
   sharp: true
   sqlite-vec: true
   "@huggingface/transformers": true
+# Keep transitive dependencies on patched releases until their parents select
+# those versions directly. Every override remains inside the parent's declared
+# semver range; the release audit is therefore checking the shipped graph, not
+# an ignored advisory list.
+minimumReleaseAgeExclude:
+  - "@hono/node-server@2.1.1"
+overrides:
+  "@hono/node-server": 2.1.1
+  adm-zip: 0.6.0
+  fast-uri: 3.1.5
+  hono: 4.13.2
+  ip-address: 10.5.0
+  nanoid: 3.3.18
+  sharp: 0.35.0

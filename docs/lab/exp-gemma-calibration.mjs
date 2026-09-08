@@ -34,7 +34,7 @@ const RESULTS = path.join(here, "results-gemma-calibration.json");
 
 const cliReq = createRequire(path.join(repo, "packages/cli/package.json"));
 const coachReq = createRequire(path.join(repo, "packages/coach/package.json"));
-const coachEntry = cliReq.resolve("@rosterhq/coach");
+const coachEntry = cliReq.resolve("@roster/coach");
 const coach = await import(pathToFileURL(coachEntry).href);
 const embMod = await import(pathToFileURL(path.join(path.dirname(coachEntry), "embeddings.js")).href);
 const { CoachStore, openCoachDb, TransformersEmbeddings, GEMMA_MODEL, cosine, truncateAndNormalize } = coach;

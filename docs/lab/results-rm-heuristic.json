@@ -1,0 +1,84 @@
+{
+  "proposedLiteral": "/(?<![-\\w=])rm(?=(?:[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*--?[A-Za-z0-9][-A-Za-z0-9=]*)*[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*-(?:[a-z]*r|-(?:recursive|recursiv|recursi|recurs|recur|recu|rec|re|r)(?![-\\w])))(?=(?:[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*--?[A-Za-z0-9][-A-Za-z0-9=]*)*[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*-(?:[a-z]*f|-(?:force|forc|for|fo|f)(?![-\\w])))(?=((?:[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*--?[A-Za-z0-9][-A-Za-z0-9=]*)+))\\1(?:[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*--)?[ \\t]+(?:\\\\\\r?\\n[ \\t]+)*[~/]/i",
+  "proposedLength": 433,
+  "equivalenceWithC8": {
+    "cases": 400000,
+    "disagreements": 0,
+    "examples": []
+  },
+  "existingSuiteAssertions": {
+    "total": 43,
+    "failures": []
+  },
+  "repoBacktrackingChildTest": {
+    "allRulesAllAttacksMs": 53.787,
+    "wallClockMs": 206,
+    "budgetMs": 10000
+  },
+  "productionCaps": {
+    "skillMd_1MiB": {
+      "spaceRun": {
+        "shippedMs": 4.983,
+        "proposedMs": 30.801
+      },
+      "flagRun": {
+        "shippedMs": 0.839,
+        "proposedMs": 16.224
+      },
+      "hitAtEnd": {
+        "shippedMs": 0.851,
+        "proposedMs": 16.567
+      },
+      "dashRm": {
+        "shippedMs": 13.854,
+        "proposedMs": 20.669
+      },
+      "preFix": {
+        "shippedMs": 6.068,
+        "proposedMs": 16.051
+      },
+      "endOpt": {
+        "shippedMs": 0.682,
+        "proposedMs": 4.97
+      },
+      "nearMiss": {
+        "shippedMs": 0.696,
+        "proposedMs": 11.178
+      },
+      "worstProposedMs": 30.801,
+      "worstShippedMs": 13.854
+    },
+    "scriptHead_256KiB": {
+      "spaceRun": {
+        "shippedMs": 1.376,
+        "proposedMs": 6.936
+      },
+      "flagRun": {
+        "shippedMs": 0.117,
+        "proposedMs": 4.011
+      },
+      "hitAtEnd": {
+        "shippedMs": 0.204,
+        "proposedMs": 4.204
+      },
+      "dashRm": {
+        "shippedMs": 2.83,
+        "proposedMs": 5.593
+      },
+      "preFix": {
+        "shippedMs": 2.068,
+        "proposedMs": 4.662
+      },
+      "endOpt": {
+        "shippedMs": 0.206,
+        "proposedMs": 1.33
+      },
+      "nearMiss": {
+        "shippedMs": 0.214,
+        "proposedMs": 2.788
+      },
+      "worstProposedMs": 6.936,
+      "worstShippedMs": 2.83
+    }
+  }
+}

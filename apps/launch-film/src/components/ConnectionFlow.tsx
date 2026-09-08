@@ -76,6 +76,7 @@ export const ConnectionFlow = ({
 
   return (
     <svg width={width} height={height} style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+      <title>Tool request and response flow</title>
       {segments.map((segment, index) => {
         const progress = interpolate(frame, [startAt + index * step, startAt + index * step + step], [0, 1], {
           extrapolateLeft: "clamp",

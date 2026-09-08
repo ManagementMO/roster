@@ -1,0 +1,215 @@
+{
+  "experiment": "E5",
+  "question": "Which of the 7 outstanding dependency upgrades are safe to take?",
+  "date": "2026-07-31",
+  "environment": {
+    "worktree": "/home/user/roster/.claude/worktrees/wf_abfd2613-1f0-5",
+    "baseCommit": "06f6c36",
+    "node": "v22.22.2",
+    "pnpm": "11.9.0",
+    "enginesNodeFloor": ">=22.13",
+    "note": "Isolated worktree. /tmp/roster-post-round5-closure was never touched."
+  },
+  "gates": {
+    "build": "pnpm build (tsc -b)",
+    "typecheck": "pnpm typecheck (tsc -b && tsc -p tsconfig.test.json)",
+    "lint": "pnpm lint (biome lint --error-on-warnings)",
+    "test": "pnpm test (vitest run)",
+    "protocol": "dist/ and *.tsbuildinfo deleted before every build so each run is a real cold build"
+  },
+  "baseline": {
+    "build": "PASS (7s)",
+    "typecheck": "PASS (6s)",
+    "lint": "PASS (1s) - 67 files checked, 0 diagnostics",
+    "test": "PASS (18s) - 14 files, 366/366 tests",
+    "audit": "pnpm audit --audit-level moderate: No known vulnerabilities found"
+  },
+  "groups": [
+    {
+      "id": "G1",
+      "name": "patches: smol-toml, vitest, tsx",
+      "from": { "smol-toml": "1.7.0", "vitest": "4.1.9", "tsx": "4.22.5" },
+      "to": { "smol-toml": "1.7.1", "vitest": "4.1.10", "tsx": "4.23.1" },
+      "verdict": "SAFE",
+      "gateResults": { "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "PASS" },
+      "testCount": "366/366 in 14 files (identical to baseline)",
+      "lintFindings": "0 (67 files, identical to baseline)",
+      "packageJsonEditsRequired": false,
+      "notes": [
+        "All three were ALREADY inside the declared caret ranges (smol-toml ^1.3.0, vitest ^4.1.9, tsx ^4.19.0).",
+        "This is therefore a LOCKFILE-ONLY upgrade: no package.json edit is strictly required.",
+        "`pnpm update -r` nevertheless raised the range floors and reformatted `engines` in 3 manifests; the cosmetic `engines` churn was reverted for the proposed patch.",
+        "vitest 4.1.10 pulled a second vite instance keyed on the new tsx; no behavioural effect observed."
+      ],
+      "recommendation": "IMPLEMENT"
+    },
+    {
+      "id": "G2",
+      "name": "@biomejs/biome 2.2.0 -> 2.5.6",
+      "verdict": "NEEDS-WORK",
+      "gateResults": { "build": "PASS", "typecheck": "PASS", "lint": "FAIL (rc=1)", "test": "PASS" },
+      "testCount": "366/366 in 14 files (identical to baseline)",
+      "newLintFindings": {
+        "warnings": 2,
+        "infos": 2,
+        "detail": [
+          {
+            "rule": "lint/complexity/useOptionalChain",
+            "severity": "warning",
+            "file": "packages/cli/src/entry.ts",
+            "line": 96,
+            "code": "if (!inert || !inert(e[key])) return null;",
+            "biomeSuggestedFix": "if (!inert?.(e[key])) return null;",
+            "fixLabelledUnsafeByBiome": true,
+            "manualEquivalenceCheck": "Equivalent for this call site: when `inert` is undefined, `inert?.(x)` evaluates to undefined and `!undefined === true`, matching the `!inert` branch; when `inert` exists, both forms test `!inert(x)`. 366/366 tests still pass with the fix applied."
+          },
+          {
+            "rule": "lint/suspicious/noProto",
+            "severity": "warning",
+            "file": "packages/combine/src/combine.test.ts",
+            "line": 153,
+            "code": "expect(files?.__proto__).toBe(\"seeded\");",
+            "correctRemediation": "biome-ignore comment - the literal __proto__ key IS the assertion of this test ('preserves a setup file literally named __proto__'). Applying biome's rewrite would destroy the test's purpose."
+          },
+          {
+            "rule": "config deprecation (info, does not fail the gate)",
+            "file": "biome.json",
+            "line": 2,
+            "detail": "The configuration schema version does not match the CLI version 2.5.6 ($schema still points at 2.2.0)"
+          },
+          {
+            "rule": "config deprecation (info, does not fail the gate)",
+            "file": "biome.json",
+            "line": "7-16",
+            "detail": "linter.rules.recommended is deprecated and will be removed in the next Biome major; use `preset` instead"
+          }
+        ]
+      },
+      "remediationMeasured": {
+        "editCount": 3,
+        "edits": [
+          "packages/cli/src/entry.ts:96 -> optional chain",
+          "packages/combine/src/combine.test.ts:152 -> add biome-ignore lint/suspicious/noProto",
+          "biome.json -> `biome migrate --write` ($schema 2.2.0->2.5.6, \"recommended\": true -> \"preset\": \"recommended\")"
+        ],
+        "resultAfterRemediation": {
+          "build": "PASS",
+          "typecheck": "PASS",
+          "lint": "PASS (0 warnings, 0 infos, 67 files)",
+          "test": "PASS 366/366"
+        },
+        "effortEstimate": "~15 minutes. Two 1-line source edits plus one config migrate. `biome migrate --write` additionally reformats biome.json to tabs and expands the includes array - hand-edit the 2 config lines instead to keep the diff to 2 lines."
+      },
+      "effortEstimate": "~15 minutes (measured, see remediationMeasured)",
+      "recommendation": "DO_NOT_IMPLEMENT as a bare version bump; IMPLEMENT only bundled with the 3 measured remediation edits. The exact pin in package.json is load-bearing - a floating range would let a future minor introduce new rules and break CI on an unrelated PR."
+    },
+    {
+      "id": "G3",
+      "name": "better-sqlite3 12.11.1 -> 13.0.2 (native)",
+      "verdict": "SAFE",
+      "gateResults": { "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "PASS" },
+      "testCount": "366/366 in 14 files (identical to baseline)",
+      "lintFindings": "0 (identical to baseline)",
+      "nativeRebuild": {
+        "result": "SUCCESS",
+        "toolchain": "node-gyp against Node 22.22.2 headers, 30.1s",
+        "bundledSqlite": "3.53.4",
+        "smokeTest": "open :memory:, CREATE TABLE, INSERT, COUNT -> 1",
+        "enginesOfNewVersion": ">=22 (compatible with the repo's >=22.13 floor)",
+        "typesPackage": "@types/better-sqlite3 stayed at 7.6.13; typecheck still passes, so no types bump is needed"
+      },
+      "crossProcessWalContention": {
+        "test": "packages/coach/src/store.test.ts:815 \"recomputeRatings is safe under cross-process contention (L11)\"",
+        "shape": "4 real spawned node processes x 25 outcomes x 6 recompute iterations against ONE file-backed WAL db, via packages/coach/test/fixtures/recompute-worker.mjs which imports the BUILT dist/index.js",
+        "singleRun": "PASS (281ms)",
+        "repeatedRuns": "10/10 PASS, 0 failures"
+      },
+      "packageJsonEditsRequired": true,
+      "recommendation": "IMPLEMENT"
+    },
+    {
+      "id": "G4",
+      "name": "@types/node 22.20.0 -> 26.1.2",
+      "verdict": "BREAKS-THE-FLOOR-GUARANTEE (all four gates pass mechanically)",
+      "gateResults": { "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "PASS" },
+      "testCount": "366/366 in 14 files (identical to baseline)",
+      "lintFindings": "0 (identical to baseline)",
+      "whyNotSafeDespitePassingGates": {
+        "claim": "@types/node 26 types APIs that do not exist on the supported Node floor, so tsc stops being a guard against shipping code that crashes for users on Node 22.13.",
+        "empiricalDemonstration": {
+          "probe": "/tmp/claude-0/-home-user-roster/c85b98df-18e8-5308-a861-b4353c52ba11/scratchpad/e5-floor-probe/probe.ts",
+          "api": "globalThis.URLPattern (became a Node global in v24)",
+          "underTypes26": "tsc exits 0 - code COMPILES CLEANLY",
+          "underTypes22": "tsc error TS2304: Cannot find name 'URLPattern' - the current setup CATCHES it",
+          "atRuntimeOnNode22_22_2": "ReferenceError: URLPattern is not defined",
+          "conclusion": "types 26 turns a compile-time error into a runtime crash for anyone on the declared floor. This is a real regression in safety that no gate in this repo can detect."
+        },
+        "runtimeProbeOfOtherCandidates": "Of 12 probed APIs, only URLPattern and Float16Array are absent on Node 22.22.2 (Float16Array is a lib/ES feature, not @types/node). The absent surface is small TODAY but grows with every Node release while the floor stays at 22.13."
+      },
+      "editScope": "8 manifests (root + 6 packages + apps/league) all declare @types/node",
+      "recommendation": "DO_NOT_IMPLEMENT. Keep @types/node on the 22.x line so the type layer keeps matching engines.node. Revisit only when the engines floor itself moves; the standard rule is to pin @types/node to the OLDEST supported Node major."
+    },
+    {
+      "id": "G5",
+      "name": "typescript 6.0.3 -> 7.0.2",
+      "verdict": "SAFE (contradicts the charter's expectation of maximal breakage)",
+      "gateResults": { "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "PASS" },
+      "testCount": "366/366 in 14 files (identical to baseline)",
+      "lintFindings": "0 (identical to baseline)",
+      "errorClasses": "NONE. Zero compiler errors of any class across all 7 projects and the test typecheck project.",
+      "skepticalVerification": [
+        "Build is not a no-op: 45 .js + 50 .d.ts + 50 .js.map emitted across 7 projects (150 files total).",
+        "EMIT EQUIVALENCE: 50/50 .js byte-identical to TS6, 50/50 .d.ts byte-identical to TS6. Only 16/50 .js.map differ, and the difference is confined to the `mappings` string (version/file/sources/sourceRoot/names all identical).",
+        "CHECKER IS NOT PERMISSIVE: a 6-case strictness probe (strictNullChecks, noUncheckedIndexedAccess, type mismatch, noImplicitOverride, verbatimModuleSyntax type-only-import-as-value, excess property check) produced IDENTICAL diagnostics under TS7 and TS6 - same error codes, same line:col.",
+        "Built CLI runs: `node packages/cli/dist/bin.js --help` prints the full command list."
+      ],
+      "performance": "cold build 7s -> 2s; typecheck 6s -> 3s (TS7 is the native port)",
+      "recommendation": "NEEDS_OWNER_DECISION. Every gate passes and emit is byte-identical, so this is technically SAFE, but TS7 is a whole-compiler rewrite and a 4-gate suite on a 366-test repo is thin evidence for adopting one. See caveats: editor/IDE tooling, biome's and vitest's TS assumptions, and any tsc API consumers were not exercised."
+    }
+  ],
+  "summaryTable": [
+    { "group": "G1 patches (smol-toml/vitest/tsx)", "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "366/366", "verdict": "SAFE", "recommend": "IMPLEMENT" },
+    { "group": "G2 biome 2.5.6", "build": "PASS", "typecheck": "PASS", "lint": "FAIL", "test": "366/366", "verdict": "NEEDS-WORK", "recommend": "bundle with 3 measured edits" },
+    { "group": "G3 better-sqlite3 13", "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "366/366", "verdict": "SAFE", "recommend": "IMPLEMENT" },
+    { "group": "G4 @types/node 26", "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "366/366", "verdict": "BREAKS floor guarantee", "recommend": "DO NOT IMPLEMENT" },
+    { "group": "G5 typescript 7.0.2", "build": "PASS", "typecheck": "PASS", "lint": "PASS", "test": "366/366", "verdict": "SAFE", "recommend": "owner decision" }
+  ],
+  "recommendedFinalState": {
+    "groups": ["G1", "G3"],
+    "patch": "/tmp/claude-0/-home-user-roster/c85b98df-18e8-5308-a861-b4353c52ba11/scratchpad/e5-proposed-patch-SAFE-g1-g3.diff",
+    "verifiedTogether": {
+      "build": "PASS (6s)",
+      "typecheck": "PASS (5s)",
+      "lint": "PASS (1s, 67 files, 0 findings)",
+      "test": "PASS (13s, 14 files, 366/366)",
+      "audit": "No known vulnerabilities found"
+    }
+  },
+  "incidentalObservation": {
+    "file": "packages/cli/src/entry.ts",
+    "lines": "91-97",
+    "severity": "PRE-EXISTING, independent of every E5 upgrade (reproduces on the unmodified baseline)",
+    "finding": "INERT_CLIENT_KEYS is a plain object literal, so `INERT_CLIENT_KEYS[key]` for an INHERITED key resolves to an Object.prototype method instead of undefined, and the key is treated as an allowlisted inert annotation.",
+    "measuredAgainstRealBuiltCode": {
+      "harness": "e5-proto-key-probe.mjs, importing packages/cli/dist/entry.js",
+      "controls": {
+        "exact entry": "claimed as ours (correct)",
+        "type:stdio": "claimed as ours (correct, allowlisted)",
+        "type:http": "rejected (correct)",
+        "env:{TOKEN}": "rejected (correct)"
+      },
+      "probes": {
+        "extra key toString": "normalizeSpawnEntry CLAIMS IT AS OURS and sameEntry() returns true -> foreign entry becomes eligible for deletion on eject",
+        "extra key constructor": "same: CLAIMED AS OURS, sameEntry() true",
+        "extra key valueOf": "throws unhandled TypeError: Cannot convert undefined or null to object",
+        "extra key hasOwnProperty": "throws unhandled TypeError"
+      },
+      "invariantViolated": "The function's own docstring says 'ANY other extra key ... makes this null, so a user's lookalike is never mistaken for ours and deleted.'"
+    },
+    "mirrorParity": "A scratchpad mirror of the production function matched the REAL built function on 16/16 inputs (12 controls + 4 inherited-key cases), including reproducing both TypeError throws — so the mirror is a faithful stand-in and the proposed fix was evaluated against real behaviour.",
+    "proposedFixValidation": "Object.hasOwn guard: changes 0 of 12 control behaviours, returns null for all 4 inherited-key inputs.",
+    "patch": "/tmp/claude-0/-home-user-roster/c85b98df-18e8-5308-a861-b4353c52ba11/scratchpad/e5-optional-patch-INCIDENTAL-inherited-key.diff (NOT applied)",
+    "notMeasured": "No end-to-end eject scenario was driven to actually delete a victim entry; the claim is about normalizeSpawnEntry/sameEntry return values, which are the inputs to that decision. No regression test was written. Reachability depends on whether a real client config can carry such a key, which was not investigated.",
+    "relationToUpgrade": "Independent of the biome bump. Biome's optional-chain rewrite neither introduces nor fixes it (inert is a truthy inherited function either way). Should be triaged separately, NOT folded into the dependency PR."
+  }
+}

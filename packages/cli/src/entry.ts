@@ -43,6 +43,29 @@ export function ourBinPath(): string {
   return path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
 }
 
+/** The published package name; the only name safe to hand to `npx`. */
+export const PACKAGE_NAME = "@roster/cli";
+
+/**
+ * Are we running out of an `npx` cache rather than a real installation?
+ *
+ * This matters because `npx` is the documented first command, and it makes BOTH
+ * other entry forms wrong:
+ *
+ *  - it puts `roster` on PATH for the duration of that one invocation, which
+ *    fooled `hasGlobalRoster()` into writing `{command: "roster"}`. The moment
+ *    npx exits there is no `roster`, so the client's launcher dies with ENOENT
+ *    — a dead MCP server, produced by the happy path.
+ *  - the cache directory itself is disposable (`npm cache clean`, npx's own
+ *    pruning), so writing this absolute path would break later instead.
+ *
+ * Verified end to end against a local registry: `npx -y @roster/cli sync` wrote
+ * `{command:"roster"}`, and spawning it afterwards failed `ENOENT`.
+ */
+export function runningFromNpxCache(binPath: string = ourBinPath()): boolean {
+  return binPath.split(path.sep).includes("_npx");
+}
+
 /**
  * The entry sync writes. A global `roster` that is provably ours → `roster serve`.
  * Otherwise THIS install's own entrypoint (node + absolute `dist/bin.js`):
@@ -50,24 +73,63 @@ export function ourBinPath(): string {
  * only code that is provably ours. Deliberately NOT `npx -y roster` — the npm
  * name `roster` is a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so
  * that entry would fetch and run a stranger's code on every client boot. The npx
- * form becomes the no-global default only at publish, under P1's cleared name
- * (one-line change; STATUS §4F).
+ * form is used ONLY for the scoped, published name and ONLY when we are already
+ * running from an npx cache — which proves that exact package is fetchable.
  */
-export function rosterEntry(): SpawnEntry {
+export function rosterEntry(binPath: string = ourBinPath()): SpawnEntry {
+  // Reaching this code from an npx cache proves the package is fetchable by
+  // name, so the npx form is both correct and self-healing: it re-fetches if
+  // the cache is pruned. It must be checked FIRST — npx's temporary PATH entry
+  // would otherwise satisfy `hasGlobalRoster()` and write a launcher that stops
+  // existing the moment npx exits.
+  if (runningFromNpxCache(binPath)) return { command: "npx", args: ["-y", PACKAGE_NAME, "serve"] };
   if (hasGlobalRoster()) return { command: "roster", args: ["serve"] };
-  return { command: process.execPath, args: [ourBinPath(), "serve"] };
+  return { command: process.execPath, args: [binPath, "serve"] };
 }
 
-const asEntry = (v: unknown): { command: string; args: string[] } | null => {
-  if (v === null || typeof v !== "object") return null;
-  const e = v as { command?: unknown; args?: unknown };
+/**
+ * Keys a CLIENT adds to its OWN serialization of a stdio entry that carry no
+ * "what runs" intent, each pinned to the only inert value consistent with the
+ * command+args stdio entry Roster writes. Claude Code stamps `type: "stdio"`
+ * onto every MCP entry in ~/.claude.json, which made the annotated proxy stop
+ * matching and survive eject (NEW-1). This allowlist is deliberately tiny:
+ * anything NOT here (env, cwd, url, headers, disabled, …) is treated as a
+ * meaningful field whose presence means the entry is NOT one Roster wrote.
+ */
+const INERT_CLIENT_KEYS: Record<string, (value: unknown) => boolean> = {
+  type: (value) => value === "stdio", // a non-stdio transport is a CONFLICTING entry, not ours
+};
+
+/**
+ * Canonicalize a config entry to the {command, args} identity Roster writes, or
+ * null if it is not an entry Roster could have written.
+ *
+ * Ownership is EXACT on command and args. Client-added transport annotations
+ * (see INERT_CLIENT_KEYS) are tolerated so a re-serialized proxy is still
+ * recognized on eject; ANY other extra key — env with a token, cwd, a url, an
+ * unknown or conflicting `type` — makes this null, so a user's lookalike is
+ * never mistaken for ours and deleted.
+ */
+export const normalizeSpawnEntry = (v: unknown): SpawnEntry | null => {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return null;
+  const e = v as Record<string, unknown>;
   if (typeof e.command !== "string") return null;
-  return { command: e.command, args: Array.isArray(e.args) ? e.args.map(String) : [] };
+  if (e.args !== undefined && (!Array.isArray(e.args) || e.args.some((arg) => typeof arg !== "string"))) {
+    return null;
+  }
+  for (const key of Object.keys(e)) {
+    if (key === "command" || key === "args") continue;
+    const inert = INERT_CLIENT_KEYS[key];
+    // An unknown key, or a known key with a non-inert value (e.g. type:"http"),
+    // means this is not the entry Roster wrote — refuse to claim ownership.
+    if (!inert?.(e[key])) return null;
+  }
+  return { command: e.command, args: e.args === undefined ? [] : ([...e.args] as string[]) };
 };
 
 /** Exact identity: is `candidate` byte-for-byte the entry we recorded writing? */
 export function sameEntry(candidate: unknown, injected: SpawnEntry | undefined): boolean {
-  const e = asEntry(candidate);
+  const e = normalizeSpawnEntry(candidate);
   if (!e || !injected) return false;
   return (
     e.command === injected.command &&
@@ -77,31 +139,13 @@ export function sameEntry(candidate: unknown, injected: SpawnEntry | undefined):
 }
 
 /**
- * Is this entry ROSTER'S OWN proxy — something Roster wrote — as opposed to a
- * server the USER merely happens to have NAMED "roster"?
- *
- * Identity is the ENTRY, never the key. Round 5 (R5-01) found all three places
- * that confused the two: import skipped anything *named* `roster` (silently
- * dropping a user's own server), health accepted anything *commanded* `roster`,
- * and key-level eject did `delete servers.roster` (silently destroying a server
- * the user added after syncing). A name is a label the user chose; it says
- * nothing about what a thing IS.
- *
- * Every form we have ever written ends in `serve` and is one of: a bare global
- * `roster`, this install's `node <…>/bin.js`, or (post-publish) `npx`. A user's
- * own server called "roster" — `node /opt/my-roster-server.js` — matches none of
- * them and is imported and preserved like any other.
- *
- * For the DESTRUCTIVE path (eject) this structural test is not enough on its own:
- * see `sameEntry`, which matches against the exact entry recorded in the backup
- * manifest, so eject removes only what this install actually installed.
+ * Ownership is a set of exact entries Roster can prove it wrote: the current
+ * install and intact active manifests. Command basenames and a trailing
+ * "serve" are not identities; treating them as such discards unrelated tools.
  */
-export function isRosterProxyEntry(candidate: unknown): boolean {
-  const e = asEntry(candidate);
-  if (!e || !e.args.includes("serve")) return false;
-  if (e.command === "roster") return true; // global form
-  const base = path.basename(e.command);
-  if (base.startsWith("node") && /(^|[\\/])bin\.js$/.test(e.args[0] ?? "")) return true; // this install
-  if (base.startsWith("npx")) return true; // post-publish form
-  return false;
+export function isOwnedRosterEntry(
+  candidate: unknown,
+  ownedEntries: readonly SpawnEntry[],
+): boolean {
+  return ownedEntries.some((owned) => sameEntry(candidate, owned));
 }

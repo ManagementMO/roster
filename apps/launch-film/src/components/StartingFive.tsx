@@ -37,7 +37,7 @@ export const StartingFive = ({ introAt = 0, activeIndex, failedIndex, compact = 
         const progress = enter(frame, introAt + index * 15, 40);
         return (
           <ConnectionRibbon
-            key={`connection-${index}`}
+            key={`connection-${slot[0]}-${slot[1]}`}
             from={prismPoint}
             to={{ x: slot[0] * width, y: slot[1] * height }}
             progress={progress}

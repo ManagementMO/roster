@@ -1,7 +1,12 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { wilsonLowerBound, type CapabilityEntry } from "@rosterhq/shared";
+import { spawn } from "node:child_process";
+import { chmodSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { wilsonLowerBound, type CapabilityEntry } from "@roster/shared";
 import { openCoachDb, type CoachDb } from "./db.js";
-import { CoachStore } from "./store.js";
+import { CoachStore, defHash } from "./store.js";
 import { normalize } from "./oats.js";
 
 const tool = (id: string, name: string, description: string): CapabilityEntry => ({
@@ -38,6 +43,209 @@ describe("capability upsert + drift", () => {
     expect(store.listCapabilities({ includeQuarantined: true })).toHaveLength(1);
     store.clearQuarantine("fs__read_file");
     expect(store.listCapabilities()).toHaveLength(1);
+  });
+});
+
+/**
+ * Drift identity must cover the fields a CLIENT or agent ACTS on, not only the
+ * ones the retrieval index reads. On the reviewed base `defHash` hashed only
+ * name/description/inputSchema/outputSchema/body, so a backend could flip
+ * `annotations.destructiveHint` true->false — the exact hint clients gate
+ * confirmations on — with a byte-identical hash: no drift event, no quarantine
+ * (reproduced). Safety annotations and the execution contract must participate
+ * in stable definition identity; volatile runtime state must not.
+ */
+describe("drift identity covers safety and contract metadata", () => {
+  const base: CapabilityEntry = {
+    id: "fs__delete",
+    kind: "tool",
+    source: "fs",
+    name: "delete",
+    description: "Delete a file",
+    title: "Delete a file",
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    execution: { taskSupport: "optional" },
+    inputSchema: { type: "object", properties: { path: { type: "string" } } },
+  };
+  const seed = (now = 1) => expect(store.upsertCapabilities([base], now).added).toEqual(["fs__delete"]);
+  const expectDrift = (next: CapabilityEntry, why: string) => {
+    const res = store.upsertCapabilities([next], 2);
+    expect(res.changed, why).toEqual(["fs__delete"]);
+    expect(res.driftEvents, why).toBe(1);
+    expect(store.driftEvents().length, why).toBeGreaterThanOrEqual(1);
+    expect(store.listCapabilities(), why).toHaveLength(0); // quarantined => withheld
+  };
+  const expectStable = (next: CapabilityEntry, why: string) => {
+    const res = store.upsertCapabilities([next], 2);
+    expect(res, why).toMatchObject({ changed: [], driftEvents: 0 });
+    expect(store.listCapabilities(), why).toHaveLength(1); // never quarantined
+  };
+
+  it("drifts on each safety annotation independently", () => {
+    for (const [k, v] of [
+      ["destructiveHint", false],
+      ["readOnlyHint", true],
+      ["idempotentHint", true],
+      ["openWorldHint", true],
+    ] as const) {
+      db = openCoachDb(":memory:");
+      store = new CoachStore(db);
+      seed();
+      expectDrift({ ...base, annotations: { ...base.annotations, [k]: v } }, `annotations.${k}`);
+    }
+  });
+
+  it("drifts on an execution/task-support contract change", () => {
+    seed();
+    expectDrift({ ...base, execution: { taskSupport: "required" } }, "taskSupport optional->required");
+  });
+
+  it("drifts on a title change (definition text the agent is shown)", () => {
+    seed();
+    expectDrift({ ...base, title: "Delete EVERYTHING" }, "title rewritten");
+  });
+
+  it("drifts on an outputSchema change (positive control)", () => {
+    seed();
+    expectDrift(
+      { ...base, outputSchema: { type: "object", properties: { ok: { type: "boolean" } } } },
+      "outputSchema added",
+    );
+  });
+
+  it("does NOT drift on pure JSON key-order changes (negative control)", () => {
+    seed();
+    expectStable(
+      {
+        ...base,
+        annotations: { openWorldHint: false, idempotentHint: false, destructiveHint: true, readOnlyHint: false },
+        inputSchema: { properties: { path: { type: "string" } }, type: "object" },
+      },
+      "reordered keys",
+    );
+  });
+
+  it("treats an absent field and an explicit undefined as equivalent (no false drift)", () => {
+    const bare: CapabilityEntry = {
+      id: "fs__plain",
+      kind: "tool",
+      source: "fs",
+      name: "plain",
+      description: "no metadata",
+      inputSchema: { type: "object" },
+    };
+    store.upsertCapabilities([bare], 1); // fields absent
+    // Same definition, but with the optional fields present as explicit undefined.
+    const res = store.upsertCapabilities(
+      [{ ...bare, title: undefined, annotations: undefined, execution: undefined }],
+      2,
+    );
+    expect(res).toMatchObject({ changed: [], driftEvents: 0 });
+  });
+
+  it("persists safety metadata so a DB reload round-trips it and does not self-drift", () => {
+    seed();
+    // New store over the SAME db handle = a fresh process reading the same file.
+    const reopened = new CoachStore(db);
+    const got = reopened.getCapability("fs__delete");
+    expect(got?.annotations).toEqual(base.annotations);
+    expect(got?.execution).toEqual(base.execution);
+    expect(got?.title).toBe(base.title);
+    // Re-sighting the identical definition after reload must be a no-op.
+    expect(reopened.upsertCapabilities([base], 3)).toMatchObject({ changed: [], driftEvents: 0 });
+  });
+
+  it("carries the expanded identity through a remove/re-add tombstone", () => {
+    seed();
+    store.pruneMissing(new Set(), new Set(), { now: 2 });
+    const res = store.upsertCapabilities(
+      [{ ...base, annotations: { ...base.annotations, destructiveHint: false } }],
+      3,
+    );
+    expect(res.driftEvents).toBe(1); // metadata-only change cannot slip back in as "new"
+    expect(res.changed).toEqual(["fs__delete"]);
+    expect(store.listCapabilities()).toHaveLength(0);
+  });
+
+  it("deletes the stored vector on metadata-only drift and rejects a stale-hash backfill", () => {
+    seed();
+    store.storeBaseVec("fs__delete", new Float32Array([1, 0]), 1);
+    const staleHash = defHash(base);
+    expectDrift({ ...base, annotations: { ...base.annotations, destructiveHint: false } }, "vector-deletion drift");
+    // A warm-boot backfill still holding the PRE-drift hash must not land.
+    expect(
+      store.storeBaseVec("fs__delete", new Float32Array([0, 1]), 3, { defHash: staleHash, modelId: "m" }),
+    ).toBe(false);
+  });
+
+  it("re-baselines silently when the hash FORMULA changes (no whole-roster quarantine)", () => {
+    seed();
+    store.upsertCapabilities([tool("fs__read", "read", "Read a file")], 1);
+    expect(store.listCapabilities()).toHaveLength(2);
+    db.prepare("UPDATE meta SET value = 'v-ancient' WHERE key = 'def_hash_version'").run();
+    const store2 = new CoachStore(db);
+    const res = store2.upsertCapabilities([base, tool("fs__read", "read", "Read a file")], 5);
+    expect(res.driftEvents, "a formula change is our change, not backend drift").toBe(0);
+    expect(res.changed).toEqual([]);
+    expect(store2.listCapabilities()).toHaveLength(2);
+  });
+
+  it("does not fabricate drift when an unchanged tombstoned capability returns after a hash-formula upgrade", () => {
+    seed();
+    store.pruneMissing(new Set(), new Set(), { now: 2 });
+    expect(store.listCapabilities({ includeQuarantined: true })).toHaveLength(0);
+
+    // Trigger the one-time formula re-baseline while the removed capability is
+    // still only a tombstone. Its old hash cannot be recomputed from that row.
+    db.prepare("UPDATE meta SET value = 'v-ancient' WHERE key = 'def_hash_version'").run();
+    const store2 = new CoachStore(db);
+    store2.upsertCapabilities([tool("fs__read", "read", "Read a file")], 3);
+
+    const returned = store2.upsertCapabilities([base, tool("fs__read", "read", "Read a file")], 4);
+    expect(returned.driftEvents, "our hash-formula change is not backend drift").toBe(0);
+    expect(returned.changed).toEqual([]);
+    expect(returned.added).toContain("fs__delete");
+    expect(store2.getCapability("fs__delete")).not.toBeNull();
+  });
+});
+
+/**
+ * R6-01. The Coach DB is an inventory of the user's toolchain — every tool
+ * description and whole SKILL.md bodies — but SQLite created it with the
+ * process umask (0644). SQLite derives the -wal/-shm permissions from the main
+ * file, so the fix is to pre-create it 0600 before the first open.
+ */
+describe.skipIf(process.platform === "win32")("the coach database is owner-only on disk", () => {
+  it("creates a new database 0600 under a permissive umask", () => {
+    const previousUmask = process.umask(0o022);
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-perms-"));
+    try {
+      const file = join(directory, "coach.db");
+      const db = openCoachDb(file);
+      new CoachStore(db).recordOutcome({
+        session: "s", source: "x", capability: "x__y", outcomeClass: "success", latencyMs: 1,
+      });
+      db.close();
+      for (const name of readdirSync(directory)) {
+        expect([name, statSync(join(directory, name)).mode & 0o077]).toEqual([name, 0]);
+      }
+    } finally {
+      process.umask(previousUmask);
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("tightens a database that is already group/world-readable", () => {
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-perms-"));
+    try {
+      const file = join(directory, "coach.db");
+      openCoachDb(file).close();
+      chmodSync(file, 0o644); // e.g. written by an older build
+      openCoachDb(file).close();
+      expect(statSync(file).mode & 0o777).toBe(0o600);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 
@@ -198,6 +406,41 @@ describe("outcomes, soft-fail, ratings", () => {
     expect(rows.every((r) => r.soft_fail === 0)).toBe(true);
   });
 
+  it("recordOutcome rolls back its insert and soft-fail update when suggestion marking fails", () => {
+    store.recordOutcome({
+      session: "rollback-session",
+      source: "fs",
+      capability: "fs__read_file",
+      outcomeClass: "tool_fail:internal",
+      latencyMs: 10,
+      argsHash: "first-args-hash",
+    });
+    store.recordSuggestion("rollback-session", "failed__tool", "fs__read_file");
+    db.exec(`
+      CREATE TRIGGER fail_suggestion_update
+      BEFORE UPDATE OF taken ON suggestion
+      BEGIN
+        SELECT RAISE(ABORT, 'forced suggestion update failure');
+      END
+    `);
+
+    expect(() =>
+      store.recordOutcome({
+        session: "rollback-session",
+        source: "fs",
+        capability: "fs__read_file",
+        outcomeClass: "success",
+        latencyMs: 11,
+        argsHash: "retry-args-hash",
+      }),
+    ).toThrow("forced suggestion update failure");
+
+    expect(db.prepare("SELECT id, soft_fail FROM outcome ORDER BY id").all()).toEqual([
+      { id: 1, soft_fail: 0 },
+    ]);
+    expect(db.prepare("SELECT taken FROM suggestion").get()).toEqual({ taken: 0 });
+  });
+
   it("computes Wilson ratings excluding soft-fail and explored rows", () => {
     for (let i = 0; i < 8; i++) {
       store.recordOutcome({ session: `s${i}`, source: "fs", capability: "fs__read_file", outcomeClass: "success", latencyMs: 100 + i });
@@ -283,10 +526,74 @@ describe("model-switch guards", () => {
     expect((db.prepare("SELECT adj, dims FROM vec").get() as { adj: Buffer | null; dims: number })).toMatchObject({ adj: null, dims: 2 });
   });
 
-  it("loadVecs drops length-mismatched blobs instead of reading garbage", () => {
+  it.each([
+    {
+      corruption: "zero dimensions",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 0 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "fractional dimensions",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 1.5 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "a length-mismatched blob",
+      corrupt: () => db.prepare("UPDATE vec SET dims = 7 WHERE capability = ?").run("a__t"),
+    },
+    {
+      corruption: "a non-finite base vector",
+      corrupt: () => db
+        .prepare("UPDATE vec SET base = ? WHERE capability = ?")
+        .run(Buffer.from(new Float32Array([Number.NaN, 0, 0]).buffer), "a__t"),
+    },
+  ])("repairs a vector row with $corruption", ({ corrupt }) => {
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
-    db.prepare("UPDATE vec SET dims = 7").run(); // corrupt: blob is 12B, dims says 28B
+    corrupt();
+
     expect(store.loadVecs().has("a__t")).toBe(false);
+    expect(store.vecCapabilityIds().has("a__t")).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
+  });
+
+  it.each([
+    ["a length-mismatched adjustment", Buffer.alloc(5)],
+    [
+      "a non-finite adjustment",
+      Buffer.from(new Float32Array([1, Number.POSITIVE_INFINITY, 0]).buffer),
+    ],
+  ])("clears %s while retaining the valid base vector", (_corruption, adj) => {
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    db.prepare("UPDATE vec SET adj = ? WHERE capability = ?").run(adj, "a__t");
+
+    expect(Array.from(store.loadVecs().get("a__t") ?? [])).toEqual([1, 0, 0]);
+    expect(store.vecCapabilityIds().has("a__t")).toBe(true);
+    expect(db.prepare("SELECT adj FROM vec WHERE capability = ?").get("a__t")).toEqual({
+      adj: null,
+    });
+  });
+
+  it("rejects a stale backfill after capability drift", () => {
+    const original = tool("a__t", "t", "original definition");
+    store.upsertCapabilities([original]);
+    store.ensureEmbeddingModel("model-A");
+    const expected = { defHash: defHash(original), modelId: "model-A" };
+
+    store.upsertCapabilities([{ ...original, description: "drifted definition" }]);
+
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 123, expected)).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
+  });
+
+  it("rejects a stale backfill after an embedding-model switch", () => {
+    const entry = tool("a__t", "t", "stable definition");
+    store.upsertCapabilities([entry]);
+    store.ensureEmbeddingModel("model-A");
+    const expected = { defHash: defHash(entry), modelId: "model-A" };
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 122, expected)).toBe(true);
+
+    store.ensureEmbeddingModel("model-B");
+
+    expect(store.storeBaseVec("a__t", new Float32Array([1, 0]), 123, expected)).toBe(false);
+    expect(db.prepare("SELECT 1 FROM vec WHERE capability = ?").get("a__t")).toBeUndefined();
   });
 });
 
@@ -314,6 +621,71 @@ describe("pruneMissing grace window", () => {
     const gone = store.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
     expect(gone).toEqual(["x__old"]);
     expect(store.listCapabilities().map((c) => c.id)).toEqual(["y__fresh"]);
+  });
+
+  it("pruneMissing selects and deletes under one immediate transaction", () => {
+    const directory = mkdtempSync(join(tmpdir(), "roster-coach-prune-"));
+    const path = join(directory, "coach.db");
+    const pruneDb = openCoachDb(path);
+    const refreshDb = openCoachDb(path);
+    try {
+      const pruneStore = new CoachStore(pruneDb);
+      const t0 = 1_000_000;
+      const refreshedAt = t0 + 2_000;
+      pruneStore.upsertCapabilities([tool("race__tool", "tool", "race target")], t0);
+      refreshDb.pragma("busy_timeout = 0");
+
+      const sqliteErrorCode = (error: unknown): string | undefined => {
+        if (
+          typeof error !== "object" ||
+          error === null ||
+          !("code" in error) ||
+          typeof error.code !== "string"
+        ) {
+          return undefined;
+        }
+        return error.code;
+      };
+      let refreshErrorCode: string | undefined;
+      const originalPrepare = pruneDb.prepare.bind(pruneDb);
+      pruneDb.prepare = ((source: string) => {
+        const statement = originalPrepare(source);
+        if (source === "SELECT id, source, last_seen, def_hash, quarantined FROM capability") {
+          const originalAll = statement.all.bind(statement);
+          statement.all = (() => {
+            const rows = originalAll();
+            try {
+              refreshDb
+                .prepare("UPDATE capability SET last_seen = ? WHERE id = ?")
+                .run(refreshedAt, "race__tool");
+            } catch (error) {
+              refreshErrorCode = sqliteErrorCode(error);
+            }
+            return rows;
+          }) as typeof statement.all;
+        }
+        return statement;
+      }) as CoachDb["prepare"];
+
+      let pruneErrorCode: string | undefined;
+      try {
+        pruneStore.pruneMissing(new Set(), new Set(), { keepSeenSince: t0 + 1_000 });
+      } catch (error) {
+        pruneErrorCode = sqliteErrorCode(error);
+      }
+
+      // IMMEDIATE must reserve the writer lock before the SELECT. A merely
+      // deferred transaction still reports `inTransaction`, but lets this
+      // sibling UPDATE commit after the stale snapshot.
+      expect(refreshErrorCode).toBe("SQLITE_BUSY");
+      expect(pruneErrorCode).toBeUndefined();
+      expect(refreshDb.prepare("SELECT 1 FROM capability WHERE id = ?").get("race__tool"))
+        .toBeUndefined();
+    } finally {
+      pruneDb.close();
+      refreshDb.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 
@@ -347,6 +719,31 @@ describe("OATS nightly", () => {
     store.upsertCapabilities([tool("a__t", "t", "d")]);
     store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
     expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+  });
+
+  it("discards a non-finite need vector without aborting OATS", () => {
+    store.upsertCapabilities([tool("a__t", "t", "d")]);
+    store.storeBaseVec("a__t", new Float32Array([1, 0, 0]));
+    for (let i = 0; i < 4; i++) {
+      const needHash = `need-${i}`;
+      store.storeNeedVec(needHash, new Float32Array([0, 1, 0]));
+      store.recordOutcome({
+        session: `s${i}`,
+        source: "a",
+        capability: "a__t",
+        outcomeClass: "success",
+        latencyMs: 10,
+        needHash,
+      });
+    }
+    db.prepare("UPDATE need_vec SET vec = ? WHERE need_hash = ?").run(
+      Buffer.from(new Float32Array([0, Number.NaN, 0]).buffer),
+      "need-0",
+    );
+
+    expect(store.runOats()).toEqual({ adjusted: 0, skipped: 1 });
+    expect(db.prepare("SELECT 1 FROM need_vec WHERE need_hash = ?").get("need-0"))
+      .toBeUndefined();
   });
 });
 
@@ -453,4 +850,56 @@ describe("fix-wave round 2 — drift + robustness", () => {
     expect(res.driftEvents).toBe(1);
     expect(res.changed).toEqual(["a__t"]);
   });
+});
+
+describe("recomputeRatings is safe under cross-process contention (L11)", () => {
+  it("many processes log outcomes and recompute at once without crashing or corrupting", async () => {
+    // Several `roster serve` processes share one coach.db. This spawns real
+    // separate node processes that concurrently recordOutcome (IMMEDIATE write
+    // txn) AND recomputeRatings (write-only txn) against ONE file-backed WAL DB.
+    // A clean exit(0) from every worker proves no writer crashed with
+    // SQLITE_BUSY or corrupted the file; the final aggregate proves durability.
+    const dir = mkdtempSync(join(tmpdir(), "coach-contention-"));
+    const dbPath = join(dir, "coach.db");
+    try {
+      new CoachStore(openCoachDb(dbPath)).close(); // migrate once, then release
+
+      const worker = fileURLToPath(new URL("../test/fixtures/recompute-worker.mjs", import.meta.url));
+      const CAP = "cap__contended";
+      const N = 4;
+      const COUNT = 25;
+      const ITERS = 6;
+
+      const codes = await Promise.all(
+        Array.from({ length: N }, (_, i) =>
+          new Promise<number | null>((resolve) => {
+            const child = spawn(
+              process.execPath,
+              [worker, dbPath, CAP, `w${i}`, String(COUNT), String(ITERS)],
+              { stdio: ["ignore", "ignore", "pipe"] },
+            );
+            let err = "";
+            child.stderr?.on("data", (d: Buffer) => {
+              err += d.toString();
+            });
+            child.on("exit", (code) => {
+              if (code !== 0) console.error(`contention worker ${i} failed:\n${err}`);
+              resolve(code);
+            });
+          }),
+        ),
+      );
+      expect(codes.every((c) => c === 0)).toBe(true);
+
+      // The file survived and a final recompute reflects EVERY logged outcome.
+      const store = new CoachStore(openCoachDb(dbPath));
+      store.recomputeRatings();
+      const rating = store.getRating(CAP);
+      expect(rating?.n).toBe(N * COUNT);
+      expect(rating?.successes).toBe(N * COUNT);
+      store.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
 });

@@ -22,13 +22,23 @@ Expected: `PASS` × 8, summary `filesystem: 8/8 passed`. Each task runs in a fre
 Same invocations, sabotaged expectations — this proves each verifier can *catch* a wrong outcome, not just bless a right one:
 
 ```bash
+PROBE_OUT="$(mktemp -t roster-failprobe).json"
 node packages/cli/dist/bin.js combine run docs/signing/fail-probes.yaml \
   --name filesystem-failprobe \
-  --out docs/signing/last-failprobe-results.json \
+  --out "$PROBE_OUT" \
   -- npx -y @modelcontextprotocol/server-filesystem '{{sandbox}}'
+node docs/verification/check-fail-probes.mjs \
+  docs/signing/fail-probes.yaml "$PROBE_OUT"
 ```
 
-Expected: `FAIL` × 8 (every failure at the `verify` stage), summary `0/8 passed`, exit code 1.
+The probe artifact goes to a temp file on purpose: your signing session should
+start and end with a clean `git status`. `docs/signing/last-failprobe-results.json`
+is a committed historical record — refresh it deliberately (point `--out` at it)
+if you want this session's run on the record, not as a surprise diff.
+
+Expected: the Combine exits 1 after `FAIL` × 8, then the checker reports that
+all 8 reached the `verify` stage and were rejected. A transport or invocation
+failure is not verifier evidence and the checker rejects it.
 
 **If any probe PASSES: STOP.** That verifier cannot detect wrongness — do not sign its task; tell the agent which one.
 

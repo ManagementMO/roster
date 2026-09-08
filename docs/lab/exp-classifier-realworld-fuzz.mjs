@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * exp-classifier-realworld part (b): precedence fuzz on the REAL built
- * classifyOutcome/isAttributable from @rosterhq/coach dist.
+ * classifyOutcome/isAttributable from @roster/coach dist.
  *
  * b1 — 500 seeded-random CallEvidence combos: verify class always follows the
  *      spec precedence transport > protocol > timeout > isError-kinds > drift
@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
 const { classifyOutcome, classifyToolFailKind, isAttributable } = await import(
-  req.resolve("@rosterhq/coach")
+  req.resolve("@roster/coach")
 );
 
 // deterministic PRNG (mulberry32) so the fuzz is reproducible

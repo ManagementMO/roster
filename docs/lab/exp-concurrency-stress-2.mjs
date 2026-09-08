@@ -21,7 +21,7 @@ import { setImmediate as yieldLoop } from "node:timers/promises";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..", "..");
 const req = createRequire(path.join(repo, "packages/cli/package.json"));
-const { CoachStore, openCoachDb } = await import(req.resolve("@rosterhq/coach"));
+const { CoachStore, openCoachDb } = await import(req.resolve("@roster/coach"));
 const { TOOLS } = await import(pathToFileURL(path.join(here, "corpus.mjs")).href);
 
 const TMP = path.join(here, "tmp-concurrency-stress");
@@ -214,7 +214,7 @@ say("\n## (d2) saveConfig race ×5 reps — full torn capture + loadConfig crash
     const code = `
       import { createRequire } from "node:module";
       const req = createRequire(${JSON.stringify(path.join(repo, "packages/cli/package.json"))});
-      const { loadConfig } = await import(req.resolve("@rosterhq/cli"));
+      const { loadConfig } = await import(req.resolve("@roster/cli"));
       try { loadConfig(); console.log(JSON.stringify({ threw: false })); }
       catch (e) { console.log(JSON.stringify({ threw: true, message: String(e.message).slice(0, 200) })); }
     `;

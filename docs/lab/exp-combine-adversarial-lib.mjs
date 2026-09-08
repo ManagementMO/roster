@@ -1,5 +1,5 @@
 // Shared helpers for the combine-adversarial experiments.
-// Imports the REAL built @rosterhq/combine exactly like docs/verification/dense-live.mjs.
+// Imports the REAL built @roster/combine exactly like docs/verification/dense-live.mjs.
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 export const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const require = createRequire(path.join(repo, "packages/cli/package.json"));
 
-export const combine = await import(require.resolve("@rosterhq/combine"));
+export const combine = await import(require.resolve("@roster/combine"));
 export const { parseSuite, runSuite, buildLabResults, template } = combine;
 
 export const SUITE_PATH = path.join(repo, "suites/filesystem/tasks.yaml");

@@ -15,7 +15,7 @@ const repo = path.resolve(here, "..", "..");
 const coachReq = createRequire(path.join(repo, "packages/coach/package.json"));
 const { AutoTokenizer } = await import(coachReq.resolve("@huggingface/transformers"));
 const { estimateTokensFromChars } = await import(
-  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@rosterhq/shared")
+  createRequire(path.join(repo, "packages/cli/package.json")).resolve("@roster/shared")
 );
 
 const TMP = path.join(here, "tmp-token-economics");

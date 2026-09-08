@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-07-31T04:30:55.636Z",
+  "setup": "alpha__aaa = 50 consecutive tool_fail; bravo__bbb = 1 success; 4 tools untried",
+  "ratings": {
+    "alpha__aaa": {
+      "n": 50,
+      "successes": 0,
+      "wilsonLb": 0,
+      "p50Ms": null,
+      "p95Ms": null
+    },
+    "bravo__bbb": {
+      "n": 1,
+      "successes": 1,
+      "wilsonLb": 0.20654329147389294,
+      "p50Ms": 10,
+      "p95Ms": 10
+    },
+    "charlie__ccc": null,
+    "delta__ddd": null,
+    "echo__eee": null,
+    "foxtrot__fff": null
+  },
+  "wilsonKeys": {
+    "alpha__aaa": 0,
+    "bravo__bbb": 0.20654329147389294,
+    "charlie__ccc": "no rating row -> COALESCE 0",
+    "delta__ddd": "no rating row -> COALESCE 0",
+    "echo__eee": "no rating row -> COALESCE 0",
+    "foxtrot__fff": "no rating row -> COALESCE 0"
+  },
+  "ratedFallbackSqlOrder": [
+    {
+      "id": "bravo__bbb",
+      "key": 0.20654329147389294,
+      "n": 1,
+      "successes": 1,
+      "last_seen": 1
+    },
+    {
+      "id": "alpha__aaa",
+      "key": 0,
+      "n": 50,
+      "successes": 0,
+      "last_seen": 1
+    },
+    {
+      "id": "charlie__ccc",
+      "key": 0,
+      "n": null,
+      "successes": null,
+      "last_seen": 1
+    },
+    {
+      "id": "delta__ddd",
+      "key": 0,
+      "n": null,
+      "successes": null,
+      "last_seen": 1
+    },
+    {
+      "id": "echo__eee",
+      "key": 0,
+      "n": null,
+      "successes": null,
+      "last_seen": 1
+    },
+    {
+      "id": "foxtrot__fff",
+      "key": 0,
+      "n": null,
+      "successes": null,
+      "last_seen": 1
+    }
+  ],
+  "draftTop5ForUnrelatedNeed": [
+    {
+      "id": "bravo__bbb",
+      "score": 0
+    },
+    {
+      "id": "alpha__aaa",
+      "score": 0
+    },
+    {
+      "id": "charlie__ccc",
+      "score": 0
+    },
+    {
+      "id": "delta__ddd",
+      "score": 0
+    },
+    {
+      "id": "echo__eee",
+      "score": 0
+    }
+  ],
+  "top1Distribution_over_200_identical_drafts": {
+    "bravo__bbb": 200
+  },
+  "findings": {
+    "brokenToolKeyEqualsUntriedToolKey": true,
+    "brokenToolStillInTop5": true,
+    "orderIsDeterministic": true,
+    "note": "wilson_lb for a 0/50 tool is exactly 0 — the SAME key an untried tool gets via COALESCE(...,0). The tie then falls through to `c.last_seen DESC`, which is identical for every capability upserted in the same boot, so the surviving order is SQLite's arbitrary-but-stable storage order. Consequence: the fallback draft can re-present a tool that has failed 50/50 times, deterministically, on every request."
+  }
+}
