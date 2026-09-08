@@ -1,0 +1,9 @@
+---
+import { release, source } from "../lib/site.js";
+import DocsAccessibility from "./DocsAccessibility.astro";
+const { entry } = Astro.locals.starlightRoute;
+---
+<DocsAccessibility />
+<div class="docs-page-meta"><a href="/docs/introduction/">Documentation</a><span aria-hidden="true">/</span><span>{entry.data.title}</span></div>
+<h1 id="_top">{entry.data.title}</h1>
+<p class="docs-revision">{release.published ? `v${release.version}` : "Pre-release documentation"}<span aria-hidden="true"> · </span><a href={source("README.md")}>Revision {release.revision.slice(0, 7)}</a></p>

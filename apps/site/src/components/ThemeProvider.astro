@@ -1,0 +1,12 @@
+<script is:inline>
+  (() => {
+    let preference = "auto";
+    try {
+      const saved = localStorage.getItem("starlight-theme");
+      if (saved === "light" || saved === "dark") preference = saved;
+    } catch {}
+    const theme = preference === "auto" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : preference;
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.themePreference = preference;
+  })();
+</script>

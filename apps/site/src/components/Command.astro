@@ -1,0 +1,7 @@
+---
+import { Code } from "@astrojs/starlight/components";
+import { commands } from "../lib/site.js";
+interface Props { name: keyof typeof commands; title?: string }
+const { name, title } = Astro.props;
+---
+<Code code={commands[name]} lang="bash" title={title} />

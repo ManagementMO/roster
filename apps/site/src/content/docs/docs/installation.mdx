@@ -1,0 +1,74 @@
+---
+title: Install & first run
+description: Install the available Roster source build, inspect your configuration, and connect a single supported client.
+---
+import { Code } from "@astrojs/starlight/components";
+import Command from "../../../components/Command.astro";
+import { release, packageName, futureInstall } from "../../../lib/site.js";
+
+<div class="docs-release">
+  <p><strong>{release.published ? `Roster ${release.version} is published.` : "Roster is available from source. The npm package is not published yet."}</strong></p>
+  <p>The selected package is <code>{packageName}</code>, with executable <code>roster</code>. Never use the unscoped npm package: it is an unrelated system-user utility. Registry state last checked {release.checked}.</p>
+</div>
+
+## Prepare the installation
+
+Use **Node 22.13 or newer**. Check your installed runtime with `node --version`.
+
+{release.published ? <p>Install the scoped package globally so the <code>roster</code> executable remains available after installation.</p> : <><p>The source build also needs <strong>pnpm 11.9.0</strong> and Git. Check <code>pnpm --version</code>. If needed, install that pinned version through your normal package-manager setup.</p><p>Use a <strong>new directory</strong> for this sequence. Preserve existing checkouts and their changes. This source installation is pinned to the product revision described by these guides.</p></>}
+
+<Command name="prepare" />
+
+{!release.published && <p>The future npm path will be <code>{futureInstall}</code>. It is not an available installation option today. Once published, a global install will make the <code>roster</code> executable available; a one-off <code>npx</code> invocation does not.</p>}
+
+For a source installation, keep the checkout in a stable location. Source-based sync records its absolute executable path, so moving or deleting it can break the client's launcher.
+
+## Check the executable
+
+<p>{release.published ? "Check the installed executable in your terminal:" : "Run this from the repository root:"}</p>
+
+<Command name="help" />
+
+Roster supports `help` and `--help`, but **not `--version`**. If a command named `roster` already exists, check its package and path rather than assuming it is this project.
+
+{!release.published && <p>All commands in these guides currently use the source entry point. Continue running them from the repository root.</p>}
+
+## Discover without rewriting clients
+
+`init` reads known client configuration locations and imports server definitions into `~/.roster/roster.json`. It also discovers skill sources and prints a Day-0 receipt. It **does not rewrite client configuration files**.
+
+Imported server definitions can contain environment credentials. The local configuration and backups are private; do not paste their raw contents or receipt paths into chat or public issues.
+
+<Command name="init" />
+
+Review the receipt for discovered clients, server counts, skill counts, and parse errors. Counts are inventory, not a measured tool-selection accuracy or token-savings benchmark.
+
+## Keep the first run lexical
+
+Lexical retrieval works without a model. `--no-dense` skips the optional runtime-install question; it does not persistently disable embeddings.
+
+**A source checkout already includes the embedding runtime among its workspace dependencies.** Before starting a client, change just the `embeddings` field in the existing `~/.roster/roster.json` to `"off"`. Preserve every other field, especially the imported `servers`. This prevents the source installation from starting a first-use model download.
+
+Later, you can deliberately [enable optional semantic retrieval](/docs/learning/#optional-dense-retrieval).
+
+## Connect one client
+
+For example, if Cursor is your intended target:
+
+<Command name="sync" />
+
+Read the reported config path. Sync selects the first existing supported path for that client, imports the server definitions, backs up the original, and replaces its MCP server map with one Roster launcher. URL-only servers cause refusal before that config is changed.
+
+Restart the client or its MCP connection. **The client launches `serve` over stdio.** You do not need to run a second Roster process in a terminal or start a hosted service.
+
+Transparent mode is the default. Once this setup works, [choose five mode](/docs/modes/).
+
+## Know the way back
+
+Use the matching scoped eject command:
+
+<Command name="eject" />
+
+Dedicated configs restore byte-for-byte when unchanged since sync. Supported live-state files restore at key level while preserving later user changes. If eject refuses a conflict, inspect it; do not add `--force` as a routine workaround.
+
+**Next:** [Understand client paths, backups, and restoration](/docs/clients/).

@@ -1,0 +1,79 @@
+---
+title: Troubleshooting
+description: Resolve source-install, client launcher, dense retrieval, skill discovery, and eject problems without weakening safeguards.
+---
+import Command from "../../../components/Command.astro";
+
+Start with the exact command, client, and non-sensitive error class. Keep raw configurations, credentials, receipt paths, and private tool results out of public reports.
+
+## The package cannot be found
+
+The selected package is `@roster/cli`. Check the [current installation and publication status](/docs/installation/). If it is not published, use the source path rather than changing the command to the unrelated unscoped package.
+
+A registry error is not a reason to run an unknown package with a similar name.
+
+## `roster` is not found after an npx command
+
+A one-off npx invocation does not add a global executable to your shell. Keep using the execution strategy in the installation guide: the built source entry point for source installs, or `roster` after a genuine global installation of the scoped package.
+
+<Command name="help" />
+
+There is no `roster --version` flag. If an existing `roster` command behaves differently, inspect its package and path.
+
+## The source build cannot load a native module
+
+Check the Node version and use the repository's pinned pnpm version. Native dependencies need to match the runtime that runs the CLI. After changing Node versions, reinstall or rebuild dependencies through the package manager in that checkout.
+
+Do not disable dependency security policies or copy native binaries from unrelated projects to get a green run.
+
+## Init finds no client configuration
+
+Discovery only reads existing known paths. Open or configure your MCP client first, or manually configure an authorized command-backed server. Review [the candidate path order](/docs/clients/#four-automated-writers), including home-scope precedence and the current working directory.
+
+`init` is not an installer for every client and does not create their configuration files. A malformed configuration is reported in discovery rather than interpreted as an empty successful setup.
+
+## Sync refuses a URL-only server
+
+The routing boundary is currently command-backed stdio. A URL in discovery does not make it a routable backend. Do not delete that server or wrap it in an arbitrary executable just to make sync pass.
+
+Keep your existing setup, or choose an authorized stdio configuration supported by that backend's own documentation.
+
+## The client cannot launch Roster
+
+Check the path printed by scoped sync and the launcher it wrote, locally. A source launcher points to that checkout and Node executable. If either moved or disappeared, the client cannot start it.
+
+Keep the installation in a stable location. If necessary, restore the old client configuration using its preserved backups before deliberately setting up a new path. Do not force-delete ownership records.
+
+The client launches `serve`; a second terminal process is not required. Reconnect the client's MCP session after a config or mode change.
+
+## I still see every tool
+
+Transparent mode is the default. [Enable five mode](/docs/modes/#enable-five-mode) in the existing Roster configuration and restart the router connection. In five mode the exposed tools are `draft` and `call`.
+
+Roster does not automatically switch modes when a context threshold is reached.
+
+## My draft seems unrelated
+
+Describe the next action more specifically. Check that the expected backend connected and that the capability is not drift-quarantined. Sparse lexical matches can be filled by rating-based fallback, so a full lineup is not proof that every candidate is relevant.
+
+Optional dense retrieval can improve semantic matching when available, but it is not a correctness guarantee. You can remain lexical indefinitely.
+
+## A skill is missing
+
+Check that its library is included, its child directory contains `SKILL.md`, and a same-slug skill from an earlier source is not taking precedence. Skills appear through the five-mode bridge, not the transparent tool list.
+
+Read any trust findings locally. Symlinks and incomplete scans can withhold a skill. Review the actual files; do not silently enable a trust override.
+
+## Dense says enabled, but I want lexical only
+
+`dense status` reports whether a runtime is available. To keep the router lexical, set `embeddings` to `"off"` and restart the client connection. This is particularly important in a source workspace, where the runtime can already be installed.
+
+Conversely, `dense enable` does not change an `"off"` config or prove a model is warm. See [the retrieval guide](/docs/learning/).
+
+## Eject refuses or was interrupted
+
+Pause client activity and read the reported conflict. Eject may be protecting changed dedicated config bytes, a moved symlink, a corrupt backup, or incomplete recovery data.
+
+Re-run the same scoped eject to resume an interrupted operation. Preserve the backup and journal. `--force` is a deliberate pristine-byte overwrite choice, not a routine fix and not a bypass for integrity checks.
+
+**Still stuck?** Open an issue in the repository with the product revision, operating system, Node version, command, and a sanitized error. Do not upload your state directory.

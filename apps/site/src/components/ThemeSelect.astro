@@ -1,0 +1,45 @@
+---
+import Icon from "./Icon.astro";
+---
+<roster-theme class="theme-control">
+  <span class="theme-sun"><Icon name="sun" size={19} /></span>
+  <span class="theme-moon"><Icon name="moon" size={19} /></span>
+  <select aria-label="Color theme">
+    <option value="auto">System</option>
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+  </select>
+  <Icon name="chevron-down" size={13} />
+</roster-theme>
+<script>
+  type Theme = "auto" | "light" | "dark";
+  function updateBrowserColor() {
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+    if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
+  }
+  function applyTheme(preference: Theme) {
+    document.documentElement.dataset.themePreference = preference;
+    document.documentElement.dataset.theme = preference === "auto"
+      ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : preference;
+    document.querySelectorAll<HTMLSelectElement>("roster-theme select").forEach((select) => { select.value = preference; });
+    updateBrowserColor();
+  }
+  class RosterTheme extends HTMLElement {
+    connectedCallback() {
+      const select = this.querySelector("select");
+      if (!select) return;
+      select.value = document.documentElement.dataset.themePreference ?? "auto";
+      updateBrowserColor();
+      select.addEventListener("change", () => {
+        const value = select.value as Theme;
+        applyTheme(value);
+        try { localStorage.setItem("starlight-theme", value === "auto" ? "" : value); } catch {}
+      });
+    }
+  }
+  if (!customElements.get("roster-theme")) customElements.define("roster-theme", RosterTheme);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (document.documentElement.dataset.themePreference === "auto") applyTheme("auto");
+  });
+</script>

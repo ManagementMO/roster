@@ -1,0 +1,66 @@
+---
+import "../styles/home.css";
+import Brand from "../components/Brand.astro";
+import Icon from "../components/Icon.astro";
+import ThemeProvider from "../components/ThemeProvider.astro";
+import ThemeSelect from "../components/ThemeSelect.astro";
+import CopyButton from "../components/CopyButton.astro";
+import AgentPrompt from "../components/AgentPrompt.astro";
+import ProductExperience from "../components/ProductExperience.astro";
+import Hero from "../components/Hero.astro";
+import { commands, description, repository, release, source, socialMeta } from "../lib/site.js";
+const social = socialMeta(Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <ThemeProvider />
+    <title>Roster | The local tool router for AI agents</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#fafafa" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Roster. All your tools. One local router." />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={social.image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Roster. All your tools. One local router. Tool servers, the Coach, and the Playbook on your machine." />
+    <meta name="twitter:card" content="summary_large_image" />
+    {social.canonical && <><link rel="canonical" href={social.canonical} /><meta property="og:url" content={social.canonical} /></>}
+    {!Astro.site && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/SpaceGrotesk.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Manrope.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body class="home-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="header-inner page-width"><Brand /><nav class="main-nav" aria-label="Main navigation">
+        <a href="#how-it-works" class="nav-how">How it works</a>
+        <a href="/docs/introduction/">Docs</a>
+        <a class="nav-source" href={repository} aria-label="Roster on GitHub"><Icon name="brand-github" size={19} /><span>GitHub</span><Icon name="arrow-up-right" size={14} /></a>
+        <ThemeSelect />
+      </nav></div>
+    </header>
+    <main id="main">
+      <Hero />
+      <section class="demo-section page-width" id="demo" aria-label="Explore Roster">
+        <div id="how-it-works"><ProductExperience /></div>
+      </section>
+      <section class="setup-section" id="setup" aria-labelledby="setup-title"><div class="page-width setup-grid">
+        <div class="setup-heading"><h2 id="setup-title">Start with one client.</h2><p>{release.published ? "Install Roster, or hand the setup to your agent." : "Build from source, or hand the setup to your agent."}</p></div>
+        <div class="setup-copy">
+          <div class="source-install"><div class="install-heading"><span><Icon name="terminal-2" size={18} />{release.published ? "Install Roster" : "Install from source"}</span><CopyButton text={commands.prepare} label="Copy commands" /></div><textarea class="command-text" rows={release.published ? 1 : 6} wrap="off" readonly spellcheck="false" aria-label="Installation commands">{commands.prepare}</textarea></div>
+          <a class="text-link" href="/docs/installation/">First-run guide<Icon name="arrow-right" size={16} /></a><p class="setup-requirements">Source builds: Node 22.13+ and pnpm 11.9.0.</p>
+        </div>
+        <div class="agent-setup" id="agent-setup"><AgentPrompt /><a class="text-link" href="/docs/agent-setup/">Agent setup guide<Icon name="arrow-right" size={15} /></a></div>
+        <div class="eject-note"><Icon name="arrow-back-up" size={20} /><p>Sync backs up first. Use <code>eject</code> to restore your configuration.</p><a class="text-link" href="/docs/clients/#leave-with-eject">How restoration works<Icon name="arrow-right" size={15} /></a></div>
+      </div></section>
+      <section class="trust-section page-width" aria-label="Privacy and provenance"><p>Open source. Local state. Telemetry off by default.</p><div class="trust-links"><a href="/docs/privacy/">Privacy<Icon name="arrow-up-right" size={15} /></a><a href="/docs/methodology/">Methodology<Icon name="arrow-up-right" size={15} /></a><a href={source("docs/PROVENANCE.md")}>Build & review record<Icon name="arrow-up-right" size={15} /></a></div><p class="provenance-note">Built with AI assistance. Human-review and release gates remain explicit.</p></section>
+    </main>
+    <footer class="site-footer page-width"><div class="footer-top"><Brand small /><nav aria-label="Footer"><a href="/docs/introduction/">Documentation</a><a href={repository}>Source code</a><a href={source("LICENSE")}>MIT license</a></nav></div><div class="footer-bottom"><span>Bring your tools. Build your roster.</span><span>{release.published ? `Roster v${release.version}` : "Pre-release. Available from source."}</span></div></footer>
+  </body>
+</html>

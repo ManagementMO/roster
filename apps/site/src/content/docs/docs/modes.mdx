@@ -1,0 +1,73 @@
+---
+title: Transparent & five mode
+description: Learn when to use transparent passthrough or opt-in draft/call routing, with accurate MCP examples.
+---
+import Command from "../../../components/Command.astro";
+import { claimSources } from "../../../lib/sources.js";
+
+Start with transparent mode to keep the full tool collection available. Choose five mode when you want your agent to request a compact, task-specific lineup.
+
+## Transparent is the default
+
+Roster lists each backend tool using a namespaced ID, such as `filesystem__read_text_file`. It preserves tool contract metadata and forwards calls and results. Derived outcome recording still happens locally.
+
+Transparent mode does not expose `draft` and `call`, does not automatically engage five mode at a context threshold, and does not provide the skill-instruction bridge in its tool list.
+
+<Command name="transparent" />
+
+This command starts a stdio process for an MCP client. It is not an interactive chat command.
+
+## Enable five mode
+
+For a client already connected through sync, set the existing Roster config's `mode` field to `"five"`, preserving all other fields. Then restart the client's MCP connection.
+
+For an explicit process launch, the supported flag is:
+
+<Command name="five" />
+
+A command-line mode flag overrides the config for that process. The synced launcher normally uses `serve` without a flag and reads the configured mode.
+
+## Draft the next step
+
+The client-visible tool list is stable: `draft` and `call`. This example shows the parameters of an MCP `tools/call` request:
+
+```json
+{
+  "name": "draft",
+  "arguments": {
+    "need": "Read the checkout component",
+    "k": 5
+  }
+}
+```
+
+The response's text content contains a compact JSON object with `need`, `draft_id`, `starters`, and a usage hint. Each starter includes an `id`, a `kind`, and a short description. Tool cards can include a trimmed input schema; skill cards explain that calling them returns instructions.
+
+The default maximum is **five**, not a guarantee of exactly five results. `k` is configurable from **1 to 10**. Retrieval can use rated fallback candidates when direct matches are sparse, so a draft is a suggestion, not a relevance guarantee.
+
+## The agent chooses the call
+
+Using an illustrative draft ID and path:
+
+```json
+{
+  "name": "call",
+  "arguments": {
+    "tool": "filesystem__read_text_file",
+    "args": {
+      "path": "/example/shop/src/checkout/CheckoutForm.tsx"
+    },
+    "draft_id": "d1"
+  }
+}
+```
+
+Use the returned `draft_id` to associate the call with the right need. An absent or unknown draft ID does not borrow another draft's context; the call can still execute without that attribution or its alternate suggestions. Recent draft context is held in memory for the connection.
+
+A tool invokes its configured backend. A skill returns [instructions and resources](/docs/playbook/). A successful response means that call returned without a detected failure; it does not mean the checkout is fixed.
+
+Drafting is not a permission boundary. Known capabilities remain callable by ID, and local draft quarantine is not a universal execution block. Your client and agent must retain their own authorization policies.
+
+**Next:** [Bring skills into the Playbook](/docs/playbook/), or [understand failure suggestions](/docs/failures/).
+
+<p class="source-note"><a href={claimSources.routing}>Draft/call implementation</a><a href={claimSources.cards}>Capability card contract</a></p>

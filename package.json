@@ -16,7 +16,11 @@
     "lint": "biome lint --error-on-warnings",
     "lint:fix": "biome lint --write",
     "format": "biome format --write .",
-    "league:build": "node apps/league/dist/build.js"
+    "league:build": "node apps/league/dist/build.js",
+    "site:dev": "pnpm --filter @roster/site dev",
+    "site:build": "pnpm --filter @roster/site build",
+    "site:check": "pnpm --filter @roster/site check",
+    "site:preview": "pnpm --filter @roster/site preview"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",
@@ -30,6 +34,7 @@
     "esbuild": "0.28.2",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
+    "vite": "7.3.6",
     "vitest": "^4.1.10"
   }
 }

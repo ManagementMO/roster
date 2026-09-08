@@ -1,0 +1,65 @@
+---
+title: Clients, sync & eject
+description: Connect a supported MCP client with a scoped, backed-up sync and understand Roster's precise eject behavior.
+---
+import Command from "../../../components/Command.astro";
+import { claimSources } from "../../../lib/sources.js";
+
+Connect one client first. Roster works as a local stdio MCP server; your client launches the process and communicates over its standard input and output.
+
+## Four automated writers
+
+| Client | `--client` ID | Candidate paths, in priority order |
+| --- | --- | --- |
+| Claude Code | `claude-code` | `~/.claude.json`, then the current project's `.mcp.json` |
+| Cursor | `cursor` | `~/.cursor/mcp.json`, then the current project's `.cursor/mcp.json` |
+| Codex | `codex` | `~/.codex/config.toml` |
+| OpenClaw | `openclaw` | `~/.openclaw/openclaw.json`, then `~/openclaw.json` |
+
+**One sync selects the first existing path for the chosen client.** It does not rewrite every candidate at once. The working directory affects project-local discovery, and an existing home-scope config takes precedence. If you want a different scope, stop and inspect the path rather than assuming a project file will win.
+
+Without `--client`, sync attempts all four writers. That is useful when intentional, but not the recommended first experiment.
+
+<Command name="sync" />
+
+## What sync changes
+
+Sync imports command-backed servers, commits a backup and manifest, then replaces the client's MCP server map with one Roster entry. Other top-level settings remain. JSON clients use `mcpServers`; Codex uses `mcp_servers` in TOML.
+
+- A repeated sync is idempotent when the config already points to Roster.
+- New server entries added since sync are imported on the next sync.
+- A URL-only server in the selected config causes refusal before Roster config, backups, or client config are mutated.
+- Direct config symlinks are preserved. Restoration checks that their targets have not moved.
+- The router serves the shared imported collection. A client-scoped write is **not** per-client capability isolation.
+
+Backups live under `~/.roster/backups/`. Preserve them. They contain original configuration bytes and may contain credentials.
+
+## Who starts serve?
+
+The client normally starts the launcher written by sync. A source install uses Node and an absolute path to that installation. A verified global installation uses `roster serve`. An npm-cache invocation, after publication, writes the scoped `npx -y @roster/cli serve` form so a pruned cache can be resolved again.
+
+Changing `mode` in `~/.roster/roster.json` affects the next server process. Restart or reconnect the client after changing it. `sync --five` is not the mode-setting command.
+
+## Leave with eject
+
+<Command name="eject" />
+
+Eject restores **every active path previously synced for that client**, not just the path that happens to be discoverable now.
+
+**Dedicated config files:** the original bytes return, including comments and formatting. If the current bytes changed after sync, normal eject refuses to overwrite those edits.
+
+**Supported live-state files:** `~/.claude.json` and `openclaw.json` use key-level restoration. Original servers return, Roster's exact owned launcher is removed, and subsequent user settings and server changes are preserved. It is intentionally not a byte-for-byte rewind of the whole live file.
+
+A private journal supports recovery after interruption. Re-run the same scoped eject to resume. Corrupt backups, changed symlink topology, or conflicting edits can cause a refusal; inspect the reported problem before proceeding. `--force` is an explicit pristine-byte restoration choice, not a universal repair switch.
+
+Eject disconnects clients. It does not uninstall the CLI or erase the local Coach database.
+
+## Discovery is wider than write support
+
+Configuration discovery also reads Claude Desktop, Gemini CLI, Hermes, VS Code, Windsurf, and Zed formats. Those clients do not have the same automatic write support.
+
+A client that can launch a stdio MCP process may be configured manually using its own current documentation. Protocol compatibility, configuration discovery, automated writers, and verified real-client behavior are separate claims. Repository fixtures cover config lifecycle; the recorded real-server checks cover filesystem and memory routing. They are not proof of every client's complete UI workflow.
+
+**Next:** [Choose transparent or five mode](/docs/modes/).
+
+<p class="source-note"><a href={claimSources.discovery}>Discovery paths</a><a href={claimSources.sync}>Sync behavior</a><a href={claimSources.eject}>Restoration implementation</a></p>

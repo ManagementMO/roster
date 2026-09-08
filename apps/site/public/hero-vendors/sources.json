@@ -1,0 +1,14 @@
+{
+  "purpose": "Decorative tool-ecosystem illustration, not a compatibility matrix, endorsement, or ranking.",
+  "collection": "https://github.com/pheralb/svgl",
+  "license": "MIT collection license; vendor trademarks remain with their owners.",
+  "assets": [
+    { "file": "cloudflare.svg", "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/cloudflare.svg" },
+    { "file": "discord.svg", "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/discord.svg" },
+    { "file": "stripe.svg", "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/stripe.svg" },
+    { "file": "gitlab.svg", "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/gitlab.svg", "gitBlob": "529dcf052eb33cd57e14412d4987a9f00578b867", "mcp": "https://docs.gitlab.com/user/model_context_protocol/mcp_server/", "status": "Official MCP server; beta as checked 2026-09-08." },
+    { "file": "mongodb.svg", "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/mongodb-icon-dark.svg", "gitBlob": "dc317f771287ddfa6035f3cde21e95fa27dda63c", "mcp": "https://www.mongodb.com/docs/mcp-server/overview/", "status": "Official MCP server; local and Atlas-managed deployments." },
+    { "file": "atlassian.svg", "source": "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/atlassian.svg", "gitBlob": "58a37846e74ce5ba3c6a6110fb5e46539076aaf8", "mcp": "https://developer.atlassian.com/cloud/rovo-mcp/", "status": "Official cloud-hosted Rovo MCP server." }
+  ],
+  "existingAssets": "The other hero logos reuse unchanged local files in public/brands, documented in public/licenses/assets.json. No filters or recoloring are applied."
+}

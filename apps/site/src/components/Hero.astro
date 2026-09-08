@@ -1,0 +1,17 @@
+---
+import LogoDepth from "./LogoDepth.astro";
+import Icon from "./Icon.astro";
+import { statusLabel } from "../lib/site.js";
+---
+<section class="hero" aria-labelledby="hero-title">
+  <LogoDepth />
+  <div class="hero-content">
+    <a class="release-label" href="/docs/installation/">{statusLabel}<Icon name="arrow-up-right" size={13} /></a>
+    <h1 id="hero-title">Local routing.<br /><span>Built to adapt.</span></h1>
+    <p class="hero-description">One home for your agent’s MCP tools and skills. Roster learns from local outcomes, while you stay in control.</p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="/docs/installation/">Get started<Icon name="arrow-right" size={17} /></a>
+      <a class="text-link" href="#agent-setup">Agent prompt<Icon name="arrow-down" size={16} /></a>
+    </div>
+  </div>
+</section>

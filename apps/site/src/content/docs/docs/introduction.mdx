@@ -1,0 +1,63 @@
+---
+title: Meet Roster
+description: A local home for your agent's MCP tools, approved skills, and routing knowledge.
+---
+import { claimSources } from "../../../lib/sources.js";
+import { release } from "../../../lib/site.js";
+
+Roster is an open-source **local tool router for AI agents**. It brings command-backed MCP servers and approved skills into one place on your machine, with local outcome learning and reversible client setup.
+
+It routes capabilities, not AI models. Your agent stays responsible for deciding what to do and verifying the result.
+
+## One local entry point
+
+Instead of managing separate tool-server entries across clients, connect the client to Roster. The client launches a local stdio process; Roster connects to your configured command-backed servers and forwards tool calls.
+
+**Transparent passthrough is the default.** Your agent sees the available backend tools under stable, namespaced IDs. You do not need to narrow your tool collection or enable a special routing mode to start using Roster.
+
+Configuration sync and eject are supported for Claude Code, Cursor, Codex, and OpenClaw. Roster can discover more configuration formats, but discovery is not equivalent to automatic write support or a verified live integration.
+
+## Local by design
+
+The configuration, capability index, derived outcome log, ratings, and routing maintenance live on your machine. There is no Roster account, Roster API key, or hosted routing service.
+
+The **Coach** records useful call-level evidence and uses later maintenance to inform routing. The **Playbook** indexes approved skill instructions alongside tools. In five mode, a skill invocation returns instructions and resource paths; Roster does not run its bundled scripts.
+
+Lexical retrieval needs no model download. Semantic retrieval is optional and also runs locally once its runtime and model are available.
+
+Your backend tools can still contact their normal services. “Local router” is not a promise that every downstream API call is offline. [Read the privacy boundary](/docs/privacy/).
+
+## The starting five, when you want it
+
+Five mode is an **optional way to use the same router**, not the whole product.
+
+1. The agent calls `draft` with its immediate need.
+2. Roster returns compact tool or skill cards, up to five by default.
+3. The agent chooses a capability and invokes it through `call`.
+4. The Coach records the derived call outcome locally.
+
+The client sees two stable tools, `draft` and `call`. Request `k` from 1 to 10; the default is 5. A returned result is not proof that the user's whole task is finished.
+
+The “200 tools” example illustrates a large toolkit. It is not a measurement of your installation or a guaranteed savings figure. Your [receipt](/docs/commands/#receipt) reports the inventory Roster actually discovers.
+
+## The product vocabulary
+
+| Name | What it does |
+| --- | --- |
+| **The Rotation** | The local MCP router and backend connections. |
+| **The Coach** | Local outcome storage, retrieval, ratings, and maintenance. |
+| **The Playbook** | Trust-gated skill instructions in the capability index. |
+| **The Combine** | Reproducible task suites and declared checks. |
+| **The League** | A separate, deferred public rankings experience with explicit evidence rules. |
+
+You do not need the Combine or League to use the local router.
+
+## Available now
+
+<p>The core is implemented and the repository is public. {release.published ? `The scoped npm package is published as version ${release.version}.` : "The npm package is not published yet; use the source-install guide."} The public League remains deferred.</p>
+
+These guides describe the revision shown above, not the older roadmap's planned HTTP support, dashboard, or automatic failover. The current backend boundary is **command-backed stdio**.
+
+**Next:** [Install and run your first receipt](/docs/installation/), or [hand the setup to your agent](/docs/agent-setup/).
+
+<p class="source-note"><a href={claimSources.routing}>Router implementation</a><a href={claimSources.status}>Product status</a><a href={claimSources.verification}>Recorded core verification</a></p>

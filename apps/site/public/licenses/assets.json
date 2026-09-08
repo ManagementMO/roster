@@ -1,0 +1,170 @@
+[
+  {
+    "asset": "fonts/SpaceGrotesk.woff2",
+    "source": "videos/roster-premiere-tight/assets/SpaceGrotesk-Variable.woff2",
+    "sha256": "a0d054c4af557de20afd6ca59f47ab353bcaec49c63ff04b6c9d39d0f8910557",
+    "license": "SIL OFL 1.1; licenses/SPACE-GROTESK-LICENSE.txt"
+  },
+  {
+    "asset": "licenses/SPACE-GROTESK-LICENSE.txt",
+    "source": "videos/roster-premiere-tight/assets/SPACE-GROTESK-LICENSE.txt",
+    "sha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "asset": "fonts/Manrope.woff2",
+    "source": "videos/roster-premiere-tight/assets/Manrope-Variable.woff2",
+    "sha256": "e310b55a7fd9677f5e3555e6c6c4d064fa1f1d24393f0ddbe217cea12a8c432f",
+    "license": "SIL OFL 1.1; licenses/MANROPE-LICENSE.txt"
+  },
+  {
+    "asset": "licenses/MANROPE-LICENSE.txt",
+    "source": "videos/roster-premiere-tight/assets/MANROPE-LICENSE.txt",
+    "sha256": "e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "asset": "fonts/JetBrainsMono.woff2",
+    "source": "videos/roster-premiere-tight/assets/JetBrainsMono-Variable.woff2",
+    "sha256": "1e06740a02a443fb7f3eeda8fcaa685a0f6c620e3f01e6666e847295469ce3ad",
+    "license": "SIL OFL 1.1; licenses/JETBRAINS-MONO-LICENSE.txt"
+  },
+  {
+    "asset": "licenses/JETBRAINS-MONO-LICENSE.txt",
+    "source": "videos/roster-premiere-tight/assets/JETBRAINS-MONO-LICENSE.txt",
+    "sha256": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d",
+    "license": "SIL OFL 1.1"
+  },
+  {
+    "asset": "brands/github.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/github.svg",
+    "sha256": "3bf8cceead820aec50d4ee825a3fd02c5a1cd6665cc9cf4cbf3d9c8861a204bb",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://cdn.jsdelivr.net/npm/simple-icons@16.21.0/icons/github.svg"
+  },
+  {
+    "asset": "brands/github-light.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/github-light.svg",
+    "sha256": "cdd774eb2aba235aac4fc6862eb3407a874570253d564ffb89e99ba94d729519",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://cdn.jsdelivr.net/npm/simple-icons@16.21.0/icons/github.svg"
+  },
+  {
+    "asset": "brands/playwright.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/playwright.svg",
+    "sha256": "6b0a4367bdeab10995bc239278f04c68c10e48adbec15e799e01909a0d66dcb9",
+    "license": "Apache-2.0; PLAYWRIGHT-LICENSE.txt",
+    "upstream": "https://raw.githubusercontent.com/microsoft/playwright/main/packages/recorder/public/playwright-logo.svg"
+  },
+  {
+    "asset": "brands/linear-color.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/linear-color.svg",
+    "sha256": "3700486fede168b1fbaf0987eda06621d0e54dd30968578b857fd7360cb2029e",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://cdn.jsdelivr.net/npm/simple-icons@16.21.0/icons/linear.svg"
+  },
+  {
+    "asset": "brands/figma.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/figma.svg",
+    "sha256": "5bcdea3417293412845b8298fe357fce3b192e8ff112d9b3fef315bc5cd127f6",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://svgl.app/library/figma.svg"
+  },
+  {
+    "asset": "brands/slack.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/slack.svg",
+    "sha256": "29734796b3a85f9d0e03150d53142fab0b7f994ae80c7e3e1efd0bef52c12f5d",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://svgl.app/library/slack.svg"
+  },
+  {
+    "asset": "brands/supabase.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/supabase.svg",
+    "sha256": "1f9387ffd2d8bea4b535f13f12c34b4b4c2df7ee0e5eefe1f532bbda0a3ce969",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://svgl.app/library/supabase.svg"
+  },
+  {
+    "asset": "brands/postgresql.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/postgresql.svg",
+    "sha256": "dc6bb4376a5cf235b19a8871f3219c2b98d97e4469309c8bbecb86ff1811f506",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://svgl.app/library/postgresql.svg"
+  },
+  {
+    "asset": "brands/brave.svg",
+    "source": "videos/roster-premiere-tight/assets/brands/brave.svg",
+    "sha256": "2530f80fdf2144b62f96953a81c6988c9c31a6cc7c9de72e069079485817cbe7",
+    "license": "Upstream artwork and vendor trademark terms; identification only, not endorsement. Simple Icons geometry is CC0.",
+    "upstream": "https://brave.com/static-assets/images/brave-logo-sans-text.svg"
+  },
+  {
+    "asset": "Inline interface icons",
+    "source": "@iconify-json/tabler@1.2.38",
+    "upstream": "https://github.com/tabler/tabler-icons",
+    "license": "MIT; TABLER-LICENSE.txt"
+  },
+  {
+    "asset": "mark-cobalt.svg",
+    "source": "assets/brand/roster-r-01/roster-mark-cobalt.svg",
+    "sha256": "ce1f67b62111a5c5438b61559b9212d85a6926f2b1f5c1880942c048fa2c0860",
+    "method": "Canonical slim five-part SVG, copied without changing geometry.",
+    "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
+  },
+  {
+    "asset": "mark-ink.svg",
+    "source": "assets/brand/roster-r-01/roster-mark-ink.svg",
+    "sha256": "23905ccbb8b504434594c0f0a2055d55fca0507575dbedbf66f1f793d9232d46",
+    "method": "Canonical slim five-part SVG, copied without changing geometry.",
+    "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
+  },
+  {
+    "asset": "mark-white.svg",
+    "source": "assets/brand/roster-r-01/roster-mark-pearl.svg",
+    "sha256": "0befcdd08c120915b0add41bd2f6d3083d040bc7aa2805191353ebbb742a50ea",
+    "method": "Canonical slim five-part SVG, copied without changing geometry.",
+    "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
+  },
+  {
+    "asset": "roster-lockup-cobalt.svg",
+    "source": "assets/brand/roster-r-01/roster-lockup-cobalt.svg",
+    "sha256": "50e188196a1e7b6c24188b1a38e8a9d2555d0ad9a6c97b62169f30d3aa7cf631",
+    "method": "Canonical slim five-part SVG, copied without changing geometry.",
+    "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
+  },
+  {
+    "asset": "roster-lockup-pearl.svg",
+    "source": "assets/brand/roster-r-01/roster-lockup-pearl.svg",
+    "sha256": "a6f1003a1b264587cf7888f9c31c631a30c62b733e6ceda0f62aeed1b3bc62c9",
+    "method": "Canonical slim five-part SVG, copied without changing geometry.",
+    "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
+  },
+  {
+    "asset": "favicon.svg",
+    "source": "assets/brand/roster-r-01/roster-favicon-pearl.svg",
+    "sha256": "8ad2b2c560c4160ee90c43b0234f7bb72b46dcb5467c47f2fb7ca444285d9150",
+    "method": "Canonical slim five-part SVG, copied without changing geometry.",
+    "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
+  },
+  {
+    "asset": "mark.svg",
+    "source": "assets/brand/roster-r-01/roster-mark-cobalt.svg",
+    "sha256": "240574897dc207e649d9c807867892a3eb19d28eafd2dd8241487b07826fa244",
+    "method": "Canonical slim vector; only the fill becomes currentColor.",
+    "license": "Owner-approved Roster identity."
+  },
+  {
+    "asset": "social.png",
+    "source": "scripts/render-assets.mjs and local identity assets",
+    "sha256": "8e0236efe96743d9a379183b4d09140e6c7cf629736ea98592ae2fcc962e6412",
+    "method": "Rendered from local vectors in isolated Chrome.",
+    "license": "Roster artwork; font and vendor licenses are recorded separately."
+  },
+  {
+    "asset": "apple-touch-icon.png",
+    "source": "public/favicon.svg",
+    "sha256": "279e77d38b4b7d0a1114d97961eff04f0bc1fe727c9cfb719755588436497386",
+    "method": "Rendered from local vectors in isolated Chrome.",
+    "license": "Roster artwork; font and vendor licenses are recorded separately."
+  }
+]

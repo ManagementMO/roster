@@ -1,0 +1,78 @@
+@import "./shared.css";
+@import "./prompt.css";
+
+:root {
+  --sl-font: var(--font-body);
+  --sl-font-system: var(--font-body);
+  --sl-font-mono: var(--font-code);
+  --sl-content-width: 44rem;
+  --sl-sidebar-width: 17rem;
+  --sl-color-accent-low: var(--accent-soft);
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: var(--accent);
+  --sl-color-white: var(--text);
+  --sl-color-gray-1: var(--text);
+  --sl-color-gray-2: var(--muted);
+  --sl-color-gray-3: var(--subtle);
+  --sl-color-gray-4: var(--line-strong);
+  --sl-color-gray-5: var(--line);
+  --sl-color-gray-6: var(--surface-soft);
+  --sl-color-gray-7: var(--paper);
+  --sl-color-black: var(--surface);
+  --sl-color-bg: var(--surface);
+  --sl-color-bg-nav: var(--paper);
+  --sl-color-bg-sidebar: var(--paper);
+  --sl-color-hairline: var(--line);
+  --sl-color-hairline-light: var(--line);
+  --sl-color-text: var(--text);
+  --sl-color-text-accent: var(--accent);
+  --sl-text-h1: 2.75rem;
+}
+body { background: var(--surface); }
+header.header { border-bottom-color: var(--line); }
+.docs-page-meta { display: flex; gap: 10px; color: var(--subtle); font-size: 12px; margin-block: 3px 23px; }
+.docs-page-meta a { color: var(--subtle); text-decoration: none; }
+.docs-page-meta span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+h1#_top { font-size: clamp(30px, 3.3vw, 43px); letter-spacing: -.035em; line-height: 1.15; font-weight: 550; margin: 0 0 19px; }
+.docs-revision { color: var(--subtle); font-size: 11px; line-height: 1.6; margin: 0; }
+.docs-revision a { color: var(--subtle); }
+.sl-markdown-content { font-size: 16px; line-height: 1.85; }
+.sl-markdown-content h2 { font-size: 24px; font-weight: 550; letter-spacing: -.02em; line-height: 1.4; margin-top: 2.5em; }
+.sl-markdown-content h3 { font-size: 19px; font-weight: 550; margin-top: 1.8em; }
+.sl-markdown-content a:not(:where(.not-content *)) { text-underline-offset: 4px; }
+.sl-markdown-content :not(pre) > code { display: inline-block; max-inline-size: 100%; vertical-align: baseline; white-space: normal; overflow-wrap: anywhere; font-size: .82em; background: var(--surface-soft); border-radius: 4px; padding-inline: 4px; }
+.sl-markdown-content table { display: block; max-width: 100%; overflow-x: auto; font-size: 13px; line-height: 1.75; }
+.sl-markdown-content td, .sl-markdown-content th { min-width: 7rem; }
+.sl-markdown-content table code { font-size: .9em; }
+.sl-markdown-content pre { font-size: 13px; }
+.sl-markdown-content .expressive-code { margin-block: 25px; max-width: 100%; }
+.sl-markdown-content .starlight-aside { border-radius: var(--radius-sm); border-inline-start-width: 1px; font-size: 14px; }
+.sidebar-content { font-size: 13px; }
+.sidebar-content summary { font-size: 13px; }
+.sidebar-content ul li { margin-top: 4px; }
+.sidebar-content a { border-radius: 6px; padding-block: 7px; color: var(--muted); }
+.sidebar-content a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 750; }
+.right-sidebar { font-size: 12px; }
+.right-sidebar a[aria-current="true"] { color: var(--accent); }
+.expressive-code .copy button { min-height: 36px; min-width: 36px; }
+.content-panel { border-top-color: var(--line); }
+.pagination-links a { border-radius: var(--radius); border-color: var(--line); box-shadow: none; }
+.pagination-links .link-title { font-family: var(--font-display); font-size: 18px; font-weight: 500; }
+.source-note { font-size: 12px; color: var(--subtle); padding-top: 18px; border-top: 1px solid var(--line); margin-top: 36px; line-height: 1.8; }
+.source-note a { margin-right: 12px; }
+.docs-release { padding: 17px 19px; background: var(--accent-soft); border-radius: var(--radius); margin-block: 24px; font-size: 14px; }
+.docs-release p { margin: 0; }
+.docs-release p + p { margin-top: 8px; }
+.docs-release strong { color: var(--accent); }
+.sl-markdown-content .agent-prompt { margin-block: 28px; }
+@media (max-width: 800px) {
+  .brand-docs { display: none; }
+  h1#_top { font-size: 34px; }
+  .sl-markdown-content { font-size: 16px; line-height: 1.8; }
+}
+@media (max-width: 400px) {
+  h1#_top { font-size: 30px; }
+  .docs-page-meta { font-size: 11px; gap: 7px; }
+  .docs-revision { font-size: 10px; }
+  .sl-markdown-content h2 { font-size: 22px; }
+}

@@ -1,0 +1,96 @@
+---
+title: Command reference
+description: The implemented Roster CLI commands and flags, with source-install examples that work before npm publication.
+---
+import Command from "../../../components/Command.astro";
+import { commands, release } from "../../../lib/site.js";
+import { claimSources } from "../../../lib/sources.js";
+
+{!release.published && <p>These examples use the source entry point. Run them from your built repository root. After a genuine global installation of the scoped package, the executable is <code>roster</code>.</p>}
+
+## Help
+
+<Command name="help" />
+
+No subcommand, `help`, and `--help` display usage. `--version` is not implemented. Do not use it to identify an existing installation.
+
+## Init
+
+<Command name="init" />
+
+Discovers client configurations, imports server definitions, merges default skill sources, and prints a receipt. It does not rewrite client configs.
+
+- `--no-dense` skips the optional embedding-runtime question.
+- `--dense` requests runtime installation without asking interactively.
+- Without those flags, an interactive terminal can offer the optional runtime; a non-interactive run does not wait for an answer.
+
+Neither declining nor `--no-dense` changes an existing embeddings setting. See [source-build lexical setup](/docs/installation/#keep-the-first-run-lexical).
+
+## Receipt
+
+<Command name="receipt" />
+
+Re-discovers current configs and updates the local receipt. Synced clients report their routed server inventory rather than counting the Roster proxy as a backend. It includes skill counts and review findings. Token estimates are labeled; it is not a measured universal savings report.
+
+The saved receipt includes local config paths. Do not share it unredacted.
+
+## Sync
+
+<Command name="sync" />
+
+`--client` accepts `claude-code`, `cursor`, `codex`, or `openclaw`. Without it, sync attempts all four. Each client selects its first existing candidate config. Unknown client IDs are rejected.
+
+Backups precede config writes. A URL-only server causes a pre-mutation refusal. See [client setup](/docs/clients/).
+
+## Eject
+
+<Command name="eject" />
+
+Uses the same four `--client` IDs, or attempts all four when omitted. Restores every active path in that client's backup era.
+
+`--force` explicitly selects pristine bytes and can replace newer edits. It is not a safe default, does not waive integrity checks, and does not make moved symlinks safe. Normal live-state restoration preserves later changes at key level.
+
+## Serve
+
+<Command name="serve" />
+
+Runs a local stdio MCP server. `--five` or `--transparent` overrides the configured mode for that process. Without a flag, the config applies; its default is transparent.
+
+The client normally launches this process from the synced entry. `--http` is not implemented. Learn the [routing modes](/docs/modes/) before changing them.
+
+## Dense
+
+<Command name="denseStatus" />
+<Command name="denseEnable" />
+
+`dense` without a subcommand means `status`. `enable` installs the optional embedding runtime; it does not force configuration to permit embeddings or prove a model has warmed. There is no disable subcommand; use the `embeddings` config field. [Dense retrieval details](/docs/learning/#optional-dense-retrieval).
+
+## Telemetry
+
+<Command name="telemetry" />
+
+`telemetry` defaults to `status`. `on` records local consent; `off` clears it. No event builder or upload endpoint exists at this revision, including when consent is on. [Privacy details](/docs/privacy/).
+
+## Unquarantine
+
+<Command name="unquarantine" />
+
+Clears local drift quarantine for the provided capability ID. Review the change first. This is not certification and does not run a suite.
+
+## Combine run
+
+For a self-contained repository fixture, not a real vendor benchmark:
+
+<Command name="combine" />
+
+The shape is `combine run <suite.yaml> --name <label> -- <command> [args]`. Optional `--out <path>` changes the default `lab-results.json` output path. The marker `{{sandbox}}` is replaced with the per-task sandbox path.
+
+This starts the specified server and executes the suite's calls. Use a fresh working area and an authorized test server, not personal production data. The fixture above is intentionally synthetic and does not earn a named League rank.
+
+## Exit behavior
+
+Successful finite commands exit 0. A failed sync or refused eject exits nonzero; multi-client operations isolate failures and can leave some clients completed while others failed. `serve` remains attached to its stdio transport. A Combine run succeeds only when all its tasks pass.
+
+Dashboard, bench, Wrapped, receipt percentiles, roast, automatic failover, and `combine self` remain planned. They are not hidden CLI commands.
+
+<p class="source-note"><a href={claimSources.commands}>Exact command parser</a></p>

@@ -1,0 +1,12 @@
+---
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+import LocalRouter from "./LocalRouter.astro";
+import StartingFive from "./StartingFive.astro";
+---
+<div class="product-experience">
+  <Tabs>
+    <TabItem label="Your local router"><LocalRouter /></TabItem>
+    <TabItem label="Try starting five"><StartingFive /></TabItem>
+  </Tabs>
+  <p class="experience-caption">Transparent by default. Draft a starting five when you choose.</p>
+</div>
