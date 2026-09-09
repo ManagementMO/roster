@@ -1,5 +1,4 @@
 ---
-import Icon from "./Icon.astro";
 import CapabilityIcon from "./CapabilityIcon.astro";
 const vendors = [
   { name: "Figma", src: "/brands/figma.svg" },
@@ -49,33 +48,17 @@ const placements = vendors.map((vendor, slot) => ({ vendor, ...slots[slot]! }));
       </span>;
     })}
   </div>
-  <button class="motion-toggle" type="button" aria-label="Pause logo motion" aria-pressed="false" hidden>
-    <span data-pause-icon><Icon name="player-pause" size={14} /></span>
-    <span data-play-icon hidden><Icon name="player-play" size={14} /></span>
-    <span data-motion-label>Pause motion</span>
-  </button>
 </logo-depth>
 <script>
   class LogoDepth extends HTMLElement {
     private observer?: IntersectionObserver;
     private reduced = matchMedia("(prefers-reduced-motion: reduce)");
     private inView = false;
-    private userPaused = false;
     private update = () => {
-      const running = this.inView && !document.hidden && !this.userPaused && !this.reduced.matches;
+      const running = this.inView && !document.hidden && !this.reduced.matches;
       this.dataset.motion = this.reduced.matches ? "still" : running ? "running" : "paused";
-      const button = this.querySelector<HTMLButtonElement>("button");
-      if (!button) return;
-      button.hidden = this.reduced.matches;
-      button.setAttribute("aria-pressed", String(this.userPaused));
-      button.setAttribute("aria-label", this.userPaused ? "Resume logo motion" : "Pause logo motion");
-      this.querySelector<HTMLElement>("[data-motion-label]")!.textContent = this.userPaused ? "Resume motion" : "Pause motion";
-      this.querySelector<HTMLElement>("[data-pause-icon]")!.hidden = this.userPaused;
-      this.querySelector<HTMLElement>("[data-play-icon]")!.hidden = !this.userPaused;
     };
-    private toggle = () => { this.userPaused = !this.userPaused; this.update(); };
     connectedCallback() {
-      this.querySelector("button")?.addEventListener("click", this.toggle);
       this.reduced.addEventListener("change", this.update);
       document.addEventListener("visibilitychange", this.update);
       this.observer = new IntersectionObserver(([entry]) => {
@@ -87,7 +70,6 @@ const placements = vendors.map((vendor, slot) => ({ vendor, ...slots[slot]! }));
     }
     disconnectedCallback() {
       this.observer?.disconnect();
-      this.querySelector("button")?.removeEventListener("click", this.toggle);
       this.reduced.removeEventListener("change", this.update);
       document.removeEventListener("visibilitychange", this.update);
     }

@@ -13,7 +13,7 @@ test("the compact hero is centered and explains local, adaptive MCP routing", as
   await expect(page.getByRole("link", { name: "Agent prompt", exact: true })).toHaveAttribute("href", "#agent-setup");
 });
 
-test("colorful logo depth motion can be paused and pauses outside the viewport", async ({ page }) => {
+test("colorful logo depth motion runs automatically and pauses outside the viewport", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const stage = page.locator("logo-depth");
@@ -27,14 +27,7 @@ test("colorful logo depth motion can be paused and pauses outside the viewport",
   const position = () => logo.evaluate((element) => getComputedStyle(element).transform);
   const first = await position();
   await expect.poll(position).not.toBe(first);
-  await page.getByRole("button", { name: "Pause logo motion" }).click();
-  await expect(stage).toHaveAttribute("data-motion", "paused");
-  await logo.evaluate(async (element) => { await Promise.all(element.getAnimations().map((animation) => animation.ready)); });
-  const paused = await position();
-  await page.waitForTimeout(200);
-  expect(await position()).toBe(paused);
-  await page.getByRole("button", { name: "Resume logo motion" }).click();
-  await expect(stage).toHaveAttribute("data-motion", "running");
+  await expect(stage.getByRole("button")).toHaveCount(0);
   await page.locator(".setup-section").scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute("data-motion", "paused");
   await page.locator(".hero").scrollIntoViewIfNeeded();
@@ -45,6 +38,6 @@ test("reduced motion retains a static full-color composition", async ({ page }) 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator("logo-depth")).toHaveAttribute("data-motion", "still");
-  await expect(page.getByRole("button", { name: "Pause logo motion" })).toBeHidden();
+  await expect(page.locator("logo-depth").getByRole("button")).toHaveCount(0);
   expect(await page.locator(".depth-logo").evaluateAll((logos) => logos.every((logo) => getComputedStyle(logo).animationName === "none"))).toBe(true);
 });

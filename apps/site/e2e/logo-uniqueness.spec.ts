@@ -14,8 +14,8 @@ for (const theme of ["light", "dark"] as const) {
       const visibleVariants = await logos.evaluateAll((elements) => elements.map((element) => [...element.querySelectorAll("img")].filter((image) => getComputedStyle(image).display !== "none").length));
       expect(visibleVariants.every((count) => count === 1)).toBe(true);
       if (motion === "no-preference") {
-        await page.getByRole("button", { name: "Pause logo motion" }).click();
-        await expect(stage).toHaveAttribute("data-motion", "paused");
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await expect(stage).toHaveAttribute("data-motion", "still");
         expect(await logos.count()).toBe(brands.length);
       }
     });
