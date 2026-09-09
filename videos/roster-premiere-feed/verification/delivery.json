@@ -53,5 +53,5 @@
   },
   "detectedBlackSpans": [],
   "detectedSilence": [],
-  "loudnessSummary": "Summary:\n\n  Integrated loudness:\n    I:         -14.0 LUFS\n    Threshold: -24.0 LUFS\n\n  Loudness range:\n    LRA:         1.2 LU\n    Threshold: -34.0 LUFS\n    LRA low:   -14.7 LUFS\n    LRA high:  -13.5 LUFS\n\n  True peak:\n    Peak:       -2.0 dBFS\n[out#0/null @ 0x832c28300] video:745KiB audio:2816KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nframe= 1800 fps=1423 q=-0.0 Lsize=N/A time=00:00:15.00 bitrate=N/A speed=11.9x elapsed=0:00:01.26    \n"
+  "loudnessSummary": "Encoded AAC: -14.03 LUFS integrated; 0.70 LU loudness range; -2.00 dBTP true peak."
 }

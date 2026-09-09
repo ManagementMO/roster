@@ -17,7 +17,7 @@ The encoded outputs measure −14.03 LUFS integrated and −2.00 dBTP. No unexpe
 
 `verification/pocket-groove-approval.json` records that acceptance against the exact master and listening-copy SHA-256 hashes. An identical rebuild retains the accepted status in `pocket-groove-mix.json`; any changed audio is marked pending until it is auditioned and accepted separately.
 
-Rebuild the current music with `npm run audio`. For an audio-only revision with existing picture exports, run `npm run audio:refresh`; it copies the new master to the feed project and remuxes all formats without re-encoding video. Future full renders obtain the active soundtrack path from `audio_meta.json`.
+Rebuild the current music with `npm run audio`. For an audio-only revision with existing picture exports, run `npm run audio:refresh`; it copies the new master to the feed project and remuxes all formats without re-encoding video. It refreshes video and listening-copy hashes, probes, silence and loudness records together. If a later remux, probe or audit raises an error, its snapshot guard restores the complete original set across both editions. Future full renders obtain the active soundtrack path from `audio_meta.json`.
 
 The prior explicitly named `full-send-final.wav`, `full-send-score.wav` and `five-in-motion-full-send.m4a` remain available. Generic `premiere-score.wav` and `five-in-motion.m4a` follow the current edit. Prior exports and production files are preserved locally under `verification/before-pocket-groove/` in each project.
 
