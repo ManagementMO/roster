@@ -2,7 +2,9 @@
 
 A dedicated 15-second 4:5 launch film, composed at 1080×1350. It shares the final widescreen film's artwork, Pocket Groove jazzy lo-fi soundtrack, pearl-and-cobalt palette and core story. Headlines, cards and product panels are rearranged for phone viewing.
 
-The latest audio pass replaces the soundtrack in all three feed exports without changing their encoded picture. The shared 48 kHz stereo mix measures −14.03 LUFS and −2.00 dBTP after encoding. See `verification/pocket-groove-delivery.json` and `../roster-premiere-tight/MUSIC.md`. Rebuild and refresh audio from the widescreen project with `npm run audio` and `npm run audio:refresh`.
+The current shared soundtrack is the accepted Pocket Groove edit. The shared 48 kHz stereo mix measures −14.03 LUFS and −2.00 dBTP after encoding. See `verification/pocket-groove-delivery.json` and `../roster-premiere-tight/MUSIC.md`. Rebuild and refresh audio from the widescreen project with `npm run audio` and `npm run audio:refresh`.
+
+The full logo now reads **Roster** once, with the unique five-part R as its first letter followed by outlined **oster**. The router node and closing scene use the same unified wordmark as the widescreen film, website and covers. All three MP4s, the poster and contact sheet were regenerated while retaining the 15-second edit, Playwright handoff and accepted audio packets. Current evidence is in `verification/unified-wordmark.json` and `check-unified-wordmark.json`.
 
 - `renders/roster-feed-60fps.mp4` — 1080×1350, 60 fps; the main feed copy.
 - `renders/roster-feed-120fps.mp4` — native 120 fps master.

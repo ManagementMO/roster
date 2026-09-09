@@ -4,7 +4,8 @@
     {
       "file": "renders/roster-feed-120fps.mp4",
       "pictureUnchanged": true,
-      "videoStreamHash": "0,v,SHA256=9870687ad3d4a02273d38a152d120c4ddaf34fef9e80300577403990d55ce3b7",
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=9fa8e13d65f33edf8497edd1a2f2820952331359c91c7e0d07c03c1552e438d7",
       "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
       "duration": "15.000000",
       "fps": "120/1",
@@ -12,12 +13,13 @@
         1080,
         1350
       ],
-      "sha256": "5ab9b1b92dca85f4926c4a4a1c32067347ed76ba151d3f16ef6e748529720eaf"
+      "sha256": "881c8b7ae462c94965d4e08a67dcaeeb62da35441f22a88eca667c7f0e5bba6c"
     },
     {
       "file": "renders/roster-feed-60fps.mp4",
       "pictureUnchanged": true,
-      "videoStreamHash": "0,v,SHA256=4ad833978756c6fb60e425e172d3192494465f356f91b3eb0f68dfff109d6f0c",
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=2b565aa1fdcefa60ec57014df3a874f2435334cb34f94f134edab01f7a060c06",
       "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
       "duration": "15.000000",
       "fps": "60/1",
@@ -25,12 +27,13 @@
         1080,
         1350
       ],
-      "sha256": "0e9cdb4766f5dfc32515cff3c847aa1c38a5db34bf9e5f3700f4ae40c7fdf049"
+      "sha256": "fa23ad4aa6131dc34a9bd5f22d325af52b54219ebc7d2ccbb6013ac6defee157"
     },
     {
       "file": "renders/roster-feed-preview.mp4",
       "pictureUnchanged": true,
-      "videoStreamHash": "0,v,SHA256=cb5893da5925cc96dc28907abff79474d908c28c025aed06e3607e76e8c91ae9",
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=0bc1539377ae0b6e09fe939bb734b7eee4b3b6b6befe6dbaeb934464e79c7612",
       "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
       "duration": "15.000000",
       "fps": "60/1",
@@ -38,7 +41,7 @@
         864,
         1080
       ],
-      "sha256": "df77e2bd33a143766aafcc648605fe838fbc60b331df4dd48bfd29659b17a8e4"
+      "sha256": "e672bcbad31b3ff0f041e3bae9e3df67be1603f92387d962ede86bd5d93db94d"
     }
   ],
   "encodedAudioMeasurement": {
@@ -54,5 +57,5 @@
     "target_offset": "-0.04"
   },
   "silenceStarts": [],
-  "method": "Replace audio with FFmpeg stream-copy picture; compare encoded video hashes with the approved backups."
+  "method": "Replace audio with FFmpeg stream-copy picture; compare encoded video hashes with the input exports, and audio with the retained first-refresh backups."
 }

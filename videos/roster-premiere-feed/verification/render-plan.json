@@ -1,8 +1,8 @@
 {
-  "sourceSha256": "c5cd451bdba2d01ea61b34c467cde0d78b19a86eded517eb1c2fc221754592d0",
-  "pictureSourceSha256": "b84474f6be57f81126e2346b7e06856d239f28a5a19f4af8160164903953f194",
+  "sourceSha256": "e9a12dedb8fea5e8769434acd60ff0ec6d8f47c064c3702c051ccce5ce399876",
+  "pictureSourceSha256": "b3355bd5f3c33a398a16c9be2ad1f7d3a37d7867f25aff5133c9e90de1d4b342",
   "change": "Only the single soundtrack element is omitted from the temporary picture render; all visual code is identical.",
-  "soundtrack": "assets/audio/full-send-final.wav",
+  "soundtrack": "assets/audio/pocket-groove-final.wav",
   "duration": 15,
   "fps": 120
 }

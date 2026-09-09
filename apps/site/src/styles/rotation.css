@@ -27,7 +27,7 @@
 .flow-connector svg { margin-left: -5px; }
 .roster-core { position: relative; display: flex; align-items: center; flex-direction: column; justify-content: center; gap: 15px; min-height: 164px; margin-inline: 6px; border-radius: 14px; color: var(--on-brand); background: var(--brand-surface); border: 1px solid var(--brand-border); box-shadow: var(--brand-shadow); text-decoration: none; transition: transform var(--duration) var(--ease-out); }
 .roster-core:hover { transform: translateY(-2px); }
-.core-lockup { display: block; width: 178px; height: 38px; }
+.core-lockup { display: block; width: 148px; height: 40.90px; }
 .core-lockup img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .core-description { font-size: 12px; color: var(--brand-muted); }
 .core-default { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; color: var(--brand-muted); border-top: 1px solid var(--brand-divider); padding-top: 13px; }
@@ -54,7 +54,7 @@
 @media (max-width: 1024px) {
   .local-router { padding: 24px; }
   .rotation-flow { grid-template-columns: 1fr 38px 1.15fr 38px 1fr; padding-inline: 0; }
-  .core-lockup { width: 150px; height: 32.02px; }
+  .core-lockup { width: 128px; height: 35.38px; }
   .flow-node h3 { font-size: 18px; }
   .tool-glyphs { gap: 4px; }
   .tool-glyphs > span { width: 39px; height: 43px; }
@@ -66,7 +66,7 @@
   .local-machine { padding-inline: 16px; }
   .rotation-flow { grid-template-columns: 1fr 26px 1.2fr 26px 1fr; }
   .core-default { font-size: 9px; gap: 3px; }
-  .core-lockup { width: 134px; height: 28.6px; }
+  .core-lockup { width: 116px; height: 32.06px; }
   .flow-node p { font-size: 11px; }
   .tool-glyphs > span { width: 33px; height: 39px; }
   .tool-glyphs img, .tool-glyphs svg { width: 23px; height: 23px; }
@@ -98,7 +98,7 @@
   .flow-connector span { left: 12px; top: 12px; width: auto; }
   .flow-connector svg { position: absolute; bottom: -5px; left: -7px; margin: 0; transform: rotate(90deg); }
   .roster-core { width: min(100%, 250px); min-height: 160px; margin: 0; gap: 12px; }
-  .core-lockup { width: 170px; height: 36.29px; }
+  .core-lockup { width: 142px; height: 39.25px; }
   .core-description { font-size: 13px; }
   .core-default { font-size: 11px; gap: 7px; }
   .tool-glyphs > span { width: 43px; height: 44px; }

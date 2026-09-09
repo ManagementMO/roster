@@ -35,7 +35,7 @@
         "start_time": "0.000000",
         "duration_ts": 230400,
         "duration": "15.000000",
-        "bit_rate": "2166597",
+        "bit_rate": "2159420",
         "bits_per_raw_sample": "8",
         "nb_frames": "1800",
         "extradata_size": 52,
@@ -89,7 +89,7 @@
         "start_time": "0.000000",
         "duration_ts": 720000,
         "duration": "15.000000",
-        "bit_rate": "265490",
+        "bit_rate": "262505",
         "nb_frames": "705",
         "extradata_size": 5,
         "disposition": {
@@ -128,8 +128,8 @@
       "format_long_name": "QuickTime / MOV",
       "start_time": "0.000000",
       "duration": "15.000000",
-      "size": "4585434",
-      "bit_rate": "2445564",
+      "size": "4566371",
+      "bit_rate": "2435397",
       "probe_score": 100,
       "tags": {
         "major_brand": "isom",
@@ -175,7 +175,7 @@
         "start_time": "0.000000",
         "duration_ts": 230400,
         "duration": "15.000000",
-        "bit_rate": "848509",
+        "bit_rate": "836912",
         "bits_per_raw_sample": "8",
         "nb_frames": "900",
         "extradata_size": 52,
@@ -229,7 +229,7 @@
         "start_time": "0.000000",
         "duration_ts": 720000,
         "duration": "15.000000",
-        "bit_rate": "265490",
+        "bit_rate": "262505",
         "nb_frames": "705",
         "extradata_size": 5,
         "disposition": {
@@ -268,8 +268,8 @@
       "format_long_name": "QuickTime / MOV",
       "start_time": "0.000000",
       "duration": "15.000000",
-      "size": "2114076",
-      "bit_rate": "1127507",
+      "size": "2086789",
+      "bit_rate": "1112954",
       "probe_score": 100,
       "tags": {
         "major_brand": "isom",
@@ -315,7 +315,7 @@
         "start_time": "0.000000",
         "duration_ts": 230400,
         "duration": "15.000000",
-        "bit_rate": "418015",
+        "bit_rate": "413912",
         "bits_per_raw_sample": "8",
         "nb_frames": "900",
         "extradata_size": 50,
@@ -369,7 +369,7 @@
         "start_time": "0.000000",
         "duration_ts": 720000,
         "duration": "15.000000",
-        "bit_rate": "265490",
+        "bit_rate": "262505",
         "nb_frames": "705",
         "extradata_size": 5,
         "disposition": {
@@ -408,8 +408,8 @@
       "format_long_name": "QuickTime / MOV",
       "start_time": "0.000000",
       "duration": "15.000000",
-      "size": "1307105",
-      "bit_rate": "697122",
+      "size": "1293758",
+      "bit_rate": "690004",
       "probe_score": 100,
       "tags": {
         "major_brand": "isom",
@@ -419,7 +419,7 @@
       }
     }
   },
-  "assets/audio/full-send-final.wav": {
+  "assets/audio/pocket-groove-final.wav": {
     "streams": [
       {
         "index": 0,
@@ -465,68 +465,7 @@
       }
     ],
     "format": {
-      "filename": "assets/audio/full-send-final.wav",
-      "nb_streams": 1,
-      "nb_programs": 0,
-      "nb_stream_groups": 0,
-      "format_name": "wav",
-      "format_long_name": "WAV / WAVE (Waveform Audio)",
-      "duration": "15.000000",
-      "size": "4320102",
-      "bit_rate": "2304054",
-      "probe_score": 99,
-      "tags": {
-        "encoder": "Lavf62.12.102"
-      }
-    }
-  },
-  "assets/audio/full-send-score.wav": {
-    "streams": [
-      {
-        "index": 0,
-        "codec_name": "pcm_s24le",
-        "codec_long_name": "PCM signed 24-bit little-endian",
-        "codec_type": "audio",
-        "codec_tag_string": "[1][0][0][0]",
-        "codec_tag": "0x0001",
-        "sample_fmt": "s32",
-        "sample_rate": "48000",
-        "channels": 2,
-        "channel_layout": "stereo",
-        "bits_per_sample": 24,
-        "initial_padding": 0,
-        "r_frame_rate": "0/0",
-        "avg_frame_rate": "0/0",
-        "time_base": "1/48000",
-        "duration_ts": 720000,
-        "duration": "15.000000",
-        "bit_rate": "2304000",
-        "bits_per_raw_sample": "24",
-        "disposition": {
-          "default": 0,
-          "dub": 0,
-          "original": 0,
-          "comment": 0,
-          "lyrics": 0,
-          "karaoke": 0,
-          "forced": 0,
-          "hearing_impaired": 0,
-          "visual_impaired": 0,
-          "clean_effects": 0,
-          "attached_pic": 0,
-          "timed_thumbnails": 0,
-          "non_diegetic": 0,
-          "captions": 0,
-          "descriptions": 0,
-          "metadata": 0,
-          "dependent": 0,
-          "still_image": 0,
-          "multilayer": 0
-        }
-      }
-    ],
-    "format": {
-      "filename": "assets/audio/full-send-score.wav",
+      "filename": "assets/audio/pocket-groove-final.wav",
       "nb_streams": 1,
       "nb_programs": 0,
       "nb_stream_groups": 0,
@@ -566,7 +505,7 @@
         "start_time": "0.000000",
         "duration_ts": 720000,
         "duration": "15.000000",
-        "bit_rate": "265490",
+        "bit_rate": "262505",
         "nb_frames": "705",
         "extradata_size": 5,
         "disposition": {
@@ -605,8 +544,8 @@
       "format_long_name": "QuickTime / MOV",
       "start_time": "0.000000",
       "duration": "15.000000",
-      "size": "502130",
-      "bit_rate": "267802",
+      "size": "496524",
+      "bit_rate": "264812",
       "probe_score": 100,
       "tags": {
         "major_brand": "M4A ",
@@ -616,7 +555,7 @@
       }
     }
   },
-  "assets/audio/five-in-motion-full-send.m4a": {
+  "assets/audio/roster-pocket-groove.m4a": {
     "streams": [
       {
         "index": 0,
@@ -641,7 +580,7 @@
         "start_time": "0.000000",
         "duration_ts": 720000,
         "duration": "15.000000",
-        "bit_rate": "265490",
+        "bit_rate": "262505",
         "nb_frames": "705",
         "extradata_size": 5,
         "disposition": {
@@ -672,7 +611,7 @@
       }
     ],
     "format": {
-      "filename": "assets/audio/five-in-motion-full-send.m4a",
+      "filename": "assets/audio/roster-pocket-groove.m4a",
       "nb_streams": 1,
       "nb_programs": 0,
       "nb_stream_groups": 0,
@@ -680,8 +619,8 @@
       "format_long_name": "QuickTime / MOV",
       "start_time": "0.000000",
       "duration": "15.000000",
-      "size": "502130",
-      "bit_rate": "267802",
+      "size": "496524",
+      "bit_rate": "264812",
       "probe_score": 100,
       "tags": {
         "major_brand": "M4A ",

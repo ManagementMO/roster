@@ -1,8 +1,8 @@
-# Roster — five-part R identity
+# Roster — unified five-part R wordmark
 
-The owner-approved Roster identity, created and optically refined September 8, 2026. The mark combines five coordinated shapes into a recognizable R. It connects to the product's starting-five idea, the selection of a useful subset of capabilities, and the direction of a routed call. Five is a brand metaphor for the default draft size; the product's configurable limit remains unchanged.
+The Roster logo reads **Roster once**: the unique five-part R is the initial letter, followed by the outlined letters **oster**. There is no separate badge next to another capital R. Created and optically refined September 8, 2026, the five-part mark connects to the product's starting-five idea and the direction of a routed call. Five is a brand metaphor; the product's configurable limit remains unchanged.
 
-The refined symbol has 40-unit stems instead of 50, a silhouette about 13% narrower, and wider interior gaps. Its lower vertical stem is 80 units long rather than the first slim version's 60; the diagonal extends by the same 20 units. The full symbol is about 10% taller, centered in the same 256×256 grid. The curves and diagonal were redrawn individually, preserving smooth geometry. The outlined “Roster” lettering is identical to the approved original. Earlier full-weight and short-leg variants are preserved under `verification/before-slim-r/` and `verification/before-longer-legs/`.
+The symbol retains the approved 40-unit stems, open gaps, 80-unit lower stem and extended diagonal, centered in the same 256×256 grid. In the wordmark, the whole symbol is scaled uniformly to the Space Grotesk cap height and aligned to the lettering baseline. The five remaining letters retain the same Space Grotesk 700 outlines. The unified wordmark uses a 926.258×256 viewBox and an 18-unit optical gap before the o. Earlier identities are preserved in ignored verification backups.
 
 ## Preview
 
@@ -37,11 +37,12 @@ Every SVG is a real vector. All three horizontal SVGs contain outlined letter sh
 - Ink `#172033` is the dark monochrome version; navy `#151B29` is the film background.
 - Use the pearl mark on navy or cobalt. Keep all five components the same color.
 - Preserve the mark's proportions, corner geometry and open gaps. The master uses a 256×256 viewBox with internal clear space.
-- Use the favicon/app-icon variant for a compact contained identity. The stand-alone symbol is useful for headers, docs, routing diagrams and motion.
+- Use the complete unified wordmark in headers, docs, router nameplates, end cards and launch covers. Never append another spelled-out Roster to it.
+- Use the standalone five-part R for icon-only placements such as favicons, touch icons and compact semantic diagram nodes.
 - Vendor logos and semantic outcome colors remain independent of Roster's brand color.
 - The motion test assembles the five components with staggered arrivals and a restrained overshoot, then becomes still. The browser's reduced-motion setting disables the entrance animation.
 
-The canonical editable symbol is `roster-mark-cobalt.svg`. `build_assets.py` derives the colorways, transparent PNGs, contained icons, outlined wordmarks and static overview. `index.html` contains the interactive composition and five-piece motion test.
+The canonical editable symbol is `roster-mark-cobalt.svg`. `build_assets.py` derives the colorways, transparent PNGs, contained icons, unified wordmarks, layout metadata and static overview. `apply_wordmark.py` imports the pearl wordmark into the film assets, animated closing scene, identity motion board and self-contained League header. Run that import script from its location inside the repository. `index.html` contains the interactive presentation.
 
 ## Source and provenance
 
@@ -61,8 +62,9 @@ The design brief was grounded in `README.md`, the router's `DRAFT_TOOL` and `CAL
 
 ```sh
 uv run --with 'fonttools[woff]' --with uharfbuzz --with cairosvg python build_assets.py
+python3 apply_wordmark.py
 ```
 
 On Homebrew macOS, use `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` before that command so Cairo's installed shared library can be found. This affects only the command's environment.
 
-`asset-manifest.json` records the 32 exported SVG/PNG files and their hashes. `verification.json` records the five-component geometry, alpha checks, longer-leg proportions and unchanged outlined wordmarks. The final films, website header, mobile layout, dark docs and sharing image were visually inspected. The logo adoption is local; no remote publication was performed.
+`asset-manifest.json` records the 32 exported SVG/PNG files and their hashes. `wordmark-layout.json` records the baseline, scale and optical spacing. `verification.json` records the unchanged five-component symbol and the five outlined suffix letters. Current adoption and validation details are in `ADOPTION.md`.

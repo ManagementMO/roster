@@ -2,7 +2,9 @@
 
 A 15-second refinement of the first launch film: native 120 fps motion, modern two-tone vector icons, a pearl-and-cobalt palette with navy contrast, natural brand colors and vibrant illustrations, and a bright jazzy lo-fi groove with original picture-timed sound effects. The original 30-second production remains in `../roster-premiere/`.
 
-The current audio revision, **Pocket Groove**, replaces Full Send in Studio and all widescreen/feed exports. Rhodes, bass and light percussion supply a relaxed but active pulse; 37 small contacts, swishes and response sounds follow the product motion. The mix measures −14.03 LUFS and −2.00 dBTP after AAC encoding. Encoded video hashes are unchanged. See `MUSIC.md` and `verification/pocket-groove-delivery.json`; the historical notes below describe the earlier visual and pop-rock revisions.
+The current audio revision, **Pocket Groove**, replaces Full Send in Studio and all widescreen/feed exports. Rhodes, bass and light percussion supply a relaxed but active pulse; 37 small contacts, swishes and response sounds follow the product motion. The mix measures −14.03 LUFS and −2.00 dBTP after AAC encoding. See `MUSIC.md` and `verification/pocket-groove-delivery.json`.
+
+The full logo now reads **Roster** once: the unique five-part R is the initial letter, followed by outlined **oster**. The router nameplate and animated closing scene use the same canonical wordmark as the website and launch covers. All three exports, the poster and contact sheet were regenerated; the 15-second timing, Playwright handoff and accepted audio packets are unchanged. `verification/unified-wordmark.json` and `check-unified-wordmark.json` record current evidence. Older visual and pop-rock notes below describe their named historical revisions.
 
 ## Watch and listen
 
@@ -27,7 +29,7 @@ The five capability icons now use clean two-tone geometry on soft white cards: b
 
 The selected Playwright row now becomes the call endpoint: a single master-owned card and logo travel across the cut with a small overshoot, a restrained tilt and two diminishing rebounds from 7.10 to 8.20 seconds, then hand over to the destination at 8.225 seconds. The active movement now spans 132 native frames instead of 60, with a soft landing that finishes before the request arrives at 8.35 seconds. Other candidate text softens during selection while the icons keep their full colors. The remaining rows recede before the moving card crosses them. All movement uses deterministic GSAP transforms, and explicit elliptical corners keep the resizing surface rounded.
 
-Music is now **Five in Motion — Full Send**, an original 128 BPM pop-rock arrangement with layered electric guitars, picked bass, an acoustic rock kit, a major-key hook and a strong logo hit. Individual instrument recordings are from Karoryfer's CC0 sample libraries; the notes, rhythm and edit are custom to this film. No existing song or music loop is used. The five editable stems are drums, bass, rhythm guitars, guitar hook and product sound design. See `MUSIC.md`. The earlier electronic score and glossy icon scene are preserved in `verification/before-pop-rock/`; the first score is in `verification/before-ignition/`.
+The preceding score was **Five in Motion — Full Send**, an original 128 BPM pop-rock arrangement with layered electric guitars, picked bass, an acoustic rock kit, a major-key hook and a strong logo hit. Individual instrument recordings are from Karoryfer's CC0 sample libraries; the notes, rhythm and edit are custom to this film. No existing song or music loop is used. The five editable stems are drums, bass, rhythm guitars, guitar hook and product sound design. See `MUSIC.md`. The earlier electronic score and glossy icon scene are preserved in `verification/before-pop-rock/`; the first score is in `verification/before-ignition/`.
 
 ## Editable source
 
@@ -64,7 +66,7 @@ Open the editable Studio with `npm run dev`. `npm run seams` resolves the actual
 
 `npm run render` renders picture with HyperFrames and then combines it with the separately mastered score using FFmpeg. A temporary copy of the master omits only its audio element; the visual source is otherwise identical and its hash is recorded. This avoids HyperFrames 0.8.31's repeated audio-assembly rejection encountered on this score. The final audio is measured independently after muxing, and no dependency or global renderer file was modified.
 
-The illustrated workflow remains explicit. The closing release-status line was removed at the user's request. Product behavior and the earlier focused test evidence are documented in `PRODUCT-RESEARCH.md`. This revision changes only video-production files and has not been committed or published.
+The illustrated workflow remains explicit. The closing release-status line was removed at the user's request. Product behavior and the earlier focused test evidence are documented in `PRODUCT-RESEARCH.md`. Video-production checks do not establish a product release or website deployment.
 
 The preceding approved coral edit and its source files are preserved under `verification/before-pearl-cobalt/`, with original hashes in `sha256.json`. HTML backups use `.html.bak` to keep them out of the Studio composition inventory. The pop-rock audio master is unchanged in this visual revision.
 

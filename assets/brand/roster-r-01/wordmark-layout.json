@@ -1,0 +1,21 @@
+{
+  "revision": "02-unified-wordmark",
+  "text": "Roster",
+  "outlinedLetters": "oster",
+  "viewBox": [
+    0,
+    0,
+    926.258,
+    256
+  ],
+  "baseline": 232,
+  "initialTransform": {
+    "x": -11.859649122807014,
+    "y": 15.049122807017568,
+    "scale": 0.8964912280701753
+  },
+  "initialGeometry": "roster-mark-cobalt.svg",
+  "initialPieces": 5,
+  "initialToLetterGap": 18,
+  "fontWeight": 700
+}

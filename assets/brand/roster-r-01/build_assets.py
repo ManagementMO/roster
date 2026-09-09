@@ -16,6 +16,7 @@ import uharfbuzz as hb
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.boundsPen import BoundsPen
 
 BASE = Path(__file__).resolve().parent
 MASTER = BASE / "roster-mark-cobalt.svg"
@@ -61,14 +62,25 @@ face = hb.Face(ttf.getvalue())
 shaper = hb.Font(face)
 shaper.scale = (face.upem, face.upem)
 buffer = hb.Buffer()
-buffer.add_str("Roster")
+buffer.add_str("oster")
 buffer.guess_segment_properties()
 hb.shape(shaper, buffer, {"kern": True})
 glyphs = font.getGlyphSet()
 order = font.getGlyphOrder()
 scale = 292 / face.upem
 tracking = -6
-x = 280
+# The approved symbol is the initial letter, not a separate badge beside an R.
+# Scale the complete five-piece group uniformly to the font's cap height and
+# baseline. Its native component geometry and longer legs remain untouched.
+baseline = 232
+cap_pen = BoundsPen(glyphs)
+glyphs["R"].draw(cap_pen)
+mark_scale = cap_pen.bounds[3] * scale / 228
+mark_x = 24 - 40 * mark_scale
+mark_y = baseline - 242 * mark_scale
+first_pen = BoundsPen(glyphs)
+glyphs[order[buffer.glyph_infos[0].codepoint]].draw(first_pen)
+x = 24 + 175 * mark_scale + 18 - first_pen.bounds[0] * scale
 paths = []
 for glyph, pos in zip(buffer.glyph_infos, buffer.glyph_positions):
     pen = SVGPathPen(glyphs)
@@ -83,8 +95,8 @@ for label, color in colors.items():
     text_color = "#172033" if label == "cobalt" else color
     lockup = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} 256" '
               f'role="img" aria-labelledby="title"><title id="title">Roster</title>'
-              f'<g fill="{mark_color}">{geometry}</g>'
-              f'<g fill="{text_color}">{"".join(paths)}</g></svg>\n')
+              f'<g id="roster-initial" fill="{mark_color}" transform="translate({mark_x:.6f} {mark_y:.6f}) scale({mark_scale:.9f})">{geometry}</g>'
+              f'<g id="roster-letters" fill="{text_color}">{"".join(paths)}</g></svg>\n')
     (BASE / f"roster-lockup-{label}.svg").write_text(lockup)
     cairosvg.svg2png(bytestring=lockup.encode(), output_width=round(width * 2),
                     output_height=512, write_to=str(BASE / f"roster-lockup-{label}.png"))
@@ -107,8 +119,15 @@ cairosvg.svg2png(bytestring=board.encode(), write_to=str(BASE / 'roster-identity
 
 files = sorted([*BASE.glob("*.svg"), *BASE.glob("*.png")])
 manifest = {"concept": "Roster five-part R / 01 slim", "geometryPieces": 5,
-            "wordmark": "Space Grotesk 700, shaped and outlined", "files": [
+            "wordmark": "Five-part R initial plus Space Grotesk 700 oster, shaped and outlined", "files": [
                 {"path": p.name, "bytes": p.stat().st_size,
                  "sha256": hashlib.sha256(p.read_bytes()).hexdigest()} for p in files]}
 (BASE / "asset-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+(BASE / "wordmark-layout.json").write_text(json.dumps({
+    "revision": "02-unified-wordmark", "text": "Roster", "outlinedLetters": "oster",
+    "viewBox": [0, 0, width, 256], "baseline": baseline,
+    "initialTransform": {"x": mark_x, "y": mark_y, "scale": mark_scale},
+    "initialGeometry": "roster-mark-cobalt.svg", "initialPieces": 5,
+    "initialToLetterGap": 18, "fontWeight": 700,
+}, indent=2) + "\n")
 print(f"Exported {len(files)} vector and PNG assets. Outlined lockup: {width} × 256.")

@@ -44,7 +44,7 @@ At the transition, the SAME Playwright card lifts from its list position and bec
 
 10.3–12.3s: A compact local learning beat: a filled teal-blue database and restrained green SUCCESS, coral ERRORS, and amber LATENCY signals. “LEARNS WHAT WORKS. ON YOUR MACHINE.” Only tiny outcome indicators enter the store. Do not depict raw conversations being copied or claim every backend is offline.
 
-By 12.8s: Resolve the exact slender pearl R and wordmark on navy. Preserve the longer legs and component spacing. Closing copy: “Your local MCP tool router.” and “github.com/ManagementMO/roster”. Hold fully composed through 15s with only subtle light drift.
+By 12.8s: Resolve the exact unified pearl Roster wordmark on navy. The slender five-part R is the initial letter followed by oster; the name appears once, with no extra symbol or ordinary capital R. Preserve the longer legs, component spacing and common baseline. Closing copy: “Your local MCP tool router.” and “github.com/ManagementMO/roster”. Hold fully composed through 15s with only subtle light drift.
 
 Motion: swift, comprehensible, smooth acceleration and deceleration, short anticipation, tiny settled rebounds, sharp readable type. Controlled motion blur belongs on traveling surfaces, not essential words. Make transitions physically related to the thing moving through them.
 
@@ -64,7 +64,7 @@ Around 8s: The outgoing pulse reaches a tool node and returns as a small pearl p
 
 9.5–11.8s: Three tiny derived-outcome indicators separate from the returning path and settle into a nearby local memory element. Use semantic green, coral, and amber sparingly. Caption: “LEARNS LOCALLY.” The task and result continue on their path; do not imply raw prompts or results are stored in the outcome database.
 
-11.8–12.8s: Widen the camera as five architectural pieces align into the EXACT supplied slender five-part R. Respect its silhouette, spacing, stem width, and long legs. The environment becomes navy and the R resolves in pearl. The approved wordmark appears. End with “Your local MCP tool router.” and “github.com/ManagementMO/roster”, stable through 15s. Composite original identity assets if generation distorts them.
+11.8–12.8s: Widen the camera as five architectural pieces align into the EXACT supplied slender five-part R. Respect its silhouette, spacing, stem width, and long legs. The environment becomes navy and the R resolves in pearl as the initial letter of the unified Roster wordmark. The letters oster join it on the same baseline, with no second capital R or detached badge. End with “Your local MCP tool router.” and “github.com/ManagementMO/roster”, stable through 15s. Composite original identity assets if generation distorts them.
 
 Camera: one clear journey, two motivated hidden cuts, macro-to-wide scale changes, fluid acceleration, a short active arc, and a still final hold. Shallow depth of field only where it does not obscure mechanism or text. Convincing inertia and small rebounds. No handheld shake, arbitrary spinning, sudden lens warping, or slow establishing shot.
 

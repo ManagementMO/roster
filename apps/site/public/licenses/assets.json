@@ -128,14 +128,14 @@
   {
     "asset": "roster-lockup-cobalt.svg",
     "source": "assets/brand/roster-r-01/roster-lockup-cobalt.svg",
-    "sha256": "50e188196a1e7b6c24188b1a38e8a9d2555d0ad9a6c97b62169f30d3aa7cf631",
+    "sha256": "2738be4580adfa86ff9435a7e4149450202941a3c01632971d75c8fe79e62b47",
     "method": "Canonical slim five-part SVG, copied without changing geometry.",
     "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
   },
   {
     "asset": "roster-lockup-pearl.svg",
     "source": "assets/brand/roster-r-01/roster-lockup-pearl.svg",
-    "sha256": "a6f1003a1b264587cf7888f9c31c631a30c62b733e6ceda0f62aeed1b3bc62c9",
+    "sha256": "a798f49ab450c1506c4b9d10eb82a1b13118ff65bd7584628b721e3227bb33d5",
     "method": "Canonical slim five-part SVG, copied without changing geometry.",
     "license": "Owner-approved Roster identity. Outlined Space Grotesk uses SIL OFL 1.1."
   },
@@ -156,7 +156,7 @@
   {
     "asset": "social.png",
     "source": "scripts/render-assets.mjs and local identity assets",
-    "sha256": "8e0236efe96743d9a379183b4d09140e6c7cf629736ea98592ae2fcc962e6412",
+    "sha256": "bd9a1749c724e8b5a54f71dcdf120dfed0f5cdff943da721eb7429207650a1d4",
     "method": "Rendered from local vectors in isolated Chrome.",
     "license": "Roster artwork; font and vendor licenses are recorded separately."
   },

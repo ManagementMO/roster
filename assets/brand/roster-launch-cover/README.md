@@ -16,7 +16,11 @@ Secondary line: **Your local MCP tool router.**
 
 The covers use a matte navy background, pearl headline, cobalt emphasis, and five distinct tool brands: GitHub, Figma, Playwright, Linear and PostgreSQL. Each tool appears once per cover, with recognizable original-color artwork.
 
-## Generation and identity
+## Unified wordmark update
+
+The top-left logo now reads **Roster** once, using the unique five-part R as the first letter followed by **oster**. Both covers were edited with the built-in image-generation tool using the canonical unified pearl wordmark as the reference. Headline, supporting copy, native vendor colors, card layout and canvas dimensions were preserved. The exact edit prompts are in `prompt-landscape-unified-wordmark.txt` and `prompt-feed-unified-wordmark.txt`; preceding artwork remains in the ignored rollback folder.
+
+## Original generation and identity
 
 Both final PNGs were made with the built-in image-generation tool, using the approved launch film and the canonical slim R with longer legs as references. The full final prompts are in `prompt-landscape.txt` and `prompt-feed.txt`. The PNGs are copied directly from the generated originals without raster post-processing.
 
@@ -35,5 +39,4 @@ These are raster campaign illustrations. The canonical reusable identity remains
 
 Visually reviewed both final covers for headline spelling, clear hierarchy, unclipped content, palette consistency, five distinct brands and the slim R silhouette. Actual export dimensions, file sizes and SHA-256 hashes are recorded in `delivery.json`.
 
-No film timeline, website source, brand source vectors or public destinations were changed by the cover task.
-
+The covers accompany the matching unified wordmark in the current films, website and canonical vector kit.

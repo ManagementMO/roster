@@ -8,6 +8,7 @@ import {
   type LoadedArtifact,
 } from "./artifact.js";
 import { esc, fmt3, layout } from "./html.js";
+import { ROSTER_WORDMARK } from "./brand.js";
 
 export interface StandingsEntry {
   artifact: LoadedArtifact;
@@ -146,7 +147,7 @@ ${body}
     : `<b>SEASON 0</b> · Pre-season — standings unlock at the first human-certified task.`;
 
   const body = `<header>
-<div class="brandrow"><span class="wordmark">R<b>O</b>STER</span><span class="leaguetag">the mcp server leaderboard</span></div>
+<div class="brandrow"><span class="wordmark">${ROSTER_WORDMARK}</span><span class="leaguetag">the mcp server leaderboard</span></div>
 <h1 class="masthead">The League<span class="dot">.</span></h1>
 <p class="tag">Real tasks, verified outcomes, humble statistics. Every number on this page traces to an auditable run artifact.</p>
 <p class="seasonline">${seasonline}</p>

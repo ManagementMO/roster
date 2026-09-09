@@ -156,8 +156,7 @@ frame("04-call", `
   #s04-illustrative { left:76px;top:464px;font-size:28px;line-height:40px;letter-spacing:1.5px; }
   #s04-agent { left:64px;top:548px;width:208px;height:228px;font-size:50px; }
   #s04-roster { left:394px;top:548px;width:292px;height:228px; }
-  #s04-logo { left:84px;top:18px;width:120px;height:120px; }
-  #s04-roster-name { left:0;top:150px;width:288px;text-align:center;font-size:50px;letter-spacing:-2px; }
+  #s04-logo { left:25px;top:79px;width:238px;height:65.78px; }
   #s04-playwright { left:808px;top:548px;width:208px;height:228px; }
   #s04-playwright-logo { left:54px;top:30px;width:96px;height:96px; }
   #s04-playwright-name { left:0;top:150px;width:204px;text-align:center;font-size:36px;letter-spacing:-1.3px; }
@@ -193,11 +192,10 @@ frame("05-learn", `
 `, (html) => html.replace('d="M 1462 561 L 1462 602 Q 1462 647 1507 647 L 1796 647"', 'd="M 840 981 L 840 1002 Q 840 1069 900 1069 L 990 1069"'));
 
 frame("06-identity", `
-  #s06-mark { left:378px;top:246px;width:324px;height:324px; }
-  #s06-word { left:68px;top:592px;width:944px;height:262.87px; }
-  #s06-rule { left:98px;top:912px;width:884px;height:5px; }
-  #s06-tagline { left:68px;top:982px;width:944px;height:76px;font-size:52px;line-height:76px;letter-spacing:-1px; }
-  #s06-link { left:68px;top:1120px;width:944px;height:72px;font-size:48px;line-height:72px;letter-spacing:-.7px; }
+  #s06-word { left:68px;top:400px;width:944px;height:260.90px; }
+  #s06-rule { left:98px;top:764px;width:884px;height:5px; }
+  #s06-tagline { left:68px;top:828px;width:944px;height:76px;font-size:52px;line-height:76px;letter-spacing:-1px; }
+  #s06-link { left:68px;top:980px;width:944px;height:72px;font-size:48px;line-height:72px;letter-spacing:-.7px; }
 `);
 
 // The portrait carrier starts at the selected full-width row, then lands in

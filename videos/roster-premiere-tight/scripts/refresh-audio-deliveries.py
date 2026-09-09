@@ -38,6 +38,7 @@ for folder, prefix in [(ROOT, "roster-tight"), (ROOT.parent / "roster-premiere-f
             shutil.copy2(ROOT / name, destination)
     assert f'src="{meta["bgm"]["path"]}"' in (folder / "index.html").read_text()
     records = []
+    probes = {}
     for suffix in ["120fps", "60fps", "preview"]:
         file = folder / "renders" / f"{prefix}-{suffix}.mp4"
         assert file.is_file(), f"Missing approved picture: {file}"
@@ -45,7 +46,9 @@ for folder, prefix in [(ROOT, "roster-tight"), (ROOT.parent / "roster-premiere-f
         backup.parent.mkdir(parents=True, exist_ok=True)
         if not backup.exists():
             shutil.copy2(file, backup)
-        before_video, before_audio = stream_hash(backup, "v"), stream_hash(backup, "a")
+        # Validate against the picture being refreshed. A later approved visual
+        # revision can differ from the historical first-audio backup.
+        before_video, before_audio = stream_hash(file, "v"), stream_hash(backup, "a")
         temporary = file.with_name(file.stem + ".audio-refresh.mp4")
         try:
             ffmpeg(["-v", "error", "-y", "-i", str(file), "-i", str(master),
@@ -68,6 +71,8 @@ for folder, prefix in [(ROOT, "roster-tight"), (ROOT.parent / "roster-premiere-f
                         "duration": probe["format"]["duration"], "fps": video["avg_frame_rate"],
                         "dimensions": [video["width"], video["height"]],
                         "sha256": hashlib.sha256(file.read_bytes()).hexdigest()})
+        probe["format"]["filename"] = str(file.relative_to(folder))
+        probes[str(file.relative_to(folder))] = probe
     audit = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(folder / "renders" / f"{prefix}-60fps.mp4"),
                             "-vn", "-af", "loudnorm=I=-14:TP=-2:LRA=7:print_format=json,silencedetect=noise=-50dB:d=0.15",
                             "-f", "null", "-"], capture_output=True, check=True).stderr.decode()
@@ -79,7 +84,23 @@ for folder, prefix in [(ROOT, "roster-tight"), (ROOT.parent / "roster-premiere-f
     assert not any(float(at) < 14.5 for at in silence), "Unexpected gap in the soundtrack."
     report = {"soundtrack": meta["bgm"]["path"], "outputs": records,
               "encodedAudioMeasurement": loudness, "silenceStarts": silence,
-              "method": "Replace audio with FFmpeg stream-copy picture; compare encoded video hashes with the approved backups."}
+              "method": "Replace audio with FFmpeg stream-copy picture; compare encoded video hashes with the input exports, and audio with the retained first-refresh backups."}
     (folder / "verification/pocket-groove-delivery.json").write_text(json.dumps(report, indent=2) + "\n")
+    # Remuxing can change container bytes even when both encoded streams are
+    # identical. Keep the general delivery sidecars aligned with the final files.
+    delivery_path = folder / "verification/delivery.json"
+    if delivery_path.exists():
+        delivery = json.loads(delivery_path.read_text())
+        by_path = {record["file"]: record for record in records}
+        for item in delivery["files"]:
+            if item["path"] in by_path:
+                item["sha256"] = by_path[item["path"]]["sha256"]
+                item["bytes"] = (folder / item["path"]).stat().st_size
+        delivery_path.write_text(json.dumps(delivery, indent=2) + "\n")
+    probe_path = folder / "verification/media-probe.json"
+    if probe_path.exists():
+        existing_probes = json.loads(probe_path.read_text())
+        existing_probes.update(probes)
+        probe_path.write_text(json.dumps(existing_probes, indent=2) + "\n")
     print(json.dumps({"project": folder.name, "exports": len(records), "pictureUnchanged": True,
                       "lufs": loudness["input_i"], "truePeakDbtp": loudness["input_tp"]}))

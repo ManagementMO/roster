@@ -13,7 +13,7 @@ Sound design includes small opening-card pops, five softer capability contacts, 
 - Source metadata, digest, tempo treatment, event times and mastering settings: `verification/pocket-groove-mix.json`.
 - Export hashes and encoded-audio checks: `verification/pocket-groove-delivery.json` in both editions.
 
-The encoded outputs measure −14.03 LUFS integrated and −2.00 dBTP. No unexpected silence was detected. All six exports preserve the approved encoded video stream exactly; only the soundtrack was replaced. These checks establish timing, media integrity and levels. The owner accepted this revision on September 8, 2026.
+The encoded outputs measure −14.03 LUFS integrated and −2.00 dBTP. No unexpected silence was detected. The audio-only revision preserved the existing picture. The subsequent unified-wordmark revision re-rendered picture while retaining the same accepted audio packets; its current evidence is in each edition's `verification/unified-wordmark.json`. The audio-refresh check compares encoded picture before and after that remux operation, allowing later visual revisions without treating the older backup as the current picture baseline. These checks establish timing, media integrity and levels. The owner accepted this revision on September 8, 2026.
 
 `verification/pocket-groove-approval.json` records that acceptance against the exact master and listening-copy SHA-256 hashes. An identical rebuild retains the accepted status in `pocket-groove-mix.json`; any changed audio is marked pending until it is auditioned and accepted separately.
 
