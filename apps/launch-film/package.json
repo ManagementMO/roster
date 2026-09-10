@@ -28,16 +28,16 @@
     "render:redesign-before-after": "node scripts/render-before-after.mjs"
   },
   "dependencies": {
-    "@remotion/media": "4.0.496",
+    "@remotion/media": "4.0.521",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "remotion": "4.0.496",
-    "zod": "4.3.6"
+    "remotion": "4.0.521",
+    "zod": "4.5.4"
   },
   "devDependencies": {
-    "@remotion/cli": "4.0.496",
-    "@types/react": "19.2.17",
-    "@types/react-dom": "19.2.3",
+    "@remotion/cli": "4.0.521",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   }
