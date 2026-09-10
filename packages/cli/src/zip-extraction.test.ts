@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { DENSE_ADM_ZIP_TARBALL } from "./dense.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 
 interface ZipEntry {
   entryName: string;
@@ -80,8 +81,14 @@ describe.each(modes)("ZIP extraction through ONNX: %s", (mode) => {
       const outside = path.join(base, "outside");
       fs.mkdirSync(outside);
       const sentinel = path.join(outside, "payload.txt");
-      fs.writeFileSync(sentinel, "original", { mode: 0o640 });
-      const beforeMode = fs.statSync(sentinel).mode;
+      const sentinelFd = fs.openSync(sentinel, "wx", 0o640);
+      let beforeMode: number;
+      try {
+        fs.writeFileSync(sentinelFd, "original");
+        beforeMode = fs.fstatSync(sentinelFd).mode;
+      } finally {
+        fs.closeSync(sentinelFd);
+      }
       const target = path.join(base, "target");
       const directoryLink = process.platform === "win32" ? "junction" : "dir";
       if (attack === "root") fs.symlinkSync(outside, target, directoryLink);
@@ -102,7 +109,7 @@ describe.each(modes)("ZIP extraction through ONNX: %s", (mode) => {
       const source = new Zip();
       source.addFile(entry, Buffer.from("replacement"));
       await expect(extract(new Zip(source.toBuffer()), mode, destination, entry)).rejects.toThrow();
-      expect(fs.readFileSync(sentinel, "utf8")).toBe("original");
+      expect(readRegularFileNoFollow(sentinel).toString("utf8")).toBe("original");
       expect(fs.statSync(sentinel).mode).toBe(beforeMode);
       expect(fs.existsSync(path.join(outside, "not-created.txt"))).toBe(false);
       expect(fs.existsSync(path.join(outside, "deeper"))).toBe(false);
