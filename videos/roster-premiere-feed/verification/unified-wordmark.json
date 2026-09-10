@@ -1,0 +1,120 @@
+{
+  "revision": "02-unified-wordmark",
+  "verifiedAt": "2026-09-09T04:08:36.933353+00:00",
+  "wordmark": {
+    "text": "Roster",
+    "initial": "canonical five-part R",
+    "suffix": "oster",
+    "initialGeometryUnchanged": true,
+    "canonicalAsset": "../../assets/brand/roster-r-01/roster-lockup-pearl.svg",
+    "canonicalSha256": "a798f49ab450c1506c4b9d10eb82a1b13118ff65bd7584628b721e3227bb33d5"
+  },
+  "sources": [
+    {
+      "path": "index.html",
+      "sha256": "e9a12dedb8fea5e8769434acd60ff0ec6d8f47c064c3702c051ccce5ce399876"
+    },
+    {
+      "path": "compositions/frames/04-call.html",
+      "sha256": "903bee65c2349842f138607b91fbd0734e232c4c72c59ed74af0a06cdb05fb08"
+    },
+    {
+      "path": "compositions/frames/06-identity.html",
+      "sha256": "d173bf340403ec14f147a76225e5f65c31e26d9588e1fc8e618669327df577a1"
+    },
+    {
+      "path": "assets/roster-wordmark-pearl.svg",
+      "sha256": "a798f49ab450c1506c4b9d10eb82a1b13118ff65bd7584628b721e3227bb33d5"
+    }
+  ],
+  "checks": {
+    "file": "verification/check-unified-wordmark.json",
+    "ok": true,
+    "findings": 0,
+    "motionSamples": 300,
+    "contrastPassed": 42
+  },
+  "outputs": [
+    {
+      "file": "renders/roster-feed-120fps.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=9fa8e13d65f33edf8497edd1a2f2820952331359c91c7e0d07c03c1552e438d7",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "120/1",
+      "dimensions": [
+        1080,
+        1350
+      ],
+      "sha256": "881c8b7ae462c94965d4e08a67dcaeeb62da35441f22a88eca667c7f0e5bba6c",
+      "frames": 1800,
+      "audioMatchesPreviousIdentity": true
+    },
+    {
+      "file": "renders/roster-feed-60fps.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=2b565aa1fdcefa60ec57014df3a874f2435334cb34f94f134edab01f7a060c06",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        1080,
+        1350
+      ],
+      "sha256": "fa23ad4aa6131dc34a9bd5f22d325af52b54219ebc7d2ccbb6013ac6defee157",
+      "frames": 900,
+      "audioMatchesPreviousIdentity": true
+    },
+    {
+      "file": "renders/roster-feed-preview.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=0bc1539377ae0b6e09fe939bb734b7eee4b3b6b6befe6dbaeb934464e79c7612",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        864,
+        1080
+      ],
+      "sha256": "e672bcbad31b3ff0f041e3bae9e3df67be1603f92387d962ede86bd5d93db94d",
+      "frames": 900,
+      "audioMatchesPreviousIdentity": true
+    }
+  ],
+  "audio": {
+    "soundtrack": "Pocket Groove",
+    "masterSha256": "4153daa51f71e0d32346a79a5c1298c1ffd6796c388702d68f2e67813eeeea3b",
+    "unchangedFromAcceptedMaster": true,
+    "encodedMeasurement": {
+      "input_i": "-14.03",
+      "input_tp": "-2.00",
+      "input_lra": "0.70",
+      "input_thresh": "-24.07",
+      "output_i": "-13.96",
+      "output_tp": "-2.00",
+      "output_lra": "0.60",
+      "output_thresh": "-23.98",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.04"
+    }
+  },
+  "visualReview": {
+    "encodedPoster": "renders/roster-feed-poster.png",
+    "encodedContactSheet": "renders/roster-feed-contact-sheet.png",
+    "timelineSeconds": [
+      9.75,
+      12.3,
+      12.7,
+      14.1,
+      14.55
+    ],
+    "reviewed": [
+      "One complete Roster word in router node and closing scene",
+      "Five-piece R assembly settles before final reading hold",
+      "Original vendor colors and restored Playwright label and outline retained"
+    ]
+  }
+}

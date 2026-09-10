@@ -1,7 +1,7 @@
 {
   "concept": "Roster five-part R / 01 slim",
   "geometryPieces": 5,
-  "wordmark": "Space Grotesk 700, shaped and outlined",
+  "wordmark": "Five-part R initial plus Space Grotesk 700 oster, shaped and outlined",
   "files": [
     {
       "path": "roster-favicon-pearl.svg",
@@ -65,43 +65,43 @@
     },
     {
       "path": "roster-identity-preview.png",
-      "bytes": 50051,
-      "sha256": "1ccbb87994b497125ff59e0d4ce8ff471cc64d706588e28630bb22280a2fbb7a"
+      "bytes": 46885,
+      "sha256": "ff6a8593d56a2b1fd2b73537487c366521d56b9779071357b8a086d8d40c862a"
     },
     {
       "path": "roster-identity-preview.svg",
-      "bytes": 5477,
-      "sha256": "4aa52297a6757999f5e39cd7de81223ce1d75d7abf0b76538f86b6b25c56e513"
+      "bytes": 5202,
+      "sha256": "62ee7b1338e4c017c7bae38e9505dbff049a544f7de08d50b5a4fb61a6514eb6"
     },
     {
       "path": "roster-lockup-cobalt.png",
-      "bytes": 55598,
-      "sha256": "330687f40dcbd1637f9770ca5c761091768d1a527b40c34883853bae93fd412e"
+      "bytes": 47516,
+      "sha256": "bb7d7fb6911b1ea93beb9fce66032271de4f9a906a585fc6442576645426a52f"
     },
     {
       "path": "roster-lockup-cobalt.svg",
-      "bytes": 3009,
-      "sha256": "50e188196a1e7b6c24188b1a38e8a9d2555d0ad9a6c97b62169f30d3aa7cf631"
+      "bytes": 2734,
+      "sha256": "2738be4580adfa86ff9435a7e4149450202941a3c01632971d75c8fe79e62b47"
     },
     {
       "path": "roster-lockup-ink.png",
-      "bytes": 55057,
-      "sha256": "5bd95629eae2c177936b95e7a8d96c51f40917285f111b2873524f9de965c58c"
+      "bytes": 46933,
+      "sha256": "d86e6980a2f945578bbf395ea31a92bdcc446bd039ee6fd64638f227fc199d14"
     },
     {
       "path": "roster-lockup-ink.svg",
-      "bytes": 3009,
-      "sha256": "1ac67c67afa148a9958cd71b7c0c16cd586f2d099fd8d0636d77c38a8d10a404"
+      "bytes": 2734,
+      "sha256": "4c2b52d56741d274b69cac76eeca45b4c11778bd0e1eb0dbc13016e193c101aa"
     },
     {
       "path": "roster-lockup-pearl.png",
-      "bytes": 52710,
-      "sha256": "8a90c011aac74f8ec7f05d7aec6840eeeef48a00d0ff2a891824c9ff62c863c8"
+      "bytes": 44769,
+      "sha256": "12699427765fc91019e7ad3f371f9b1c9d9f70535e447ec50360181c421820a9"
     },
     {
       "path": "roster-lockup-pearl.svg",
-      "bytes": 3009,
-      "sha256": "a6f1003a1b264587cf7888f9c31c631a30c62b733e6ceda0f62aeed1b3bc62c9"
+      "bytes": 2734,
+      "sha256": "a798f49ab450c1506c4b9d10eb82a1b13118ff65bd7584628b721e3227bb33d5"
     },
     {
       "path": "roster-mark-cobalt-1024.png",

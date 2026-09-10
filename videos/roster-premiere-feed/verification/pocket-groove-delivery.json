@@ -1,0 +1,61 @@
+{
+  "soundtrack": "assets/audio/pocket-groove-final.wav",
+  "outputs": [
+    {
+      "file": "renders/roster-feed-120fps.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=9fa8e13d65f33edf8497edd1a2f2820952331359c91c7e0d07c03c1552e438d7",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "120/1",
+      "dimensions": [
+        1080,
+        1350
+      ],
+      "sha256": "881c8b7ae462c94965d4e08a67dcaeeb62da35441f22a88eca667c7f0e5bba6c"
+    },
+    {
+      "file": "renders/roster-feed-60fps.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=2b565aa1fdcefa60ec57014df3a874f2435334cb34f94f134edab01f7a060c06",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        1080,
+        1350
+      ],
+      "sha256": "fa23ad4aa6131dc34a9bd5f22d325af52b54219ebc7d2ccbb6013ac6defee157"
+    },
+    {
+      "file": "renders/roster-feed-preview.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=0bc1539377ae0b6e09fe939bb734b7eee4b3b6b6befe6dbaeb934464e79c7612",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        864,
+        1080
+      ],
+      "sha256": "e672bcbad31b3ff0f041e3bae9e3df67be1603f92387d962ede86bd5d93db94d"
+    }
+  ],
+  "encodedAudioMeasurement": {
+    "input_i": "-14.03",
+    "input_tp": "-2.00",
+    "input_lra": "0.70",
+    "input_thresh": "-24.07",
+    "output_i": "-13.96",
+    "output_tp": "-2.00",
+    "output_lra": "0.60",
+    "output_thresh": "-23.98",
+    "normalization_type": "dynamic",
+    "target_offset": "-0.04"
+  },
+  "silenceStarts": [],
+  "method": "Replace audio with FFmpeg stream-copy picture; compare encoded video hashes with the input exports, and audio with the retained first-refresh backups."
+}

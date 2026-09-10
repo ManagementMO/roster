@@ -1,0 +1,283 @@
+{
+  "title": "Roster \u2014 Pocket Groove",
+  "duration": 15.0,
+  "sampleRate": 48000,
+  "music": {
+    "provider": "HeyGen audio catalog",
+    "id": "42cc02db157645af90a944d8bd53e77a",
+    "catalogDescription": "upbeat light jazzy track, bright upright bass, brushed drums, Rhodes keys, muted horns, medium-fast tempo 110-125 BPM, instrumental",
+    "sourceExcerptSeconds": [
+      7.704,
+      23.704
+    ],
+    "estimatedSourceBpm": 125,
+    "tempoMultiplier": 1.024,
+    "targetBpm": 128,
+    "pitchPreserved": true,
+    "sourceFile": "assets/audio/pocket-groove-source.flac",
+    "sourceSha256": "1c63fd8f8f4b999315be21227f120c0215b705506cb9e0bfd40044b48ec032ee"
+  },
+  "soundDesign": {
+    "authorship": "Original synthesized picture-timed effects",
+    "seed": 202609081,
+    "events": [
+      {
+        "seconds": 0.08,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": -0.32
+      },
+      {
+        "seconds": 0.17,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": -0.23
+      },
+      {
+        "seconds": 0.25,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": -0.14
+      },
+      {
+        "seconds": 0.34,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": -0.04999999999999999
+      },
+      {
+        "seconds": 0.43,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": 0.03999999999999998
+      },
+      {
+        "seconds": 0.51,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": 0.12999999999999995
+      },
+      {
+        "seconds": 0.6,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": 0.22000000000000003
+      },
+      {
+        "seconds": 0.68,
+        "name": "opening card pop",
+        "gain": 0.031,
+        "pan": 0.31
+      },
+      {
+        "seconds": 1.685,
+        "name": "short scene swish",
+        "gain": 0.053,
+        "pan": -0.06
+      },
+      {
+        "seconds": 2.055,
+        "name": "starting-five card",
+        "gain": 0.039,
+        "pan": -0.3
+      },
+      {
+        "seconds": 2.135,
+        "name": "starting-five card",
+        "gain": 0.039,
+        "pan": -0.15
+      },
+      {
+        "seconds": 2.205,
+        "name": "starting-five card",
+        "gain": 0.039,
+        "pan": 0.0
+      },
+      {
+        "seconds": 2.265,
+        "name": "starting-five card",
+        "gain": 0.039,
+        "pan": 0.14999999999999997
+      },
+      {
+        "seconds": 2.315,
+        "name": "starting-five card",
+        "gain": 0.039,
+        "pan": 0.3
+      },
+      {
+        "seconds": 3.56,
+        "name": "short scene swish",
+        "gain": 0.053,
+        "pan": -0.06
+      },
+      {
+        "seconds": 4.57,
+        "name": "draft submitted",
+        "gain": 0.073,
+        "pan": -0.12
+      },
+      {
+        "seconds": 5.2,
+        "name": "draft row arrival",
+        "gain": 0.027,
+        "pan": 0.06
+      },
+      {
+        "seconds": 5.31,
+        "name": "draft row arrival",
+        "gain": 0.027,
+        "pan": 0.095
+      },
+      {
+        "seconds": 5.41,
+        "name": "draft row arrival",
+        "gain": 0.027,
+        "pan": 0.13
+      },
+      {
+        "seconds": 5.5,
+        "name": "draft row arrival",
+        "gain": 0.027,
+        "pan": 0.165
+      },
+      {
+        "seconds": 5.58,
+        "name": "draft row arrival",
+        "gain": 0.027,
+        "pan": 0.2
+      },
+      {
+        "seconds": 6.35,
+        "name": "Playwright selected",
+        "gain": 0.077,
+        "pan": 0.12
+      },
+      {
+        "seconds": 7.12,
+        "name": "Playwright lift",
+        "gain": 0.024,
+        "pan": 0.22
+      },
+      {
+        "seconds": 7.31,
+        "name": "short scene swish",
+        "gain": 0.053,
+        "pan": -0.06
+      },
+      {
+        "seconds": 8.2,
+        "name": "Playwright settled contact",
+        "gain": 0.12,
+        "pan": 0.28
+      },
+      {
+        "seconds": 8.35,
+        "name": "request sent",
+        "gain": 0.054,
+        "pan": 0.3
+      },
+      {
+        "seconds": 9.05,
+        "name": "snapshot returned",
+        "gain": 0.047,
+        "pan": -0.12
+      },
+      {
+        "seconds": 9.12,
+        "name": "snapshot response tail",
+        "gain": 0.032,
+        "pan": 0.08
+      },
+      {
+        "seconds": 10.1225,
+        "name": "short scene swish",
+        "gain": 0.053,
+        "pan": -0.06
+      },
+      {
+        "seconds": 10.5125,
+        "name": "local outcome recorded",
+        "gain": 0.038,
+        "pan": -0.18
+      },
+      {
+        "seconds": 10.6325,
+        "name": "local outcome recorded",
+        "gain": 0.038,
+        "pan": -0.07999999999999999
+      },
+      {
+        "seconds": 10.7425,
+        "name": "local outcome recorded",
+        "gain": 0.038,
+        "pan": 0.020000000000000018
+      },
+      {
+        "seconds": 11.1325,
+        "name": "local outcome recorded",
+        "gain": 0.038,
+        "pan": 0.12000000000000005
+      },
+      {
+        "seconds": 11.9975,
+        "name": "short scene swish",
+        "gain": 0.069,
+        "pan": -0.06
+      },
+      {
+        "seconds": 12.1875,
+        "name": "rounded logo arrival",
+        "gain": 0.065,
+        "pan": 0
+      },
+      {
+        "seconds": 12.1875,
+        "name": "logo C chime",
+        "gain": 0.044,
+        "pan": -0.16
+      },
+      {
+        "seconds": 12.2675,
+        "name": "logo G chime",
+        "gain": 0.032,
+        "pan": 0.18
+      }
+    ]
+  },
+  "dependencies": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1"
+  },
+  "normalization": {
+    "targetLufs": -14,
+    "targetTruePeakDbtp": -2,
+    "before": {
+      "input_i": "-15.81",
+      "input_tp": "-1.92",
+      "input_lra": "0.70",
+      "input_thresh": "-25.86",
+      "output_i": "-13.92",
+      "output_tp": "-2.00",
+      "output_lra": "0.70",
+      "output_thresh": "-23.94",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.08"
+    },
+    "after": {
+      "input_i": "-15.81",
+      "input_tp": "-1.92",
+      "input_lra": "0.70",
+      "input_thresh": "-25.86",
+      "output_i": "-13.99",
+      "output_tp": "-2.00",
+      "output_lra": "0.70",
+      "output_thresh": "-24.02",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.01"
+    }
+  },
+  "masterSha256": "4153daa51f71e0d32346a79a5c1298c1ffd6796c388702d68f2e67813eeeea3b",
+  "listeningCopySha256": "296da6b5f027932e81b0af8977840f107cc9a022c820e2b84ed7a689a43f6c27",
+  "listeningApproval": "The owner accepted the Pocket Groove revision on 2026-09-08."
+}

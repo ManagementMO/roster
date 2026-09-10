@@ -1,5 +1,5 @@
 {
-  "revision": "01-slim-longer-legs",
+  "revision": "02-unified-wordmark",
   "marks": [
     {
       "asset": "roster-mark-cobalt-1024.png",
@@ -48,7 +48,7 @@
     }
   ],
   "wordmarksAreOutlined": true,
-  "wordmarkGeometryUnchanged": true,
+  "wordmarkGeometryUnchanged": false,
   "stemWidthReductionPercent": 20,
   "silhouetteWidthReductionPercent": 13.15,
   "filledAreaReductionPercent": 14.19,
@@ -62,5 +62,11 @@
   "silhouetteHeightIncreasePercent": 9.62,
   "lowerStemLength": 80,
   "previousSlimLowerStemLength": 60,
-  "lowerLegExtension": 20
+  "lowerLegExtension": 20,
+  "initialGeometryUnchanged": true,
+  "standaloneIconBytesUnchanged": true,
+  "outlinedSuffix": "oster",
+  "outlinedSuffixGlyphs": 5,
+  "wordmarkLayout": "wordmark-layout.json",
+  "fullLogoReadsOnce": true
 }

@@ -16,19 +16,21 @@
       "path": "roster-launch-cover-landscape.png",
       "width": 1672,
       "height": 941,
-      "bytes": 1410911,
-      "sha256": "6d19b7a37e18a2c7211808d470a31e60ba0918d28300bf05d39ed8aff831d135",
-      "generatedOriginal": "exec-6870d594-9449-4e0d-bc92-bfc403508474.png",
-      "unchangedFromGeneratedOriginal": true
+      "bytes": 1383145,
+      "sha256": "92f7e4414203e6d8aede891c65a43d62eca756f4ac58e1c44167b746155df652",
+      "generatedOriginal": "exec-50460df4-5918-4aca-a0e9-1a9aa3ec4a11.png",
+      "unchangedFromGeneratedOriginal": true,
+      "editPrompt": "prompt-landscape-unified-wordmark.txt"
     },
     {
       "path": "roster-launch-cover-feed.png",
       "width": 1122,
       "height": 1402,
-      "bytes": 1391389,
-      "sha256": "25169aeb1343484defa7d0279ba8c0a59f2cdef6d2944ecded6d7f8bbcbd9fcc",
-      "generatedOriginal": "exec-3922859d-096c-4986-9df0-05f460c4b7e3.png",
-      "unchangedFromGeneratedOriginal": true
+      "bytes": 1405996,
+      "sha256": "4f1b3fa9e204fb42fc047718fb3fe809c8005d9e36292f86a895267a21307cc6",
+      "generatedOriginal": "exec-f92145a8-b05c-4f5e-a2a7-ec8ad376fc62.png",
+      "unchangedFromGeneratedOriginal": true,
+      "editPrompt": "prompt-feed-unified-wordmark.txt"
     }
   ],
   "visualReview": [
@@ -36,7 +38,8 @@
     "Five unique tool logos visible in each cover",
     "All headline, brand and tool elements inside the canvas",
     "Consistent navy, pearl, cobalt identity",
-    "Slim R silhouette checked visually"
+    "Slim R silhouette checked visually",
+    "Unified Roster name appears once, with the five-piece R as its first letter"
   ],
-  "localOnly": true
+  "revision": "02-unified-wordmark"
 }

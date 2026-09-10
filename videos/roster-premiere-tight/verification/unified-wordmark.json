@@ -1,0 +1,120 @@
+{
+  "revision": "02-unified-wordmark",
+  "verifiedAt": "2026-09-09T04:08:36.313104+00:00",
+  "wordmark": {
+    "text": "Roster",
+    "initial": "canonical five-part R",
+    "suffix": "oster",
+    "initialGeometryUnchanged": true,
+    "canonicalAsset": "../../assets/brand/roster-r-01/roster-lockup-pearl.svg",
+    "canonicalSha256": "a798f49ab450c1506c4b9d10eb82a1b13118ff65bd7584628b721e3227bb33d5"
+  },
+  "sources": [
+    {
+      "path": "index.html",
+      "sha256": "393a68fc70b74d2f056bd366429a09e4f3756a3a1b02bd1958e915e939347fdc"
+    },
+    {
+      "path": "compositions/frames/04-call.html",
+      "sha256": "86145737c15535e93243a8b8af743fa32e3ace640c70245fe266647bbef307e3"
+    },
+    {
+      "path": "compositions/frames/06-identity.html",
+      "sha256": "8eb3315611f36a13eac36982a3ff8ced76161d099b5080dcb4aaca74ad8139de"
+    },
+    {
+      "path": "assets/roster-wordmark-pearl.svg",
+      "sha256": "a798f49ab450c1506c4b9d10eb82a1b13118ff65bd7584628b721e3227bb33d5"
+    }
+  ],
+  "checks": {
+    "file": "verification/check-unified-wordmark.json",
+    "ok": true,
+    "findings": 0,
+    "motionSamples": 300,
+    "contrastPassed": 45
+  },
+  "outputs": [
+    {
+      "file": "renders/roster-tight-120fps.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=c5881d2705c4df64f4d7f8883fb390f3d2b99846f78259b9910687b958b95f09",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "120/1",
+      "dimensions": [
+        1920,
+        1080
+      ],
+      "sha256": "4b8897b6094ddc3eaa4efb52212bd4153f81e25194e855188aac561d9f32ff6b",
+      "frames": 1800,
+      "audioMatchesPreviousIdentity": true
+    },
+    {
+      "file": "renders/roster-tight-60fps.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=82c068497d5cf5fe03cf0d37f7fbd528005dec3863ec67314308b1978d5db19d",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        1920,
+        1080
+      ],
+      "sha256": "df9c0cda8f18448e4990c22960c65106677436cc8f25183f3db57756a148b20b",
+      "frames": 900,
+      "audioMatchesPreviousIdentity": true
+    },
+    {
+      "file": "renders/roster-tight-preview.mp4",
+      "pictureUnchanged": true,
+      "audioChangedFromBackup": true,
+      "videoStreamHash": "0,v,SHA256=62e4e2543625148024afe9a39e4bba2b91688f6cbc686752747a66f6ef3febde",
+      "audioStreamHash": "0,a,SHA256=f7274d9905c070e80ad05d145e8ff13e0a181516b25c9f32d0f245ba6e209ff9",
+      "duration": "15.000000",
+      "fps": "60/1",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "c3713b7eeb8d62f288d2152934322f2f52dd077f362fb5de80938a7c1365c2fc",
+      "frames": 900,
+      "audioMatchesPreviousIdentity": true
+    }
+  ],
+  "audio": {
+    "soundtrack": "Pocket Groove",
+    "masterSha256": "4153daa51f71e0d32346a79a5c1298c1ffd6796c388702d68f2e67813eeeea3b",
+    "unchangedFromAcceptedMaster": true,
+    "encodedMeasurement": {
+      "input_i": "-14.03",
+      "input_tp": "-2.00",
+      "input_lra": "0.70",
+      "input_thresh": "-24.07",
+      "output_i": "-13.96",
+      "output_tp": "-2.00",
+      "output_lra": "0.60",
+      "output_thresh": "-23.98",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.04"
+    }
+  },
+  "visualReview": {
+    "encodedPoster": "renders/roster-tight-poster.png",
+    "encodedContactSheet": "renders/roster-tight-contact-sheet.png",
+    "timelineSeconds": [
+      9.75,
+      12.3,
+      12.7,
+      14.1,
+      14.55
+    ],
+    "reviewed": [
+      "One complete Roster word in router node and closing scene",
+      "Five-piece R assembly settles before final reading hold",
+      "Original vendor colors and restored Playwright label and outline retained"
+    ]
+  }
+}

@@ -1,40 +1,40 @@
 {
-  "generatedAt": "2026-09-08T07:51:44.428Z",
+  "generatedAt": "2026-09-08T22:36:07.958Z",
   "files": [
     {
       "path": "renders/roster-tight-120fps.mp4",
-      "bytes": 5746173,
-      "sha256": "171e3fe007fbf2eeea0db701ebb0b83df13bdc58e4b8b63b558eb483c1e5b15a"
+      "bytes": 5767947,
+      "sha256": "4b8897b6094ddc3eaa4efb52212bd4153f81e25194e855188aac561d9f32ff6b"
     },
     {
       "path": "renders/roster-tight-60fps.mp4",
-      "bytes": 2568614,
-      "sha256": "baa05bfd831b284bf7d6d209c7ea3ae0abc67d389bd3795210d3f35bd25226c7"
+      "bytes": 2559885,
+      "sha256": "df9c0cda8f18448e4990c22960c65106677436cc8f25183f3db57756a148b20b"
     },
     {
       "path": "renders/roster-tight-preview.mp4",
-      "bytes": 1269834,
-      "sha256": "85742df1f631491a1be9af997d19f8f28ca694ec30b5c41fcd231c80b10aa2cd"
+      "bytes": 1262361,
+      "sha256": "c3713b7eeb8d62f288d2152934322f2f52dd077f362fb5de80938a7c1365c2fc"
     },
     {
       "path": "renders/roster-tight-poster.png",
-      "bytes": 187738,
-      "sha256": "c88bd6bf6a7d40aadcd24eb237229d5cac78447055a5d52f9797a61f39f2ddeb"
+      "bytes": 193720,
+      "sha256": "f88d210839e9b648b717b192ad8946599ac6d9e3fb8fe6825514517e7a37a067"
     },
     {
       "path": "renders/roster-tight-contact-sheet.png",
-      "bytes": 440080,
-      "sha256": "d66a892b468620d2c7e29395b763cb249b2dc1a4282ef6458e209180ba15351a"
+      "bytes": 441264,
+      "sha256": "2866d0de7ec9e1a4768b4f147a50b0b32813dad78feb62ed7373e7e5d71b8bf2"
     },
     {
       "path": "assets/audio/five-in-motion.m4a",
-      "bytes": 502130,
-      "sha256": "221250a73e9e1fe723e63d8ca2fc44fecf61c761fab81d2dd64a8202bc0f725e"
+      "bytes": 496524,
+      "sha256": "296da6b5f027932e81b0af8977840f107cc9a022c820e2b84ed7a689a43f6c27"
     },
     {
-      "path": "assets/audio/five-in-motion-full-send.m4a",
-      "bytes": 502130,
-      "sha256": "221250a73e9e1fe723e63d8ca2fc44fecf61c761fab81d2dd64a8202bc0f725e"
+      "path": "assets/audio/roster-pocket-groove.m4a",
+      "bytes": 496524,
+      "sha256": "296da6b5f027932e81b0af8977840f107cc9a022c820e2b84ed7a689a43f6c27"
     }
   ],
   "representativeSeconds": [
@@ -53,5 +53,5 @@
   },
   "detectedBlackSpans": [],
   "detectedSilence": [],
-  "loudnessSummary": "Summary:\n\n  Integrated loudness:\n    I:         -13.0 LUFS\n    Threshold: -23.2 LUFS\n\n  Loudness range:\n    LRA:         1.3 LU\n    Threshold: -33.2 LUFS\n    LRA low:   -14.1 LUFS\n    LRA high:  -12.8 LUFS\n\n  True peak:\n    Peak:       -1.8 dBFS\n[out#0/null @ 0xb5ac24300] video:745KiB audio:2816KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nframe= 1800 fps=0.0 q=-0.0 Lsize=N/A time=00:00:15.00 bitrate=N/A speed=22.9x elapsed=0:00:00.65    \n"
+  "loudnessSummary": "Encoded AAC: -14.03 LUFS integrated; 0.70 LU loudness range; -2.00 dBTP true peak."
 }

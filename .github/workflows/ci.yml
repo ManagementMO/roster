@@ -113,7 +113,7 @@ jobs:
       # binary, or a broken publishConfig BEFORE the registry does — the failure
       # mode is otherwise invisible until a stranger runs `npx -y @roster/cli`.
       - name: Pack, install elsewhere, and run the real binary
-        run: node scripts/verify-clean-install.mjs
+        run: node scripts/verify-clean-install.mjs --dense
 
   clean-install-windows:
     name: Clean external install · windows-latest

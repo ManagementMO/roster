@@ -13,7 +13,7 @@ test("the compact hero is centered and explains local, adaptive MCP routing", as
   await expect(page.getByRole("link", { name: "Agent prompt", exact: true })).toHaveAttribute("href", "#agent-setup");
 });
 
-test("colorful logo depth motion can be paused and pauses outside the viewport", async ({ page }) => {
+test("colorful logo depth motion runs automatically and pauses outside the viewport", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const stage = page.locator("logo-depth");
@@ -27,14 +27,7 @@ test("colorful logo depth motion can be paused and pauses outside the viewport",
   const position = () => logo.evaluate((element) => getComputedStyle(element).transform);
   const first = await position();
   await expect.poll(position).not.toBe(first);
-  await page.getByRole("button", { name: "Pause logo motion" }).click();
-  await expect(stage).toHaveAttribute("data-motion", "paused");
-  await logo.evaluate(async (element) => { await Promise.all(element.getAnimations().map((animation) => animation.ready)); });
-  const paused = await position();
-  await page.waitForTimeout(200);
-  expect(await position()).toBe(paused);
-  await page.getByRole("button", { name: "Resume logo motion" }).click();
-  await expect(stage).toHaveAttribute("data-motion", "running");
+  await expect(stage.getByRole("button")).toHaveCount(0);
   await page.locator(".setup-section").scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute("data-motion", "paused");
   await page.locator(".hero").scrollIntoViewIfNeeded();
@@ -45,6 +38,32 @@ test("reduced motion retains a static full-color composition", async ({ page }) 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator("logo-depth")).toHaveAttribute("data-motion", "still");
-  await expect(page.getByRole("button", { name: "Pause logo motion" })).toBeHidden();
+  await expect(page.locator("logo-depth").getByRole("button")).toHaveCount(0);
   expect(await page.locator(".depth-logo").evaluateAll((logos) => logos.every((logo) => getComputedStyle(logo).animationName === "none"))).toBe(true);
 });
+
+for (const width of [390, 1440]) {
+  test(`hero motion settles within five seconds and stays stopped at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const stage = page.locator("logo-depth");
+    await expect(stage).toHaveAttribute("data-motion", "running");
+    await expect(stage).toHaveAttribute("data-motion", "settled", { timeout: 5000 });
+    await expect(stage.getByRole("button")).toHaveCount(0);
+    const positions = () => stage.locator(".depth-logo").evaluateAll((logos) => logos.map((logo) => getComputedStyle(logo).transform));
+    const settled = await positions();
+    await page.waitForTimeout(250);
+    expect(await positions()).toEqual(settled);
+    expect(await stage.evaluate((element) => element.getAnimations({ subtree: true }).every((animation) => animation.playState === "paused"))).toBe(true);
+    await page.locator(".setup-section").scrollIntoViewIfNeeded();
+    await page.locator(".hero").scrollIntoViewIfNeeded();
+    await expect(stage).toHaveAttribute("data-motion", "settled");
+    expect(await positions()).toEqual(settled);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(stage).toHaveAttribute("data-motion", "still");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(stage).toHaveAttribute("data-motion", "settled");
+    expect(await stage.evaluate((element) => element.getAnimations({ subtree: true }).every((animation) => animation.playState !== "running"))).toBe(true);
+  });
+}

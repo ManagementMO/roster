@@ -2,6 +2,8 @@ node_modules/
 dist/
 bundle/
 *.tgz
+# Reviewed, immutable upstream security patch; provenance is in docs/security/adm-zip.md.
+!/vendor/adm-zip-7d90dea2bfd35bc4761d6c8cf822f26b59aeef77.tgz
 *.tsbuildinfo
 .DS_Store
 coverage/
@@ -29,6 +31,8 @@ videos/**/.media/
 videos/**/snapshots/
 videos/**/renders/
 videos/**/verification/before-*/
+# Rebuildable unmastered sum; editable stems and delivered masters are tracked.
+videos/**/assets/audio/pocket-groove-stems/mix.wav
 assets/brand/**/verification/before-*/
 assets/brand/**/verification/website-first-browser-run/
 

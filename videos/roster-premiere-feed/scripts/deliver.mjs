@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const soundtrack = JSON.parse(readFileSync("audio_meta.json", "utf8")).bgm.path;
 mkdirSync("renders", { recursive:true });
 mkdirSync("verification", { recursive:true });
 const master = "renders/roster-feed-120fps.mp4";
@@ -30,7 +31,7 @@ const select=frameIndices.map(frame=>`eq(n\\,${frame})`).join("+");
 run("ffmpeg",["-hide_banner","-y","-i",master,"-vf",`select=${select},scale=360:450:flags=lanczos,tile=3x2:padding=8:margin=8:color=0x151B29`,"-frames:v","1","-update","1",contact],"contact-extract.log");
 
 const probes={};
-for(const file of [master,share,preview,"assets/audio/full-send-final.wav","assets/audio/full-send-score.wav","assets/audio/five-in-motion.m4a","assets/audio/five-in-motion-full-send.m4a"]){
+for(const file of [master,share,preview,soundtrack,"assets/audio/five-in-motion.m4a","assets/audio/roster-pocket-groove.m4a"]){
   probes[file]=JSON.parse(run("ffprobe",["-v","error","-show_streams","-show_format","-of","json",file]).stdout);
 }
 writeFileSync("verification/media-probe.json",JSON.stringify(probes,null,2)+"\n");
@@ -40,7 +41,7 @@ const audit=run("ffmpeg",["-hide_banner","-i",master,"-vf","blackdetect=d=0.10:p
 const hashes=run("ffmpeg",["-hide_banner","-ss","0.12","-i",master,"-t","0.2","-an","-f","framemd5","-"],"native-rate-audit.log").stdout;
 writeFileSync("verification/native-rate.framemd5",hashes);
 const sampled=hashes.split("\n").filter(line=>line.trim() && !line.startsWith("#")).map(line=>line.split(",").at(-1).trim());
-const files=[master,share,preview,poster,contact,"assets/audio/five-in-motion.m4a","assets/audio/five-in-motion-full-send.m4a"].map(path=>{
+const files=[master,share,preview,poster,contact,"assets/audio/five-in-motion.m4a","assets/audio/roster-pocket-groove.m4a"].map(path=>{
   // The size and digest describe the same bytes, even if the file is replaced.
   const content=readFileSync(path);
   return {path,bytes:content.length,sha256:createHash("sha256").update(content).digest("hex")};

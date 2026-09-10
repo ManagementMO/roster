@@ -5,15 +5,15 @@ export const fmt3 = (n: number): string => n.toFixed(3);
 
 /**
  * Self-contained, theme-aware, zero external requests — the generated pages
- * must work from file:// and behind any CSP. Identity is carried by weight,
- * tracking, and tabular mono numerals rather than font files: a deliberate
- * trade so the generator ships no assets.
+ * must work from file:// and behind any CSP. The brand uses inline canonical
+ * vector outlines; interface typography uses system fonts and tabular mono
+ * numerals, so the generator needs no external image or font assets.
  */
 const CSS = `
 :root{
   color-scheme:dark light;
   --bg:#0b0d12; --surface:#12151c; --inset:#0e1117; --line:#202531;
-  --ink:#edf0f7; --dim:#8e97a8; --faint:#5b6272;
+  --ink:#edf0f7; --dim:#8e97a8; --faint:#5b6272; --wordmark-initial:#edf0f7;
   --accent:#ff6b3a; --gold:#f0b44c; --win:#34d399; --loss:#f87171;
   --glow:rgba(255,107,58,.05);
   --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
@@ -21,19 +21,19 @@ const CSS = `
 }
 @media (prefers-color-scheme: light){:root{
   --bg:#f7f7f5; --surface:#ffffff; --inset:#f1f0ec; --line:#e5e4df;
-  --ink:#16181d; --dim:#6a7180; --faint:#9aa0ad;
+  --ink:#16181d; --dim:#6a7180; --faint:#9aa0ad; --wordmark-initial:#4963df;
   --accent:#e04e12; --gold:#9a6b12; --win:#0e9f6e; --loss:#dc2f45;
   --glow:rgba(224,78,18,.05);
 }}
 :root[data-theme="dark"]{
   --bg:#0b0d12; --surface:#12151c; --inset:#0e1117; --line:#202531;
-  --ink:#edf0f7; --dim:#8e97a8; --faint:#5b6272;
+  --ink:#edf0f7; --dim:#8e97a8; --faint:#5b6272; --wordmark-initial:#edf0f7;
   --accent:#ff6b3a; --gold:#f0b44c; --win:#34d399; --loss:#f87171;
   --glow:rgba(255,107,58,.05);
 }
 :root[data-theme="light"]{
   --bg:#f7f7f5; --surface:#ffffff; --inset:#f1f0ec; --line:#e5e4df;
-  --ink:#16181d; --dim:#6a7180; --faint:#9aa0ad;
+  --ink:#16181d; --dim:#6a7180; --faint:#9aa0ad; --wordmark-initial:#4963df;
   --accent:#e04e12; --gold:#9a6b12; --win:#0e9f6e; --loss:#dc2f45;
   --glow:rgba(224,78,18,.05);
 }
@@ -48,9 +48,9 @@ a:hover{color:var(--accent)}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* ---- header ---- */
-.brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.wordmark{font-family:var(--mono);font-weight:700;letter-spacing:.38em;font-size:12px;color:var(--dim)}
-.wordmark b{color:var(--accent)}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.wordmark{display:inline-flex;width:126px;height:34.83px;color:var(--ink)}
+.wordmark svg{display:block;width:100%;height:100%}
 .leaguetag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--faint)}
 h1.masthead{font-size:clamp(40px,7.5vw,68px);font-weight:900;letter-spacing:-.04em;
   line-height:1.02;margin:18px 0 10px;text-wrap:balance}

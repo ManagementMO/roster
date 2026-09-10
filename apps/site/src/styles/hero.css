@@ -10,8 +10,6 @@
 .logo-depth-scene { position: absolute; inset: 0; perspective: 850px; perspective-origin: 50% 50%; overflow: clip; mask-image: linear-gradient(90deg, #000 0%, #000 12%, transparent 32%, transparent 68%, #000 88%, #000 100%); }
 .depth-logo { --logo-x: var(--desktop-x); --logo-y: var(--desktop-y); --logo-rest-depth: var(--desktop-rest-depth); position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 66px; height: 66px; margin: -33px; transform: translate3d(var(--logo-x), var(--logo-y), var(--logo-rest-depth)) rotate(var(--logo-rotation)); backface-visibility: hidden; }
 .depth-logo img { width: 48px; height: 48px; object-fit: contain; }
-.motion-toggle { position: absolute; right: max(24px, calc((100vw - 1184px) / 2)); bottom: 14px; display: inline-flex; gap: 6px; align-items: center; min-height: 36px; padding: 7px 9px; border: 0; border-radius: 6px; background: var(--paper); color: var(--subtle); font-size: 11px; pointer-events: auto; }
-.motion-toggle:hover { color: var(--text); background: var(--surface-soft); }
 @media (prefers-reduced-motion: no-preference) {
   .depth-logo { animation: logo-approach var(--logo-duration) linear infinite; animation-delay: var(--logo-delay); animation-play-state: paused; }
   [data-motion="running"] .depth-logo { animation-play-state: running; }
@@ -41,5 +39,4 @@
   .depth-logo { --logo-x: var(--mobile-x); --logo-y: var(--mobile-y); --logo-rest-depth: 0px; width: 49px; height: 49px; margin: -24.5px; }
   .depth-logo img { width: 32px; height: 32px; }
   .depth-logo:nth-child(n + 7) { display: none; }
-  .motion-toggle { bottom: 6px; right: 12px; font-size: 10px; min-height: 32px; }
 }

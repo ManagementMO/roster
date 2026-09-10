@@ -1,19 +1,14 @@
 # Roster launch film — final delivery review
 
-## Current identity adoption — September 8, 2026
+## Current unified wordmark — September 8, 2026
 
-The current exports use the owner-approved slim five-part R with longer lower legs. Stems are 40 units wide, the lower stem is 80 units long, and the diagonal extends by the same 20 units. The symbol is centered in its original 256×256 grid. The exact outlined “Roster” wordmark is preserved. All Roster marks in the film are pearl on navy.
+The current router nameplate and closing scene use one **Roster** wordmark. Its initial is the canonical slim five-part R followed by outlined **oster**. The original five shapes, longer lower legs, spacing and proportions are preserved; the whole R is uniformly scaled to the lettering's cap height and baseline. The closing assembly remains deterministic and settles before the existing final reading hold. The Playwright label, handoff outline, bounce and native vendor colors are preserved.
 
-The closing mark assembles in five short staggered arrivals with a one-pixel soft catch, settling by 12.6725 seconds. The complete closing card is still by 12.8975 seconds, leaving the existing 2.1025-second reading hold. The music and Playwright handoff remain unchanged.
+All three MP4s, the poster and contact sheet were regenerated for this identity. `verification/unified-wordmark.json` records the current source and delivery hashes, exact 15-second durations, 1,800 native frames and 900 sharing frames. `check-unified-wordmark.json` passes lint, runtime, layout, motion and contrast with zero findings. The current poster and contact sheet were extracted from the encoded master and visually reviewed; timeline snapshots at 9.75, 12.3, 12.7, 14.1 and 14.55 seconds cover both changed placements and the closing assembly.
 
-- `verification/identity-adoption.json` records current source and delivery hashes, canonical geometry, exact 15-second durations, 1,800 native frames, and 900 sharing frames.
-- `verification/check-roster-r-final.json` passes lint, runtime, layout, motion and contrast with zero findings. `check-final.json` is the current alias.
-- `verification/seams-roster-r-final.log` passes all five boundaries with zero failures or warnings. `seams-latest.log` is the current alias.
-- `snapshots/roster-r-final/` covers every changed placement and the closing assembly. The current poster and contact sheet are extracted from the final encoded master and were visually reviewed.
-- `verification/delivery.json` and `media-probe.json` describe the current exports. Both formats retain the identical soundtrack, −13.0 LUFS integrated loudness and −1.8 dB true peak. Full decode finds no configured black or silence spans; the native-motion sample has 23 distinct frames.
-- Earlier sources and deliverables are preserved in `verification/before-roster-r-adoption/`. The original 30-second film is unchanged.
+The accepted Pocket Groove master and all encoded audio packets remain unchanged. The 48 kHz stereo AAC measures −14.03 LUFS and −2.00 dBTP, with no unexpected gaps. `verification/pocket-groove-delivery.json` records the current file and stream hashes. Its picture-preservation check compares each export before and after the audio refresh, rather than against an older visual revision. `verification/delivery.json` and `media-probe.json` describe the current files; full decode detects no configured black or silence spans, and the sampled native-motion passage has 23 distinct adjacent frames.
 
-This is local video-production evidence. It does not record a remote publication or product release.
+Preceding source and exports remain in the ignored `verification/before-unified-wordmark/` directory. The older `identity-adoption.json`, `check-roster-r-final.json` and named final-polish reports retain their historical evidence for earlier logos and soundtracks. This is local video-production evidence; it does not establish a public deployment or product release.
 
 ## Earlier polish review — September 7
 

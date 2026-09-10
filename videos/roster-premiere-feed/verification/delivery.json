@@ -1,40 +1,40 @@
 {
-  "generatedAt": "2026-09-08T07:51:43.248Z",
+  "generatedAt": "2026-09-08T22:36:01.265Z",
   "files": [
     {
       "path": "renders/roster-feed-120fps.mp4",
-      "bytes": 4585434,
-      "sha256": "d94b525180f451c4428fc16792f119bf95f0f82defdff0ff9b225046190e272d"
+      "bytes": 4566371,
+      "sha256": "881c8b7ae462c94965d4e08a67dcaeeb62da35441f22a88eca667c7f0e5bba6c"
     },
     {
       "path": "renders/roster-feed-60fps.mp4",
-      "bytes": 2114076,
-      "sha256": "25f96511050980daf5fbe8d71bcd2a6a6156a3ae16aa881c8cc33eb45b8062ba"
+      "bytes": 2086789,
+      "sha256": "fa23ad4aa6131dc34a9bd5f22d325af52b54219ebc7d2ccbb6013ac6defee157"
     },
     {
       "path": "renders/roster-feed-preview.mp4",
-      "bytes": 1307105,
-      "sha256": "4a9283e9ff924251d15ebb8a4307a5ae0cfe2c4a9eef6304b195488de465aa4f"
+      "bytes": 1293758,
+      "sha256": "e672bcbad31b3ff0f041e3bae9e3df67be1603f92387d962ede86bd5d93db94d"
     },
     {
       "path": "renders/roster-feed-poster.png",
-      "bytes": 189681,
-      "sha256": "aad1b24de4d9c25e18f0df28298018f92c01a6572564682f41585a03d885dec8"
+      "bytes": 176877,
+      "sha256": "67b71f51923a56beb1b01e988da41d43b60940f9fa70965ce8e5719959a8611f"
     },
     {
       "path": "renders/roster-feed-contact-sheet.png",
-      "bytes": 382280,
-      "sha256": "849c3ef1ba2a1bced95b01e90f309c61f6478e4685ca2fff2b683347acfe5ded"
+      "bytes": 379012,
+      "sha256": "1c7adddbe42d6669d3c7247679bec98307a4a35443be5d97a6ddea3699b85993"
     },
     {
       "path": "assets/audio/five-in-motion.m4a",
-      "bytes": 502130,
-      "sha256": "221250a73e9e1fe723e63d8ca2fc44fecf61c761fab81d2dd64a8202bc0f725e"
+      "bytes": 496524,
+      "sha256": "296da6b5f027932e81b0af8977840f107cc9a022c820e2b84ed7a689a43f6c27"
     },
     {
-      "path": "assets/audio/five-in-motion-full-send.m4a",
-      "bytes": 502130,
-      "sha256": "221250a73e9e1fe723e63d8ca2fc44fecf61c761fab81d2dd64a8202bc0f725e"
+      "path": "assets/audio/roster-pocket-groove.m4a",
+      "bytes": 496524,
+      "sha256": "296da6b5f027932e81b0af8977840f107cc9a022c820e2b84ed7a689a43f6c27"
     }
   ],
   "representativeSeconds": [
@@ -53,5 +53,5 @@
   },
   "detectedBlackSpans": [],
   "detectedSilence": [],
-  "loudnessSummary": "Summary:\n\n  Integrated loudness:\n    I:         -13.0 LUFS\n    Threshold: -23.2 LUFS\n\n  Loudness range:\n    LRA:         1.3 LU\n    Threshold: -33.2 LUFS\n    LRA low:   -14.1 LUFS\n    LRA high:  -12.8 LUFS\n\n  True peak:\n    Peak:       -1.8 dBFS\n[out#0/null @ 0xb14c2c300] video:745KiB audio:2816KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nframe= 1800 fps=0.0 q=-0.0 Lsize=N/A time=00:00:15.00 bitrate=N/A speed=19.3x elapsed=0:00:00.77    \n"
+  "loudnessSummary": "Encoded AAC: -14.03 LUFS integrated; 0.70 LU loudness range; -2.00 dBTP true peak."
 }
