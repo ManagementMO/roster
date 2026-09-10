@@ -10,14 +10,16 @@
  * binary cannot even be parsed (a duplicated shebang did exactly that), or if
  * the flagship init → sync → eject round-trip does not restore byte-for-byte.
  *
- * Usage: node scripts/verify-clean-install.mjs
+ * Usage: node scripts/verify-clean-install.mjs [--dense]
+ * --dense also installs/upgrades the optional runtime and runs real MiniLM.
  */
 import { execFileSync, spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 /**
  * A minimal stdio MCP server, written with raw JSON-RPC so the probe needs no
@@ -507,6 +509,68 @@ try {
     }
     return `${summary.passes}/${summary.n} passed · wilsonLb ${summary.wilsonLb.toFixed(3)} · signed ${summary.signedN}`;
   });
+
+  if (process.argv.includes("--dense")) {
+    const runtime = path.join(env.ROSTER_HOME, "runtime");
+    const manifestPath = path.join(runtime, "package.json");
+    const expectedSource = "https://codeload.github.com/cthackers/adm-zip/tar.gz/7d90dea2bfd35bc4761d6c8cf822f26b59aeef77";
+    const archive = fs.readFileSync(path.join(repo, "vendor", `adm-zip-${expectedSource.split("/").at(-1)}.tgz`));
+    const expectedIntegrity = `sha512-${crypto.createHash("sha512").update(archive).digest("base64")}`;
+    const assertPatchedRuntime = () => {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      const lock = JSON.parse(fs.readFileSync(path.join(runtime, "package-lock.json"), "utf8"));
+      const zipPackages = Object.entries(lock.packages).filter(([name]) => name.endsWith("/adm-zip"));
+      if (manifest.overrides?.["adm-zip"] !== expectedSource || zipPackages.length !== 1 ||
+        zipPackages.some(([, pkg]) => pkg.resolved !== expectedSource || pkg.integrity !== expectedIntegrity)) {
+        throw new Error(`owned runtime did not lock exactly the reviewed ZIP archive: ${JSON.stringify({
+          override: manifest.overrides?.["adm-zip"], expectedIntegrity, zipPackages,
+        })}`);
+      }
+      // Check installed bytes as well: a lockfile alone cannot prove that npm
+      // replaced an old node_modules after a partial or unsuccessful install.
+      const runtimeRequire = createRequire(manifestPath);
+      const transformersRequire = createRequire(runtimeRequire.resolve("@huggingface/transformers"));
+      const onnxRequire = createRequire(transformersRequire.resolve("onnxruntime-node"));
+      const installedUtils = fs.readFileSync(onnxRequire.resolve("adm-zip/util/utils.js"));
+      const expectedUtils = run("tar", ["-xzOf", path.join(repo, "vendor", `adm-zip-${expectedSource.split("/").at(-1)}.tgz`),
+        `adm-zip-${expectedSource.split("/").at(-1)}/util/utils.js`]);
+      if (!installedUtils.equals(Buffer.from(expectedUtils))) throw new Error("installed ZIP implementation differs from reviewed source");
+    };
+    await step("packed CLI installs the patched semantic runtime in its own npm prefix", () => {
+      roster("dense", "enable");
+      assertPatchedRuntime();
+      return "source URL, archive integrity, and installed bytes verified";
+    });
+    await step("explicit enable upgrades an existing vulnerable runtime and lockfile", () => {
+      const legacy = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      legacy.overrides["adm-zip"] = "0.6.0";
+      fs.writeFileSync(manifestPath, `${JSON.stringify(legacy, null, 2)}\n`);
+      run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: runtime });
+      const oldLock = JSON.parse(fs.readFileSync(path.join(runtime, "package-lock.json"), "utf8"));
+      if (!Object.entries(oldLock.packages).some(([name, pkg]) => name.endsWith("/adm-zip") && pkg.version === "0.6.0")) {
+        throw new Error("legacy runtime fixture did not contain the vulnerable dependency");
+      }
+      roster("dense", "enable");
+      assertPatchedRuntime();
+      return "legacy 0.6.0 replaced with the reviewed patch";
+    });
+    await step("separately installed runtime performs real MiniLM inference", async () => {
+      const runtimeRequire = createRequire(manifestPath);
+      const { pipeline, env: transformerEnv } = await import(pathToFileURL(runtimeRequire.resolve("@huggingface/transformers")).href);
+      transformerEnv.cacheDir = path.join(workdir, "models");
+      const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { dtype: "q8" });
+      try {
+        const output = await extractor(["Find the right tools for this task"], { pooling: "mean", normalize: true });
+        const vector = output.tolist()[0];
+        if (vector.length !== 384 || !vector.every(Number.isFinite) || !vector.some((value) => value !== 0)) {
+          throw new Error("MiniLM did not produce a finite, nonzero 384-dimensional embedding");
+        }
+      } finally {
+        await extractor.dispose();
+      }
+      return "384-dimensional embedding from the owned runtime";
+    });
+  }
 
   process.stdout.write(`${steps.join("\n")}\n\nclean external install: OK\n`);
 } catch (error) {

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import {
   DENSE_APPROX_MB,
+  denseModulesDir,
   denseOffer,
   denseStatusLine,
   installDenseRuntime,
   isDenseAvailable,
+  isDenseInstalledIn,
 } from "./dense.js";
 import { ejectClient } from "./eject.js";
 import { init } from "./init.js";
@@ -122,11 +124,18 @@ async function main(): Promise<number> {
         process.stdout.write("usage: roster dense [status|enable]\n");
         return 1;
       }
-      if (isDenseAvailable()) {
+      const ownedRuntime = isDenseInstalledIn(denseModulesDir());
+      // An explicit enable refreshes an owned install, including security
+      // overrides. Never let an existing package (or a failed prior update)
+      // bypass npm's reconciliation. Independently installed runtimes stay owned
+      // by their installer.
+      if (isDenseAvailable() && !ownedRuntime) {
         process.stdout.write("semantic search is already enabled\n");
         return 0;
       }
-      process.stdout.write(`installing the embedding runtime (~${DENSE_APPROX_MB} MB)…\n`);
+      process.stdout.write(ownedRuntime
+        ? "updating the embedding runtime…\n"
+        : `installing the embedding runtime (~${DENSE_APPROX_MB} MB)…\n`);
       const result = installDenseRuntime();
       process.stdout.write(
         result.ok

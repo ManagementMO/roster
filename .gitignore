@@ -2,6 +2,8 @@ node_modules/
 dist/
 bundle/
 *.tgz
+# Reviewed, immutable upstream security patch; provenance is in docs/security/adm-zip.md.
+!/vendor/adm-zip-7d90dea2bfd35bc4761d6c8cf822f26b59aeef77.tgz
 *.tsbuildinfo
 .DS_Store
 coverage/

@@ -3,6 +3,8 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { ensurePrivateDir, PRIVATE_FILE, rosterHome } from "./paths.js";
+import { atomicWriteFileSync } from "./rosterfile.js";
+import { readRegularFileNoFollow } from "./safeFile.js";
 
 /**
  * Optional semantic search, installed on request.
@@ -23,6 +25,9 @@ import { ensurePrivateDir, PRIVATE_FILE, rosterHome } from "./paths.js";
  */
 export const DENSE_PACKAGE = "@huggingface/transformers";
 export const DENSE_RANGE = "^4.2.0";
+/** Temporary upstream symlink fix, not a published release. See docs/security/adm-zip.md. */
+export const DENSE_ADM_ZIP_TARBALL =
+  "https://codeload.github.com/cthackers/adm-zip/tar.gz/7d90dea2bfd35bc4761d6c8cf822f26b59aeef77";
 /** Measured on a clean install; quoted to the user before they agree. */
 export const DENSE_APPROX_MB = 385;
 
@@ -69,6 +74,46 @@ export interface DenseInstallResult {
   detail: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** npm reads overrides only from its own root, independently of our pnpm workspace. */
+function prepareDenseManifest(dir: string): void {
+  const manifest = path.join(dir, "package.json");
+  const initial = {
+    name: "roster-dense-runtime",
+    version: "0.0.0",
+    private: true,
+    overrides: { "adm-zip": DENSE_ADM_ZIP_TARBALL },
+  };
+  try {
+    // Exclusive creation keeps npm in this prefix without following an existing
+    // manifest symlink. Existing installations need the override migrated below.
+    fs.writeFileSync(manifest, `${JSON.stringify(initial, null, 2)}\n`, {
+      mode: PRIVATE_FILE,
+      flag: "wx",
+    });
+    return;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  }
+
+  const current: unknown = JSON.parse(readRegularFileNoFollow(manifest).toString("utf8"));
+  if (!isRecord(current) || (current.overrides !== undefined && !isRecord(current.overrides))) {
+    throw new Error("runtime package.json and its overrides must be JSON objects");
+  }
+  const overrides = current.overrides ?? {};
+  if (overrides["adm-zip"] === DENSE_ADM_ZIP_TARBALL) return;
+  // Preserve dependencies and unrelated settings; atomic replacement never
+  // truncates the manifest or writes through a symlink swapped in after reading.
+  atomicWriteFileSync(
+    manifest,
+    `${JSON.stringify({ ...current, overrides: { ...overrides, "adm-zip": DENSE_ADM_ZIP_TARBALL } }, null, 2)}\n`,
+    PRIVATE_FILE,
+  );
+}
+
 /**
  * Install the runtime into the Roster-owned prefix. `spawn` is injectable so
  * the suite can prove the flow end to end without a 385 MB download.
@@ -77,23 +122,16 @@ export function installDenseRuntime(
   spawn: (cmd: string, args: string[]) => SpawnSyncReturns<string> = (cmd, args) =>
     spawnSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "inherit", "pipe"] }),
 ): DenseInstallResult {
-  const dir = ensurePrivateDir(denseRuntimeDir());
-  // A package.json in the prefix stops npm from walking up and installing into
-  // whatever project the user happens to be standing in.
-  //
-  // Created with "wx" (exclusive) rather than exists-then-write: the check and
-  // the write are otherwise two steps with a gap between them, which is the same
-  // TOCTOU shape this codebase refuses everywhere else it touches the
-  // filesystem. EEXIST simply means a previous run already wrote it.
-  const manifest = path.join(dir, "package.json");
+  // npm must see one canonical root. Alias paths (e.g. macOS /var -> /private/var)
+  // can otherwise produce linked lockfile entries that bypass root overrides.
+  const dir = fs.realpathSync(ensurePrivateDir(denseRuntimeDir()));
   try {
-    fs.writeFileSync(
-      manifest,
-      `${JSON.stringify({ name: "roster-dense-runtime", version: "0.0.0", private: true }, null, 2)}\n`,
-      { mode: PRIVATE_FILE, flag: "wx" },
-    );
+    prepareDenseManifest(dir);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    return {
+      ok: false,
+      detail: `Cannot prepare semantic runtime: ${error instanceof Error ? error.message : String(error)}`,
+    };
   }
   const result = spawn("npm", [
     "install",

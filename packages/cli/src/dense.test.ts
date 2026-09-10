@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   DENSE_APPROX_MB,
+  DENSE_ADM_ZIP_TARBALL,
   denseModulesDir,
   denseRuntimeDir,
   denseStatusLine,
@@ -66,6 +67,8 @@ describe("optional dense runtime", () => {
     const calls: string[][] = [];
     const result = installDenseRuntime((cmd, args) => {
       calls.push([cmd, ...args]);
+      const manifest = JSON.parse(fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8"));
+      expect(manifest.overrides["adm-zip"]).toBe(DENSE_ADM_ZIP_TARBALL);
       plantFakeRuntime(); // pretend npm succeeded
       return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
     });
@@ -74,7 +77,7 @@ describe("optional dense runtime", () => {
     const [call] = calls;
     expect(call?.[0]).toBe("npm");
     expect(call).toContain("--prefix");
-    expect(call?.[call.indexOf("--prefix") + 1]).toBe(denseRuntimeDir());
+    expect(call?.[call.indexOf("--prefix") + 1]).toBe(fs.realpathSync(denseRuntimeDir()));
     // Without this manifest npm walks up and installs into the user's project.
     const manifest = JSON.parse(
       fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8"),
@@ -87,7 +90,7 @@ describe("optional dense runtime", () => {
     }
   });
 
-  it("is safe to run twice: the prefix manifest is created exclusively, not checked-then-written", () => {
+  it("keeps an already patched prefix manifest byte-for-byte on a second install", () => {
     const spawnStub = () => {
       plantFakeRuntime();
       return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
@@ -98,6 +101,92 @@ describe("optional dense runtime", () => {
     const before = fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8");
     expect(installDenseRuntime(spawnStub).ok).toBe(true);
     expect(fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8")).toBe(before);
+  });
+
+  it("uses the canonical npm prefix when ROSTER_HOME contains a directory alias", () => {
+    const actualHome = path.join(home, "actual home");
+    const alias = path.join(home, "aliased home");
+    fs.mkdirSync(actualHome);
+    fs.symlinkSync(actualHome, alias, process.platform === "win32" ? "junction" : "dir");
+    process.env.ROSTER_HOME = alias;
+    const result = installDenseRuntime((_cmd, args) => {
+      expect(args[args.indexOf("--prefix") + 1]).toBe(
+        fs.realpathSync(path.join(actualHome, "runtime")),
+      );
+      plantFakeRuntime();
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("patches an existing runtime before npm starts and preserves its other settings", () => {
+    fs.mkdirSync(denseRuntimeDir(), { recursive: true });
+    const manifest = path.join(denseRuntimeDir(), "package.json");
+    const previous = {
+      name: "roster-dense-runtime",
+      private: true,
+      dependencies: { "@huggingface/transformers": "^4.2.0" },
+      overrides: { "adm-zip": "0.6.0", "unrelated-dependency": "1.2.3" },
+    };
+    fs.writeFileSync(manifest, JSON.stringify(previous));
+    const result = installDenseRuntime(() => {
+      expect(JSON.parse(fs.readFileSync(manifest, "utf8"))).toEqual({
+        ...previous,
+        overrides: { ...previous.overrides, "adm-zip": DENSE_ADM_ZIP_TARBALL },
+      });
+      if (process.platform !== "win32") expect(fs.statSync(manifest).mode & 0o077).toBe(0);
+      plantFakeRuntime();
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(["{", "null", "[]", '{"overrides":[]}'])(
+    "leaves an invalid manifest untouched and never starts npm: %s",
+    (content) => {
+      fs.mkdirSync(denseRuntimeDir(), { recursive: true });
+      const manifest = path.join(denseRuntimeDir(), "package.json");
+      fs.writeFileSync(manifest, content);
+      let called = false;
+      const result = installDenseRuntime(() => {
+        called = true;
+        throw new Error("npm must not run");
+      });
+      expect(result.ok).toBe(false);
+      expect(result.detail).toContain("Cannot prepare semantic runtime");
+      expect(called).toBe(false);
+      expect(fs.readFileSync(manifest, "utf8")).toBe(content);
+    },
+  );
+
+  it("refuses a symlinked manifest without changing the external file", () => {
+    fs.mkdirSync(denseRuntimeDir(), { recursive: true });
+    const outside = path.join(home, "outside.json");
+    const original = '{"name":"outside"}';
+    fs.writeFileSync(outside, original);
+    fs.symlinkSync(outside, path.join(denseRuntimeDir(), "package.json"), "file");
+    let called = false;
+    const result = installDenseRuntime(() => {
+      called = true;
+      throw new Error("npm must not run");
+    });
+    expect(result.ok).toBe(false);
+    expect(called).toBe(false);
+    expect(fs.readFileSync(outside, "utf8")).toBe(original);
+  });
+
+  it("an explicit enable checks an existing owned runtime instead of returning already enabled", () => {
+    plantFakeRuntime();
+    // Fail before npm can start: this proves the real command reaches manifest
+    // migration even when isDenseAvailable() is already true, without a download.
+    fs.writeFileSync(path.join(denseRuntimeDir(), "package.json"), "{");
+    const result = spawnSync(process.execPath, [BIN, "dense", "enable"], {
+      encoding: "utf8", timeout: 20_000, env: { ...process.env },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("Cannot prepare semantic runtime");
+    expect(result.stdout).not.toContain("already enabled");
   });
 
   it("reports failure instead of pretending, when npm exits non-zero", () => {

@@ -10,14 +10,13 @@ allowBuilds:
   sqlite-vec: true
   "@huggingface/transformers": true
 # Keep transitive dependencies on patched releases until their parents select
-# those versions directly. Every override remains inside the parent's declared
-# semver range; the release audit is therefore checking the shipped graph, not
-# an ignored advisory list.
+# those versions directly. adm-zip is temporarily pinned to the unreleased
+# symlink fix in upstream PR #575; see docs/security/adm-zip.md.
 minimumReleaseAgeExclude:
   - "@hono/node-server@2.1.1"
 overrides:
   "@hono/node-server": 2.1.1
-  adm-zip: 0.6.0
+  adm-zip: file:vendor/adm-zip-7d90dea2bfd35bc4761d6c8cf822f26b59aeef77.tgz
   fast-uri: 3.1.6
   hono: 4.13.5
   ip-address: 10.5.0
