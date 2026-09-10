@@ -14,17 +14,17 @@
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "7.2.4",
-    "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.41.10",
+    "@astrojs/markdown-remark": "7.3.0",
+    "@astrojs/sitemap": "3.7.4",
+    "@astrojs/starlight": "0.42.0",
     "@iconify-json/tabler": "1.2.38",
-    "astro": "7.2.9"
+    "astro": "7.3.1"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@axe-core/playwright": "4.13.0",
     "@modelcontextprotocol/sdk": "1.30.0",
-    "@playwright/test": "1.62.1",
+    "@playwright/test": "1.63.0",
     "pagefind": "1.5.2",
     "typescript": "6.0.3"
   }
