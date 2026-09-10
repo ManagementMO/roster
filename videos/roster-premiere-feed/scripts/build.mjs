@@ -24,8 +24,9 @@ for (const file of fs.readdirSync(path.join(wide, "assets"))) {
   if (/license|ofl/i.test(file) && fs.statSync(path.join(wide, "assets", file)).isFile()) copy(`assets/${file}`);
 }
 fs.cpSync(path.join(wide, "assets/brands"), path.join(project, "assets/brands"), { recursive: true });
-for (const name of ["full-send-final.wav", "full-send-score.wav", "five-in-motion.m4a", "five-in-motion-full-send.m4a", "pocket-groove-final.wav", "roster-pocket-groove.m4a"]) copy(`assets/audio/${name}`);
-copy(soundtrack);
+// Keep historical sources and listening copies; the active master comes from metadata.
+const audioFiles = ["full-send-final.wav", "full-send-score.wav", "five-in-motion.m4a", "five-in-motion-full-send.m4a", "roster-pocket-groove.m4a"].map((name) => `assets/audio/${name}`);
+for (const name of new Set([...audioFiles, soundtrack])) copy(name);
 for (const name of ["hyperframes.json", "ledger.json", "index.motion.json", "audio_meta.json", "scripts/seam-stamp.mjs", "scripts/verify-seams.mjs"]) copy(name);
 for (const name of ["render", "deliver"]) {
   const source = fs.readFileSync(path.join(wide, `scripts/${name}.mjs`), "utf8")

@@ -42,7 +42,7 @@ Every SVG is a real vector. All three horizontal SVGs contain outlined letter sh
 - Vendor logos and semantic outcome colors remain independent of Roster's brand color.
 - The motion test assembles the five components with staggered arrivals and a restrained overshoot, then becomes still. The browser's reduced-motion setting disables the entrance animation.
 
-The canonical editable symbol is `roster-mark-cobalt.svg`. `build_assets.py` derives the colorways, transparent PNGs, contained icons, unified wordmarks, layout metadata and static overview. `apply_wordmark.py` imports the pearl wordmark into the film assets, animated closing scene, identity motion board and self-contained League header. Run that import script from its location inside the repository. `index.html` contains the interactive presentation.
+The canonical editable symbol is `roster-mark-cobalt.svg`. `build_assets.py` derives the colorways, transparent PNGs, contained icons, unified wordmarks, layout metadata and static overview. `apply_wordmark.py` imports the pearl wordmark into the film assets, animated closing scene, identity motion board and self-contained League header, preserving existing Studio element identifiers. The normal League tests compare the embedded logo geometry with the canonical SVG so later artwork changes cannot silently leave the leaderboard behind. Run that import script from its location inside the repository. `index.html` contains the interactive presentation.
 
 ## Source and provenance
 

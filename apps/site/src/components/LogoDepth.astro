@@ -54,9 +54,35 @@ const placements = vendors.map((vendor, slot) => ({ vendor, ...slots[slot]! }));
     private observer?: IntersectionObserver;
     private reduced = matchMedia("(prefers-reduced-motion: reduce)");
     private inView = false;
+    private startedAt?: number;
+    private frame?: number;
+    // A single short introduction avoids an unbounded animation without a control.
+    private readonly motionDuration = 4500;
+    private tick = (now: number) => {
+      const elapsed = now - (this.startedAt ?? now);
+      if (elapsed >= this.motionDuration) {
+        this.dataset.motion = "settled";
+        this.frame = undefined;
+        return;
+      }
+      const progress = Math.max(0, (elapsed - 2500) / 2000);
+      const rate = 1 - progress * progress * (3 - 2 * progress);
+      for (const animation of this.getAnimations({ subtree: true })) {
+        animation.updatePlaybackRate(rate);
+      }
+      this.frame = requestAnimationFrame(this.tick);
+    };
     private update = () => {
-      const running = this.inView && !document.hidden && !this.reduced.matches;
-      this.dataset.motion = this.reduced.matches ? "still" : running ? "running" : "paused";
+      if (this.frame !== undefined) cancelAnimationFrame(this.frame);
+      this.frame = undefined;
+      const now = performance.now();
+      const settled = this.startedAt !== undefined && now - this.startedAt >= this.motionDuration;
+      const running = this.inView && !document.hidden && !this.reduced.matches && !settled;
+      this.dataset.motion = this.reduced.matches ? "still" : settled ? "settled" : running ? "running" : "paused";
+      if (running) {
+        this.startedAt ??= now;
+        this.tick(now);
+      }
     };
     connectedCallback() {
       this.reduced.addEventListener("change", this.update);
@@ -69,6 +95,7 @@ const placements = vendors.map((vendor, slot) => ({ vendor, ...slots[slot]! }));
       this.update();
     }
     disconnectedCallback() {
+      if (this.frame !== undefined) cancelAnimationFrame(this.frame);
       this.observer?.disconnect();
       this.reduced.removeEventListener("change", this.update);
       document.removeEventListener("visibilitychange", this.update);

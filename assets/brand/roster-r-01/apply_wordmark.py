@@ -4,6 +4,7 @@ Run after build_assets.py, then rebuild the feed edition and import website asse
 Only the R group moves in the film; its five native component paths stay exact.
 """
 from pathlib import Path
+from html import escape
 import json
 import re
 import shutil
@@ -15,7 +16,7 @@ ET.register_namespace("", "http://www.w3.org/2000/svg")
 PARTS = ["upper-stem", "upper-bowl", "lower-bowl", "lower-stem", "outgoing-leg"]
 
 
-def inline_wordmark(prefix, root_id, animated_board=False):
+def inline_wordmark(prefix, root_id, animated_board=False, previous=None):
     svg = ET.fromstring((BASE / "roster-lockup-pearl.svg").read_text())
     svg.attrib.pop("aria-labelledby", None)
     svg.set("aria-label", "Roster")
@@ -35,7 +36,26 @@ def inline_wordmark(prefix, root_id, animated_board=False):
             element.set("id", f"{prefix}-{old_id}")
             if animated_board and old_id == "roster-letters":
                 element.set("class", "word")
-    return ET.tostring(svg, encoding="unicode")
+    markup = ET.tostring(svg, encoding="unicode")
+    if previous is not None:
+        # Keep Studio's stable selections when canonical outlines are reimported.
+        # Named pieces match by id; anonymous letter paths match by geometry.
+        def identity(element):
+            if element.get("id"):
+                return ("id", element.get("id"))
+            return (element.tag, element.get("d"), element.get("transform"))
+
+        identifiers = {identity(element): element.get("data-hf-id")
+                       for element in ET.fromstring(previous).iter()
+                       if element.get("data-hf-id")}
+        elements = iter(svg.iter())
+
+        def restore_identifier(match):
+            identifier = identifiers.get(identity(next(elements)))
+            return match[0] + (f' data-hf-id="{escape(identifier, quote=True)}"' if identifier else "")
+
+        markup = re.sub(r"<[A-Za-z][\w:-]*(?=[\s>])", restore_identifier, markup)
+    return markup
 
 
 wide = REPO / "videos/roster-premiere-tight"
@@ -47,7 +67,8 @@ html = scene.read_text()
 old_pair = r'<svg\b[^>]*id="s06-mark"[\s\S]*?</svg>\s*<img\b[^>]*id="s06-word"[^>]*>'
 current = r'<svg\b[^>]*id="s06-word"[^>]*>[\s\S]*?</svg>'
 pattern = old_pair if re.search(old_pair, html) else current
-html, count = re.subn(pattern, lambda _: inline_wordmark("s06", "s06-word"), html, count=1)
+html, count = re.subn(pattern, lambda match: inline_wordmark(
+    "s06", "s06-word", previous=match[0] if pattern == current else None), html, count=1)
 assert count == 1, "Expected one closing wordmark placement."
 scene.write_text(html)
 
