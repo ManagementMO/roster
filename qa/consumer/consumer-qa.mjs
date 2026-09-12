@@ -111,6 +111,8 @@ const ENV_FACTS = {
   node: process.version,
   nodeLabel: NODE_LABEL,
   nodeExecPath: process.execPath,
+  libuv: process.versions.uv,
+  v8: process.versions.v8,
   npm: versionOf(process.execPath, [NPM_CLI, "--version"]),
   shells: WIN
     ? { cmd: versionOf("cmd.exe", ["/c", "ver"]), powershell: versionOf("powershell.exe", ["-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"]), pwsh: PWSH_DIRS.length ? versionOf("pwsh.exe", ["-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"]) : "not found" }
@@ -570,9 +572,33 @@ function processState(procs) {
       `Get-CimInstance Win32_Process -Filter "ProcessId=${procs.map((p) => p.pid).join(" or ProcessId=")}" | Select-Object ProcessId,ParentProcessId,SessionId,CreationDate,Name,CommandLine | ConvertTo-Json -Compress`],
       { encoding: "utf8", timeout: 60_000 });
     const text = (r.stdout ?? "").trim();
-    if (!text) return procs.map((p) => ({ ...p, state: "gone" }));
-    const parsed = JSON.parse(text);
-    return (Array.isArray(parsed) ? parsed : [parsed]).map((p) => ({ pid: p.ProcessId, ppid: p.ParentProcessId, session: p.SessionId, created: p.CreationDate, name: p.Name, cmd: p.CommandLine }));
+    // Second, independent liveness signal per PID: tasklist only lists processes that still exist
+    // (a CIM row can linger for an exited process whose object is still referenced).
+    const tasklistAlive = (pid) => {
+      const t = spawnSync("tasklist.exe", ["/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"], { encoding: "utf8", timeout: 60_000, windowsHide: true });
+      const out = (t.stdout ?? "").trim();
+      return { tasklistAlive: /^"/.test(out) && out.includes(`"${pid}"`), tasklist: trimTo(out, 200) };
+    };
+    const gp = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
+      `Get-Process -Id ${procs.map((p) => p.pid).join(",")} -ErrorAction SilentlyContinue | Select-Object Id,HasExited,Responding,@{n='StartTime';e={try{$_.StartTime.ToString('o')}catch{$null}}} | ConvertTo-Json -Compress`],
+      { encoding: "utf8", timeout: 60_000 });
+    const gpText = (gp.stdout ?? "").trim();
+    const gpList = gpText ? [].concat(JSON.parse(gpText)) : [];
+    const gpById = new Map(gpList.map((p) => [p.Id, p]));
+    const cimList = text ? [].concat(JSON.parse(text)) : [];
+    const cimById = new Map(cimList.map((p) => [p.ProcessId, p]));
+    return procs.map(({ pid }) => {
+      const c = cimById.get(pid);
+      const g = gpById.get(pid);
+      const t = tasklistAlive(pid);
+      const alive = Boolean(g) || t.tasklistAlive;
+      return {
+        pid, ppid: c?.ParentProcessId ?? null, session: c?.SessionId ?? null, created: c?.CreationDate ?? null,
+        name: c?.Name ?? null, cmd: c?.CommandLine ?? null, cimRow: Boolean(c),
+        getProcess: g ? { hasExited: g.HasExited, responding: g.Responding, startTime: g.StartTime } : null,
+        ...t, state: alive ? "alive" : "gone",
+      };
+    });
   }
   const r = spawnSync("ps", ["-o", "pid=,ppid=,pgid=,sid=,stat=,etimes=,args=", "-p", procs.map((p) => p.pid).join(",")], { encoding: "utf8" });
   return r.stdout.split("\n").filter(Boolean).map((l) => {
@@ -1560,15 +1586,22 @@ async function functionalMatrix(routes) {
     const rosterPid = d.child.pid;
     const stateBefore = processState([{ pid: rosterPid }, ...treeBefore]);
     const exitD = await d.eof(30_000);
-    const leftAfterD = await waitForNoProcesses(marker3, 8000);
+    const leftByMarker = await waitForNoProcesses(marker3, 8000);
     const stateAfter = processState([{ pid: rosterPid }, ...treeBefore]);
+    // Survivors = union of the marker scan and the per-PID state snapshot (Windows CIM rows can outlive
+    // the marker scan or vice versa; a PID counts as alive only if a liveness signal says so).
+    const aliveByPid = stateAfter.filter((p) => p.pid !== rosterPid && (WIN ? p.state === "alive" : p.pid != null && !p.raw));
+    const leftAfterD = [...leftByMarker];
+    for (const p of aliveByPid) if (!leftAfterD.some((q) => q.pid === p.pid)) leftAfterD.push({ pid: p.pid, ppid: p.ppid, cmd: p.cmd ?? treeBefore.find((q) => q.pid === p.pid)?.cmd ?? "" });
     const fixtureLeft = leftAfterD.filter((p) => !/descendant/.test(p.cmd));
     const descendantLeft = leftAfterD.filter((p) => /descendant/.test(p.cmd));
-    const snapshot = { rosterPid, rosterExit: exitD, before: stateBefore, afterEofAndWait: stateAfter, survivors: leftAfterD, capturedAt: new Date().toISOString() };
+    const killResults = WIN ? treeBefore.map((p) => { const k = spawnSync("taskkill", ["/PID", String(p.pid), "/T", "/F"], { encoding: "utf8", timeout: 60_000 }); return { pid: p.pid, exit: k.status, out: trimTo(`${k.stdout ?? ""}${k.stderr ?? ""}`.trim(), 200) }; }) : null;
+    const snapshot = { rosterPid, rosterExit: exitD, before: stateBefore, afterEofAndWait: stateAfter, survivorsByMarkerScan: leftByMarker, survivors: leftAfterD, cleanupTaskkill: killResults, capturedAt: new Date().toISOString() };
     fs.writeFileSync(path.join(OUT, "cases", "FN-lifecycle-uncooperative-descendant.process-state.json"), `${JSON.stringify(snapshot, null, 2)}\n`);
     note(`tree before=${treeBefore.length} [${treeBefore.map((p) => `${p.pid}<-${p.ppid}`).join(" ")}] (roster pid ${rosterPid}); roster exit=${JSON.stringify(exitD)}; fixture left=${fixtureLeft.length}; descendant left=${descendantLeft.length} [${descendantLeft.map((p) => `${p.pid}<-${p.ppid}`).join(" ")}]; fixture events: ${trimTo(exists(stateFile) ? fs.readFileSync(stateFile, "utf8").split("\n").filter((l) => l.includes(marker3) || /ignored|eof|descendant/.test(l)).slice(-6).join(" | ") : "n/a", 500)}`);
     note(`process state BEFORE eof: ${trimTo(JSON.stringify(stateBefore), 700)}`);
     note(`process state AFTER eof + 8s wait: ${trimTo(JSON.stringify(stateAfter), 700)} (full snapshot: cases/FN-lifecycle-uncooperative-descendant.process-state.json)`);
+    if (killResults) note(`cleanup taskkill /T /F per pre-EOF pid (exit 128 = "not found" ⇒ already gone; exit 0 ⇒ was still alive): ${JSON.stringify(killResults)}`);
     killMarked(marker3);
     cfg.servers["fixture-codex"].args = [FIXTURE_SERVER, fx.marker];
     setFixtureEnv({});
