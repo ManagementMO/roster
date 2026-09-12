@@ -141,6 +141,9 @@ jobs:
         run: |
           node qa/consumer/staging-registry.mjs start --dir "$env:RUNNER_TEMP\staging-registry" --port 4873 --tarball "$env:tarball"
           if ($LASTEXITCODE -ne 0) { throw "staging registry failed to start" }
+          Start-Sleep -Seconds 3
+          $ping = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:4873/-/ping
+          Write-Host "registry still alive after launcher exit: HTTP $($ping.StatusCode) $($ping.Content)"
           node qa/consumer/consumer-qa.mjs --out "$env:RUNNER_TEMP\qa-out" --tarball "$env:tarball" --registry http://127.0.0.1:4873/ --node-label "${{ matrix.node }}" --repo "$env:GITHUB_WORKSPACE" --dense
           $qaExit = $LASTEXITCODE
           node qa/consumer/staging-registry.mjs stop --dir "$env:RUNNER_TEMP\staging-registry"

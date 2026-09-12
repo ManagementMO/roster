@@ -102,7 +102,9 @@ if (cmd === "start") {
   const out = fs.openSync(path.join(dir, "verdaccio.out"), "a");
   const child = spawn(process.execPath, [bin, "--config", configPath], {
     cwd: dir,
-    detached: process.platform !== "win32",
+    // libuv puts non-detached Windows children in a kill-on-close job object,
+    // so the registry would die with this launcher process.
+    detached: true,
     stdio: ["ignore", out, out],
     env: { ...process.env, VERDACCIO_STORAGE_PATH: storage },
     windowsHide: true,
