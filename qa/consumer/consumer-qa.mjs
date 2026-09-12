@@ -83,7 +83,7 @@ function whoami() {
   return { user: os.userInfo().username, uid: process.getuid?.(), root: process.getuid?.() === 0, id };
 }
 function versionOf(cmd, args) {
-  const r = spawnSync(cmd, args, { encoding: "utf8", shell: WIN });
+  const r = spawnSync(cmd, args, { encoding: "utf8" });
   return (r.stdout || r.stderr || "").trim().split(/\r?\n/)[0];
 }
 function whereBinary(name) {
@@ -678,15 +678,27 @@ function findRosterEntry(servers) {
 async function caseRegistryPublic() {
   await testCase("REG-public-availability", { area: "registry", title: "Public npm availability of @roster/cli (must be reported separately)", source: "public-npm", expected: "observed state reported; unscoped `roster` never installed" }, async () => {
     const root = makeRoot("reg-public");
+    // The consumer npmrc maps @roster to the staging registry; a scoped registry
+    // beats `--registry`, so the public lookup must override the scope explicitly
+    // (and is cross-checked with a direct HTTPS GET against registry.npmjs.org).
+    const publicRegistry = "https://registry.npmjs.org/";
     const env = envFor(root);
-    const r = npm(["view", PKG, "version", "--registry", "https://registry.npmjs.org/", "--json"], { cwd: root.project, env });
-    const available = r.exitCode === 0;
-    const unscoped = npm(["view", "roster", "name", "version", "description", "--registry", "https://registry.npmjs.org/", "--json"], { cwd: root.project, env });
+    const direct = await fetch(`${publicRegistry}@roster%2fcli`, { headers: { accept: "application/json" } });
+    const directBody = trimTo(await direct.text(), 200);
+    note(`direct GET ${publicRegistry}@roster%2fcli → HTTP ${direct.status} ${directBody}`);
+    const r = npm(["view", PKG, "version", "--registry", publicRegistry, `--@roster:registry=${publicRegistry}`, "--json"], { cwd: root.project, env });
+    const npmSays404 = /E404|404/.test(r.stderr + r.stdout);
+    assert(
+      (direct.status === 200 && r.exitCode === 0) || (direct.status === 404 && npmSays404),
+      `direct HTTP ${direct.status} disagrees with npm view (exit ${r.exitCode}): ${trimTo(r.stderr, 200)}`,
+    );
+    const available = direct.status === 200 && r.exitCode === 0;
+    const unscoped = npm(["view", "roster", "name", "version", "description", "--registry", publicRegistry, "--json"], { cwd: root.project, env });
     let unscopedInfo = "n/a";
     try { const j = JSON.parse(unscoped.stdout); unscopedInfo = `${j.name}@${j.version} — ${j.description ?? ""}`.trim(); } catch { unscopedInfo = trimTo(unscoped.stdout || unscoped.stderr, 200); }
-    const publicState = available ? `AVAILABLE (version ${r.stdout.trim()})` : /E404|404/.test(r.stderr + r.stdout) ? "E404 — not published on public npm" : `lookup failed: exit ${r.exitCode}`;
+    const publicState = available ? `AVAILABLE (version ${r.stdout.trim()})` : direct.status === 404 ? "E404 — not published on public npm" : `lookup failed: HTTP ${direct.status}, npm exit ${r.exitCode}`;
     return {
-      status: available || /E404|404/.test(r.stderr + r.stdout) ? "PASS" : "BLOCKED",
+      status: available || direct.status === 404 ? "PASS" : "BLOCKED",
       actual: `public @roster/cli: ${publicState}; unscoped roster: ${unscopedInfo} (unrelated, NOT installed)`,
       notes: [available ? "public npm/npx route AVAILABLE" : "public npm/npx route UNAVAILABLE — all install evidence below is staging-registry parity, not public publication"],
     };
@@ -819,9 +831,15 @@ async function caseGlobalInstall(routes) {
     const unknown = shell(SHELLS[0], shellLine(SHELLS[0], ["roster", "definitely-not-a-command"]), { cwd: root.elsewhere, env: shimEnv });
     assert(unknown.exitCode === 1 && /unknown command/.test(unknown.stderr), `unknown command should exit 1, got ${unknown.exitCode}`);
     const lsg = npm(["ls", "-g", "--prefix", root.prefix, "--json", "--depth=0"], { cwd: root.elsewhere, env });
-    let deps = {};
-    try { deps = resolvedDeps(path.join(globalPkgDir(root.prefix), "..", "..", ".package-lock.json"), "node_modules/"); } catch { /* optional */ }
-    return { actual: `shims: ${shims.join(", ")}; resolved: ${which.stdout.trim().split(/\r?\n/)[0]}; ${lines.join("; ")}; unknown command exit 1`, notes: [`npm ls -g: ${trimTo(lsg.stdout, 400)}`, `resolved deps: ${JSON.stringify(deps.deps ?? {})}`] };
+    // Global installs write no hidden lockfile; read the installed package.json versions instead.
+    const deps = {};
+    for (const w of ["@modelcontextprotocol/sdk", "better-sqlite3", "ajv", "yaml", "smol-toml"]) {
+      const pj = path.join(globalPkgDir(root.prefix), "node_modules", w, "package.json");
+      deps[w] = exists(pj) ? readJson(pj).version : "MISSING";
+    }
+    const hfDir = path.join(globalPkgDir(root.prefix), "node_modules", "@huggingface");
+    assert(!exists(hfDir), "@huggingface present after minimal global install");
+    return { actual: `shims: ${shims.join(", ")}; resolved: ${which.stdout.trim().split(/\r?\n/)[0]}; ${lines.join("; ")}; unknown command exit 1`, notes: [`npm ls -g: ${trimTo(lsg.stdout, 400)}`, `resolved deps (installed package.json versions): ${JSON.stringify(deps)}; @huggingface absent (minimal install did not pull the optional runtime)`] };
   });
 }
 

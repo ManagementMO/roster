@@ -1,8 +1,10 @@
 name: consumer-qa-windows
-# Verification-only: native Windows clean-consumer install matrix for the pinned
-# candidate @roster/cli@0.0.1 tarball (qa/consumer/artifact). Lives on a
+# Verification-only: native Windows clean-consumer install matrix for
+# @roster/cli@0.0.1 built from the pinned application commit. Lives on a
 # temporary QA branch; never merged. Product source on this branch is identical
-# to the application commit (checked below).
+# to the application commit (checked below). No build output is committed: the
+# candidate tarball is produced by the `build` job with frozen deps and handed
+# to the Windows jobs as an Actions artifact.
 on:
   push:
     branches: ["devin/*-consumer-qa-windows"]
@@ -17,11 +19,62 @@ concurrency:
 
 env:
   APP_SHA: 13a9c9f83e3b6d20e3477d4b65f9a1212ecd9395
+  # SHA-256 of the Linux coordinator's candidate tarball (pnpm 11.9.0, Node 24.21.0,
+  # frozen lockfile, `pnpm build` + `pnpm pack` in packages/cli at APP_SHA).
   CANDIDATE_SHA256: ad8356c22c007bb23138e8988fdd206befb92e36adef34ecb20d885254b308ed
 
 jobs:
+  build:
+    name: Pinned candidate build (linux, node24, frozen)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      qa_harness_sha: ${{ steps.pin.outputs.qa_harness_sha }}
+      tarball_sha256: ${{ steps.pack.outputs.sha256 }}
+      byte_identical: ${{ steps.pack.outputs.byte_identical }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Application SHA unchanged outside qa/ + this workflow
+        id: pin
+        shell: bash
+        run: |
+          git fetch --quiet origin "$APP_SHA"
+          if ! git diff --quiet "$APP_SHA" HEAD -- . ':(exclude)qa' ':(exclude).github/workflows/consumer-qa-windows.yml'; then
+            git diff --stat "$APP_SHA" HEAD -- . ':(exclude)qa' ':(exclude).github/workflows/consumer-qa-windows.yml'
+            echo "product files differ from application SHA" >&2; exit 1
+          fi
+          echo "qa_harness_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "application SHA $APP_SHA; QA harness SHA $(git rev-parse HEAD)"
+      - uses: ./.github/actions/setup
+        with:
+          node-version: "24"
+      - name: Build + pack @roster/cli, compare with Linux candidate
+        id: pack
+        shell: bash
+        run: |
+          pnpm build
+          mkdir -p "$RUNNER_TEMP/candidate"
+          (cd packages/cli && pnpm pack --pack-destination "$RUNNER_TEMP/candidate")
+          f=$(ls "$RUNNER_TEMP"/candidate/*.tgz)
+          h=$(sha256sum "$f" | cut -d' ' -f1)
+          echo "built $(basename "$f") sha256=$h (coordinator candidate $CANDIDATE_SHA256)"
+          echo "sha256=$h" >> "$GITHUB_OUTPUT"
+          echo "byte_identical=$([ "$h" = "$CANDIDATE_SHA256" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          { echo "{\"appSha\":\"$APP_SHA\",\"qaHarnessSha\":\"$(git rev-parse HEAD)\",\"node\":\"$(node -v)\",\"pnpm\":\"$(pnpm -v)\",\"tarball\":\"$(basename "$f")\",\"sha256\":\"$h\",\"coordinatorCandidateSha256\":\"$CANDIDATE_SHA256\",\"byteIdentical\":$([ "$h" = "$CANDIDATE_SHA256" ] && echo true || echo false)}"; } > "$RUNNER_TEMP/candidate/build-identity.json"
+          cat "$RUNNER_TEMP/candidate/build-identity.json"
+          [ "$h" = "$CANDIDATE_SHA256" ] || { echo "::error::built tarball is not byte-identical to the coordinator candidate" >&2; exit 1; }
+      - uses: actions/upload-artifact@v6
+        with:
+          name: candidate-tarball
+          path: ${{ runner.temp }}/candidate
+          if-no-files-found: error
+          retention-days: 30
+
   windows:
     name: Consumer QA · windows-x64 node${{ matrix.node }}
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -33,27 +86,23 @@ jobs:
         shell: pwsh
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
-      - name: Application SHA unchanged outside qa/ + this workflow
-        run: |
-          git fetch --quiet origin $env:APP_SHA
-          $diff = git diff --stat $env:APP_SHA HEAD -- . ':(exclude)qa' ':(exclude).github/workflows/consumer-qa-windows.yml'
-          if ($diff) { Write-Host $diff; throw "product files differ from application SHA" }
-          "application_sha=$env:APP_SHA" >> $env:GITHUB_OUTPUT
-          "qa_harness_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
-          Write-Host "application SHA $env:APP_SHA; QA harness SHA $(git rev-parse HEAD)"
+      - uses: actions/download-artifact@v7
+        with:
+          name: candidate-tarball
+          path: ${{ runner.temp }}/candidate
 
       - name: Candidate tarball identity
         run: |
-          $h = (Get-FileHash -Algorithm SHA256 qa/consumer/artifact/roster-cli-0.0.1.tgz).Hash.ToLower()
-          Write-Host "candidate sha256 = $h"
+          $t = Get-ChildItem "$env:RUNNER_TEMP\candidate\*.tgz" | Select-Object -First 1
+          $h = (Get-FileHash -Algorithm SHA256 $t.FullName).Hash.ToLower()
+          Write-Host "candidate $($t.Name) sha256 = $h"
           if ($h -ne $env:CANDIDATE_SHA256) { throw "candidate tarball hash mismatch: $h" }
+          "tarball=$($t.FullName)" >> $env:GITHUB_ENV
 
-      # Node 24 leg only: rebuild from the pinned source on Windows with frozen
-      # deps and report whether the Windows-built tarball is byte-identical to
-      # the Linux candidate (informational; consumer tests use the candidate).
+      # Node 24 leg only: also rebuild from the pinned source ON WINDOWS with
+      # frozen deps and report whether the Windows-built tarball is byte-identical
+      # (informational; consumer tests use the artifact from the build job).
       - uses: ./.github/actions/setup
         if: matrix.node == '24'
         with:
@@ -64,10 +113,10 @@ jobs:
         run: |
           pnpm build
           New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\win-pack" | Out-Null
-          pnpm --filter @roster/cli pack --pack-destination "$env:RUNNER_TEMP\win-pack"
+          Push-Location packages/cli; pnpm pack --pack-destination "$env:RUNNER_TEMP\win-pack"; Pop-Location
           $t = Get-ChildItem "$env:RUNNER_TEMP\win-pack\*.tgz" | Select-Object -First 1
           $h = (Get-FileHash -Algorithm SHA256 $t.FullName).Hash.ToLower()
-          $parity = @{ windowsBuiltTarball = $t.Name; windowsBuiltSha256 = $h; candidateSha256 = $env:CANDIDATE_SHA256; byteIdentical = ($h -eq $env:CANDIDATE_SHA256) }
+          $parity = @{ windowsBuiltTarball = $t.Name; windowsBuiltSha256 = $h; candidateSha256 = $env:CANDIDATE_SHA256; byteIdentical = ($h -eq $env:CANDIDATE_SHA256); node = (node -v); pnpm = (pnpm -v) }
           New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\qa-out" | Out-Null
           $parity | ConvertTo-Json | Set-Content "$env:RUNNER_TEMP\qa-out\windows-build-parity.json"
           Write-Host ($parity | ConvertTo-Json)
@@ -84,21 +133,19 @@ jobs:
           Get-ExecutionPolicy -List
           node -e "console.log('process.platform=' + process.platform, 'arch=' + process.arch)"
 
-      - name: Start loopback staging registry (Verdaccio 6.10.2, test-owned dir)
-        run: |
-          node qa/consumer/staging-registry.mjs start --dir "$env:RUNNER_TEMP\staging-registry" --port 4873 --tarball qa/consumer/artifact/roster-cli-0.0.1.tgz
-
-      - name: Consumer QA matrix (outside the clone; --dense)
+      # The runner tears down every process a step started when the step ends,
+      # so the loopback registry must live in the same step as the harness.
+      - name: Staging registry (Verdaccio 6.10.2, loopback, test-owned dir) + consumer QA matrix (outside the clone; --dense)
         id: qa
         continue-on-error: true
         run: |
-          node qa/consumer/consumer-qa.mjs --out "$env:RUNNER_TEMP\qa-out" --tarball qa/consumer/artifact/roster-cli-0.0.1.tgz --registry http://127.0.0.1:4873/ --node-label "${{ matrix.node }}" --repo "$env:GITHUB_WORKSPACE" --dense
-          "exit_code=$LASTEXITCODE" >> $env:GITHUB_OUTPUT
-          exit $LASTEXITCODE
-
-      - name: Stop staging registry
-        if: always()
-        run: node qa/consumer/staging-registry.mjs stop --dir "$env:RUNNER_TEMP\staging-registry"
+          node qa/consumer/staging-registry.mjs start --dir "$env:RUNNER_TEMP\staging-registry" --port 4873 --tarball "$env:tarball"
+          if ($LASTEXITCODE -ne 0) { throw "staging registry failed to start" }
+          node qa/consumer/consumer-qa.mjs --out "$env:RUNNER_TEMP\qa-out" --tarball "$env:tarball" --registry http://127.0.0.1:4873/ --node-label "${{ matrix.node }}" --repo "$env:GITHUB_WORKSPACE" --dense
+          $qaExit = $LASTEXITCODE
+          node qa/consumer/staging-registry.mjs stop --dir "$env:RUNNER_TEMP\staging-registry"
+          "exit_code=$qaExit" >> $env:GITHUB_OUTPUT
+          exit $qaExit
 
       - name: Collect sanitized registry evidence (no auth files)
         if: always()
@@ -110,6 +157,7 @@ jobs:
           }
           # Never ship the test-owned publisher token / htpasswd.
           Get-ChildItem -Recurse "$env:RUNNER_TEMP\qa-out\registry" | Where-Object { $_.Name -match 'npmrc|htpasswd' } | Remove-Item -Force
+          Copy-Item "$env:RUNNER_TEMP\candidate\build-identity.json" "$env:RUNNER_TEMP\qa-out\build-identity.json" -ErrorAction SilentlyContinue
           # Work tree (installed prefixes, caches, model files) is large and not evidence; drop it.
           if (Test-Path "$env:RUNNER_TEMP\qa-out\work") { Remove-Item -Recurse -Force "$env:RUNNER_TEMP\qa-out\work" }
 
