@@ -1,0 +1,135 @@
+name: consumer-qa-windows
+# Verification-only: native Windows clean-consumer install matrix for the pinned
+# candidate @roster/cli@0.0.1 tarball (qa/consumer/artifact). Lives on a
+# temporary QA branch; never merged. Product source on this branch is identical
+# to the application commit (checked below).
+on:
+  push:
+    branches: ["devin/*-consumer-qa-windows"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: consumer-qa-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APP_SHA: 13a9c9f83e3b6d20e3477d4b65f9a1212ecd9395
+  CANDIDATE_SHA256: ad8356c22c007bb23138e8988fdd206befb92e36adef34ecb20d885254b308ed
+
+jobs:
+  windows:
+    name: Consumer QA · windows-x64 node${{ matrix.node }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24", "22.13.x"]
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Application SHA unchanged outside qa/ + this workflow
+        run: |
+          git fetch --quiet origin $env:APP_SHA
+          $diff = git diff --stat $env:APP_SHA HEAD -- . ':(exclude)qa' ':(exclude).github/workflows/consumer-qa-windows.yml'
+          if ($diff) { Write-Host $diff; throw "product files differ from application SHA" }
+          "application_sha=$env:APP_SHA" >> $env:GITHUB_OUTPUT
+          "qa_harness_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+          Write-Host "application SHA $env:APP_SHA; QA harness SHA $(git rev-parse HEAD)"
+
+      - name: Candidate tarball identity
+        run: |
+          $h = (Get-FileHash -Algorithm SHA256 qa/consumer/artifact/roster-cli-0.0.1.tgz).Hash.ToLower()
+          Write-Host "candidate sha256 = $h"
+          if ($h -ne $env:CANDIDATE_SHA256) { throw "candidate tarball hash mismatch: $h" }
+
+      # Node 24 leg only: rebuild from the pinned source on Windows with frozen
+      # deps and report whether the Windows-built tarball is byte-identical to
+      # the Linux candidate (informational; consumer tests use the candidate).
+      - uses: ./.github/actions/setup
+        if: matrix.node == '24'
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Windows source build parity (informational)
+        if: matrix.node == '24'
+        continue-on-error: true
+        run: |
+          pnpm build
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\win-pack" | Out-Null
+          pnpm --filter @roster/cli pack --pack-destination "$env:RUNNER_TEMP\win-pack"
+          $t = Get-ChildItem "$env:RUNNER_TEMP\win-pack\*.tgz" | Select-Object -First 1
+          $h = (Get-FileHash -Algorithm SHA256 $t.FullName).Hash.ToLower()
+          $parity = @{ windowsBuiltTarball = $t.Name; windowsBuiltSha256 = $h; candidateSha256 = $env:CANDIDATE_SHA256; byteIdentical = ($h -eq $env:CANDIDATE_SHA256) }
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\qa-out" | Out-Null
+          $parity | ConvertTo-Json | Set-Content "$env:RUNNER_TEMP\qa-out\windows-build-parity.json"
+          Write-Host ($parity | ConvertTo-Json)
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Environment facts
+        run: |
+          Write-Host "OS: $([System.Environment]::OSVersion.VersionString)  arch: $env:PROCESSOR_ARCHITECTURE"
+          Write-Host "node: $(node -v)  npm: $(npm -v)"
+          Write-Host "user: $(whoami)"
+          Get-ExecutionPolicy -List
+          node -e "console.log('process.platform=' + process.platform, 'arch=' + process.arch)"
+
+      - name: Start loopback staging registry (Verdaccio 6.10.2, test-owned dir)
+        run: |
+          node qa/consumer/staging-registry.mjs start --dir "$env:RUNNER_TEMP\staging-registry" --port 4873 --tarball qa/consumer/artifact/roster-cli-0.0.1.tgz
+
+      - name: Consumer QA matrix (outside the clone; --dense)
+        id: qa
+        continue-on-error: true
+        run: |
+          node qa/consumer/consumer-qa.mjs --out "$env:RUNNER_TEMP\qa-out" --tarball qa/consumer/artifact/roster-cli-0.0.1.tgz --registry http://127.0.0.1:4873/ --node-label "${{ matrix.node }}" --repo "$env:GITHUB_WORKSPACE" --dense
+          "exit_code=$LASTEXITCODE" >> $env:GITHUB_OUTPUT
+          exit $LASTEXITCODE
+
+      - name: Stop staging registry
+        if: always()
+        run: node qa/consumer/staging-registry.mjs stop --dir "$env:RUNNER_TEMP\staging-registry"
+
+      - name: Collect sanitized registry evidence (no auth files)
+        if: always()
+        run: |
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\qa-out\registry" | Out-Null
+          foreach ($f in @("registry-summary.json", "verdaccio.log", "verdaccio.out")) {
+            $p = Join-Path "$env:RUNNER_TEMP\staging-registry" $f
+            if (Test-Path $p) { Copy-Item $p "$env:RUNNER_TEMP\qa-out\registry\$f" }
+          }
+          # Never ship the test-owned publisher token / htpasswd.
+          Get-ChildItem -Recurse "$env:RUNNER_TEMP\qa-out\registry" | Where-Object { $_.Name -match 'npmrc|htpasswd' } | Remove-Item -Force
+          # Work tree (installed prefixes, caches, model files) is large and not evidence; drop it.
+          if (Test-Path "$env:RUNNER_TEMP\qa-out\work") { Remove-Item -Recurse -Force "$env:RUNNER_TEMP\qa-out\work" }
+
+      - name: Job summary
+        if: always()
+        run: |
+          $lines = @("## Consumer QA · windows-x64 · node ${{ matrix.node }} (harness exit ${{ steps.qa.outputs.exit_code }})", "")
+          $file = "$env:RUNNER_TEMP\qa-out\results.json"
+          if (Test-Path $file) {
+            $r = Get-Content $file -Raw | ConvertFrom-Json
+            $lines += @("| case | status | duration ms |", "|---|---|---|")
+            foreach ($c in $r.results) { $lines += "| $($c.id) | $($c.status) | $($c.durationMs) |" }
+          } else { $lines += "results.json missing — harness did not start" }
+          $lines -join "`n" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload native Windows results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: consumer-qa-windows-node${{ matrix.node }}
+          path: ${{ runner.temp }}/qa-out
+          if-no-files-found: error
+          retention-days: 30
