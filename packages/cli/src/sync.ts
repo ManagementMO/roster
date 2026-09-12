@@ -147,7 +147,7 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
     mode: PRIVATE_FILE,
   });
   fs.renameSync(stagingDir, backupDir); // atomic publish: complete backup or none
-  fs.writeFileSync(latestPath, timestamp, { mode: PRIVATE_FILE });
+  atomicWriteFileSync(latestPath, timestamp, PRIVATE_FILE);
 
   // Step 3 — atomic config replacement (private tmp + rename).
   let replaceApproved = false;

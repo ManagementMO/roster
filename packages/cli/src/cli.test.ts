@@ -312,6 +312,37 @@ describe("receipt truthfulness", () => {
 });
 
 describe("sync content conflicts", () => {
+  it.each([false, true])("never follows a latest-pointer symlink swapped in after its snapshot (existing: %s)", (existing) => {
+    const file = write(".cursor/mcp.json", '{"mcpServers":{"demo":{"command":"echo"}}}');
+    if (existing) {
+      syncClient("cursor", new Date("2026-09-08T00:00:00Z"));
+      const current = JSON.parse(fs.readFileSync(file, "utf8"));
+      current.mcpServers.added = { command: "node" };
+      fs.writeFileSync(file, JSON.stringify(current));
+    }
+    const latest = path.join(home, ".roster/backups/cursor/latest");
+    const outside = write("outside-pointer-target.txt", "keep this file intact");
+    const originalWrite = fs.writeFileSync;
+    let swapped = false;
+    fs.writeFileSync = ((target, data, ...args) => {
+      const result = Reflect.apply(originalWrite, fs, [target, data, ...args]);
+      if (!swapped && typeof target === "string" && target.includes(".staging-") && path.basename(target) === "manifest.json") {
+        swapped = true;
+        if (existing) fs.unlinkSync(latest);
+        fs.symlinkSync(outside, latest, "file");
+      }
+      return result;
+    }) as typeof fs.writeFileSync;
+    try {
+      expect(syncClient("cursor", new Date("2026-09-08T01:00:00Z")).action).toBe("synced");
+    } finally {
+      fs.writeFileSync = originalWrite;
+    }
+    expect(swapped).toBe(true);
+    expect(readRegularFileNoFollow(outside).toString("utf8")).toBe("keep this file intact");
+    expect(readRegularFileNoFollow(latest).toString("utf8")).toBe("2026-09-08T01-00-00-000Z");
+  });
+
   it.each(["backup", "temporary-file"])("refuses a client edit during %s work and does not poison the next pristine", (phase) => {
     const file = write(".claude.json", JSON.stringify({ counter: 1, mcpServers: { original: { command: "echo" } } }));
     const changedBytes = JSON.stringify({ counter: 2, mcpServers: { original: { command: "echo" }, added: { command: "node" } } });
