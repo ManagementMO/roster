@@ -562,6 +562,27 @@ function findProcesses(marker) {
     return m ? { pid: Number(m[1]), ppid: Number(m[2]), cmd: m[3] } : null;
   }).filter(Boolean);
 }
+// Full per-process state (pid, ppid, pgid, session, state, elapsed, argv) for an evidence snapshot.
+function processState(procs) {
+  if (!procs.length) return [];
+  if (WIN) {
+    const r = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
+      `Get-CimInstance Win32_Process -Filter "ProcessId=${procs.map((p) => p.pid).join(" or ProcessId=")}" | Select-Object ProcessId,ParentProcessId,SessionId,CreationDate,Name,CommandLine | ConvertTo-Json -Compress`],
+      { encoding: "utf8", timeout: 60_000 });
+    const text = (r.stdout ?? "").trim();
+    if (!text) return procs.map((p) => ({ ...p, state: "gone" }));
+    const parsed = JSON.parse(text);
+    return (Array.isArray(parsed) ? parsed : [parsed]).map((p) => ({ pid: p.ProcessId, ppid: p.ParentProcessId, session: p.SessionId, created: p.CreationDate, name: p.Name, cmd: p.CommandLine }));
+  }
+  const r = spawnSync("ps", ["-o", "pid=,ppid=,pgid=,sid=,stat=,etimes=,args=", "-p", procs.map((p) => p.pid).join(",")], { encoding: "utf8" });
+  return r.stdout.split("\n").filter(Boolean).map((l) => {
+    const m = l.trim().match(/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(.*)$/);
+    if (!m) return { raw: l.trim() };
+    let procStatus = null;
+    try { procStatus = fs.readFileSync(`/proc/${m[1]}/status`, "utf8").match(/^State:\s*(.*)$/m)?.[1] ?? null; } catch { /* gone */ }
+    return { pid: Number(m[1]), ppid: Number(m[2]), pgid: Number(m[3]), sid: Number(m[4]), stat: m[5], elapsedSeconds: Number(m[6]), cmd: m[7], procStatus };
+  });
+}
 async function waitForNoProcesses(marker, ms) {
   const deadline = Date.now() + ms;
   let procs = findProcesses(marker);
@@ -1536,11 +1557,18 @@ async function functionalMatrix(routes) {
     await sleep(1000);
     const treeBefore = findProcesses(marker3);
     assert(treeBefore.length >= 2, `fixture tree not established: ${JSON.stringify(treeBefore)}`);
+    const rosterPid = d.child.pid;
+    const stateBefore = processState([{ pid: rosterPid }, ...treeBefore]);
     const exitD = await d.eof(30_000);
     const leftAfterD = await waitForNoProcesses(marker3, 8000);
+    const stateAfter = processState([{ pid: rosterPid }, ...treeBefore]);
     const fixtureLeft = leftAfterD.filter((p) => !/descendant/.test(p.cmd));
     const descendantLeft = leftAfterD.filter((p) => /descendant/.test(p.cmd));
-    note(`tree before=${treeBefore.length} [${treeBefore.map((p) => `${p.pid}<-${p.ppid}`).join(" ")}] (roster pid ${d.child.pid}); roster exit=${JSON.stringify(exitD)}; fixture left=${fixtureLeft.length}; descendant left=${descendantLeft.length} [${descendantLeft.map((p) => `${p.pid}<-${p.ppid}`).join(" ")}]; fixture events: ${trimTo(exists(stateFile) ? fs.readFileSync(stateFile, "utf8").split("\n").filter((l) => l.includes(marker3) || /ignored|eof|descendant/.test(l)).slice(-6).join(" | ") : "n/a", 500)}`);
+    const snapshot = { rosterPid, rosterExit: exitD, before: stateBefore, afterEofAndWait: stateAfter, survivors: leftAfterD, capturedAt: new Date().toISOString() };
+    fs.writeFileSync(path.join(OUT, "cases", "FN-lifecycle-uncooperative-descendant.process-state.json"), `${JSON.stringify(snapshot, null, 2)}\n`);
+    note(`tree before=${treeBefore.length} [${treeBefore.map((p) => `${p.pid}<-${p.ppid}`).join(" ")}] (roster pid ${rosterPid}); roster exit=${JSON.stringify(exitD)}; fixture left=${fixtureLeft.length}; descendant left=${descendantLeft.length} [${descendantLeft.map((p) => `${p.pid}<-${p.ppid}`).join(" ")}]; fixture events: ${trimTo(exists(stateFile) ? fs.readFileSync(stateFile, "utf8").split("\n").filter((l) => l.includes(marker3) || /ignored|eof|descendant/.test(l)).slice(-6).join(" | ") : "n/a", 500)}`);
+    note(`process state BEFORE eof: ${trimTo(JSON.stringify(stateBefore), 700)}`);
+    note(`process state AFTER eof + 8s wait: ${trimTo(JSON.stringify(stateAfter), 700)} (full snapshot: cases/FN-lifecycle-uncooperative-descendant.process-state.json)`);
     killMarked(marker3);
     cfg.servers["fixture-codex"].args = [FIXTURE_SERVER, fx.marker];
     setFixtureEnv({});
@@ -1695,12 +1723,16 @@ await pipe.dispose?.();
 // Linux network evidence (process-attributed via strace; offline via unshare)
 // ---------------------------------------------------------------------------
 async function networkEvidence(routes) {
-  await testCase("NET-telemetry-off-privacy", { area: "network", route: "npm global", title: "Process-attributed network evidence: installed product commands + serve session make no non-loopback connections (strace -f) and work with networking removed (unshare -n)", expected: "strace shows no connect()/sendto() to non-loopback AF_INET/AF_INET6 for init/receipt/telemetry/sync/eject/serve; the same commands succeed inside a network-less namespace" }, async () => {
+  let netRoot = null;
+  let netEnv = null;
+  let netShim = null;
+  await testCase("NET-telemetry-off-strace", { area: "network", route: "npm global", title: "Process-attributed network evidence: installed product commands + a transparent serve session make no non-loopback connections (strace -f -e connect,sendto,sendmsg)", expected: "strace shows no connect()/sendto()/sendmsg() to non-loopback AF_INET/AF_INET6 for init --no-dense/receipt/telemetry status/sync/eject/dense status and a serve session" }, async () => {
     if (WIN) notRun("NOT RUN on Windows — no packet capture / syscall tracing available on the GitHub-hosted runner");
     const root = routes.functional ?? notRun("functional route unavailable");
     if (!ENV_FACTS.tools.strace) blocked("strace not available");
     const binDir = globalBinDir(root.prefix);
     const env = envFor(root, { PATH_PREPEND: [binDir] });
+    netRoot = root; netEnv = env; netShim = path.join(binDir, "roster");
     const trace = path.join(root.root, "strace-net.txt");
     fs.rmSync(trace, { force: true });
     const shim = path.join(binDir, "roster");
@@ -1727,16 +1759,23 @@ async function networkEvidence(routes) {
     const notes = [];
     note(`strace lines=${lines.length}; AF_UNIX=${unix}; AF_INET(any)=${inet.length}; non-loopback=${nonLoopback.length}`, ...nonLoopback.slice(0, 10).map((l) => `NON-LOOPBACK: ${trimTo(l, 200)}`));
     fs.copyFileSync(trace, path.join(OUT, "cases", "NET-strace-net.txt"));
-    // Offline namespace
-    const ns = exec("unshare", ["-r", "-n", "--", "bash", "--noprofile", "--norc", "-c", `roster receipt && roster telemetry status && roster sync --client cursor && roster eject --client cursor`], { cwd: root.elsewhere, env });
-    note(`unshare -rn: exit ${ns.exitCode}${ns.exitCode !== 0 ? ` (${trimTo(ns.stderr, 300)})` : ""}`);
-    const nsServe = ns.exitCode === 0 ? await (async () => {
-      const c = new McpClient("unshare", ["-r", "-n", "--", shim, "serve"], { cwd: root.elsewhere, env }).start();
-      try { await c.initialize(120_000); const n = (await c.listTools()).length; const e = await c.eof(30_000); return `serve offline: ${n} tools, exit ${JSON.stringify(e)}`; } catch (e) { await c.waitExit(5000); return `serve offline failed: ${e.message}`; }
-    })() : "serve offline: skipped (unshare unavailable)";
-    note(nsServe);
     assert(nonLoopback.length === 0, `non-loopback network activity attributed to roster processes: ${nonLoopback.length} lines`, { severity: "high" });
-    return { status: ns.exitCode === 0 ? "PASS" : "PASS", actual: `no non-loopback AF_INET connect/sendto/sendmsg across ${cmds.length} commands + a transparent serve session (${lines.length} traced socket calls, ${unix} AF_UNIX); serve exit ${JSON.stringify(exit)}; ${ns.exitCode === 0 ? "commands succeed with networking removed" : "unshare -n unavailable in this VM (offline check NOT RUN)"}; ${nsServe}`, notes };
+    return { actual: `no non-loopback AF_INET connect/sendto/sendmsg across ${cmds.length} commands + a transparent serve session (${lines.length} traced socket calls, ${unix} AF_UNIX); serve exit ${JSON.stringify(exit)}`, notes };
+  });
+
+  await testCase("NET-offline-namespace", { area: "network", route: "npm global", title: "Installed product commands + serve session succeed with networking removed (unshare -r -n)", expected: "receipt/telemetry status/sync/eject and a serve session succeed inside a network-less user namespace; NOT RUN if unshare -n is unavailable on this host" }, async () => {
+    if (WIN) notRun("NOT RUN on Windows — no network-namespace equivalent on the GitHub-hosted runner");
+    if (!netRoot) blocked("strace case did not establish the network evidence route");
+    const probe = spawnSync("unshare", ["-r", "-n", "--", "true"], { encoding: "utf8" });
+    if (probe.status !== 0) notRun(`unshare -r -n unavailable on this host (exit ${probe.status}: ${trimTo(probe.stderr, 200)})`);
+    const ns = exec("unshare", ["-r", "-n", "--", "bash", "--noprofile", "--norc", "-c", `roster receipt && roster telemetry status && roster sync --client cursor && roster eject --client cursor`], { cwd: netRoot.elsewhere, env: netEnv });
+    note(`unshare -rn commands: exit ${ns.exitCode}${ns.exitCode !== 0 ? ` (${trimTo(ns.stderr, 300)})` : ""}`);
+    assert(ns.exitCode === 0, `commands failed with networking removed: exit ${ns.exitCode}`);
+    const c = new McpClient("unshare", ["-r", "-n", "--", netShim, "serve"], { cwd: netRoot.elsewhere, env: netEnv }).start();
+    let toolCount;
+    let serveExit;
+    try { await c.initialize(120_000); toolCount = (await c.listTools()).length; serveExit = await c.eof(30_000); } catch (e) { await c.waitExit(5000); throw new Error(`serve offline failed: ${e.message}`); }
+    return { actual: `commands succeed with networking removed (exit 0); serve offline: ${toolCount} tools, exit ${JSON.stringify(serveExit)}` };
   });
 }
 
