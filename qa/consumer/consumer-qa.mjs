@@ -1722,6 +1722,109 @@ await pipe.dispose?.();
 // ---------------------------------------------------------------------------
 // Linux network evidence (process-attributed via strace; offline via unshare)
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Diagnostics: pin down platform invariants the product relies on. These do
+// not exercise Roster itself; they explain FAIL results observed above.
+// ---------------------------------------------------------------------------
+function statIdentityProbe(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, "identity-probe.txt");
+  fs.writeFileSync(file, "probe");
+  const fd = fs.openSync(file, fs.constants.O_RDONLY);
+  try {
+    const pick = (s) => ({ dev: String(s.dev), ino: String(s.ino), mode: String(s.mode), isFile: s.isFile(), isDir: s.isDirectory(), isSymlink: s.isSymbolicLink(), size: String(s.size), mtimeNs: String(s.mtimeNs), ctimeNs: String(s.ctimeNs) });
+    const fstat1 = fs.fstatSync(fd, { bigint: true });
+    const lstat1 = fs.lstatSync(file, { bigint: true });
+    const stat1 = fs.statSync(file, { bigint: true });
+    const fstat2 = fs.fstatSync(fd, { bigint: true });
+    const parent1 = fs.lstatSync(dir, { bigint: true });
+    const parent2 = fs.lstatSync(dir, { bigint: true });
+    const parentStat = fs.statSync(dir, { bigint: true });
+    return {
+      file: sanitize(file),
+      fstat: pick(fstat1),
+      lstat: pick(lstat1),
+      stat: pick(stat1),
+      fstatAgain: pick(fstat2),
+      parentLstat: pick(parent1),
+      parentLstatAgain: pick(parent2),
+      parentStat: pick(parentStat),
+      fstatVsLstatIdentity: fstat1.dev === lstat1.dev && fstat1.ino === lstat1.ino,
+      fstatVsStatIdentity: fstat1.dev === stat1.dev && fstat1.ino === stat1.ino,
+      lstatVsStatIdentity: lstat1.dev === stat1.dev && lstat1.ino === stat1.ino,
+      fstatStable: fstat1.dev === fstat2.dev && fstat1.ino === fstat2.ino,
+      parentLstatStable: parent1.dev === parent2.dev && parent1.ino === parent2.ino,
+      parentLstatVsStat: parent1.dev === parentStat.dev && parent1.ino === parentStat.ino,
+    };
+  } finally {
+    fs.closeSync(fd);
+    fs.rmSync(file, { force: true });
+  }
+}
+function volumeInfo(dir) {
+  if (WIN) {
+    const drive = path.parse(path.resolve(dir)).root.replace(/\\$/, "");
+    const letter = drive.replace(":", "");
+    const ps = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
+      `Get-Volume -DriveLetter ${letter} | Select-Object DriveLetter,FileSystemType,FileSystem,FileSystemLabel,Size | ConvertTo-Json -Compress`],
+      { encoding: "utf8", timeout: 60_000, windowsHide: true });
+    const fsutil = spawnSync("fsutil.exe", ["fsinfo", "volumeinfo", drive], { encoding: "utf8", timeout: 60_000, windowsHide: true });
+    return {
+      drive,
+      getVolume: (ps.stdout ?? "").trim() || (ps.stderr ?? "").trim(),
+      fsutil: (fsutil.stdout ?? "").trim().split("\n").filter((l) => /File System Name|Supports|Volume Serial|Is ReFS|Dev ?Drive|Trusted/i.test(l)).map((l) => l.trim()).join(" | ") || (fsutil.stderr ?? "").trim(),
+    };
+  }
+  const r = spawnSync("df", ["-T", dir], { encoding: "utf8" });
+  return { df: (r.stdout ?? "").trim().split("\n").pop() };
+}
+async function diagnostics() {
+  const probes = [
+    ["DIAG-stat-identity-work-volume", WORK, "the QA work volume (where all installs, homes, fixtures and Combine sandboxes live)"],
+    ["DIAG-stat-identity-os-tmpdir", path.join(os.tmpdir(), `roster-qa-diag-${process.pid}`), "os.tmpdir() (the volume the repository's own unit tests use)"],
+  ];
+  for (const [id, dir, where] of probes) {
+    await testCase(id, { area: "diagnostic", route: null, source: "n/a", title: `fstat(fd) vs lstat(path) dev/ino identity on ${where} — the invariant safeFile.ts / safeVerifierRead.ts rely on`, expected: "fstat(fd).dev/ino == lstat(path).dev/ino for a freshly written regular file and its parent directory (otherwise every descriptor-pinned read in the product fails on this volume)" }, async () => {
+      fs.mkdirSync(dir, { recursive: true });
+      const vol = volumeInfo(dir);
+      note(`volume: ${JSON.stringify(vol)}`);
+      const probe = statIdentityProbe(dir);
+      fs.writeFileSync(path.join(OUT, "cases", `${id}.json`), `${JSON.stringify({ volume: vol, probe }, null, 2)}\n`);
+      note(`fstat dev/ino=${probe.fstat.dev}/${probe.fstat.ino} lstat dev/ino=${probe.lstat.dev}/${probe.lstat.ino} stat dev/ino=${probe.stat.dev}/${probe.stat.ino}`);
+      note(`parent lstat dev/ino=${probe.parentLstat.dev}/${probe.parentLstat.ino} (stable across calls: ${probe.parentLstatStable}; vs stat: ${probe.parentLstatVsStat})`);
+      const ok = probe.fstatVsLstatIdentity && probe.parentLstatStable && probe.fstat.isFile && probe.lstat.isFile && !probe.lstat.isSymlink;
+      if (!ok) {
+        return {
+          status: "FAIL",
+          severity: "high",
+          actual: `identity mismatch on this volume: fstat(fd) dev/ino=${probe.fstat.dev}/${probe.fstat.ino}, lstat(path) dev/ino=${probe.lstat.dev}/${probe.lstat.ino}, stat(path) dev/ino=${probe.stat.dev}/${probe.stat.ino}; fstat stable=${probe.fstatStable}; lstat==stat identity=${probe.lstatVsStatIdentity}; parent lstat stable=${probe.parentLstatStable}`,
+          repro: `node -e "const fs=require('fs');fs.writeFileSync('p.txt','x');const fd=fs.openSync('p.txt','r');const a=fs.fstatSync(fd,{bigint:true}),b=fs.lstatSync('p.txt',{bigint:true});console.log(a.dev===b.dev&&a.ino===b.ino, a.dev,a.ino,b.dev,b.ino)" (run on ${vol.drive ?? "this volume"}; ${vol.fsutil ?? vol.df ?? ""})`,
+          notes: [`this is the exact comparison in packages/cli/src/safeFile.ts sameIdentity() (used by sync/eject via readRegularFileNoFollow) and packages/combine/src/safeVerifierRead.ts (fileEquals/fileContains verifiers)`],
+        };
+      }
+      return { actual: `fstat(fd) and lstat(path) agree (dev/ino ${probe.fstat.dev}/${probe.fstat.ino}); parent identity stable; ${JSON.stringify(vol)}` };
+    });
+  }
+  await testCase("DIAG-npm-on-PATH-for-child-spawn", { area: "diagnostic", route: null, source: "n/a", title: "How `npm` resolves for a child process spawned WITHOUT a shell (what installDenseRuntime does): spawnSync('npm', ['--version'])", expected: "spawnSync('npm', ...) succeeds, or the platform reason for ENOENT is recorded (Windows: npm ships only as npm.cmd/npm.ps1, which CreateProcess cannot execute without a shell)" }, async () => {
+    const env = { ...process.env };
+    const pathKey = Object.keys(env).find((k) => k.toUpperCase() === "PATH") ?? "PATH";
+    env[pathKey] = [TOOLCHAIN_BIN, env[pathKey] ?? ""].join(path.delimiter);
+    const candidates = fs.readdirSync(TOOLCHAIN_BIN).filter((f) => /^npm(\.cmd|\.ps1|\.exe|)$/i.test(f));
+    note(`npm entries in toolchain bin dir: ${JSON.stringify(candidates)}`);
+    const direct = spawnSync("npm", ["--version"], { encoding: "utf8", env, timeout: 60_000, windowsHide: true });
+    recordCommand({ shell: "spawn(no shell)", command: "npm --version", cwd: process.cwd(), exitCode: direct.status, signal: direct.signal, error: direct.error ? String(direct.error) : undefined, stdout: direct.stdout ?? "", stderr: direct.stderr ?? "", durationMs: 0 });
+    const viaShell = spawnSync("npm", ["--version"], { encoding: "utf8", env, timeout: 60_000, windowsHide: true, shell: true });
+    recordCommand({ shell: "spawn(shell:true)", command: "npm --version", cwd: process.cwd(), exitCode: viaShell.status, signal: viaShell.signal, error: viaShell.error ? String(viaShell.error) : undefined, stdout: viaShell.stdout ?? "", stderr: viaShell.stderr ?? "", durationMs: 0 });
+    const viaCmd = WIN ? spawnSync("npm.cmd", ["--version"], { encoding: "utf8", env, timeout: 60_000, windowsHide: true }) : null;
+    if (viaCmd) recordCommand({ shell: "spawn(no shell)", command: "npm.cmd --version", cwd: process.cwd(), exitCode: viaCmd.status, signal: viaCmd.signal, error: viaCmd.error ? String(viaCmd.error) : undefined, stdout: viaCmd.stdout ?? "", stderr: viaCmd.stderr ?? "", durationMs: 0 });
+    const summary = `spawnSync('npm'): ${direct.error ? String(direct.error.code ?? direct.error) : `exit ${direct.status} → ${(direct.stdout ?? "").trim()}`}; shell:true: ${viaShell.error ? String(viaShell.error) : `exit ${viaShell.status} → ${(viaShell.stdout ?? "").trim()}`}${viaCmd ? `; spawnSync('npm.cmd'): ${viaCmd.error ? String(viaCmd.error.code ?? viaCmd.error) : `exit ${viaCmd.status}`}` : ""}`;
+    if (direct.error) {
+      return { status: "FAIL", severity: "high", actual: summary, repro: `node -e "console.log(require('child_process').spawnSync('npm',['--version']).error)" on native Windows → Error: spawnSync npm ENOENT (npm is npm.cmd/npm.ps1 there; Node's spawn without shell only launches .exe/.com)`, notes: ["this is exactly what packages/cli/src/dense.ts installDenseRuntime() does: spawnSync('npm', [...]) with no shell and no .cmd fallback"] };
+    }
+    return { actual: summary };
+  });
+}
+
 async function networkEvidence(routes) {
   let netRoot = null;
   let netEnv = null;
@@ -1802,6 +1905,7 @@ await caseNpxEphemeral(routes);
 await caseNpxSyncJourney(routes);
 await caseUpgradeNotRun();
 await functionalMatrix(routes);
+await diagnostics();
 await networkEvidence(routes);
 
 ENV_FACTS.finishedAt = new Date().toISOString();
