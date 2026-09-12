@@ -12,9 +12,9 @@ import { withFileLockSync } from "./lock.js";
 import { atomicWriteFileSync, defaultConfig, loadConfig, mergeServers } from "./rosterfile.js";
 import { createEjectJournal, hasEjectJournal } from "./ejectJournal.js";
 import { ejectClient } from "./eject.js";
-import { rosterEntry, runningFromNpxCache } from "./entry.js";
+import { hasGlobalRoster, rosterEntry, runningFromNpxCache } from "./entry.js";
 import { readRegularFileNoFollow } from "./safeFile.js";
-import { ownedRosterEntries, syncClient } from "./sync.js";
+import { ownedRosterEntries, rawBackups, syncClient } from "./sync.js";
 
 let home: string;
 
@@ -154,6 +154,89 @@ describe("read-import across all client formats", () => {
   });
 });
 
+describe("client option safety", () => {
+  it.each([
+    'enabled = false',
+    'disabled_tools = ["write_file"]',
+    'enabled_tools = ["read_file"]',
+    'env_vars = ["FIXTURE_TOKEN"]',
+    'cwd = "/fixture/project"',
+    'tool_timeout_sec = 120',
+    'required = true',
+  ])("refuses unsupported Codex controls before any config or backup write: %s", (setting) => {
+    const original = `[mcp_servers.demo]\ncommand = "node"\nargs = ["fixture.js"]\n${setting}\n`;
+    const file = write(".codex/config.toml", original);
+    expect(() => syncClient("codex")).toThrow(/unsupported/i);
+    expect(fs.readFileSync(file, "utf8")).toBe(original);
+    expect(fs.existsSync(path.join(home, ".roster/roster.json"))).toBe(false);
+    expect(fs.existsSync(path.join(home, ".roster/backups"))).toBe(false);
+    const discovery = discoverClients().find((d) => d.client.id === "codex");
+    expect(discovery?.parseError).toMatch(/unsupported/i);
+    expect(discovery?.servers).toEqual([]);
+  });
+
+  it.each([
+    { disabled: true },
+    { enabled: false },
+    { cwd: "/fixture/project" },
+    { envFile: ".env" },
+    { autoApprove: ["write_file"] },
+    { type: "http" },
+  ])("refuses unsupported JSON controls rather than stripping them: %j", (setting) => {
+    const original = JSON.stringify({ mcpServers: { demo: { command: "node", ...setting } } });
+    const file = write(".cursor/mcp.json", original);
+    expect(() => syncClient("cursor")).toThrow(/unsupported/i);
+    expect(fs.readFileSync(file, "utf8")).toBe(original);
+    expect(fs.existsSync(path.join(home, ".roster/roster.json"))).toBe(false);
+    expect(fs.existsSync(path.join(home, ".roster/backups"))).toBe(false);
+  });
+
+  it.each([
+    { command: 12 },
+    { command: "node", args: "fixture.js" },
+    { command: "node", args: [12] },
+    { command: "node", env: { TOKEN: false } },
+    { command: "node", env: [] },
+    { url: 12 },
+    "not a server entry",
+  ])("refuses malformed server definitions without discarding them: %j", (server) => {
+    const original = JSON.stringify({ mcpServers: { demo: server } });
+    const file = write(".cursor/mcp.json", original);
+    expect(() => syncClient("cursor")).toThrow();
+    expect(fs.readFileSync(file, "utf8")).toBe(original);
+    expect(fs.existsSync(path.join(home, ".roster/roster.json"))).toBe(false);
+  });
+
+  it.each([{ enabled: false }, { cwd: "/fixture" }, { env_vars: ["TOKEN"] }, { disabled_tools: ["write"] }])(
+    "refuses unsupported controls in manually edited roster state: %j",
+    (setting) => {
+      const original = JSON.stringify({ version: 1, servers: { demo: { command: "node", ...setting } } });
+      const file = write(".roster/roster.json", original);
+      expect(() => loadConfig()).toThrow(/unsupported/i);
+      expect(fs.readFileSync(file, "utf8")).toBe(original);
+    },
+  );
+
+  it("rejects malformed JSON before even cleaning prior backup staging", () => {
+    const file = write(".cursor/mcp.json", "{ not JSON");
+    const orphan = write(".roster/backups/cursor/2026-09-08T00-00-00-000Z.staging-1234abcd/original", "prior snapshot");
+    expect(() => syncClient("cursor")).toThrow();
+    expect(fs.readFileSync(file, "utf8")).toBe("{ not JSON");
+    expect(fs.existsSync(orphan)).toBe(true);
+    expect(fs.existsSync(path.join(home, ".roster/roster.json"))).toBe(false);
+  });
+
+  it("keeps supported stdio commands, arguments and explicit environment values", () => {
+    write(".cursor/mcp.json", JSON.stringify({ mcpServers: {
+      demo: { type: "stdio", command: "node", args: ["fixture.js"], env: { TOKEN: "synthetic-value" } },
+    } }));
+    expect(syncClient("cursor").action).toBe("synced");
+    expect(loadConfig().servers.demo).toEqual({
+      command: "node", args: ["fixture.js"], env: { TOKEN: "synthetic-value" }, importedFrom: ["cursor"],
+    });
+  });
+});
+
 describe("jsonc", () => {
   it("preserves comment-like content inside strings", () => {
     const parsed = parseJsonc(`{"a": "http://x // not-a-comment", "b": "/*neither*/", }`) as Record<string, string>;
@@ -163,6 +246,37 @@ describe("jsonc", () => {
 });
 
 describe("receipt truthfulness", () => {
+  it("deduplicates the same definition across a synced and an unsynced client", () => {
+    const entry = { command: "node", args: ["fixture.js"] };
+    write(".claude.json", JSON.stringify({ mcpServers: { shared: entry } }));
+    write(".cursor/mcp.json", JSON.stringify({ mcpServers: { shared: entry } }));
+    syncClient("cursor");
+    const receipt = buildReceipt(discoverClients(), [], 0, loadConfig().servers, ownedRosterEntries());
+    expect(receipt.uniqueServers).toBe(1);
+    expect(receipt.clients.map((client) => client.serverCount)).toEqual([1, 1]);
+  });
+
+  it("counts post-sync direct additions alongside the routed servers", () => {
+    const file = write(".cursor/mcp.json", JSON.stringify({ mcpServers: { original: { command: "node" } } }));
+    syncClient("cursor");
+    const current = JSON.parse(fs.readFileSync(file, "utf8"));
+    current.mcpServers.added = { command: "echo" };
+    fs.writeFileSync(file, JSON.stringify(current));
+    const receipt = buildReceipt(discoverClients(), [], 0, loadConfig().servers, ownedRosterEntries());
+    expect(receipt.uniqueServers).toBe(2);
+    expect(receipt.clients[0]?.serverCount).toBe(2);
+  });
+
+  it("uses the same identity for reordered environment maps", () => {
+    const config = defaultConfig();
+    mergeServers(config, [
+      { name: "original", command: "node", env: { A: "one", B: "two" }, client: "cursor", sourcePath: "fixture" },
+      { name: "alias", command: "node", env: { B: "two", A: "one" }, client: "claude-code", sourcePath: "fixture" },
+    ]);
+    expect(Object.keys(config.servers)).toEqual(["original"]);
+    expect(config.servers.original?.importedFrom).toEqual(["cursor", "claude-code"]);
+  });
+
   it("Claude Code line says deferred-not-loaded; OpenClaw skills chars are exact", () => {
     writeClientFixtures();
     // one skill in the default claude skills dir
@@ -194,6 +308,269 @@ describe("receipt truthfulness", () => {
     const skillPath = `${path.join(home, ".claude/skills/demo")}/SKILL.md`;
     expect(receipt.skills.openclaw?.chars).toBe(195 + 97 + 4 + 12 + skillPath.length);
     expect(receipt.methodology).toContain("estimate");
+  });
+});
+
+describe("sync content conflicts", () => {
+  it.each(["backup", "temporary-file"])("refuses a client edit during %s work and does not poison the next pristine", (phase) => {
+    const file = write(".claude.json", JSON.stringify({ counter: 1, mcpServers: { original: { command: "echo" } } }));
+    const changedBytes = JSON.stringify({ counter: 2, mcpServers: { original: { command: "echo" }, added: { command: "node" } } });
+    const originalWrite = fs.writeFileSync;
+    let changed = false;
+    fs.writeFileSync = ((target, data, ...args) => {
+      const result = Reflect.apply(originalWrite, fs, [target, data, ...args]);
+      const atBackup = typeof target === "string" && target.includes(".staging-") && path.basename(target) === "manifest.json";
+      const atTemporaryFile = typeof target === "number" && typeof data === "string" && data.includes('"mcpServers"');
+      if (!changed && (phase === "backup" ? atBackup : atTemporaryFile)) {
+        changed = true;
+        originalWrite(file, changedBytes);
+      }
+      return result;
+    }) as typeof fs.writeFileSync;
+    try {
+      expect(() => syncClient("claude-code", new Date("2026-09-08T00:00:00Z"))).toThrow(/changed.*sync/i);
+    } finally {
+      fs.writeFileSync = originalWrite;
+    }
+    expect(changed).toBe(true);
+    expect(fs.readFileSync(file, "utf8")).toBe(changedBytes);
+    expect(rawBackups("claude-code")).toEqual([]);
+    expect(syncClient("claude-code", new Date("2026-09-08T01:00:00Z")).action).toBe("synced");
+    expect(ejectClient("claude-code").action).toBe("restored");
+    expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(JSON.parse(changedBytes));
+  });
+
+  it("keeps the existing era and latest pointer when a re-sync is refused", () => {
+    const file = write(".claude.json", JSON.stringify({ mcpServers: { original: { command: "echo" } } }));
+    syncClient("claude-code", new Date("2026-09-08T00:00:00Z"));
+    const latest = path.join(home, ".roster/backups/claude-code/latest");
+    const previousLatest = fs.readFileSync(latest, "utf8");
+    const current = JSON.parse(fs.readFileSync(file, "utf8"));
+    current.mcpServers.added = { command: "node" };
+    fs.writeFileSync(file, JSON.stringify(current));
+    const originalWrite = fs.writeFileSync;
+    fs.writeFileSync = ((target, data, ...args) => {
+      const result = Reflect.apply(originalWrite, fs, [target, data, ...args]);
+      if (typeof target === "string" && target.includes(".staging-") && path.basename(target) === "manifest.json") {
+        originalWrite(file, JSON.stringify({ ...current, counter: 3 }));
+      }
+      return result;
+    }) as typeof fs.writeFileSync;
+    try {
+      expect(() => syncClient("claude-code", new Date("2026-09-08T01:00:00Z"))).toThrow(/changed.*sync/i);
+    } finally {
+      fs.writeFileSync = originalWrite;
+    }
+    expect(rawBackups("claude-code")).toHaveLength(1);
+    expect(fs.readFileSync(latest, "utf8")).toBe(previousLatest);
+    expect(ejectClient("claude-code").action).toBe("restored");
+    expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual({
+      counter: 3, mcpServers: { original: { command: "echo" }, added: { command: "node" } },
+    });
+  });
+});
+
+describe("write-command selectors", () => {
+  it.each([
+    ["--client"], ["--client="], ["--client", "--force"],
+    ["--client", "cursor", "--client", "codex"], ["--clinet", "cursor"],
+  ])("rejects malformed selectors before any sync or eject mutation: %j", (...args) => {
+    const cursor = write(".cursor/mcp.json", '{"mcpServers":{"demo":{"command":"echo"}}}');
+    const codex = write(".codex/config.toml", '[mcp_servers.demo]\ncommand = "node"\n');
+    for (const command of ["sync", "eject"] as const) {
+      if (command === "eject") {
+        syncClient("cursor");
+        syncClient("codex");
+      }
+      const before = [fs.readFileSync(cursor), fs.readFileSync(codex)];
+      const result = spawnSync(process.execPath, [path.resolve(__dirname, "../dist/bin.js"), command, ...args], {
+        cwd: home, env: { ...process.env }, encoding: "utf8", timeout: 10_000,
+      });
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(fs.readFileSync(cursor)).toEqual(before[0]);
+      expect(fs.readFileSync(codex)).toEqual(before[1]);
+    }
+  });
+
+  it.each([["--client", "cursor"], ["--client=cursor"]])("accepts a valid selector without touching other clients: %j", (...args) => {
+    const cursor = write(".cursor/mcp.json", '{"mcpServers":{"demo":{"command":"echo"}}}');
+    const codex = write(".codex/config.toml", '[mcp_servers.demo]\ncommand = "node"\n');
+    const before = fs.readFileSync(codex);
+    const result = spawnSync(process.execPath, [path.resolve(__dirname, "../dist/bin.js"), "sync", ...args], {
+      cwd: home, env: { ...process.env }, encoding: "utf8", timeout: 10_000,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(Object.keys(JSON.parse(fs.readFileSync(cursor, "utf8")).mcpServers)).toEqual(["roster"]);
+    expect(fs.readFileSync(codex)).toEqual(before);
+  });
+});
+
+describe("launcher path identity", () => {
+  it.each([true, false])("pins this binary rather than resolving a bare command later (shadowed: %s)", (shadowed) => {
+    const bin = path.resolve(__dirname, "../bundle/bin.js");
+    const foreign = write("foreign-bin/roster", "fixture");
+    fs.chmodSync(foreign, 0o755);
+    const ownedDir = path.join(home, "owned-bin");
+    fs.mkdirSync(ownedDir);
+    fs.symlinkSync(bin, path.join(ownedDir, "roster"), "file");
+    const previousPath = process.env.PATH;
+    const previousOverride = process.env.ROSTER_ASSUME_GLOBAL;
+    process.env.PATH = (shadowed ? [path.dirname(foreign), ownedDir] : [ownedDir]).join(path.delimiter);
+    delete process.env.ROSTER_ASSUME_GLOBAL;
+    try {
+      expect(rosterEntry(bin)).toEqual({ command: process.execPath, args: [bin, "serve"] });
+      expect(hasGlobalRoster(bin)).toBe(!shadowed);
+      expect(hasGlobalRoster(foreign)).toBe(shadowed);
+    } finally {
+      if (previousPath === undefined) delete process.env.PATH;
+      else process.env.PATH = previousPath;
+      if (previousOverride === undefined) delete process.env.ROSTER_ASSUME_GLOBAL;
+      else process.env.ROSTER_ASSUME_GLOBAL = previousOverride;
+    }
+  });
+});
+
+describe("launcher migration", () => {
+  it("does not claim a foreign first-PATH alias even with the diagnostic override enabled", () => {
+    const bin = path.resolve(__dirname, "../bundle/bin.js");
+    const foreign = write("foreign-bin/roster", "fixture");
+    fs.chmodSync(foreign, 0o755);
+    const ownedDir = path.join(home, "owned-bin");
+    fs.mkdirSync(ownedDir);
+    fs.symlinkSync(bin, path.join(ownedDir, "roster"), "file");
+    write(".cursor/mcp.json", JSON.stringify({ mcpServers: { foreign: { command: "roster", args: ["serve"] } } }));
+    const result = spawnSync(process.execPath, [bin, "sync", "--client", "cursor"], {
+      cwd: home, encoding: "utf8", timeout: 10_000,
+      env: { ...process.env, PATH: [path.dirname(foreign), ownedDir].join(path.delimiter), ROSTER_ASSUME_GLOBAL: "1" },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(loadConfig().servers.foreign).toMatchObject({ command: "roster", args: ["serve"] });
+  });
+
+  it.each(["bare", "missing-install"])("migrates a recorded %s entry without re-importing the proxy", (kind) => {
+    const file = write(".cursor/mcp.json", '{"mcpServers":{"original":{"command":"echo"}}}');
+    syncClient("cursor", new Date("2026-09-08T00:00:00Z"));
+    const backup = rawBackups("cursor")[0]!;
+    const legacy = kind === "bare"
+      ? { command: "roster", args: ["serve"] }
+      : { command: process.execPath, args: [path.join(home, "missing-install/bin.js"), "serve"] };
+    fs.writeFileSync(file, JSON.stringify({ mcpServers: { roster: legacy } }));
+    fs.writeFileSync(path.join(backup.dir, "manifest.json"), JSON.stringify({
+      ...backup.manifest, injectedEntry: legacy, writtenSha256: sha256Hex(fs.readFileSync(file)),
+    }));
+    const result = syncClient("cursor", new Date("2026-09-08T01:00:00Z"));
+    expect(result.action).toBe("synced");
+    expect(result.imported).toBe(0);
+    expect(JSON.parse(fs.readFileSync(file, "utf8")).mcpServers.roster).toEqual(rosterEntry());
+    expect(Object.keys(loadConfig().servers)).toEqual(["original"]);
+  });
+
+  it("recognizes a verified bare self-alias without requiring a historical backup", () => {
+    const bin = path.resolve(__dirname, "../bundle/bin.js");
+    const binDir = path.join(home, "bin");
+    fs.mkdirSync(binDir);
+    fs.symlinkSync(bin, path.join(binDir, "roster"), "file");
+    write(".cursor/mcp.json", JSON.stringify({ mcpServers: {
+      roster: { command: "roster", args: ["serve"] }, other: { command: "echo" },
+    } }));
+    const result = spawnSync(process.execPath, [bin, "sync", "--client", "cursor"], {
+      cwd: home, encoding: "utf8", timeout: 10_000,
+      env: { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`, ROSTER_ASSUME_GLOBAL: "" },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(Object.keys(loadConfig().servers)).toEqual(["other"]);
+    expect(JSON.parse(fs.readFileSync(path.join(home, ".cursor/mcp.json"), "utf8")).mcpServers.roster.command).toBe(process.execPath);
+  });
+});
+
+describe("forced journal recovery", () => {
+  function pending(client: "cursor" | "claude-code") {
+    const original = Buffer.from('{\n  "counter": 1, "mcpServers": {"demo": {"command": "echo"}}\n}\n');
+    const file = write(client === "cursor" ? ".cursor/mcp.json" : ".claude.json", original.toString("utf8"));
+    syncClient(client, new Date("2026-09-08T00:00:00Z"));
+    const backup = rawBackups(client)[0]!;
+    const journal = createEjectJournal(client, backup.name, [{
+      sourcePath: file, writePath: fs.realpathSync(file),
+      beforeSha256: sha256Hex(fs.readFileSync(file)), desiredBytes: original,
+      ...(client === "claude-code" ? { keyLevel: true, originalBytes: original, injectedEntries: [rosterEntry()] } : {}),
+    }]);
+    fs.writeFileSync(file, '{"counter":9,"mcpServers":{}}');
+    return { file, original, journal };
+  }
+
+  it.each(["cursor", "claude-code"] as const)("restores pristine bytes with --force from an interrupted %s eject", (client) => {
+    const { file, original } = pending(client);
+    expect(ejectClient(client, { force: true }).action).toBe("restored");
+    expect(fs.readFileSync(file)).toEqual(original);
+    expect(hasEjectJournal(client)).toBe(false);
+    expect(syncClient(client, new Date("2026-09-08T01:00:00Z")).action).toBe("synced");
+  });
+
+  it.each(["desired", "original"])("does not let --force bypass corrupt %s journal bytes", (which) => {
+    const { file, journal } = pending("claude-code");
+    const before = fs.readFileSync(file);
+    const target = journal.plan.targets[0]!;
+    fs.writeFileSync(path.join(journal.dir, which === "desired" ? target.desiredFile : target.originalFile!), "corrupt");
+    expect(ejectClient("claude-code", { force: true }).action).toBe("integrity-error");
+    expect(fs.readFileSync(file)).toEqual(before);
+    expect(hasEjectJournal("claude-code")).toBe(true);
+  });
+
+  it.each(["before", "after"])("persists the forced intent across a crash %s the config write", (phase) => {
+    const { file, original } = pending("claude-code");
+    const writePath = fs.realpathSync(file);
+    const rename = fs.renameSync;
+    let interrupted = false;
+    fs.renameSync = ((from, to) => {
+      if (!interrupted && String(to) === writePath) {
+        interrupted = true;
+        if (phase === "after") rename(from, to);
+        throw new Error("synthetic interruption");
+      }
+      return rename(from, to);
+    }) as typeof fs.renameSync;
+    try {
+      expect(ejectClient("claude-code", { force: true }).action).toBe("integrity-error");
+    } finally {
+      fs.renameSync = rename;
+    }
+    expect(interrupted).toBe(true);
+    expect(hasEjectJournal("claude-code")).toBe(true);
+    expect(ejectClient("claude-code").action).toBe("restored");
+    expect(fs.readFileSync(file)).toEqual(original);
+  });
+
+  it("requires renewed force consent for edits made after a forced recovery was interrupted", () => {
+    const { file } = pending("claude-code");
+    const writePath = fs.realpathSync(file);
+    const rename = fs.renameSync;
+    fs.renameSync = ((from, to) => {
+      if (String(to) === writePath) throw new Error("synthetic interruption");
+      return rename(from, to);
+    }) as typeof fs.renameSync;
+    try {
+      expect(ejectClient("claude-code", { force: true }).action).toBe("integrity-error");
+    } finally {
+      fs.renameSync = rename;
+    }
+    const later = '{"counter":10,"mcpServers":{}}';
+    fs.writeFileSync(file, later);
+    expect(ejectClient("claude-code").action).toBe("integrity-error");
+    expect(fs.readFileSync(file, "utf8")).toBe(later);
+  });
+
+  it.skipIf(process.platform === "win32")("does not let --force write through a replaced config symlink", () => {
+    const { file } = pending("cursor");
+    const outside = write("outside.json", "untouched");
+    fs.renameSync(file, `${file}.previous`);
+    fs.symlinkSync(outside, file);
+    expect(ejectClient("cursor", { force: true }).action).toBe("integrity-error");
+    expect(fs.readFileSync(outside, "utf8")).toBe("untouched");
+    expect(hasEjectJournal("cursor")).toBe(true);
   });
 });
 
@@ -1340,8 +1717,9 @@ args = ["-y", "late-mcp"]
       write(".cursor/mcp.json", JSON.stringify({ mcpServers: { oldRoster: historical } }));
 
       const result = syncClient("cursor", new Date("2026-07-05T02:00:00Z"));
-      expect(result.action).toBe("already-synced");
+      expect(result.action).toBe("synced");
       expect(result.imported).toBe(0);
+      expect(JSON.parse(fs.readFileSync(path.join(home, ".cursor/mcp.json"), "utf8")).mcpServers.roster).toEqual(rosterEntry());
     });
 
     it("eject does NOT delete a server the user added under the name `roster` after syncing", () => {

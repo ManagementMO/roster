@@ -273,6 +273,32 @@ export function createEjectJournal(
   }
 }
 
+export function rebaseEjectJournal(
+  journal: LoadedEjectJournal,
+  beforeHashes: ReadonlyMap<string, string | null>,
+): LoadedEjectJournal {
+  const targets = journal.plan.targets.map((target): EjectJournalTarget => {
+    const desired = readDesiredBytes(journal, target);
+    const bytes = target.keyLevel ? readOriginalBytes(journal, target) : desired;
+    const beforeSha256 = beforeHashes.get(target.sourcePath);
+    if (beforeSha256 === undefined) throw new Error("missing forced-eject preflight snapshot");
+    const nonce = BigInt(`0x${crypto.randomBytes(16).toString("hex")}`);
+    const desiredFile = `target-${nonce}.bin`;
+    atomicWriteFileSync(path.join(journal.dir, desiredFile), bytes, PRIVATE_FILE);
+    return {
+      sourcePath: target.sourcePath,
+      ...(target.writePath !== undefined ? { writePath: target.writePath } : {}),
+      ...(target.symlinkTarget !== undefined ? { symlinkTarget: target.symlinkTarget } : {}),
+      beforeSha256,
+      desiredSha256: sha256Hex(bytes),
+      desiredFile,
+    };
+  });
+  const plan: EjectJournalPlan = { ...journal.plan, targets };
+  atomicWriteFileSync(path.join(journal.dir, "plan.json"), `${JSON.stringify(plan, null, 2)}\n`, PRIVATE_FILE);
+  return { dir: journal.dir, plan };
+}
+
 export function readDesiredBytes(
   journal: LoadedEjectJournal,
   target: EjectJournalTarget,

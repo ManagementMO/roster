@@ -29,16 +29,22 @@ import { stableBackendName, stableNamespacedId } from "@roster/shared";
  */
 class IsolatingSchemaValidator implements JsonSchemaValidatorProvider {
   private readonly inner = new AjvJsonSchemaValidator();
+  private readonly validators = new WeakMap<JsonSchemaType, JsonSchemaValidator<unknown>>();
   getValidator<T>(schema: JsonSchemaType): JsonSchemaValidator<T> {
+    const cached = this.validators.get(schema);
+    if (cached) return cached as JsonSchemaValidator<T>;
+    let validator: JsonSchemaValidator<T>;
     try {
-      return this.inner.getValidator<T>(schema);
+      validator = this.inner.getValidator<T>(schema);
     } catch {
-      return () => ({
+      validator = () => ({
         valid: false,
         data: undefined,
         errorMessage: "the tool declares an invalid output schema",
       });
     }
+    this.validators.set(schema, validator);
+    return validator;
   }
 }
 
@@ -62,6 +68,7 @@ export interface CallOutcome {
   result: Record<string, unknown> | null;
   evidence: CallEvidence;
   latencyMs: number;
+  error?: { code: number; message: string; data?: unknown };
 }
 
 const DEFAULT_CALL_TIMEOUT_MS = 30_000;
@@ -91,6 +98,14 @@ interface ConnectedBackend {
   name: string;
   client: Client;
   tools: CapabilityEntry[];
+  validator: IsolatingSchemaValidator;
+}
+
+interface BackendConnection {
+  client: Client;
+  transport: Transport;
+  abort: AbortController;
+  closing?: Promise<void>;
 }
 
 /**
@@ -100,6 +115,9 @@ interface ConnectedBackend {
 export class BackendManager {
   private backends = new Map<string, ConnectedBackend>();
   private connecting = new Set<string>();
+  private connections = new Set<BackendConnection>();
+  private closed = false;
+  private closing?: Promise<void>;
   private readonly maxTools: number;
   private readonly closeTimeoutMs: number;
 
@@ -116,17 +134,19 @@ export class BackendManager {
     // The source id is derived from the raw configured name before connecting,
     // so a failed peer cannot change an already-public backend identity.
     const name = stableBackendName(config.name);
+    if (this.closed) throw new Error("backend manager is closed");
     if (this.backends.has(name) || this.connecting.has(name)) {
       throw new Error(`duplicate backend identity: ${name}`);
     }
     this.connecting.add(name);
     // Bound the handshake AND close the spawned child on timeout, so a wedged
     // backend neither hangs boot nor leaks a process.
-    let client: Client | undefined;
+    let connection: BackendConnection | undefined;
     try {
-      client = new Client(
+      const validator = new IsolatingSchemaValidator();
+      const client = new Client(
         { name: "roster-router", version: "0.0.1" },
-        { jsonSchemaValidator: new IsolatingSchemaValidator() },
+        { jsonSchemaValidator: validator },
       );
       const transport: Transport =
         "transport" in config
@@ -138,30 +158,37 @@ export class BackendManager {
               env: config.env,
               stderr: "ignore",
             });
-      await withTimeout(client.connect(transport), this.connectTimeoutMs, "connect timeout");
-      const tools = await withTimeout(this.fetchTools(name, client), this.connectTimeoutMs, "listTools timeout");
-      this.backends.set(name, { name, client, tools });
+      if (transport instanceof StdioClientTransport) {
+        const closeTransport = transport.close.bind(transport);
+        let transportClosing: Promise<void> | undefined;
+        transport.close = () => {
+          transportClosing ??= Promise.resolve().then(closeTransport);
+          return transportClosing;
+        };
+      }
+      connection = { client, transport, abort: new AbortController() };
+      this.connections.add(connection);
+      await withTimeout(client.connect(transport, { signal: connection.abort.signal }), this.connectTimeoutMs, "connect timeout");
+      const tools = await withTimeout(this.fetchTools(name, client, connection.abort.signal), this.connectTimeoutMs, "listTools timeout");
+      if (this.closed) throw new Error("backend manager is closed");
+      this.backends.set(name, { name, client, tools, validator });
       return tools;
     } catch (err) {
-      if (client) {
-        await withTimeout(client.close(), this.closeTimeoutMs, "close timeout").catch(
-          () => undefined,
-        );
-      }
+      if (connection) await this.closeConnection(connection).catch(() => undefined);
       throw err;
     } finally {
       this.connecting.delete(name);
     }
   }
 
-  private async fetchTools(source: string, client: Client): Promise<CapabilityEntry[]> {
+  private async fetchTools(source: string, client: Client, signal: AbortSignal): Promise<CapabilityEntry[]> {
     const entries: CapabilityEntry[] = [];
     const seenCursors = new Set<string>();
     // Stable raw-name hashing makes sanitizer collisions independently
     // addressable without assigning order-dependent duplicate suffixes.
     let cursor: string | undefined;
     do {
-      const page = await client.listTools({ cursor });
+      const page = await client.listTools({ cursor }, { signal });
       for (const tool of page.tools) {
         const id = stableNamespacedId(source, tool.name);
         entries.push({
@@ -232,24 +259,55 @@ export class BackendManager {
         undefined,
         { timeout: this.callTimeoutMs },
       )) as Record<string, unknown>;
-      const latencyMs = Date.now() - started;
+      const schema = backend.tools.find((tool) => tool.name === toolName)?.outputSchema ?? outputSchema;
       const isError = result.isError === true;
+      if (schema && !result.structuredContent && !isError) {
+        throw new McpError(ErrorCode.InvalidRequest, `Tool ${toolName} has an output schema but did not return structured content`);
+      }
+      if (schema && result.structuredContent) {
+        const validation = backend.validator.getValidator(schema as JsonSchemaType)(result.structuredContent);
+        if (!validation.valid) {
+          throw new McpError(ErrorCode.InvalidParams, `Structured content does not match the tool's output schema: ${validation.errorMessage}`);
+        }
+      }
+      const latencyMs = Date.now() - started;
       const evidence: CallEvidence = isError
         ? { isError: true, errorText: extractErrorText(result) }
-        : { outputSchemaViolation: violatesOutputSchema(result, outputSchema) };
+        : { outputSchemaViolation: violatesOutputSchema(result, schema) };
       return { result, evidence, latencyMs };
     } catch (err) {
-      return { result: null, evidence: errorToEvidence(err), latencyMs: Date.now() - started };
+      let error: CallOutcome["error"];
+      if (err instanceof McpError) {
+        const prefix = `MCP error ${err.code}: `;
+        error = {
+          code: err.code,
+          message: err.message.startsWith(prefix) ? err.message.slice(prefix.length) : err.message,
+          data: err.data,
+        };
+      }
+      return { result: null, evidence: errorToEvidence(err), latencyMs: Date.now() - started, error };
     }
   }
 
-  async close(): Promise<void> {
-    await Promise.allSettled(
-      [...this.backends.values()].map((backend) =>
-        withTimeout(backend.client.close(), this.closeTimeoutMs, "close timeout"),
-      ),
-    );
-    this.backends.clear();
+  private closeConnection(connection: BackendConnection): Promise<void> {
+    connection.closing ??= (async () => {
+      connection.abort.abort();
+      try {
+        const closing = connection.client.close();
+        if (connection.transport instanceof StdioClientTransport) await closing;
+        else await withTimeout(closing, this.closeTimeoutMs, "close timeout");
+      } finally {
+        this.connections.delete(connection);
+      }
+    })();
+    return connection.closing;
+  }
+
+  close(): Promise<void> {
+    this.closed = true;
+    this.closing ??= Promise.allSettled([...this.connections].map((connection) => this.closeConnection(connection)))
+      .then(() => { this.backends.clear(); });
+    return this.closing;
   }
 }
 

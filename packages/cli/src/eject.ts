@@ -12,6 +12,7 @@ import {
   type PreparedJournalTarget,
   readDesiredBytes,
   readOriginalBytes,
+  rebaseEjectJournal,
 } from "./ejectJournal.js";
 import { parseJsonc } from "./jsonc.js";
 import { withFileLockSync } from "./lock.js";
@@ -78,7 +79,7 @@ function ejectClientUnlocked(
       `pending eject recovery data is corrupt — refusing: ${errorMessage(error)}`,
     );
   }
-  if (pending) return applyJournal(clientId, pending);
+  if (pending) return applyJournal(clientId, pending, opts.force === true);
 
   let slots: RawBackup[];
   try {
@@ -331,6 +332,7 @@ function newestTopology(
 function applyJournal(
   clientId: ClientId,
   journal: LoadedEjectJournal,
+  force = false,
 ): EjectResult {
   const restoredPaths = journal.plan.targets.map((target) => target.sourcePath);
   let alreadyClosed: string | null;
@@ -353,6 +355,19 @@ function applyJournal(
     }
     archiveEraThrough(clientId, journal.plan.boundary);
     return restoredResult(clientId, restoredPaths, "completed interrupted eject cleanup");
+  }
+
+  if (force) {
+    try {
+      const beforeHashes = new Map<string, string | null>();
+      for (const target of journal.plan.targets) {
+        const writePath = validateWriteTopology(target.sourcePath, target.writePath, target.symlinkTarget);
+        beforeHashes.set(target.sourcePath, hashIfPresent(writePath));
+      }
+      journal = rebaseEjectJournal(journal, beforeHashes);
+    } catch (error) {
+      return integrityFailure(clientId, `forced eject recovery failed validation: ${errorMessage(error)}`);
+    }
   }
 
   const prepared: Array<{

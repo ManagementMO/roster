@@ -35,6 +35,7 @@ export interface RosterServerOptions {
   embedNeed?: (need: string) => Promise<Float32Array | null>;
   defaultK?: number;
   sessionId?: string;
+  ready?: Promise<void>;
 }
 
 interface DraftCache {
@@ -117,10 +118,12 @@ export class RosterServer {
       { name: "roster", version: "0.0.1" },
       { capabilities: { tools: {} } },
     );
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: this.listTools(),
-    }));
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      await opts.ready;
+      return { tools: this.listTools() };
+    });
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      await opts.ready;
       if (this.mode === "transparent") {
         return this.handleTransparentCall(
           request.params.name,
@@ -148,10 +151,7 @@ export class RosterServer {
     unavailableSources: ReadonlySet<string> = new Set(),
     keepSeenSince?: number,
   ): void {
-    const entries: CapabilityEntry[] = [
-      ...this.manager.allTools(),
-      ...[...this.skills.entries()].map(([id, skill]) => skillToCapabilityEntry(skill, id)),
-    ];
+    const entries = [...this.sessionCapabilities().values()];
     this.store.upsertCapabilities(entries);
     this.store.pruneMissing(new Set(entries.map((e) => e.id)), unavailableSources, {
       keepSeenSince,
@@ -161,6 +161,13 @@ export class RosterServer {
   /** Skills that survived trust filtering and identity de-duplication. */
   servedSkillCount(): number {
     return this.skills.size;
+  }
+
+  private sessionCapabilities(): Map<string, CapabilityEntry> {
+    return new Map([
+      ...this.manager.allTools(),
+      ...[...this.skills.entries()].map(([id, skill]) => skillToCapabilityEntry(skill, id)),
+    ].map((entry) => [entry.id, entry]));
   }
 
   private listTools(): Array<Record<string, unknown>> {
@@ -199,6 +206,12 @@ export class RosterServer {
     );
     this.record(namespacedName, target.backend, outcome.evidence, outcome.latencyMs, args, null);
     if (outcome.result) return outcome.result;
+    if (outcome.error) {
+      const { code, message, data } = outcome.error;
+      const error = new McpError(code, message, data);
+      error.message = message;
+      throw error;
+    }
     // Transparent means transparent: backend faults surface as the SAME error a
     // direct connection would show — never repackaged into a "successful"
     // isError result. Preserve the original JSON-RPC code (D3), and route a raw
@@ -227,7 +240,7 @@ export class RosterServer {
   private async handleDraft(
     args: { need?: string; k?: number } | undefined,
   ): Promise<Record<string, unknown>> {
-    const need = (args?.need ?? "").trim();
+    const need = typeof args?.need === "string" ? args.need.trim() : "";
     if (need === "") {
       throw new McpError(ErrorCode.InvalidParams, "draft requires a non-empty `need`");
     }
@@ -244,7 +257,8 @@ export class RosterServer {
       }
     }
 
-    const candidates = this.store.draftCandidates(need, k, needVec);
+    const sessionEntries = this.sessionCapabilities();
+    const candidates = this.store.draftCandidates(need, k, needVec, new Set(sessionEntries.keys()));
     const draftId = `d${++this.draftCounter}`;
     this.drafts.set(draftId, { need, needHash, rankedIds: candidates.map((c) => c.entry.id) });
     // Keep only the most recent drafts so a long-lived connection doesn't grow
@@ -253,7 +267,7 @@ export class RosterServer {
       const oldest = this.drafts.keys().next().value;
       if (oldest) this.drafts.delete(oldest);
     }
-    const starters = candidates.map((c) => toCard(c.entry));
+    const starters = candidates.map((c) => toCard(sessionEntries.get(c.entry.id)!));
     return {
       content: [
         {
@@ -275,9 +289,12 @@ export class RosterServer {
   private async handleFiveCall(
     args: { tool?: string; args?: Record<string, unknown>; draft_id?: string } | undefined,
   ): Promise<Record<string, unknown>> {
-    const id = args?.tool ?? "";
+    const id = typeof args?.tool === "string" ? args.tool : "";
     const callArgs = args?.args;
     if (id === "") throw new McpError(ErrorCode.InvalidParams, "call requires `tool`");
+    if (callArgs !== undefined && (callArgs === null || typeof callArgs !== "object" || Array.isArray(callArgs))) {
+      throw new McpError(ErrorCode.InvalidParams, "call `args` must be an object");
+    }
     // Strict attribution: omitted and unknown draft ids execute without
     // borrowing another request's need or Sixth Man candidates.
     const draft = args?.draft_id ? (this.drafts.get(args.draft_id) ?? null) : null;

@@ -359,6 +359,35 @@ describe("lexical search", () => {
   });
 });
 
+describe("session eligibility", () => {
+  it("filters before the lexical limit so unavailable hits cannot hide an eligible match", () => {
+    store.upsertCapabilities([tool("live__invoice", "lookup", `invoice ${"ordinary detail ".repeat(100)}`)], 1);
+    store.upsertCapabilities(Array.from({ length: 50 }, (_, i) => tool(`offline__${i}`, "invoice", "invoice")), 2);
+    store.upsertCapabilities([tool("live__fallback", "standby", "unrelated operation")], 3);
+    expect(store.lexicalSearch("invoice", 30).map((row) => row.id)).not.toContain("live__invoice");
+    const selected = store.draftCandidates("invoice", 1, null, new Set(["live__invoice", "live__fallback"]));
+    expect(selected.map((candidate) => candidate.entry.id)).toEqual(["live__invoice"]);
+    expect(selected[0]?.lexScore).toBeGreaterThan(0);
+    expect(store.listCapabilities()).toHaveLength(52);
+  });
+
+  it("filters before the fallback limit and treats an empty eligibility set as empty", () => {
+    store.upsertCapabilities([tool("live__old", "old", "older available capability")], 1);
+    store.upsertCapabilities(Array.from({ length: 50 }, (_, i) => tool(`offline__${i}`, "new", "unavailable")), 2);
+    const selected = store.draftCandidates("zzxyyzz", 1, null, new Set(["live__old"]));
+    expect(selected.map((candidate) => candidate.entry.id)).toEqual(["live__old"]);
+    expect(store.draftCandidates("zzxyyzz", 5, null, new Set())).toEqual([]);
+  });
+
+  it("keeps dense candidates inside the same session eligibility boundary", () => {
+    store.upsertCapabilities([tool("live__tool", "tool", "available"), tool("offline__tool", "tool", "unavailable")]);
+    store.storeBaseVec("live__tool", new Float32Array([0, 1]));
+    store.storeBaseVec("offline__tool", new Float32Array([1, 0]));
+    const selected = store.draftCandidates("zzxyyzz", 1, new Float32Array([1, 0]), new Set(["live__tool"]));
+    expect(selected.map((candidate) => candidate.entry.id)).toEqual(["live__tool"]);
+  });
+});
+
 describe("hybrid fusion", () => {
   it("dense similarity outvotes lexical overlap at 30/70", () => {
     store.upsertCapabilities([
@@ -690,6 +719,49 @@ describe("pruneMissing grace window", () => {
 });
 
 describe("OATS nightly", () => {
+  function seedLearning(now: number): void {
+    store.upsertCapabilities([tool("demo__tool", "tool", "synthetic learning fixture")], now);
+    store.storeBaseVec("demo__tool", new Float32Array([1, 0]), now);
+    for (let i = 0; i < 4; i++) {
+      store.storeNeedVec(`need-${i}`, new Float32Array([0, 1]), now);
+      store.recordOutcome({
+        session: `session-${i}`, source: "demo", capability: "demo__tool", outcomeClass: "success",
+        latencyMs: 1, needHash: `need-${i}`, ts: now,
+      });
+    }
+  }
+
+  it("returns to the base vector after the supporting evidence expires", () => {
+    const now = 1_000_000;
+    seedLearning(now);
+    expect(store.runOats(now).adjusted).toBe(1);
+    expect(store.loadVecs().get("demo__tool")![1]).toBeGreaterThan(0.3);
+    expect(store.runOats(now + 91 * 24 * 3600 * 1000)).toEqual({ adjusted: 0, skipped: 1 });
+    expect(Array.from(store.loadVecs().get("demo__tool")!)).toEqual([1, 0]);
+  });
+
+  it("does not apply an adjustment to a base replaced after the maintenance snapshot", () => {
+    const now = 1_000_000;
+    seedLearning(now);
+    const prepare = db.prepare.bind(db);
+    let replaced = false;
+    db.prepare = ((sql: string) => {
+      if (!replaced && sql.includes("SELECT need_hash, class FROM outcome")) {
+        replaced = true;
+        store.storeBaseVec("demo__tool", new Float32Array([0, 1]), now + 1);
+      }
+      return prepare(sql);
+    }) as CoachDb["prepare"];
+    try {
+      store.runOats(now + 2);
+    } finally {
+      db.prepare = prepare;
+    }
+    expect(replaced).toBe(true);
+    expect(db.prepare("SELECT adj FROM vec WHERE capability = ?").get("demo__tool")).toEqual({ adj: null });
+    expect(Array.from(store.loadVecs().get("demo__tool")!)).toEqual([0, 1]);
+  });
+
   it("adjusts only capabilities with ≥4 success needs and stores adj", () => {
     store.upsertCapabilities([tool("fs__read_file", "read_file", "Read a file")]);
     store.storeBaseVec("fs__read_file", new Float32Array([1, 0, 0]));

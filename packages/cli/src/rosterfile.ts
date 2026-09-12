@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { sha256Hex } from "@roster/coach";
 import type { ImportedServer } from "./clients.js";
-import { isOwnedRosterEntry, rosterEntry, type SpawnEntry } from "./entry.js";
+import { isOwnedRosterEntry, rosterEntry, verifiedRosterAliases, type SpawnEntry } from "./entry.js";
 import { withFileLockSync } from "./lock.js";
 import { ensureRosterHome, PRIVATE_FILE, rosterConfigPath, rosterHome } from "./paths.js";
 
@@ -142,7 +142,12 @@ function existingMode(target: string): number | undefined {
  *     may carry credentials imported from a client config.
  * (On Windows these modes are largely inert; the rename semantics still hold.)
  */
-export function atomicWriteFileSync(target: string, data: string | Buffer, mode?: number): void {
+export function atomicWriteFileSync(
+  target: string,
+  data: string | Buffer,
+  mode?: number,
+  beforeReplace?: () => void,
+): void {
   const tmp = `${target}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
   const finalMode = mode ?? existingMode(target) ?? PRIVATE_FILE;
   let fd: number | undefined;
@@ -153,6 +158,7 @@ export function atomicWriteFileSync(target: string, data: string | Buffer, mode?
     fs.fsyncSync(fd);
     fs.closeSync(fd);
     fd = undefined;
+    beforeReplace?.();
     fs.renameSync(tmp, target);
     try {
       const parent = fs.openSync(path.dirname(target), "r");
@@ -260,6 +266,10 @@ function normalizeServer(value: unknown, field: string): RosterServerEntry {
   if (!isRecord(value)) {
     throw new Error(`~/.roster/roster.json ${field} must be an object`);
   }
+  const unsupported = Object.keys(value).filter((key) => !["command", "args", "env", "url", "importedFrom"].includes(key));
+  if (unsupported.length > 0) {
+    throw new Error(`~/.roster/roster.json ${field} has unsupported settings: ${unsupported.join(", ")}`);
+  }
   const command = value.command;
   const url = value.url;
   if (command !== undefined && typeof command !== "string") {
@@ -340,7 +350,7 @@ export function serverIdentity(
       command: server.command ?? null,
       args: server.args ?? [],
       url: server.url ?? null,
-      env: server.env ?? {},
+      env: Object.fromEntries(Object.entries(server.env ?? {}).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)),
     }),
   );
 }
@@ -356,7 +366,7 @@ export interface MergeResult {
 export function mergeServers(
   config: RosterConfig,
   imported: readonly ImportedServer[],
-  ownedEntries: readonly SpawnEntry[] = [rosterEntry()],
+  ownedEntries: readonly SpawnEntry[] = [rosterEntry(), ...verifiedRosterAliases()],
 ): MergeResult {
   const byIdentity = new Map<string, string>(); // identity → roster name
   for (const [name, entry] of Object.entries(config.servers)) {

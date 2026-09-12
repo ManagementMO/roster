@@ -38,7 +38,13 @@ async function waitFor(fn: () => boolean, timeoutMs: number): Promise<boolean> {
 
 let homes: string[] = [];
 let kids: ChildProcess[] = [];
+const backendPids = new Set<number>();
 afterEach(() => {
+  for (const pid of backendPids) {
+    if (!alive(pid)) continue;
+    try { process.kill(pid, "SIGKILL"); } catch {}
+  }
+  backendPids.clear();
   for (const k of kids) {
     try {
       k.kill("SIGKILL");
@@ -52,7 +58,7 @@ afterEach(() => {
 });
 
 /** Spawn `roster serve` over a real backend; resolve once it reports serving. */
-async function startServe(): Promise<{ roster: ChildProcess; backendPidFile: string }> {
+async function startServe(opts: { stubborn?: boolean; initialize?: boolean; badInitialize?: boolean } = {}): Promise<{ roster: ChildProcess; backendPidFile: string; shuttingDown: () => boolean }> {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "roster-serve-"));
   homes.push(home);
   const rosterHome = path.join(home, ".roster");
@@ -70,10 +76,18 @@ async function startServe(): Promise<{ roster: ChildProcess; backendPidFile: str
     const require_ = createRequire(${JSON.stringify(path.join(REPO, "packages/router/package.json"))});
     const { Server } = await import(${sdkReq});
     const { StdioServerTransport } = await import(require_.resolve("@modelcontextprotocol/sdk/server/stdio.js"));
-    const { ListToolsRequestSchema } = await import(require_.resolve("@modelcontextprotocol/sdk/types.js"));
+    const { InitializeRequestSchema, ListToolsRequestSchema } = await import(require_.resolve("@modelcontextprotocol/sdk/types.js"));
     const server = new Server({ name: "pidbackend", version: "0.0.0" }, { capabilities: { tools: {} } });
     server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));
-    await server.connect(new StdioServerTransport());
+    if (${opts.badInitialize === true}) server.setRequestHandler(InitializeRequestSchema, async () => ({
+      protocolVersion: "unsupported", capabilities: {}, serverInfo: { name: "pidbackend", version: "0" },
+    }));
+    if (${opts.stubborn === true}) {
+      process.on("SIGTERM", () => {});
+      setInterval(() => {}, 1000);
+    }
+    if (${opts.initialize !== false}) await server.connect(new StdioServerTransport());
+    else process.stdin.resume();
     fs.writeFileSync(${JSON.stringify(backendPidFile)}, String(process.pid));
     `,
   );
@@ -100,9 +114,10 @@ async function startServe(): Promise<{ roster: ChildProcess; backendPidFile: str
     err += d.toString();
   });
   // Boot is complete when it reports serving AND the backend has recorded its pid.
-  const ready = await waitFor(() => /serving .* in transparent mode/.test(err) && fs.existsSync(backendPidFile), 20_000);
+  const ready = await waitFor(() => (opts.initialize === false || /serving .* in transparent mode/.test(err)) && fs.existsSync(backendPidFile), 20_000);
   expect(ready, `serve did not become ready; stderr:\n${err}`).toBe(true);
-  return { roster, backendPidFile };
+  backendPids.add(Number(fs.readFileSync(backendPidFile, "utf8")));
+  return { roster, backendPidFile, shuttingDown: () => err.includes("shutting down") };
 }
 
 // POSIX-only: these spawn a real MCP backend over stdio and drive shutdown with
@@ -137,6 +152,38 @@ describe.skipIf(process.platform === "win32")("roster serve shuts down cleanly a
     await waitExit(roster);
     expect(await waitFor(() => !alive(backendPid), 8_000), "backend must not be orphaned").toBe(true);
   }, 40_000);
+
+  it.each([true, false])("reaps an uncooperative backend on EOF (initialized: %s)", async (initialize) => {
+    const { roster, backendPidFile } = await startServe({ stubborn: true, initialize });
+    const backendPid = Number(fs.readFileSync(backendPidFile, "utf8"));
+    roster.stdin?.write(`${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {
+      protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "shutdown-fixture", version: "1" },
+    } })}\n`);
+    roster.stdin?.end();
+    const exited = await waitFor(() => roster.exitCode !== null || roster.signalCode !== null, 7_000);
+    expect(exited, "shutdown must not wait for the pending backend handshake").toBe(true);
+    expect(roster.exitCode).toBe(0);
+    expect(await waitFor(() => !alive(backendPid), 1_000)).toBe(true);
+  }, 15_000);
+
+  it.each([true, false])("keeps handling repeated signals until an uncooperative backend is reaped (initialized: %s)", async (initialize) => {
+    const { roster, backendPidFile, shuttingDown } = await startServe({ stubborn: true, initialize });
+    const backendPid = Number(fs.readFileSync(backendPidFile, "utf8"));
+    roster.kill("SIGTERM");
+    expect(await waitFor(shuttingDown, 1_000)).toBe(true);
+    roster.kill("SIGTERM");
+    expect(await waitFor(() => roster.exitCode !== null || roster.signalCode !== null, 7_000)).toBe(true);
+    expect(roster.exitCode).toBe(143);
+    expect(await waitFor(() => !alive(backendPid), 1_000)).toBe(true);
+  }, 15_000);
+
+  it("waits for SDK-initiated close after a failed initialization", async () => {
+    const { roster, backendPidFile } = await startServe({ stubborn: true, badInitialize: true });
+    const pid = Number(fs.readFileSync(backendPidFile, "utf8"));
+    roster.stdin?.end();
+    expect(await waitFor(() => roster.exitCode !== null || roster.signalCode !== null, 7_000)).toBe(true);
+    expect(await waitFor(() => !alive(pid), 1_000)).toBe(true);
+  }, 15_000);
 
   it("a second shutdown trigger does not hang or error (idempotent)", async () => {
     const { roster, backendPidFile } = await startServe();

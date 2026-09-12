@@ -114,7 +114,24 @@ describe("graceful shutdown (platform-neutral)", () => {
     expect(exits).toEqual([143]); // the FIRST trigger wins
   });
 
-  it("removes every listener it installed once shutdown starts", async () => {
+  it("keeps signal handlers installed until backend cleanup finishes", async () => {
+    let finish!: () => void;
+    const closed = new Promise<void>((resolve) => { finish = resolve; });
+    const { exits } = harness({ manager: { close: () => closed } });
+    try {
+      process.emit("SIGTERM");
+      expect(signalListeners()).toBe(baselineSignals + 2);
+      process.emit("SIGTERM");
+      expect(exits).toEqual([]);
+    } finally {
+      finish();
+      await settle();
+    }
+    expect(exits).toEqual([143]);
+    expect(signalListeners()).toBe(baselineSignals);
+  });
+
+  it("removes every listener it installed once shutdown finishes", async () => {
     harness();
     expect(signalListeners()).toBe(baselineSignals + 2);
     expect(stdinListeners()).toBe(baselineStdin + 2);

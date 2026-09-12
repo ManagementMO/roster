@@ -51,20 +51,42 @@ export interface ClientSpec {
 
 type RawServer = Record<string, unknown>;
 
+function isRecord(value: unknown): value is RawServer {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function fromMcpServersObject(
   obj: unknown,
   client: ClientId,
   sourcePath: string,
   opts: { urlKeys?: string[] } = {},
 ): ImportedServer[] {
-  if (obj === null || typeof obj !== "object") return [];
+  if (obj === undefined) return [];
+  if (!isRecord(obj)) throw new Error("MCP servers must be an object");
   const out: ImportedServer[] = [];
-  for (const [name, raw] of Object.entries(obj as Record<string, RawServer>)) {
-    if (raw === null || typeof raw !== "object") continue;
-    const urlKeys = opts.urlKeys ?? ["url", "httpUrl", "serverUrl"];
+  const urlKeys = opts.urlKeys ?? ["url", "httpUrl", "serverUrl"];
+  const supported = new Set(["command", "args", "env", "type", ...urlKeys]);
+  for (const [name, raw] of Object.entries(obj)) {
+    if (!isRecord(raw)) throw new Error(`MCP server "${name}" must be an object`);
+    const unsupported = Object.keys(raw).filter((key) => !supported.has(key));
+    if (unsupported.length > 0 || (raw.type !== undefined && raw.type !== "stdio")) {
+      throw new Error(`Unsupported MCP server settings for "${name}": ${unsupported.join(", ") || "type"}; configuration left unchanged`);
+    }
+    for (const key of ["command", ...urlKeys]) {
+      if (raw[key] !== undefined && (typeof raw[key] !== "string" || raw[key].trim() === "")) {
+        throw new Error(`MCP server "${name}" ${key} must be a non-empty string`);
+      }
+    }
+    if (raw.args !== undefined && (!Array.isArray(raw.args) || raw.args.some((arg) => typeof arg !== "string"))) {
+      throw new Error(`MCP server "${name}" args must be an array of strings`);
+    }
+    if (raw.env !== undefined && (!isRecord(raw.env) || Object.values(raw.env).some((value) => typeof value !== "string"))) {
+      throw new Error(`MCP server "${name}" env must be an object of strings`);
+    }
     const url = urlKeys.map((k) => raw[k]).find((v) => typeof v === "string") as string | undefined;
     const command = typeof raw.command === "string" ? raw.command : undefined;
-    if (!url && !command) continue;
+    if (!url && !command) throw new Error(`MCP server "${name}" must define command or url`);
+    if (command && url) throw new Error(`Unsupported mixed MCP transports for "${name}"`);
     out.push({
       name,
       command,

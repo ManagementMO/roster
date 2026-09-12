@@ -13,6 +13,7 @@ Use Node `>=22.13` and pnpm `11.9.0`.
 - `pnpm test` runs Vitest once; `pnpm test:watch` supports local iteration.
 - `pnpm lint` applies Biome's recommended rules and treats warnings as failures; `pnpm lint:fix` writes safe fixes.
 - `pnpm league:build` regenerates `apps/league/dist-site` after a successful build.
+- Core-only work can install with `pnpm --filter roster-monorepo --filter './packages/*' install --frozen-lockfile`, then build with `./node_modules/.bin/tsc -b packages/cli && node packages/cli/scripts/bundle.mjs` and test with `./node_modules/.bin/vitest run packages`. Build the bundle before CLI launcher tests. Direct local binaries avoid pnpm's automatic workspace install during verification; these commands do not build or test the website or films.
 
 ## Coding Style & Naming Conventions
 

@@ -1,6 +1,6 @@
 import { estimateTokensFromChars } from "@roster/shared";
 import { openclawInjectionChars, type ParsedSkill } from "@roster/playbook";
-import type { Discovery } from "./clients.js";
+import type { Discovery, ImportedServer } from "./clients.js";
 import { isOwnedRosterEntry, type SpawnEntry } from "./entry.js";
 import { ensureRosterHome, PRIVATE_FILE, receiptPath } from "./paths.js";
 import { atomicWriteFileSync, serverIdentity } from "./rosterfile.js";
@@ -50,7 +50,9 @@ function routedByClient(routed: RoutedServers | undefined): Map<string, Set<stri
   return byClient;
 }
 
-export type RoutedServers = Record<string, { importedFrom: readonly string[] }>;
+export type RoutedServers = Record<string,
+  Pick<ImportedServer, "command" | "args" | "env" | "url"> & { importedFrom: readonly string[] }
+>;
 
 export function buildReceipt(
   discoveries: Discovery[],
@@ -74,13 +76,19 @@ export function buildReceipt(
     });
     const synced = theirs.length < d.servers.length;
     const routedHere = byClient.get(d.client.id) ?? new Set<string>();
-    for (const server of theirs) identities.add(serverIdentity(server));
-    if (synced) for (const name of routedHere) identities.add(`routed:${name}`);
+    const clientIdentities = new Set(theirs.map(serverIdentity));
+    if (synced) {
+      for (const name of routedHere) {
+        const server = routed?.[name];
+        clientIdentities.add(server && (server.command || server.url) ? serverIdentity(server) : `routed:${name}`);
+      }
+    }
+    for (const identity of clientIdentities) identities.add(identity);
     return {
       id: d.client.id,
       displayName: d.client.displayName,
       configPath: d.configPath,
-      serverCount: synced ? routedHere.size : theirs.length,
+      serverCount: synced ? clientIdentities.size : theirs.length,
       note: d.parseError
         ? `could not parse (${d.parseError.slice(0, 80)})`
         : synced

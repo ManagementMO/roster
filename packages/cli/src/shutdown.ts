@@ -32,14 +32,15 @@ export interface ShutdownOptions {
 
 /**
  * Idempotent: the first trigger wins and the rest are no-ops, so racing
- * triggers (EOF + a signal) cannot double-close or hang. Signal listeners are
- * one-shot and removed once shutdown starts. Nothing here logs tool args,
+ * triggers (EOF + a signal) cannot double-close or hang. Signal listeners remain
+ * installed until shutdown finishes. Nothing here logs tool args,
  * results, or prompts.
  */
 export function installGracefulShutdown(
   targets: ShutdownTargets,
   options: ShutdownOptions = {},
-): void {
+): AbortSignal {
+  const controller = new AbortController();
   const exit = options.exit ?? ((code: number) => process.exit(code));
   const emit = options.onMessage ?? ((message: string) => void process.stderr.write(message));
   const { manager, store, server } = targets;
@@ -60,7 +61,7 @@ export function installGracefulShutdown(
   const shutdown = async (reason: string, exitCode: number): Promise<void> => {
     if (started) return;
     started = true;
-    for (const [sig, handler] of handlers) process.removeListener(sig, handler);
+    controller.abort();
     process.stdin.removeListener("end", onEof);
     process.stdin.removeListener("close", onEof);
     emit(`roster: shutting down (${reason})\n`);
@@ -74,13 +75,14 @@ export function installGracefulShutdown(
     } catch {
       /* DB may already be closing */
     }
+    for (const [sig, handler] of handlers) process.removeListener(sig, handler);
     exit(exitCode);
   };
   for (const sig of signals) {
     // 128 + signal number is the conventional exit status for a signal.
     const handler = (): void => void shutdown(sig, sig === "SIGINT" ? 130 : 143);
     handlers.set(sig, handler);
-    process.once(sig, handler);
+    process.on(sig, handler);
   }
   // The SDK stdio transport listens only for stdin 'data'/'error' — it never
   // reacts to EOF — so a client disconnect would otherwise leave `serve` and its
@@ -93,4 +95,5 @@ export function installGracefulShutdown(
   server.onclose = () => {
     void shutdown("transport closed", 0);
   };
+  return controller.signal;
 }
