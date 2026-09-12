@@ -13,15 +13,24 @@ export interface SpawnEntry {
  * `existsSync` alone was a smaller replay of the squatter hazard round 4b closed:
  * a third-party `roster` on PATH — or a mere directory named `roster` — would
  * have been written into every client as a spawn target. So we require an
- * executable regular FILE and, until our own package is published, that it
- * realpaths INTO this checkout (no global `roster` today is ours). Relax the
- * realpath check post-publish (STATUS §4F). Overridable via ROSTER_ASSUME_GLOBAL.
+ * executable regular FILE resolving to this install's exact entrypoint.
+ * Only the first executable match counts; a later trusted PATH entry cannot
+ * vouch for an earlier foreign one. Diagnostic override: ROSTER_ASSUME_GLOBAL.
  */
-export function hasGlobalRoster(): boolean {
+export function hasGlobalRoster(binPath: string = ourBinPath()): boolean {
   if (process.env.ROSTER_ASSUME_GLOBAL === "1") return true;
   if (process.env.ROSTER_ASSUME_GLOBAL === "0") return false;
+  return firstPathEntryMatches(binPath);
+}
+
+function firstPathEntryMatches(binPath: string): boolean {
   const names = process.platform === "win32" ? ["roster.cmd", "roster.exe", "roster"] : ["roster"];
-  const ourRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+  let expected: string;
+  try {
+    expected = fs.realpathSync(binPath);
+  } catch {
+    return false;
+  }
   for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
     if (dir === "") continue;
     for (const n of names) {
@@ -29,7 +38,7 @@ export function hasGlobalRoster(): boolean {
       try {
         if (!fs.statSync(p).isFile()) continue; // not a spawnable file (dir/socket/…)
         fs.accessSync(p, fs.constants.X_OK); // executable
-        if (fs.realpathSync(p).startsWith(ourRoot + path.sep)) return true; // provably ours
+        return fs.realpathSync(p) === expected; // provably ours
       } catch {
         /* not a file / not accessible → keep looking */
       }
@@ -41,6 +50,12 @@ export function hasGlobalRoster(): boolean {
 /** The `bin.js` THIS install would spawn. */
 export function ourBinPath(): string {
   return path.join(path.dirname(fileURLToPath(import.meta.url)), "bin.js");
+}
+
+export function verifiedRosterAliases(): SpawnEntry[] {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const binaries = [ourBinPath(), path.resolve(dir, "../bundle/bin.js"), path.resolve(dir, "../dist/bin.js")];
+  return binaries.some(firstPathEntryMatches) ? [{ command: "roster", args: ["serve"] }] : [];
 }
 
 /** The published package name; the only name safe to hand to `npx`. */
@@ -67,10 +82,10 @@ export function runningFromNpxCache(binPath: string = ourBinPath()): boolean {
 }
 
 /**
- * The entry sync writes. A global `roster` that is provably ours → `roster serve`.
- * Otherwise THIS install's own entrypoint (node + absolute `dist/bin.js`):
- * spawnable today for repo checkouts, pnpm links, and npx-cache installs, running
- * only code that is provably ours. Deliberately NOT `npx -y roster` — the npm
+ * The entry sync writes pins Node and this install's absolute entrypoint.
+ * Bare PATH commands are not stored: another binary could shadow them later.
+ * Repo checkouts, pnpm links, and global installs use the same code; npx caches
+ * use the scoped package form below. Deliberately NOT `npx -y roster` — the npm
  * name `roster` is a THIRD-PARTY package (verified 2026-07-07, roster@0.0.3), so
  * that entry would fetch and run a stranger's code on every client boot. The npx
  * form is used ONLY for the scoped, published name and ONLY when we are already
@@ -83,8 +98,7 @@ export function rosterEntry(binPath: string = ourBinPath()): SpawnEntry {
   // would otherwise satisfy `hasGlobalRoster()` and write a launcher that stops
   // existing the moment npx exits.
   if (runningFromNpxCache(binPath)) return { command: "npx", args: ["-y", PACKAGE_NAME, "serve"] };
-  if (hasGlobalRoster()) return { command: "roster", args: ["serve"] };
-  return { command: process.execPath, args: [binPath, "serve"] };
+  return { command: process.execPath, args: [path.resolve(binPath), "serve"] };
 }
 
 /**

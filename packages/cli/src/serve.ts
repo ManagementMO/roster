@@ -29,22 +29,6 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
   // a backend configured as e.g. "skill" (stored as skill-server__*) lose ALL its
   // learned state on its first unavailable boot despite the "preserved" promise.
   const unavailable = new Set<string>();
-  for (const [name, entry] of Object.entries(config.servers)) {
-    if (!entry.command) {
-      process.stderr.write(`roster: skipping "${name}" (url backends land post-launch; stdio only for now)\n`);
-      unavailable.add(stableBackendName(name));
-      continue;
-    }
-    try {
-      await manager.connect({ name, command: entry.command, args: entry.args, env: entry.env });
-    } catch (err) {
-      unavailable.add(stableBackendName(name));
-      process.stderr.write(
-        `roster: backend "${name}" failed to connect (its learned state is preserved): ${err instanceof Error ? err.message : err}\n`,
-      );
-    }
-  }
-
   // homeDir() honors ROSTER_TEST_HOME so serve stays hermetic under test.
   const scannedSkills = scanSkillSources([
     ...config.skillSources,
@@ -75,7 +59,30 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
     embedNeed = makeLazyEmbedder(store);
   }
 
-  const roster = new RosterServer({ mode, manager, store, skills, embedNeed, allowReviewSkills: allowReview });
+  let markReady!: () => void;
+  const ready = new Promise<void>((resolve) => { markReady = resolve; });
+  const roster = new RosterServer({ mode, manager, store, skills, embedNeed, allowReviewSkills: allowReview, ready });
+  const transport = new StdioServerTransport();
+  const shutdown = installGracefulShutdown({ manager, store, server: roster.server });
+  await roster.server.connect(transport);
+  for (const [name, entry] of Object.entries(config.servers)) {
+    if (shutdown.aborted) return;
+    if (!entry.command) {
+      process.stderr.write(`roster: skipping "${name}" (url backends land post-launch; stdio only for now)\n`);
+      unavailable.add(stableBackendName(name));
+      continue;
+    }
+    try {
+      await manager.connect({ name, command: entry.command, args: entry.args, env: entry.env });
+    } catch (err) {
+      if (shutdown.aborted) return;
+      unavailable.add(stableBackendName(name));
+      process.stderr.write(
+        `roster: backend "${name}" failed to connect (its learned state is preserved): ${err instanceof Error ? err.message : err}\n`,
+      );
+    }
+  }
+  if (shutdown.aborted) return;
   try {
     // keepSeenSince: rows a sibling serve touched during OUR boot window are
     // never pruned — its roster.json may be newer than the one we read.
@@ -100,9 +107,7 @@ export async function serve(modeOverride?: RouterMode): Promise<void> {
     process.stderr.write(`roster: maintenance skipped: ${err instanceof Error ? err.message : err}\n`);
   }
 
-  const transport = new StdioServerTransport();
-  installGracefulShutdown({ manager, store, server: roster.server });
-  await roster.server.connect(transport);
+  markReady();
   process.stderr.write(
     `roster: serving ${manager.allTools().length} tool(s) + ${roster.servedSkillCount()} skill(s) in ${mode} mode\n`,
   );

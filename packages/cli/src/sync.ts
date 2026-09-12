@@ -8,6 +8,7 @@ import {
   isOwnedRosterEntry,
   normalizeSpawnEntry,
   rosterEntry,
+  verifiedRosterAliases,
   type SpawnEntry,
 } from "./entry.js";
 import { hasEjectJournal } from "./ejectJournal.js";
@@ -85,17 +86,12 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
     attempts: 4,
   });
 
-  // Step 1 — import before we overwrite anything. ONLY the parse may fail
-  // benignly (unparseable config = nothing to import). A failure of the import
-  // SAVE must propagate: swallowing it let sync report "synced" while the
-  // user's servers were never persisted to roster.json — routed nowhere.
+  // Step 1 — import before we overwrite anything. Parsing and import-save
+  // failures must propagate before rewriting or cleaning backup state.
+  // Swallowing a failure let sync report "synced" while the user's servers
+  // were never persisted to roster.json — routed nowhere.
   let imported = 0;
-  let servers: ImportedServer[] = [];
-  try {
-    servers = spec.parse(originalBytes.toString("utf8"), configPath);
-  } catch {
-    servers = []; // unparseable: the backup still protects the original bytes
-  }
+  const servers: ImportedServer[] = spec.parse(originalBytes.toString("utf8"), configPath); // unparseable: abort before mutation
   if (servers.some((server) => server.url && !server.command)) {
     throw new Error(
       "URL-only MCP servers cannot be synced yet: Roster routing is stdio-only; the client was left untouched",
@@ -116,7 +112,6 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
     clientId,
     originalBytes.toString("utf8"),
     injectedEntry,
-    ownedEntries,
   );
   if (rewritten === null) {
     return { client: clientId, configPath, action: "already-synced", imported };
@@ -128,6 +123,8 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
   // later brick eject). listBackups skips ".staging-" dirs.
   const timestamp = now.toISOString().replace(/[:.]/g, "-");
   const backupDir = backupDirFor(clientId, timestamp);
+  const latestPath = path.join(path.dirname(backupDir), "latest");
+  const previousLatest = fs.existsSync(latestPath) ? readRegularFileNoFollow(latestPath) : null;
   const stagingDir = `${backupDir}.staging-${crypto.randomBytes(4).toString("hex")}`;
   // A backup is a verbatim copy of the client's config — including whatever API
   // keys sat in its `env` blocks. Owner-only, dirs included: a 0755 backups tree
@@ -150,15 +147,28 @@ function syncClientUnlocked(clientId: ClientId, now: Date): SyncResult {
     mode: PRIVATE_FILE,
   });
   fs.renameSync(stagingDir, backupDir); // atomic publish: complete backup or none
-  fs.writeFileSync(path.join(path.dirname(backupDir), "latest"), timestamp, { mode: PRIVATE_FILE });
+  atomicWriteFileSync(latestPath, timestamp, PRIVATE_FILE);
 
   // Step 3 — atomic config replacement (private tmp + rename).
-  const writePath = validateWriteTopology(
-    configPath,
-    manifest.writePath,
-    manifest.symlinkTarget,
-  );
-  atomicWriteFileSync(writePath, rewritten);
+  let replaceApproved = false;
+  try {
+    const writePath = validateWriteTopology(configPath, manifest.writePath, manifest.symlinkTarget);
+    atomicWriteFileSync(writePath, rewritten, undefined, () => {
+      validateWriteTopology(configPath, manifest.writePath, manifest.symlinkTarget);
+      const current = readRegularFileNoFollow(writePath, { attempts: 4 });
+      if (sha256Hex(current) !== manifest.originalSha256) {
+        throw new Error("client config changed during sync; left untouched — retry when the client is idle");
+      }
+      replaceApproved = true;
+    });
+  } catch (error) {
+    if (!replaceApproved) {
+      fs.renameSync(backupDir, stagingDir);
+      if (previousLatest === null) fs.rmSync(latestPath, { force: true });
+      else atomicWriteFileSync(latestPath, previousLatest, PRIVATE_FILE);
+    }
+    throw error;
+  }
 
   return { client: clientId, configPath, action: "synced", backupDir, imported };
 }
@@ -168,11 +178,10 @@ function rewriteConfig(
   clientId: ClientId,
   content: string,
   entry: SpawnEntry,
-  ownedEntries: readonly SpawnEntry[],
 ): string | null {
   if (clientId === "codex") {
     const data = parseToml(content) as Record<string, unknown>;
-    if (isAlreadySynced(data.mcp_servers, ownedEntries)) return null;
+    if (isAlreadySynced(data.mcp_servers, [entry])) return null;
     data.mcp_servers = { roster: entry };
     return `${stringifyToml(data)}\n`;
   }
@@ -185,15 +194,15 @@ function rewriteConfig(
     throw new Error(`config is not a JSON object (got ${Array.isArray(data) ? "array" : typeof data})`);
   }
   const obj = data as Record<string, unknown>;
-  if (isAlreadySynced(obj.mcpServers, ownedEntries)) return null;
+  if (isAlreadySynced(obj.mcpServers, [entry])) return null;
   obj.mcpServers = { roster: entry };
   return `${JSON.stringify(obj, null, 2)}\n`;
 }
 
 /**
- * A healthy Roster-only install has one entry whose full shape exactly matches
- * either this install or an intact active manifest. Basenames, key names,
- * executable existence, and a trailing "serve" are insufficient proof.
+ * A healthy Roster-only install matches the currently selected launcher.
+ * Historical entries remain owned for import/eject, but are migrated on sync.
+ * Basenames, key names, executable existence, and a trailing "serve" are insufficient proof.
  */
 function isAlreadySynced(servers: unknown, ownedEntries: readonly SpawnEntry[]): boolean {
   if (servers === null || typeof servers !== "object" || Array.isArray(servers)) return false;
@@ -219,7 +228,7 @@ export function ownedRosterEntries(
   clientId?: ClientId,
   current: SpawnEntry = rosterEntry(),
 ): SpawnEntry[] {
-  const entries: SpawnEntry[] = [current];
+  const entries: SpawnEntry[] = [current, ...verifiedRosterAliases()];
   const clients = clientId ? [clientId] : WRITE_CLIENTS;
   for (const id of clients) {
     for (const backup of rawBackups(id)) {

@@ -57,6 +57,7 @@ interface VecRow {
   dims: number;
   base: Buffer;
   adj: Buffer | null;
+  updated_at: number;
 }
 
 const SOFT_FAIL_LOOKBACK = 3;
@@ -713,7 +714,7 @@ export class CoachStore {
   // ── retrieval ladder ────────────────────────────────────────────────────
 
   /** Rung 1: FTS5/BM25 — instant, zero-download. */
-  lexicalSearch(need: string, k = 30): Array<{ id: string; lexScore: number }> {
+  lexicalSearch(need: string, k = 30, eligibleIds?: ReadonlySet<string>): Array<{ id: string; lexScore: number }> {
     const all = [...new Set(lexTokens(need))];
     // Drop function words that only add noise — but if the need is ALL
     // stopwords, keep them rather than return nothing.
@@ -725,9 +726,11 @@ export class CoachStore {
       const rows = this.db
         .prepare(
           `SELECT id, bm25(capability_fts) AS rank FROM capability_fts
-           WHERE capability_fts MATCH ? ORDER BY rank LIMIT ?`,
+           WHERE capability_fts MATCH @match
+             AND (@eligible IS NULL OR id IN (SELECT value FROM json_each(@eligible)))
+           ORDER BY rank LIMIT @limit`,
         )
-        .all(match, k) as Array<{ id: string; rank: number }>;
+        .all({ match, limit: k, eligible: eligibleIds ? JSON.stringify([...eligibleIds]) : null }) as Array<{ id: string; rank: number }>;
       if (rows.length === 0) return [];
       // bm25(): lower is better (negative). Normalize to [0,1], best = 1.
       // NB: no `|| 1` shortcuts here — that bug once promoted the WORST
@@ -751,8 +754,8 @@ export class CoachStore {
    * Rung 2 fusion: 0.15·lexical + 0.85·cosine when a need vector is available.
    * Quarantined capabilities never enter a roster.
    */
-  draftCandidates(need: string, k: number, needVec?: Float32Array | null): Candidate[] {
-    const lexical = this.lexicalSearch(need, Math.max(30, k * 6));
+  draftCandidates(need: string, k: number, needVec?: Float32Array | null, eligibleIds?: ReadonlySet<string>): Candidate[] {
+    const lexical = this.lexicalSearch(need, Math.max(30, k * 6), eligibleIds);
     const lexById = new Map(lexical.map((l) => [l.id, l.lexScore]));
 
     const vecs = needVec ? this.loadVecs() : new Map<string, Float32Array>();
@@ -762,6 +765,7 @@ export class CoachStore {
     // Pass 1: gather raw signals.
     const gathered: Array<{ entry: CapabilityEntry; lexScore: number | null; cosScore: number | null }> = [];
     for (const id of candidateIds) {
+      if (eligibleIds && !eligibleIds.has(id)) continue;
       const entry = this.activeCapability(id);
       if (!entry) continue; // quarantined or removed
       const lexScore = lexById.get(id) ?? null;
@@ -803,22 +807,23 @@ export class CoachStore {
     // backfill by rating (proven performers first), then by recency. Dense
     // routing supersedes this once the embedding model warms.
     const have = new Set(out.map((c) => c.entry.id));
-    for (const entry of this.ratedFallback(k - out.length, have)) {
+    for (const entry of this.ratedFallback(k - out.length, have, eligibleIds)) {
       out.push({ entry, score: 0, lexScore: null, cosScore: null });
     }
     return out.slice(0, k);
   }
 
-  private ratedFallback(limit: number, exclude: ReadonlySet<string>): CapabilityEntry[] {
+  private ratedFallback(limit: number, exclude: ReadonlySet<string>, eligibleIds?: ReadonlySet<string>): CapabilityEntry[] {
     const rows = this.db
       .prepare(
         `SELECT c.id FROM capability c
          LEFT JOIN rating r ON r.capability = c.id AND r.category = 'all'
          WHERE c.quarantined = 0
+           AND (@eligible IS NULL OR c.id IN (SELECT value FROM json_each(@eligible)))
          ORDER BY COALESCE(r.wilson_lb, 0) DESC, c.last_seen DESC
-         LIMIT ?`,
+         LIMIT @limit`,
       )
-      .all(Math.max(limit + exclude.size, limit)) as Array<{ id: string }>;
+      .all({ limit: Math.max(limit + exclude.size, limit), eligible: eligibleIds ? JSON.stringify([...eligibleIds]) : null }) as Array<{ id: string }>;
     const out: CapabilityEntry[] = [];
     for (const row of rows) {
       if (exclude.has(row.id)) continue;
@@ -906,7 +911,7 @@ export class CoachStore {
    * adjustment is losslessly cleared so routing falls back to the valid base.
    */
   private validVecRows(): VecRow[] {
-    const read = this.db.prepare("SELECT capability, dims, base, adj FROM vec");
+    const read = this.db.prepare("SELECT capability, dims, base, adj, updated_at FROM vec");
     const deleteBase = this.db.prepare("DELETE FROM vec WHERE capability = ?");
     const clearAdj = this.db.prepare("UPDATE vec SET adj = NULL WHERE capability = ?");
     const repair = this.db.transaction(() => {
@@ -964,7 +969,9 @@ export class CoachStore {
 
     let adjusted = 0;
     let skipped = 0;
-    const writeAdj = this.db.prepare("UPDATE vec SET adj = ?, updated_at = ? WHERE capability = ?");
+    const writeAdj = this.db.prepare(
+      "UPDATE vec SET adj = ?, updated_at = ? WHERE capability = ? AND dims = ? AND base = ? AND adj IS ? AND updated_at = ?",
+    );
 
     for (const cap of caps) {
       const rows = [
@@ -991,12 +998,12 @@ export class CoachStore {
       }
       const base = blobToVec(cap.base, cap.dims);
       const result = oatsAdjust(base, positives, negatives);
-      if (result.applied) {
-        writeAdj.run(vecToBlob(result.vec), now, cap.capability);
-        adjusted += 1;
-      } else {
-        skipped += 1;
-      }
+      const written = writeAdj.run(
+        result.applied ? vecToBlob(result.vec) : null,
+        now, cap.capability, cap.dims, cap.base, cap.adj, cap.updated_at,
+      );
+      if (result.applied && written.changes === 1) adjusted += 1;
+      else skipped += 1;
     }
     return { adjusted, skipped };
   }

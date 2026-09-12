@@ -100,13 +100,25 @@ function assertWriteClient(id: string | undefined): ClientId | undefined {
   return id as ClientId;
 }
 
+function parseWriteClient(args: readonly string[], allowForce = false): ClientId | undefined {
+  let client: ClientId | undefined;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (allowForce && arg === "--force") continue;
+    let value: string | undefined;
+    if (arg === "--client") value = args[++i];
+    else if (arg.startsWith("--client=")) value = arg.slice("--client=".length);
+    else throw new Error("unexpected argument; use --client <id> to select a client");
+    if (!value || value.startsWith("-")) throw new Error("--client requires a client id");
+    if (client !== undefined) throw new Error("--client may only be specified once");
+    client = assertWriteClient(value);
+  }
+  return client;
+}
+
 async function main(): Promise<number> {
   const [, , command, ...rest] = process.argv;
   const flags = new Set(rest.filter((a) => a.startsWith("--")));
-  const flagValue = (name: string): string | undefined => {
-    const idx = rest.indexOf(name);
-    return idx >= 0 ? rest[idx + 1] : undefined;
-  };
 
   switch (command) {
     case "init":
@@ -157,7 +169,7 @@ async function main(): Promise<number> {
     }
 
     case "sync": {
-      const only = assertWriteClient(flagValue("--client"));
+      const only = parseWriteClient(rest);
       const targets = only ? [only] : WRITE_CLIENTS;
       let syncFailures = 0;
       for (const client of targets) {
@@ -181,7 +193,7 @@ async function main(): Promise<number> {
     }
 
     case "eject": {
-      const only = assertWriteClient(flagValue("--client"));
+      const only = parseWriteClient(rest, true);
       const targets = only ? [only] : WRITE_CLIENTS;
       let failures = 0;
       let restored = 0;
