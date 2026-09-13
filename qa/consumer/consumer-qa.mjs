@@ -1763,6 +1763,7 @@ await pipe.dispose?.();
     if (inst.exitCode !== 0 || !launcher) blocked("launcher unavailable");
     if (!DENSE) notRun("NOT RUN — --dense not requested for this matrix leg");
     if (results.find((result) => result.id === "FN-dense-status-enable-provenance")?.status !== "PASS") blocked("runtime installation and provenance were not verified");
+    if (results.find((result) => result.id === "FN-dense-minilm-inference")?.status !== "PASS") blocked("native model inference did not pass; product dense backfill is unverified");
     const before = (await dumpDb(coachDb)).vec?.length ?? 0;
     const client = new McpClient(launcher.command, [...launcher.args, "--five"], { cwd: root.elsewhere, env: envFor(root) }).start();
     await client.initialize(120_000);
