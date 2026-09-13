@@ -1,0 +1,167 @@
+name: consumer-native-qa
+# Verification-only: installs the PUBLIC @npmmo/roster@0.0.2 artifact on native
+# GitHub-hosted standard runners and runs qa/consumer/native-qa.mjs. Nothing here
+# builds, publishes, deploys or modifies the product. Standard runner labels only.
+on:
+  push:
+    branches: ["devin/*-native-qa"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: consumer-native-qa-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  CANDIDATE_SHA256: 3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0
+  CANDIDATE_URL: https://registry.npmjs.org/@npmmo/roster/-/roster-0.0.2.tgz
+jobs:
+  plan:
+    name: "Read matrix + fetch the public artifact anonymously"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: m
+        run: echo "matrix=$(node -e 'process.stdout.write(JSON.stringify(JSON.parse(require("fs").readFileSync("qa/consumer/native-matrix.json","utf8")).include))')" >> "$GITHUB_OUTPUT"
+      - name: Download and pin the public tarball (no credentials, exact digest)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/candidate"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/candidate/roster-0.0.2.tgz" "$CANDIDATE_URL"
+          echo "$CANDIDATE_SHA256  $RUNNER_TEMP/candidate/roster-0.0.2.tgz" | sha256sum -c -
+          curl -fsSL --retry 3 -H 'accept: application/json' -o "$RUNNER_TEMP/candidate/packument.json" 'https://registry.npmjs.org/@npmmo%2froster'
+          node -e '
+            const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const v = d.versions["0.0.2"];
+            const out = { fetchedAt: new Date().toISOString(), latest: d["dist-tags"].latest, integrity: v.dist.integrity, shasum: v.dist.shasum, tarball: v.dist.tarball, gitHead: v.gitHead, published: d.time["0.0.2"], fileCount: v.dist.fileCount, unpackedSize: v.dist.unpackedSize };
+            if (out.latest !== "0.0.2") { console.error("latest is", out.latest); process.exit(1); }
+            require("fs").writeFileSync(process.argv[2], JSON.stringify(out, null, 2)); console.log(out);
+          ' "$RUNNER_TEMP/candidate/packument.json" "$RUNNER_TEMP/candidate/public-identity.json"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: public-candidate
+          path: ${{ runner.temp }}/candidate
+          if-no-files-found: error
+          retention-days: 30
+
+  native:
+    name: ${{ matrix.id }}
+    needs: plan
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: false
+      - uses: actions/download-artifact@v7
+        with:
+          name: public-candidate
+          path: ${{ runner.temp }}/candidate
+      - name: Runner facts
+        shell: bash
+        run: |
+          echo "node=$(node --version) npm=$(npm --version) arch=$(node -p process.arch) libuv=$(node -p process.versions.uv)"
+          echo "uname=$(uname -a 2>/dev/null || true)"
+          node -p "require('os').totalmem()/2**30 + ' GiB RAM, ' + require('os').cpus().length + ' cpus'"
+      - name: Re-verify the artifact digest on this runner
+        shell: bash
+        run: node -e 'const c=require("crypto"),f=require("fs");const h=c.createHash("sha256").update(f.readFileSync(process.argv[1])).digest("hex");if(h!==process.env.CANDIDATE_SHA256){console.error("digest mismatch",h);process.exit(1)};console.log("sha256",h)' "$RUNNER_TEMP/candidate/roster-0.0.2.tgz"
+
+      # ---- supported + negative-control rows: run as the runner's own account ----
+      - name: native-qa (POSIX)
+        if: matrix.kind != 'standard-user' && matrix.platform != 'windows'
+        id: qa_posix
+        continue-on-error: true
+        shell: bash
+        run: |
+          node qa/consumer/native-qa.mjs \
+            --tarball "$RUNNER_TEMP/candidate/roster-0.0.2.tgz" \
+            --expected-sha256 "$CANDIDATE_SHA256" \
+            --out "$RUNNER_TEMP/qa-out" --work "$RUNNER_TEMP/w" \
+            --node-label "${{ matrix.node }}" --mode "${{ matrix.kind == 'negative-control' && 'negative-control' || 'supported' }}" \
+            ${{ matrix.dense && '--dense' || '' }}
+      - name: native-qa (Windows, runner account)
+        if: matrix.kind != 'standard-user' && matrix.platform == 'windows'
+        id: qa_win
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $mode = if ("${{ matrix.kind }}" -eq "negative-control") { "negative-control" } else { "supported" }
+          $dense = if ("${{ matrix.dense }}" -eq "true") { @("--dense") } else { @() }
+          New-Item -ItemType Directory -Force -Path C:\rw | Out-Null
+          node qa/consumer/native-qa.mjs --tarball "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" --expected-sha256 $env:CANDIDATE_SHA256 --out "$env:RUNNER_TEMP\qa-out" --work C:\rw --node-label "${{ matrix.node }}" --mode $mode @dense
+          exit $LASTEXITCODE
+
+      # ---- standard-user rows: ephemeral non-admin account INSIDE the VM ----
+      - name: native-qa as an ephemeral Windows standard user
+        if: matrix.kind == 'standard-user'
+        id: qa_std
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $dense = if ("${{ matrix.dense }}" -eq "true") { @("-Dense") } else { @() }
+          Copy-Item "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" C:\roster-0.0.2.tgz
+          New-Item -ItemType Directory -Force -Path C:\rqout | Out-Null
+          pwsh -NoProfile -File qa/consumer/run-as-standard-user.ps1 -Tarball C:\roster-0.0.2.tgz -ExpectedSha256 $env:CANDIDATE_SHA256 -Out C:\rqout -NodeLabel "${{ matrix.node }}" @dense
+          $code = $LASTEXITCODE
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\qa-out" | Out-Null
+          Copy-Item -Recurse -Force C:\rqout\* "$env:RUNNER_TEMP\qa-out\"
+          exit $code
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: native-${{ matrix.id }}
+          path: |
+            ${{ runner.temp }}/qa-out/results.json
+            ${{ runner.temp }}/qa-out/env.json
+            ${{ runner.temp }}/qa-out/cases
+            ${{ runner.temp }}/qa-out/locks
+            ${{ runner.temp }}/qa-out/std-user-launch.json
+            ${{ runner.temp }}/qa-out/std-user.stderr.log
+          if-no-files-found: warn
+          retention-days: 30
+      - name: "Row verdict (honest: a failed harness exit fails the row)"
+        shell: bash
+        run: |
+          echo "posix=${{ steps.qa_posix.outcome }} win=${{ steps.qa_win.outcome }} std=${{ steps.qa_std.outcome }}"
+          test -f "$RUNNER_TEMP/qa-out/results.json" || { echo "::error::no results.json produced"; exit 1; }
+          node -e '
+            const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const c = {}; for (const r of d.results) c[r.status] = (c[r.status] ?? 0) + 1;
+            console.log(JSON.stringify(c)); for (const r of d.results) console.log(r.status.padEnd(8), r.id, r.category ? `[${r.category}]` : "");
+            process.exit(c.FAIL ? 1 : 0);
+          ' "$RUNNER_TEMP/qa-out/results.json"
+
+  summary:
+    name: Evidence inventory (missing rows are not passes)
+    needs: [plan, native]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: native-*
+          path: ${{ runner.temp }}/evidence
+      - name: Aggregate
+        run: node qa/consumer/native-summary.mjs --matrix qa/consumer/native-matrix.json --artifacts "$RUNNER_TEMP/evidence" --out "$RUNNER_TEMP/evidence" | tee -a "$GITHUB_STEP_SUMMARY" || echo "::warning::failures or missing evidence present (see summary)"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: native-summary
+          path: |
+            ${{ runner.temp }}/evidence/native-summary.md
+            ${{ runner.temp }}/evidence/native-summary.json
+          if-no-files-found: error
+          retention-days: 30

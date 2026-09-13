@@ -1,0 +1,29 @@
+{
+  "_comment": "Native consumer matrix for public @npmmo/roster@0.0.2. Standard GitHub-hosted runners only (never -large/-xlarge). kind=supported rows are the only ones that can count as supported-platform coverage; negative-control rows PASS only by refusing before mutation; standard-user rows run the harness as an ephemeral non-admin account inside the Windows VM. dense=true rows additionally exercise the optional embedding runtime (real inference, model recorded from stored dims).",
+  "include": [
+    { "id": "ubuntu-22.04-x64-node22.17.0", "os": "ubuntu-22.04", "platform": "linux", "arch": "x64", "node": "22.17.0", "kind": "supported", "dense": false, "role": "minimum-control" },
+    { "id": "ubuntu-22.04-x64-node26.8.1-dense", "os": "ubuntu-22.04", "platform": "linux", "arch": "x64", "node": "26.8.1", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "ubuntu-24.04-x64-node22.23.2-dense", "os": "ubuntu-24.04", "platform": "linux", "arch": "x64", "node": "22.23.2", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "ubuntu-24.04-x64-node24.20.0", "os": "ubuntu-24.04", "platform": "linux", "arch": "x64", "node": "24.20.0", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "ubuntu-24.04-arm64-node24.20.0-dense", "os": "ubuntu-24.04-arm", "platform": "linux", "arch": "arm64", "node": "24.20.0", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "ubuntu-24.04-arm64-node26.8.1", "os": "ubuntu-24.04-arm", "platform": "linux", "arch": "arm64", "node": "26.8.1", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "ubuntu-26.04-arm64-node22.23.2", "os": "ubuntu-26.04-arm", "platform": "linux", "arch": "arm64", "node": "22.23.2", "kind": "supported", "dense": false, "role": "preview-image" },
+    { "id": "windows-2022-x64-node22.17.0", "os": "windows-2022", "platform": "windows", "arch": "x64", "node": "22.17.0", "kind": "supported", "dense": false, "role": "minimum-control" },
+    { "id": "windows-2022-x64-node24.20.0-dense", "os": "windows-2022", "platform": "windows", "arch": "x64", "node": "24.20.0", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "windows-2025-x64-node24.2.0", "os": "windows-2025", "platform": "windows", "arch": "x64", "node": "24.2.0", "kind": "supported", "dense": false, "role": "minimum-control" },
+    { "id": "windows-2025-x64-node22.23.2", "os": "windows-2025", "platform": "windows", "arch": "x64", "node": "22.23.2", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "windows-2025-x64-node26.8.1-dense", "os": "windows-2025", "platform": "windows", "arch": "x64", "node": "26.8.1", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "windows-11-arm64-node24.20.0-dense", "os": "windows-11-arm", "platform": "windows", "arch": "arm64", "node": "24.20.0", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "windows-11-arm64-node26.8.1", "os": "windows-11-arm", "platform": "windows", "arch": "arm64", "node": "26.8.1", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "macos-15-x64-node22.23.2-dense", "os": "macos-15-intel", "platform": "darwin", "arch": "x64", "node": "22.23.2", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "macos-15-x64-node24.20.0", "os": "macos-15-intel", "platform": "darwin", "arch": "x64", "node": "24.20.0", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "macos-26-x64-node26.8.1", "os": "macos-26-intel", "platform": "darwin", "arch": "x64", "node": "26.8.1", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "macos-15-arm64-node24.20.0-dense", "os": "macos-15", "platform": "darwin", "arch": "arm64", "node": "24.20.0", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "macos-26-arm64-node22.23.2", "os": "macos-26", "platform": "darwin", "arch": "arm64", "node": "22.23.2", "kind": "supported", "dense": false, "role": "current" },
+    { "id": "macos-26-arm64-node26.8.1-dense", "os": "macos-26", "platform": "darwin", "arch": "arm64", "node": "26.8.1", "kind": "supported", "dense": true, "role": "current" },
+    { "id": "stduser-windows-2025-x64-node24.20.0-dense", "os": "windows-2025", "platform": "windows", "arch": "x64", "node": "24.20.0", "kind": "standard-user", "dense": true, "role": "privilege" },
+    { "id": "stduser-windows-11-arm64-node26.8.1", "os": "windows-11-arm", "platform": "windows", "arch": "arm64", "node": "26.8.1", "kind": "standard-user", "dense": false, "role": "privilege" },
+    { "id": "negctl-windows-2022-x64-node22.13.1", "os": "windows-2022", "platform": "windows", "arch": "x64", "node": "22.13.1", "kind": "negative-control", "dense": false, "role": "negative-control" },
+    { "id": "negctl-windows-2025-x64-node24.1.0", "os": "windows-2025", "platform": "windows", "arch": "x64", "node": "24.1.0", "kind": "negative-control", "dense": false, "role": "negative-control" }
+  ]
+}
