@@ -1,5 +1,15 @@
 # Roster — status & decision board for Mo
 
+## Current release update — 2026-09-13
+
+`@npmmo/roster@0.0.1` is published on public npm, with the `roster` executable and the owner-approved Node runtime baseline. PR #39 merged as `0667eb6`. The owner's completed human review, exact-artifact authorization, native verification, packet capture, and successful public npm/npx checks are recorded in [release readiness](docs/release-readiness.md) and [PROVENANCE](docs/PROVENANCE.md).
+
+This is the CLI preview release, not a League or hosted-service launch. No named League score was signed or published, no domain was registered, and no website or telemetry endpoint was deployed. Native GUI-client workflows and a non-admin Windows profile remain outside the recorded verification scope.
+
+## Historical decision board — 2026-08-21
+
+The dated board below preserves earlier findings and decisions. Its old package name and unpublished-status statements are historical; the current release update above takes precedence.
+
 > **Single source of truth for where the project stands, what's left, and what awaits YOUR decision.** Last full update: **2026-08-21**, after the persistent-slot lock merge and its independent meta-verification. Read top to bottom; **§2 and §3 are yours**, **§4 and §7 are the deep "what's left" map**.
 >
 > **Current hardening delta:** the cross-process/config/eject, bounded Playbook, full-contract drift, resumable eject, child-reaping, schema-isolation, staging-cleanup, verifier-read, package-name, dependency-audit, pinned secret-scan installer, and release-policy hardening is merged. **Round 6 (independent clean-room review) then closed the last engineering launch blocker**: the packed CLI no longer depends on unpublished packages, so `npx -y @roster/cli` can actually resolve once you publish it — proven by a new CI gate that installs the tarball into an empty project. It also hardened on-disk permissions and added platform-neutral shutdown coverage. The repository's `main-protection` ruleset is now active and requires the documented CI/CodeQL checks. Details: `docs/lab/review-round6-hardening.md`. The repository is public; no package, League website, signed named score, or telemetry endpoint has been published.

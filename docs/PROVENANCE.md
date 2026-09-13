@@ -32,6 +32,8 @@ Line-by-line reviews of the security-critical paths are recorded here only after
 
 The owner explicitly confirmed completion of the required line-by-line review and authorized Devin to merge PR #39 and publish `@npmmo/roster@0.0.1` on the owner's behalf. That authorization is limited to the reviewed tarball with SHA-256 `e6e854508e71e3eef4a17ef88e8a019790735f65ed238e7b726c5e0434bf1fb0`, public access, and the `latest` tag. It does not authorize League signing, named scores, or service deployment. This entry records the owner's attestation; it does not claim an additional independent human audit.
 
+The approved publication completed on 2026-09-13 after the owner's npm browser authentication. Unauthenticated public-registry download matched the approved artifact; fresh public npm/npx consumer checks passed on Linux, Windows, and macOS within the recorded scope.
+
 The automated security-scan and consumer-verification report is recorded in [release readiness](release-readiness.md), including CI links, native consumer evidence, and the default-off packet capture.
 
 If anything on this page ever stops being true, that's a bug in the project, not in the page. File it.

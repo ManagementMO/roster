@@ -7,9 +7,12 @@ before publication. A passing source build alone is not a release approval.
 
 ## The selected namespace
 
-The first-release target is **`@npmmo/roster@0.0.1`**, and the installed executable
-remains **`roster`**. The scope belongs to the npm user `npmmo`; verify that exact
-account with `npm whoami` immediately before publishing.
+The first release, **`@npmmo/roster@0.0.1`**, was published publicly on
+**2026-09-13**, and the installed executable remains **`roster`**. Its reviewed
+artifact and public-install evidence are recorded in `docs/release-readiness.md`.
+Do not attempt to publish `0.0.1` again: a later release needs a new version and
+its own reviewed artifact and owner authorization. The scope belongs to the npm
+user `npmmo`; verify that exact account with `npm whoami` before publishing.
 
 The earlier choice, `@roster/cli`, is not the publication target. The authenticated
 `npmmo` account was not listed as a member of `@roster`. A package lookup returning
@@ -48,7 +51,7 @@ npm login                                   # the account that owns @npmmo
 npm whoami                                  # confirm it
 node scripts/verify-clean-install.mjs --dense # last check: packs and installs outside the workspace
 
-CANDIDATE="/absolute/path/to/reviewed/npmmo-roster-0.0.1.tgz"
+CANDIDATE="/absolute/path/to/reviewed/npmmo-roster-VERSION.tgz"
 npm publish "$CANDIDATE" --dry-run --access public # inspect the exact file list one final time
 npm publish "$CANDIDATE" --access public --tag latest # publish the reviewed bytes after owner approval
 ```
