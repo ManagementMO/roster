@@ -133,6 +133,7 @@ const ENV_FACTS = {
   harness: "qa/consumer/native-qa.mjs",
   harnessSha256: sha256(fs.readFileSync(fileURLToPath(import.meta.url))),
   fixtureServerSha256: exists(FIXTURE_SERVER) ? sha256(fs.readFileSync(FIXTURE_SERVER)) : null,
+  argv: args,
   mode: MODE,
   expectStandardUser: EXPECT_STD_USER,
   dense: DENSE,
@@ -591,8 +592,34 @@ async function caseNegativeControl() {
 // ---------------------------------------------------------------------------
 // Installs: metacharacter paths, real shells, npx cache move/removal, upgrade
 // ---------------------------------------------------------------------------
-const META_DIR = WIN ? "q &(x)!^;$'ü-ロ" : "q &(x)!^;$'ü-ロ?|<>\"";
+// ';' is the Windows PATH separator: a prefix containing it cannot be a PATH entry, so it gets its own
+// controlled case on win32 (N-INST-win-semicolon-path-npm-limitation) instead of hiding inside this one
+const META_DIR = WIN ? "q &(x)!^$'ü-ロ" : "q &(x)!^;$'ü-ロ?|<>\"";
 async function caseInstallRoutes(routes) {
+  await testCase("N-INST-win-semicolon-path-npm-limitation", { area: "install", title: "Global install into a Windows prefix whose path contains ';' (the PATH separator): npm prepends <prefix>\\…\\node_modules\\.bin to the lifecycle-script PATH, so any dependency whose install script needs a .bin executable (better-sqlite3 → prebuild-install) fails; minimal no-Roster control in the same and in a ';'-free path", expected: "public install into the ';' prefix fails (or, if it succeeds, roster --help works); control project with a postinstall that needs its own .bin fails identically in a ';' path and succeeds in the same path without ';' → BLOCKED (environment), not a product verdict", applicability: "win32 only (';' is a legal path character on POSIX and is covered by N-INST-metachar-global-shells there)" }, async () => {
+    if (!WIN) notRun("';' is not the PATH separator on POSIX; covered by N-INST-metachar-global-shells");
+    const root = makeRoot(`sc-${rand()}`, { prefixName: "p a;b" });
+    const inst = installGlobal(root);
+    // control: a local project whose postinstall runs a .bin from its own dependency (no registry, no Roster)
+    const mkControl = (dirName) => {
+      const proj = path.join(root.root, dirName); fs.mkdirSync(path.join(proj, "dep"), { recursive: true });
+      fs.writeFileSync(path.join(proj, "dep", "package.json"), JSON.stringify({ name: "ctldep", version: "1.0.0", bin: { ctldep: "bin.js" } }));
+      fs.writeFileSync(path.join(proj, "dep", "bin.js"), "#!/usr/bin/env node\nconsole.log('ctldep ok');\n");
+      fs.writeFileSync(path.join(proj, "package.json"), JSON.stringify({ name: "ctlpkg", version: "1.0.0", private: true, dependencies: { ctldep: "file:dep" }, scripts: { postinstall: "ctldep" } }));
+      return npm(["install", "--no-package-lock", "--foreground-scripts"], { cwd: proj, env: envFor(root) });
+    };
+    const semi = mkControl("c a;b");
+    const plain = mkControl("c a-b");
+    note(`public install exit ${inst.exitCode}; control postinstall via .bin: ';' path exit ${semi.exitCode} (${trimTo((semi.stderr.match(/not recognized[^\n]*|npm error command failed[^\n]*/) ?? [""])[0], 160)}), ';'-free path exit ${plain.exitCode} (${trimTo(plain.stdout.match(/ctldep ok/)?.[0] ?? plain.stderr, 120)})`);
+    if (inst.ok) {
+      const r = exec(process.execPath, [inst.binJs, "--help"], { cwd: root.elsewhere, env: envFor(root) });
+      assert(r.exitCode === 0 && /roster init/.test(r.stdout), `installed into a ';' prefix but roster --help exit ${r.exitCode}`);
+      return { actual: `npm ${ENV_FACTS.npm} installed ${PKG_SPEC} into a ';' prefix and roster --help works; control ';' exit ${semi.exitCode}, plain exit ${plain.exitCode}` };
+    }
+    if (semi.exitCode !== 0 && plain.exitCode === 0 && /ctldep ok/.test(plain.stdout)) blocked(`npm on Windows joins the lifecycle-script PATH with ';', so a prefix containing ';' splits <prefix>\\node_modules\\.bin and install scripts cannot find their .bin executables (better-sqlite3's prebuild-install → node-gyp fallback); the no-Roster control fails identically in a ';' path and succeeds without ';'; product not installable here`);
+    fail(`public install into a ';' prefix failed (exit ${inst.exitCode}) but the control did not isolate the cause: control ';' exit ${semi.exitCode}, plain exit ${plain.exitCode}: ${trimTo(inst.stderr.split("\n").filter((l) => /npm error/.test(l)).slice(0, 6).join(" | "), 400)}`, { severity: "medium" });
+  });
+
   await testCase("N-INST-metachar-global-shells", { area: "install", title: "Fresh public global install into a prefix AND a HOME whose path has spaces, Unicode and shell metacharacters; `roster` resolved by each real shell via PATH; init/sync/eject in that home", expected: `npm -g install exit 0; ${SHELLS.join("/")} run 'roster --help' exit 0; init/sync/eject succeed with metachar HOME/ROSTER_HOME` }, async () => {
     const root = makeRoot(`m-${rand()}`, { prefixName: `p ${META_DIR}`, homeName: `h ${META_DIR}` });
     routes.meta = root;
@@ -1229,8 +1256,16 @@ async function serveCases(routes) {
       if (!/OFF/.test(roster(["dense", "status"]).stdout) === false) blocked("dense runtime not enabled (see N-DENSE-enable-status-repair)");
       const before = fs.existsSync(coachDb) ? ((await dumpDb(coachDb)).vec?.length ?? 0) : 0;
       const expectModel = ENV_FACTS.totalMemGiB >= 8 ? "EmbeddingGemma-300m (256-d)" : "MiniLM-L6-v2 (384-d)";
+      // control: does the installed runtime's onnxruntime-node ship a binding for THIS platform/arch, and does it load?
+      const runtimeDir = path.join(root.rosterHome, "runtime");
+      const napi = path.join(runtimeDir, "node_modules", "onnxruntime-node", "bin", "napi-v6");
+      const shipped = exists(napi) ? fs.readdirSync(napi).flatMap((p) => (fs.statSync(path.join(napi, p)).isDirectory() ? fs.readdirSync(path.join(napi, p)).map((a) => `${p}/${a}`) : [])) : [];
+      const bindingHere = shipped.includes(`${process.platform}/${process.arch}`);
+      const ort = exec(process.execPath, ["-e", "import('onnxruntime-node').then((m) => { console.log('ort-load-ok', typeof m.InferenceSession); }).catch((e) => { console.error('ort-load-failed', e.code ?? '', String(e.message).split('\\n')[0]); process.exit(2); });"], { cwd: runtimeDir, env: envFor(root), timeout: 60_000 });
+      note(`onnxruntime-node bindings shipped: [${shipped.join(", ")}]; binding for ${process.platform}/${process.arch}: ${bindingHere}; direct import from the installed runtime: exit ${ort.exitCode} ${trimTo((ort.stdout + ort.stderr).trim(), 300)}`);
       const c = client(["--five"]); await c.initialize(180_000);
-      const deadline = Date.now() + 8 * 60_000; let rows = before; let drafts = 0; let lexicalOk = 0;
+      // a runtime that cannot even load its native binding is decided quickly (90 s of drafts); otherwise allow a real download + compute
+      const deadline = Date.now() + (ort.exitCode === 0 ? 8 * 60_000 : 90_000); let rows = before; let drafts = 0; let lexicalOk = 0;
       while (Date.now() < deadline) {
         const d = await c.callTool("draft", { need: "persist a note into the knowledge graph memory" }, 120_000); drafts++;
         if (!d.error && /memory-cursor__/.test(textOf(d))) lexicalOk++;
@@ -1244,7 +1279,13 @@ async function serveCases(routes) {
       const native = /onnxruntime|\.node|dlopen|not a valid Win32|ELF|Illegal instruction|sharp|cannot find module/i.test(c.stderr);
       note(`drafts=${drafts} lexicalOk=${lexicalOk}; vec ${before}→${rows}; dims=${dims}; RAM ${ENV_FACTS.totalMemGiB} GiB → expected ${expectModel}; native-error signature=${native}; stderr: ${trimTo(c.stderr, 400)}`);
       assert(lexicalOk === drafts, `lexical fallback broke while dense warmed: ${lexicalOk}/${drafts} drafts returned memory tools`, { severity: "high" });
-      if (rows <= before) return { status: "FAIL", severity: "medium", category: native ? "native-dependency-failure (lexical fallback OK)" : "no-inference-within-8min (lexical fallback OK)", actual: `no vec rows after ${drafts} drafts; ${native ? "native runtime error in stderr" : "no native error signature; download/compute did not finish"}; lexical fallback worked ${lexicalOk}/${drafts}; exit ${JSON.stringify(exit)}`, repro: `roster dense enable; roster serve --five; draft ×N; SELECT count(*) FROM vec` };
+      if (rows <= before) {
+        const statusAfter = trimTo(roster(["dense", "status"]).stdout.trim(), 120);
+        const cause = ort.exitCode !== 0
+          ? `onnxruntime-node ${bindingHere ? "binding present but fails to load" : `ships no ${process.platform}/${process.arch} binding`} (${trimTo(ort.stderr.trim(), 160)}); \`dense status\` afterwards: "${statusAfter}"; server stderr native-error signature=${native}`
+          : native ? "native runtime error in stderr" : "no native error signature; download/compute did not finish";
+        return { status: "FAIL", severity: "medium", category: ort.exitCode !== 0 ? "native-dependency-unavailable-silent (lexical fallback OK)" : native ? "native-dependency-failure (lexical fallback OK)" : "no-inference-within-8min (lexical fallback OK)", actual: `no vec rows after ${drafts} drafts; ${cause}; lexical fallback worked ${lexicalOk}/${drafts}; exit ${JSON.stringify(exit)}`, repro: `roster dense enable; roster serve --five; draft ×N; SELECT count(*) FROM vec; control: cd ~/.roster/runtime && node -e "import('onnxruntime-node')"` };
+      }
       const model = dims === 384 ? "MiniLM-L6-v2" : dims === 256 ? "EmbeddingGemma-300m" : `unknown(${dims})`;
       return { actual: `real inference: vec ${before}→${rows} rows, dims ${dims} → ${model} on ${process.platform}/${process.arch} (RAM ${ENV_FACTS.totalMemGiB} GiB); ${drafts} drafts all lexical-OK; exit ${JSON.stringify(exit)}`, category: model };
     });
@@ -1269,6 +1310,14 @@ if (!NEGATIVE) {
     await caseInstallRoutes(routes);
     await lifecycleCases(routes);
     if (routes.life) await serveCases(routes);
+  }
+} else {
+  // negative-control rows exercise only facts/artifact/refusal; every supported-platform case is recorded explicitly as NOT RUN
+  // (the gate treats an absent case as MISSING, never as a pass)
+  const inventory = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "native-cases.json"), "utf8")).cases;
+  for (const c of inventory) {
+    if (results.some((r) => r.id === c.id)) continue;
+    await testCase(c.id, { area: c.area, title: c.title, expected: "supported-platform case; see supported rows" }, async () => notRun("negative-control row: the product must refuse before any of this could run (see N-NEG-refuses-before-mutation)"));
   }
 }
 const tally = results.reduce((acc, r) => { const k = r.kind === "negative-control" && r.status === "PASS" ? "PASS (negative-control refusal)" : r.status; acc[k] = (acc[k] ?? 0) + 1; return acc; }, {});

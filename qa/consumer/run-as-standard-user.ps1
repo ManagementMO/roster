@@ -47,14 +47,15 @@ Write-Host "node for the child: $node"
 
 $stdout = Join-Path $Out "std-user.stdout.log"
 $stderr = Join-Path $Out "std-user.stderr.log"
-$args = @($harness, "--tarball", $Tarball, "--expected-sha256", $ExpectedSha256, "--out", $Out, "--work", $work, "--node-label", $NodeLabel, "--expect-standard-user")
-if ($Dense) { $args += "--dense" }
+$nodeArgs = @($harness, "--tarball", $Tarball, "--expected-sha256", $ExpectedSha256, "--out", $Out, "--work", $work, "--node-label", $NodeLabel, "--expect-standard-user")
+if ($Dense) { $nodeArgs += "--dense" }
+Write-Host "child argv: $($nodeArgs -join ' ')"
 $cred = New-Object System.Management.Automation.PSCredential("$env:COMPUTERNAME\$user", $secure)
 $launch = "ok"
 $exit = 1
 try {
   # -LoadUserProfile gives the account a real profile (USERPROFILE/APPDATA) like an interactive standard user.
-  $proc = Start-Process -FilePath $node -ArgumentList $args -Credential $cred -LoadUserProfile -WorkingDirectory $work -WindowStyle Hidden `
+  $proc = Start-Process -FilePath $node -ArgumentList $nodeArgs -Credential $cred -LoadUserProfile -WorkingDirectory $work -WindowStyle Hidden `
     -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru -Wait
   $exit = $proc.ExitCode
 } catch {

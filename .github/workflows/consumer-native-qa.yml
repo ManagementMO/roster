@@ -100,12 +100,15 @@ jobs:
         shell: pwsh
         run: |
           $mode = if ("${{ matrix.kind }}" -eq "negative-control") { "negative-control" } else { "supported" }
-          $dense = if ("${{ matrix.dense }}" -eq "true") { @("--dense") } else { @() }
           # short (MAX_PATH) but uniquely owned work dir; fail closed if it already exists
           $work = "C:\rw" + (-join ((48..57 + 97..122) | Get-Random -Count 6 | ForEach-Object { [char]$_ }))
           if (Test-Path $work) { throw "refusing to reuse preexisting $work" }
           New-Item -ItemType Directory -Path $work | Out-Null
-          node qa/consumer/native-qa.mjs --tarball "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" --expected-sha256 $env:CANDIDATE_SHA256 --out "$env:RUNNER_TEMP\qa-out" --work $work --node-label "${{ matrix.node }}" --mode $mode @dense
+          # an explicit argv array: pwsh splatting (@arr) of a native command splits strings into characters
+          $argv = @("qa/consumer/native-qa.mjs", "--tarball", "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz", "--expected-sha256", $env:CANDIDATE_SHA256, "--out", "$env:RUNNER_TEMP\qa-out", "--work", $work, "--node-label", "${{ matrix.node }}", "--mode", $mode)
+          if ("${{ matrix.dense }}" -eq "true") { $argv += "--dense" }
+          Write-Host "argv: $($argv -join ' ')"
+          node $argv
           $code = $LASTEXITCODE
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\qa-out" | Out-Null
           Set-Content -NoNewline -Path "$env:RUNNER_TEMP\qa-out\harness-exit.txt" -Value "$code"
@@ -118,14 +121,17 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
-          $dense = if ("${{ matrix.dense }}" -eq "true") { @("-Dense") } else { @() }
+          $isDense = "${{ matrix.dense }}" -eq "true"
           # uniquely owned, fail-closed staging paths (the std-user script creates its own work/harness dirs the same way)
           $suffix = -join ((48..57 + 97..122) | Get-Random -Count 6 | ForEach-Object { [char]$_ })
           $stage = "C:\rqt$suffix"; $outDir = "C:\rqo$suffix"
           foreach ($p in @($stage, $outDir)) { if (Test-Path $p) { throw "refusing to reuse preexisting $p" } }
           New-Item -ItemType Directory -Path $stage | Out-Null
           Copy-Item "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" "$stage\roster-0.0.2.tgz"
-          pwsh -NoProfile -File qa/consumer/run-as-standard-user.ps1 -Tarball "$stage\roster-0.0.2.tgz" -ExpectedSha256 $env:CANDIDATE_SHA256 -Out $outDir -NodeLabel "${{ matrix.node }}" @dense
+          $psArgs = @("-NoProfile", "-File", "qa/consumer/run-as-standard-user.ps1", "-Tarball", "$stage\roster-0.0.2.tgz", "-ExpectedSha256", $env:CANDIDATE_SHA256, "-Out", $outDir, "-NodeLabel", "${{ matrix.node }}")
+          if ($isDense) { $psArgs += "-Dense" }
+          Write-Host "pwsh $($psArgs -join ' ')"
+          pwsh $psArgs
           $code = $LASTEXITCODE
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\qa-out" | Out-Null
           if (Test-Path $outDir) { Copy-Item -Recurse -Force "$outDir\*" "$env:RUNNER_TEMP\qa-out\" }

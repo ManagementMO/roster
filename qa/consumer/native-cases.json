@@ -9,6 +9,11 @@
     { "id": "N-ART-registry-anonymous", "kind": ["supported", "standard-user", "negative-control"] },
     { "id": "N-NEG-refuses-before-mutation", "platform": ["win32"], "kind": ["negative-control"] },
     { "id": "N-SETUP-pinned-backends" },
+    {
+      "id": "N-INST-win-semicolon-path-npm-limitation",
+      "platform": ["win32"],
+      "blockedIf": "npm on Windows joins the lifecycle-script PATH with ';'.*no-Roster control fails identically in a ';' path and succeeds without ';'"
+    },
     { "id": "N-INST-metachar-global-shells" },
     { "id": "N-INST-star-path-node-limitation", "platform": ["linux", "darwin"], "blockedIf": "ESM resolver substitutes the exports pattern into the absolute URL.*control fails identically" },
     { "id": "N-INST-npx-cache-move-remove" },
