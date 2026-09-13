@@ -6,7 +6,7 @@ Roster is a pnpm/TypeScript monorepo. Workspace libraries live in `packages/`: `
 
 ## Build, Test, and Development Commands
 
-Use Node `>=22.13` and pnpm `11.9.0`.
+Use Node `^22.17.0 || >=24.2.0` for the published CLI and pnpm `11.9.0`. The workspace retains an older Node 22.13 Linux compatibility job; that extra coverage does not expand the published CLI's supported-runtime contract. Affected Windows/libuv versions must be refused without weakening file-identity checks.
 
 - `pnpm install --frozen-lockfile` installs the exact locked dependency graph.
 - `pnpm build` compiles all TypeScript project references; run it before compiled CLI or verification scripts.

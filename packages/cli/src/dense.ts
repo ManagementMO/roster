@@ -1,4 +1,5 @@
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
+import type { SpawnSyncReturns } from "node:child_process";
+import crossSpawn from "cross-spawn";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -120,7 +121,7 @@ function prepareDenseManifest(dir: string): void {
  */
 export function installDenseRuntime(
   spawn: (cmd: string, args: string[]) => SpawnSyncReturns<string> = (cmd, args) =>
-    spawnSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "inherit", "pipe"] }),
+    crossSpawn.sync(cmd, args, { encoding: "utf8", stdio: ["ignore", "inherit", "pipe"] }),
 ): DenseInstallResult {
   // npm must see one canonical root. Alias paths (e.g. macOS /var -> /private/var)
   // can otherwise produce linked lockfile entries that bypass root overrides.

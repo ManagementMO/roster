@@ -1994,7 +1994,9 @@ args = ["-y", "late-mcp"]
   it("writes a self-healing npx entry when running from an npx cache, never a PATH shim", () => {
     const npxBin = path.join(home, "cache", "_npx", "abc123", "node_modules", "@roster", "cli", "bundle", "bin.js");
     expect(runningFromNpxCache(npxBin)).toBe(true);
-    expect(rosterEntry(npxBin)).toEqual({ command: "npx", args: ["-y", "@roster/cli", "serve"] });
+    expect(rosterEntry(npxBin)).toEqual(process.platform === "win32"
+      ? { command: path.win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "cmd.exe"), args: ["/d", "/s", "/c", "npx", "-y", "@roster/cli", "serve"] }
+      : { command: "npx", args: ["-y", "@roster/cli", "serve"] });
 
     // A real installation is unaffected and still gets an absolute, stable path.
     const installed = path.join(home, "lib", "node_modules", "@roster", "cli", "bundle", "bin.js");

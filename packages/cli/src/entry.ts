@@ -97,7 +97,12 @@ export function rosterEntry(binPath: string = ourBinPath()): SpawnEntry {
   // the cache is pruned. It must be checked FIRST — npx's temporary PATH entry
   // would otherwise satisfy `hasGlobalRoster()` and write a launcher that stops
   // existing the moment npx exits.
-  if (runningFromNpxCache(binPath)) return { command: "npx", args: ["-y", PACKAGE_NAME, "serve"] };
+  if (runningFromNpxCache(binPath)) {
+    const args = ["-y", PACKAGE_NAME, "serve"];
+    return process.platform === "win32"
+      ? { command: path.win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "cmd.exe"), args: ["/d", "/s", "/c", "npx", ...args] }
+      : { command: "npx", args };
+  }
   return { command: process.execPath, args: [path.resolve(binPath), "serve"] };
 }
 
