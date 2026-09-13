@@ -4,6 +4,8 @@
 > below passed without a release. Those entries remain as decision history; a
 > revised launch date has not been set.
 
+> **Current release preparation:** the candidate publishing target is `@npmmo/roster`, under the authenticated `npmmo` account. Access to the earlier `@roster` namespace was not established; its older references below are decision history, not authorization to publish there. The executable remains `roster`. The owner approved patched Node runtime requirements; final name/version/artifact approval, human review, and successful release verification are still required. See `docs/publishing.md` and `docs/release-readiness.md`.
+
 > **What this document is:** the synthesis of the entire ideation → research → verification → red-team cycle (July 3–4, 2026), written for two readers: **Mo**, to finalize the open decisions, and **future agents**, to understand exactly where truth lives before touching anything.
 >
 > **Precedence rule (updated 2026-07-04): the D5 consolidation pass has been EXECUTED.** The handoff (`ROSTER-BUILD-HANDOFF.md`) is authoritative for build; this file is the decision log, binding-laws record, and red-team archive. The 11 contradictions in §3.4 are resolved.

@@ -54,7 +54,7 @@ const social = socialMeta(Astro.site);
         <div class="setup-heading"><h2 id="setup-title">Start with one client.</h2><p>{release.published ? "Install Roster, or hand the setup to your agent." : "Build from source, or hand the setup to your agent."}</p></div>
         <div class="setup-copy">
           <div class="source-install"><div class="install-heading"><span><Icon name="terminal-2" size={18} />{release.published ? "Install Roster" : "Install from source"}</span><CopyButton text={commands.prepare} label="Copy commands" /></div><textarea class="command-text" rows={release.published ? 1 : 6} wrap="off" readonly spellcheck="false" aria-label="Installation commands">{commands.prepare}</textarea></div>
-          <a class="text-link" href="/docs/installation/">First-run guide<Icon name="arrow-right" size={16} /></a><p class="setup-requirements">Source builds: Node 22.13+ and pnpm 11.9.0.</p>
+          <a class="text-link" href="/docs/installation/">First-run guide<Icon name="arrow-right" size={16} /></a><p class="setup-requirements">Node 22.17+ (22.x) or 24.2+. Source builds also need pnpm 11.9.0.</p>
         </div>
         <div class="agent-setup" id="agent-setup"><AgentPrompt /><a class="text-link" href="/docs/agent-setup/">Agent setup guide<Icon name="arrow-right" size={15} /></a></div>
         <div class="eject-note"><Icon name="arrow-back-up" size={20} /><p>Sync backs up first. Use <code>eject</code> to restore your configuration.</p><a class="text-link" href="/docs/clients/#leave-with-eject">How restoration works<Icon name="arrow-right" size={15} /></a></div>

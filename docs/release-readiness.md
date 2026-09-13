@@ -1,5 +1,57 @@
 # Roster Release Readiness
 
+## Current candidate: verified and owner-authorized, publication pending
+
+As of 2026-09-13, automated release verification and the required owner review are complete for `@npmmo/roster@0.0.1`. The owner explicitly authorized merging PR #39 and publishing the exact reviewed artifact with public access and the `latest` tag. Publication and fresh public-registry verification have not yet occurred; an npm dry-run is not a publication.
+
+### Identity and supported runtime
+
+- Package: `@npmmo/roster@0.0.1`; executable: `roster`; authenticated publishing account: `npmmo`.
+- Package-source baseline: `76ef880844a3f6c613375e3d78e42537519a14ed`. Verified PR revision `377e3bba91c3fe8653034d92eae27254ba73dac2` additionally fixes the Windows verifier's native-library cleanup without changing the package payload.
+- Reviewed tarball SHA-256: `e6e854508e71e3eef4a17ef88e8a019790735f65ed238e7b726c5e0434bf1fb0`.
+- The producer is pinned to Linux Node 24.20.0 and pnpm 11.9.0 with the frozen lockfile. Its decompressed tar archive and all five file hashes match the local candidate byte-for-byte. Different recorded zlib versions explain the different gzip bytes; the Linux archive is the selected artifact, not a later repack.
+- The five shipped files are `bundle/bin.js`, `bundle/index.js`, `package.json`, `README.md`, and `LICENSE`. No unpublished workspace dependency, local state, or credential is shipped.
+- Supported CLI runtime: Node `^22.17.0 || >=24.2.0`. Affected Windows/libuv versions are refused before state changes. File-identity checks, symlink protections, and repository security controls remain intact. The retained Linux Node 22.13 compatibility job does not expand the published support contract.
+
+### Current verification evidence
+
+- Build, typecheck, lint, and the 552-test local suite passed. The package/install-copy changes also passed Astro checks, the site build, and internal link/asset checks; no website was deployed.
+- All checks on [PR #39's verified CI revision](https://github.com/ManagementMO/roster/actions/runs/34733552434) passed, including native Windows minimums, real packed dense installation/upgrade/inference, and cleanup. [CodeQL](https://github.com/ManagementMO/roster/actions/runs/34733552439), dependency audit, secret scanning, and the configured Semgrep check passed. Semgrep remains supporting evidence from an externally configured GitHub App.
+- The [same-artifact consumer run](https://github.com/ManagementMO/roster/actions/runs/34733726151) used the reviewed tarball in every leg, outside the clone, with disposable homes, prefixes, caches, and npm configuration:
+
+| Consumer environment | PASS | FAIL | BLOCKED | Explicitly NOT RUN |
+| --- | ---: | ---: | ---: | ---: |
+| Linux x64, Node 22.17.0 | 31 | 0 | 0 | 2 |
+| Linux x64, Node 24.20.0 | 31 | 0 | 0 | 2 |
+| Windows x64, Node 22.17.0 | 30 | 0 | 0 | 3 |
+| Windows x64, Node 24.2.0 | 30 | 0 | 0 | 3 |
+| Windows x64, Node 24.20.0 | 30 | 0 | 0 | 3 |
+
+These are case observations, not counts of distinct product features. They cover local/global/npx installation, fresh shells, Unicode and moved paths, exact saved-launcher execution after moving and removing the npx cache, CLI/config lifecycle, real backend routing, skills/review withholding, drift, process cleanup, Combine separation, runtime provenance/repair, MiniLM, and the product's automatic dense-model path. Public registry availability was observed separately; install evidence in this run is staging parity, not public publication.
+
+- The previously failing ordinary POSIX descendant is now gone after EOF, and the native Windows npm/npx paths pass without a client-side shell workaround. A backend deliberately creating a separate session remains outside the POSIX process-group guarantee.
+- A dedicated [default-off packet-capture run](https://github.com/ManagementMO/roster/actions/runs/34734327864) verified the same artifact in a separate CI network namespace. Capture tooling ran privileged, but the CLI and backend ran as UID 1001. The positive control recorded 7 packets; init/receipt/telemetry/scoped sync/eject and transparent/five-mode MCP checks recorded 0 product packets, with byte-identical restoration. Both PCAP files were independently read after download. This captures the tested default behavior with a local fixture, not arbitrary network activity of third-party tools.
+- `npm publish <reviewed-tarball> --dry-run --access public --tag latest` passed. No package was uploaded by the dry-run.
+
+### Explicit limits and remaining actions
+
+- Native GUI-client/account workflows and a non-admin Windows profile were not exercised. Windows packet capture was not performed.
+- A genuine previous-version upgrade cannot be tested before an earlier release exists. The main matrix could not create an unprivileged Linux network namespace; the separate packet-capture run created one with privileged tooling while running the product non-root and without external network interfaces.
+- The owner's review and narrowly scoped publication authorization are recorded in [PROVENANCE](PROVENANCE.md). The next actions are the approved merge, exact-artifact npm publication, and fresh public npm/npx verification.
+- No League task was human-signed by this work, no named public score was authorized, no domain was registered, and no public service or telemetry endpoint was deployed.
+
+## Historical evidence below
+
+The remaining sections preserve dated findings and earlier package choices. They are not the current package identity or an assertion that old release blockers remain open.
+
+### Pre-fix consumer gate for candidate `13a9c9f`
+
+That clean-consumer verification superseded the earlier release-ready assessment. At that point the candidate was not cleared for publication: Linux shutdown could leave an ordinary non-detached backend descendant alive; Windows dense installation failed when npm was launched without Windows-aware process resolution; and Node 22.13.1 on Windows reported incompatible path/descriptor device identities, causing guarded reads to refuse unchanged files. The native Windows evidence is retained in [consumer run 34724166403](https://github.com/ManagementMO/roster/actions/runs/34724166403) and [diagnostic run 34724751753](https://github.com/ManagementMO/roster/actions/runs/34724751753).
+
+The approved release baseline is Node 22.17 or newer within Node 22.x, or Node 24.2 or newer. File-identity, symlink, and mutation checks must not be relaxed to accommodate affected runtimes. Release validation must cover the patched Windows minimum, the real npm execution path, and POSIX process-group cleanup that terminates owned non-detached descendants without signalling unrelated processes. A backend that deliberately creates a separate session is outside that process-group guarantee.
+
+Fresh consumer results, the security-critical human review, npm scope ownership, and the final owner publication approval remain release gates. The historical checks below do not close these newer findings, and no named League scores may be signed by an agent.
+
 Last verified: 2026-08-21 (fresh isolated worktree, full local gate, real-server probes, and live GitHub/npm checks)
 
 Repository: [ManagementMO/roster](https://github.com/ManagementMO/roster)

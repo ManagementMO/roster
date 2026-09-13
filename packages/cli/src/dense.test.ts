@@ -189,6 +189,45 @@ describe("optional dense runtime", () => {
     expect(result.stdout).not.toContain("already enabled");
   });
 
+  it("starts the default npm executable and preserves a prefix containing shell metacharacters", () => {
+    const originalPath = process.env.PATH;
+    const ownedHome = path.join(home, "runtime home & (literal)");
+    process.env.ROSTER_HOME = ownedHome;
+    const bin = path.join(home, "npm bin");
+    const script = path.join(bin, "npm-fixture.cjs");
+    const captured = path.join(home, "npm-args.json");
+    fs.mkdirSync(bin);
+    fs.writeFileSync(script, `
+      const fs = require("node:fs");
+      const path = require("node:path");
+      const args = process.argv.slice(2);
+      const prefix = args[args.indexOf("--prefix") + 1];
+      fs.writeFileSync(${JSON.stringify(captured)}, JSON.stringify(args));
+      const target = path.join(prefix, "node_modules", "@huggingface", "transformers");
+      fs.mkdirSync(target, { recursive: true });
+      fs.writeFileSync(path.join(target, "package.json"), JSON.stringify({ name: "@huggingface/transformers", version: "4.2.0" }));
+    `);
+    fs.writeFileSync(path.join(bin, process.platform === "win32" ? "npm.cmd" : "npm"),
+      process.platform === "win32"
+        ? `@"${process.execPath}" "${script}" %*\r\n`
+        : `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`,
+      { mode: 0o755 });
+    process.env.PATH = [bin, path.dirname(process.execPath), ...(process.platform === "win32"
+      ? [path.win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32")]
+      : ["/usr/bin", "/bin"])].join(path.delimiter);
+    try {
+      const result = installDenseRuntime();
+      expect(result.ok, result.detail).toBe(true);
+      const args = JSON.parse(fs.readFileSync(captured, "utf8")) as string[];
+      expect(args[0]).toBe("install");
+      expect(args[args.indexOf("--prefix") + 1]).toBe(fs.realpathSync(path.join(ownedHome, "runtime")));
+      expect(fs.existsSync(path.join(ownedHome, "runtime", "node_modules", "@huggingface", "transformers", "package.json"))).toBe(true);
+    } finally {
+      if (originalPath === undefined) delete process.env.PATH;
+      else process.env.PATH = originalPath;
+    }
+  });
+
   it("reports failure instead of pretending, when npm exits non-zero", () => {
     const result = installDenseRuntime(() => ({
       status: 1,

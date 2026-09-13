@@ -10,7 +10,7 @@ The product content describes public revision `670c77e0c6d1ada1d1569363d88d3b038
 
 ## Run locally
 
-Use Node >=22.13 and pnpm 11.9.0. From the repository root:
+Use Node 22.17+ within Node 22.x, or Node 24.2+, and pnpm 11.9.0. From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -49,7 +49,7 @@ Starlight handles docs navigation, search, table of contents, and accessible tab
 
 ## Release switching
 
-Only after verifying an actual package publication, update `published`, `version`, `checked`, and the documented `revision` in `src/lib/site.ts`. `commandsFor` changes the entire execution strategy from the source entry point to an explicit global install of `@roster/cli` followed by `roster` commands. Do not mix one-off npx init with an assumed global executable. Re-read version-sensitive guides, run checks, and regenerate the social image.
+Only after verifying an actual package publication, update `published`, `version`, `checked`, and the documented `revision` in `src/lib/site.ts`. `commandsFor` changes the entire execution strategy from the source entry point to an explicit global install of the centralized `packageName` (`@npmmo/roster` for this release candidate) followed by `roster` commands. Do not mix one-off npx init with an assumed global executable. Re-read version-sensitive guides, run checks, and regenerate the social image.
 
 Source-install commands intentionally set up a new checkout at the documented product revision. The first-run guide explains that `init --no-dense` skips the install offer but does not turn an available runtime off: source builds should explicitly set `embeddings` to `off` before starting clients when lexical-only operation is intended.
 

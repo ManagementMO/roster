@@ -8,7 +8,7 @@
   },
   "packageManager": "pnpm@11.9.0",
   "scripts": {
-    "build": "tsc -b && pnpm --filter @roster/cli bundle",
+    "build": "tsc -b && pnpm --filter @npmmo/roster bundle",
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "typecheck:tests": "tsc -p tsconfig.test.json",
     "test": "vitest run",
@@ -58,6 +58,7 @@
     "@roster/router": "workspace:*",
     "@roster/shared": "workspace:*",
     "@types/better-sqlite3": "^7.6.11",
+    "@types/cross-spawn": "6.0.6",
     "@types/node": "^22.20.1",
     "esbuild": "0.28.2",
     "tsx": "^4.23.12",

@@ -5,7 +5,7 @@ import { capabilities, presets, initialDemoState, reduceDemo, exampleCall } from
 describe("release-aware setup", () => {
   it("offers a usable source path while the scoped package is unpublished", () => {
     expect(release.published).toBe(false);
-    expect(packageName).toBe("@roster/cli");
+    expect(packageName).toBe("@npmmo/roster");
     const commands = commandsFor({ ...release, published: false });
     expect(commands.init).toBe("node packages/cli/dist/bin.js init --no-dense");
     expect(commands.sync).toBe("node packages/cli/dist/bin.js sync --client cursor");
@@ -15,14 +15,14 @@ describe("release-aware setup", () => {
 
   it("switches the whole command sequence to a documented global install after publication", () => {
     const commands = commandsFor({ ...release, published: true, version: "0.1.0" });
-    expect(commands.prepare).toBe("npm install --global @roster/cli@0.1.0");
+    expect(commands.prepare).toBe("npm install --global @npmmo/roster@0.1.0");
     expect(commands.init).toBe("roster init --no-dense");
     expect(commands.sync).toBe("roster sync --client cursor");
     expect(commands.eject).toBe("roster eject --client cursor");
   });
 
   it("gives agents explicit consent and privacy boundaries, not dangerous shortcuts", () => {
-    expect(setupPrompt).toContain("@roster/cli");
+    expect(setupPrompt).toContain("@npmmo/roster");
     expect(setupPrompt).toContain("embeddings");
     expect(setupPrompt).toContain("authorized");
     expect(setupPrompt).toContain("--no-dense");

@@ -11,6 +11,7 @@ import type {
 import type { CallEvidence } from "@roster/coach";
 import type { CapabilityEntry } from "@roster/shared";
 import { stableBackendName, stableNamespacedId } from "@roster/shared";
+import { ProcessGroupTransport } from "./processGroupTransport.js";
 
 /**
  * The MCP SDK compiles EVERY tool's `outputSchema` after `listTools`. A single
@@ -151,7 +152,7 @@ export class BackendManager {
       const transport: Transport =
         "transport" in config
           ? config.transport
-          : new StdioClientTransport({
+          : new (process.platform === "win32" ? StdioClientTransport : ProcessGroupTransport)({
               command: config.command,
               args: config.args ?? [],
               // Only explicitly-configured env vars flow through; nothing is persisted or logged.
@@ -294,7 +295,7 @@ export class BackendManager {
       connection.abort.abort();
       try {
         const closing = connection.client.close();
-        if (connection.transport instanceof StdioClientTransport) await closing;
+        if (connection.transport instanceof StdioClientTransport || connection.transport instanceof ProcessGroupTransport) await closing;
         else await withTimeout(closing, this.closeTimeoutMs, "close timeout");
       } finally {
         this.connections.delete(connection);

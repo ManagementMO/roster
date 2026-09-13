@@ -24,12 +24,14 @@ We don't consider this a confession. A tool router that *measures* AI tooling, b
 
 ## Human review log
 
-Line-by-line reviews of the security-critical paths are recorded here as they happen, with the commit they cover. The table starts empty because the reviews haven't happened yet — an empty row is honest; a filled one that didn't happen wouldn't be.
+Line-by-line reviews of the security-critical paths are recorded here only after the reviewer confirms completion, with the commit they cover. Automated checks are evidence, not a substitute for the human review.
 
 | Date | Area | Reviewer | Commit |
 |------|------|----------|--------|
-|      |      |          |        |
+| 2026-09-13 | Security-critical paths listed above and the complete changes in PR #39 | Mo (owner; completion explicitly confirmed in the release approval) | `377e3bba91c3fe8653034d92eae27254ba73dac2` |
 
-A self-run security scan report will be published alongside this log before launch.
+The owner explicitly confirmed completion of the required line-by-line review and authorized Devin to merge PR #39 and publish `@npmmo/roster@0.0.1` on the owner's behalf. That authorization is limited to the reviewed tarball with SHA-256 `e6e854508e71e3eef4a17ef88e8a019790735f65ed238e7b726c5e0434bf1fb0`, public access, and the `latest` tag. It does not authorize League signing, named scores, or service deployment. This entry records the owner's attestation; it does not claim an additional independent human audit.
+
+The automated security-scan and consumer-verification report is recorded in [release readiness](release-readiness.md), including CI links, native consumer evidence, and the default-off packet capture.
 
 If anything on this page ever stops being true, that's a bug in the project, not in the page. File it.

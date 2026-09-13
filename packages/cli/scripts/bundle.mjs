@@ -120,7 +120,7 @@ const packageOf = (specifier) =>
 const undeclared = [...new Set(bare.map(packageOf))].filter((name) => !declared.has(name));
 if (undeclared.length > 0) {
   throw new Error(
-    `bundle imports undeclared dependencies: ${undeclared.join(", ")} — add them to @roster/cli dependencies`,
+    `bundle imports undeclared dependencies: ${undeclared.join(", ")} — add them to ${manifest.name} dependencies`,
   );
 }
 

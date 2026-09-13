@@ -13,7 +13,7 @@ import { release, packageName, futureInstall } from "../../../lib/site.js";
 
 ## Prepare the installation
 
-Use **Node 22.13 or newer**. Check your installed runtime with `node --version`.
+Use **Node 22.17 or newer within Node 22.x, or Node 24.2 or newer**. Check your installed runtime with `node --version`. Affected older Windows/libuv builds are refused before local state changes; upgrade the runtime rather than weakening file-safety checks.
 
 {release.published ? <p>Install the scoped package globally so the <code>roster</code> executable remains available after installation.</p> : <><p>The source build also needs <strong>pnpm 11.9.0</strong> and Git. Check <code>pnpm --version</code>. If needed, install that pinned version through your normal package-manager setup.</p><p>Use a <strong>new directory</strong> for this sequence. Preserve existing checkouts and their changes. This source installation is pinned to the product revision described by these guides.</p></>}
 

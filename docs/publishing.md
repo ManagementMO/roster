@@ -1,90 +1,86 @@
-# Publishing `@roster/cli`
+# Publishing `@npmmo/roster`
 
 Everything here is an **owner action**: it needs an npm account, and it is
-irreversible in ways an agent must not perform. The engineering side is done and
-verified — this is the ceremony around it.
+irreversible in ways an agent must not perform. The release candidate,
+security-critical human review, and fresh consumer verification must be complete
+before publication. A passing source build alone is not a release approval.
 
-## What "the `@roster` scope" means
+## The selected namespace
 
-`@roster/cli` is a **scoped** package name. The `@roster` part is the scope, and
-npm treats it as a namespace that somebody owns. You cannot publish
-`@roster/anything` until `@roster` belongs to you, and once it does, nobody else
-can ever take a name inside it.
+The first-release target is **`@npmmo/roster@0.0.1`**, and the installed executable
+remains **`roster`**. The scope belongs to the npm user `npmmo`; verify that exact
+account with `npm whoami` immediately before publishing.
 
-Two ways to own it:
+The earlier choice, `@roster/cli`, is not the publication target. The authenticated
+`npmmo` account was not listed as a member of `@roster`. A package lookup returning
+404 does not prove a namespace is unclaimed, and an agent cannot grant access to
+someone else's organization. A different organization would need its owner's
+permission and a separately confirmed package name.
 
-| | How | When to use |
-|---|---|---|
-| **Organization** (recommended) | npmjs.com → *Add Organization* → name it `roster` | Survives you, supports multiple maintainers, free for public packages |
-| **User scope** | Register the npm **username** `roster`; `@roster` is then yours | Only if you want it tied to a personal account |
+The unscoped package `roster` belongs to an unrelated project. Never substitute
+`npx roster` for the scoped command. Choosing a different scope after publication
+would require a separate package and migration, not renaming this package in place.
 
-The org route is the right one for a project meant to outlive a single account.
+## Public access and package boundaries
 
-As of the last check the scope looked unclaimed — `npm view @roster/cli` returns
-E404 and a registry search for `scope:roster` returns 0 packages — but npm's web
-endpoints refuse scripted checks (HTTP 403), so **confirm it while logged in
-before relying on it**. Scopes are first-come, first-served.
+`packages/cli/package.json` sets `publishConfig.access` to `public`, so the scoped
+package is not accidentally treated as a paid private package. The clean-install
+gate checks this setting.
 
-Note the unscoped name `roster` is already taken by an unrelated
-`roster@0.0.3`, which is exactly why the scoped name was chosen. Anyone typing
-`npx roster` gets a stranger's package — worth knowing when writing launch copy.
+Only this CLI package is publishable. The internal workspace libraries stay
+private and are bundled into it. The tarball contains the executable and library
+bundles, package manifest, README, and license; it must not contain credentials,
+local Roster state, scratch artifacts, or unpublished workspace dependencies.
 
-## Why `publishConfig.access` matters
-
-Scoped packages are **private by default**. Without
-
-```json
-"publishConfig": { "access": "public" }
-```
-
-the first `npm publish` fails with `402 Payment Required — You must sign up for
-private packages`. It is set in `packages/cli/package.json`, and
-`scripts/verify-clean-install.mjs` fails the build if it is ever removed.
-
-(This is also the one thing `publishConfig` is reliable for. npm **ignores**
-`publishConfig` overrides of `bin`/`main`/`exports` — only pnpm applies them —
-which is why the manifest points at `bundle/` directly instead. See
-`docs/lab/review-round6-hardening.md`.)
+The supported CLI runtime range is `^22.17.0 || >=24.2.0`. Affected older Windows
+libuv builds are refused before local state changes; the file-integrity checks
+must not be disabled or relaxed as a publishing workaround.
 
 ## The publish
 
+Review the exact candidate tarball, its SHA-256, name, version, file list,
+dependency graph, and the native consumer results. The owner must review the
+security-critical changes and explicitly approve the public publication. Keep the
+reviewed tarball unchanged between approval and publication.
+
 ```bash
-npm login                                   # the account that owns @roster
+npm login                                   # the account that owns @npmmo
 npm whoami                                  # confirm it
-node scripts/verify-clean-install.mjs       # last check: packs, installs elsewhere, runs all 8 commands
+node scripts/verify-clean-install.mjs --dense # last check: packs and installs outside the workspace
 
-cd packages/cli
-npm publish --dry-run                       # inspect the file list one final time
-npm publish                                 # prepack rebuilds + bundles + stages README/LICENSE
+CANDIDATE="/absolute/path/to/reviewed/npmmo-roster-0.0.1.tgz"
+npm publish "$CANDIDATE" --dry-run --access public # inspect the exact file list one final time
+npm publish "$CANDIDATE" --access public --tag latest # publish the reviewed bytes after owner approval
 ```
 
-Then verify as a stranger would, from a directory that is not this repo:
-
-```bash
-cd "$(mktemp -d)"
-npx -y @roster/cli init
-```
+Do not run `npm publish --workspaces`. Do not rebuild or repack after approving a
+different tarball. Public publication is not reversible by reusing the same
+version number.
 
 ## Immediately after publishing
 
-1. Check the package page renders: description, README, repository link, licence.
-2. `npm view @roster/cli` — confirm version, `bin`, and that the dependency list
-   contains **no** `@roster/*` entries (they are bundled, never published).
-3. Consider `npm dist-tag` hygiene if you publish a pre-release before `latest`.
+1. Query the public registry independently of any staging-scope configuration;
+   confirm the name, version, access, dist-tag, and tarball integrity.
+2. Check that the npm package page renders its README, source links, and license.
+3. From a fresh directory outside the repository, with a fresh npm cache and a
+   disposable Roster home, install the public package and run the real npm shim,
+   `npx` invocation, and scoped config lifecycle. Do not touch the owner's live
+   client configurations during this verification.
+4. Only after those checks succeed, update publication metadata and announce the
+   actual version. A one-off `npx` command does not install a global `roster` binary.
 
 ## Optional hardening for later releases
 
-- **Provenance.** Publishing from CI with `--provenance` (OIDC) attests which
-  workflow and commit produced the tarball. Do not set
-  `publishConfig.provenance` for a manual publish — npm errors when it cannot
-  find OIDC credentials.
-- **2FA on publish** for the org.
-- **A release workflow** so publishing is reproducible rather than a laptop
-  ritual.
+- **Provenance.** CI publishing with OIDC can attest the workflow and source
+  commit. Do not claim provenance for a manual publish or set provenance options
+  without the required OIDC credentials.
+- **2FA on publish** and a reviewed trusted-publisher configuration.
+- **A release workflow** that preserves the reviewed artifact and owner gates.
 
 ## Still owner-gated, separately from publishing
 
-The Combine signing session (`docs/signing/session-1-checklist.md`) and the
-first `docs/PROVENANCE.md` review entries. Until signing happens `signedN = 0`
-and the League may not publish a single named score — publishing the package
-does not change that.
+The Combine signing session (`docs/signing/session-1-checklist.md`) and the human
+entries in `docs/PROVENANCE.md` remain separate gates. Until human signing happens,
+`signedN = 0` and the League may not publish named scores. Publishing the CLI does
+not certify or publish a League ranking, register a domain, or create a telemetry
+endpoint.

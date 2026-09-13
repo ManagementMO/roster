@@ -18,6 +18,7 @@ import { telemetry } from "./telemetry.js";
 import { scanSkillSources, trustScan } from "@roster/playbook";
 import { loadConfig } from "./rosterfile.js";
 import type { ClientId } from "./clients.js";
+import { assertWindowsRuntimeSupport } from "./runtime.js";
 
 const HELP = `roster — the tool router for AI agents
 
@@ -117,6 +118,7 @@ function parseWriteClient(args: readonly string[], allowForce = false): ClientId
 }
 
 async function main(): Promise<number> {
+  assertWindowsRuntimeSupport();
   const [, , command, ...rest] = process.argv;
   const flags = new Set(rest.filter((a) => a.startsWith("--")));
 

@@ -215,7 +215,7 @@ const tarEntries = (tarball) =>
 try {
   // 1. Pack through the real publish lifecycle (prepack builds + bundles).
   await step("pnpm pack produces a tarball", () => {
-    run("pnpm", ["--filter", "@roster/cli", "pack", "--pack-destination", packDir], { cwd: repo });
+    run("pnpm", ["--filter", "@npmmo/roster", "pack", "--pack-destination", packDir], { cwd: repo });
     const [tarball] = fs.readdirSync(packDir).filter((f) => f.endsWith(".tgz"));
     if (!tarball) throw new Error("no tarball produced");
     return tarball;
@@ -256,6 +256,7 @@ try {
   //    that does not exist on the registry.
   await step("published manifest declares only published dependencies", () => {
     const manifest = JSON.parse(run("tar", ["-xzOf", tarball, "package/package.json"]));
+    if (manifest.name !== "@npmmo/roster") throw new Error(`unexpected publish target: ${manifest.name}`);
     const deps = Object.keys({
       ...manifest.dependencies,
       ...manifest.optionalDependencies,
@@ -357,7 +358,7 @@ try {
     ".bin",
     process.platform === "win32" ? "roster.cmd" : "roster",
   );
-  const binJs = path.join(project, "node_modules", "@roster", "cli", "bundle", "bin.js");
+  const binJs = path.join(project, "node_modules", "@npmmo", "roster", "bundle", "bin.js");
   if (!fs.existsSync(binShim)) throw new Error(`npm created no platform CLI shim at ${binShim}`);
   if (!fs.existsSync(binJs)) throw new Error(`installed package has no executable bundle at ${binJs}`);
   const env = {
@@ -554,25 +555,30 @@ try {
       assertPatchedRuntime();
       return "legacy 0.6.0 replaced with the reviewed patch";
     });
-    await step("separately installed runtime performs real MiniLM inference", async () => {
+    await step("separately installed runtime performs real MiniLM inference", () => {
       const runtimeRequire = createRequire(manifestPath);
-      const { pipeline, env: transformerEnv } = await import(pathToFileURL(runtimeRequire.resolve("@huggingface/transformers")).href);
-      transformerEnv.cacheDir = path.join(workdir, "models");
-      const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { dtype: "q8" });
-      try {
-        const output = await extractor(["Find the right tools for this task"], { pooling: "mean", normalize: true });
-        const vector = output.tolist()[0];
-        if (vector.length !== 384 || !vector.every(Number.isFinite) || !vector.some((value) => value !== 0)) {
-          throw new Error("MiniLM did not produce a finite, nonzero 384-dimensional embedding");
+      const moduleUrl = pathToFileURL(runtimeRequire.resolve("@huggingface/transformers")).href;
+      const inference = run(process.execPath, ["--input-type=module", "-e", `
+        const { pipeline, env } = await import(${JSON.stringify(moduleUrl)});
+        env.cacheDir = ${JSON.stringify(path.join(workdir, "models"))};
+        const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { dtype: "q8" });
+        try {
+          const output = await extractor(["Find the right tools for this task"], { pooling: "mean", normalize: true });
+          process.stdout.write("ROSTER_EMBEDDING=" + JSON.stringify(output.tolist()[0]) + "\\n");
+        } finally {
+          await extractor.dispose();
         }
-      } finally {
-        await extractor.dispose();
+      `], { cwd: project, env, timeout: 900_000 });
+      const line = inference.split(/\r?\n/).find((value) => value.startsWith("ROSTER_EMBEDDING="));
+      const vector = line ? JSON.parse(line.slice("ROSTER_EMBEDDING=".length)) : null;
+      if (!Array.isArray(vector) || vector.length !== 384 || !vector.every(Number.isFinite) || !vector.some((value) => value !== 0)) {
+        throw new Error("MiniLM did not produce a finite, nonzero 384-dimensional embedding");
       }
-      return "384-dimensional embedding from the owned runtime";
+      return "384-dimensional embedding from the owned runtime; inference child exited before cleanup";
     });
   }
 
-  process.stdout.write(`${steps.join("\n")}\n\nclean external install: OK\n`);
+  process.stdout.write(`${steps.join("\n")}\n`);
 } catch (error) {
   process.stdout.write(`${steps.join("\n")}\n`);
   const detail = error?.stderr ? `\n${error.stderr}` : "";
@@ -581,3 +587,4 @@ try {
 } finally {
   fs.rmSync(workdir, { recursive: true, force: true });
 }
+if (!process.exitCode) process.stdout.write("\nclean external install: OK\n");
