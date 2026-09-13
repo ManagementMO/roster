@@ -6,7 +6,7 @@ import AgentPrompt from "../../../components/AgentPrompt.astro";
 
 Let your coding agent do the setup legwork. Keep the decisions about configuration and downloads with you.
 
-The prompt checks for an existing installation, uses the correct scoped package, and handles the current source-only release state. It asks the agent to explain the selected client and file before changing them.
+The prompt checks for an existing installation and uses the current release-aware commands: a pinned scoped npx setup, with a source fallback when needed. It asks the agent to explain the selected client and file before changing them.
 
 <AgentPrompt expanded />
 

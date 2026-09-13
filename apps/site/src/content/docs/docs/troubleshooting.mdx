@@ -15,11 +15,15 @@ A registry error is not a reason to run an unknown package with a similar name.
 
 ## `roster` is not found after an npx command
 
-A one-off npx invocation does not add a global executable to your shell. Keep using the execution strategy in the installation guide: the built source entry point for source installs, or `roster` after a genuine global installation of the scoped package.
+This is expected: npx downloads and runs a package without adding a global `roster` executable. Keep the pinned npx prefix shown in these guides; select Windows for the `npx.cmd` form. Use the built source entry point for source installations, or choose the optional global installation in the [first-run guide](/docs/installation/) if you prefer a bare `roster` command.
 
 <Command name="help" />
 
 There is no `roster --version` flag. If an existing `roster` command behaves differently, inspect its package and path.
+
+## PowerShell blocks an npm script
+
+Choose the Windows command tab. It uses `npx.cmd` or `npm.cmd`, avoiding the PowerShell script shim without changing execution policy. Do not disable machine security controls to run a copied command.
 
 ## The source build cannot load a native module
 
@@ -41,9 +45,9 @@ Keep your existing setup, or choose an authorized stdio configuration supported 
 
 ## The client cannot launch Roster
 
-Check the path printed by scoped sync and the launcher it wrote, locally. A source launcher points to that checkout and Node executable. If either moved or disappeared, the client cannot start it.
+Check the path printed by scoped sync and the launcher it wrote, locally. A source or global launcher refers to that installation and Node executable; moving or removing them can break it. An npx-cache installation writes a scoped package launcher instead of a temporary cache path, so it can fetch the package again after cache removal. That refetch needs npm registry access.
 
-Keep the installation in a stable location. If necessary, restore the old client configuration using its preserved backups before deliberately setting up a new path. Do not force-delete ownership records.
+Keep source/global installations in a stable location. Re-run scoped sync from the installation you intend to use, or restore the old configuration using its preserved backups before deliberately changing paths. Do not force-delete ownership records.
 
 The client launches `serve`; a second terminal process is not required. Reconnect the client's MCP session after a config or mode change.
 
@@ -67,9 +71,21 @@ Read any trust findings locally. Symlinks and incomplete scans can withhold a sk
 
 ## Dense says enabled, but I want lexical only
 
-`dense status` reports whether a runtime is available. To keep the router lexical, set `embeddings` to `"off"` and restart the client connection. This is particularly important in a source workspace, where the runtime can already be installed.
+`dense status` reports installed package presence, not successful native inference. To keep the router lexical, set `embeddings` to `"off"` and restart the client connection. This is particularly important in a source workspace or an existing setup with the runtime already installed.
 
 Conversely, `dense enable` does not change an `"off"` config or prove a model is warm. See [the retrieval guide](/docs/learning/).
+
+## Dense on Alpine or musl
+
+In 0.0.2, the optional ONNX runtime expects glibc loaders that Alpine/musl does not provide. `dense enable` can finish successfully and status can report ON, but inference fails with `ERR_DLOPEN_FAILED` and a missing `ld-linux-*.so` library.
+
+Normal routing falls back to lexical retrieval. Keep `embeddings` set to `"off"` on Alpine, or use a compatible glibc-based Linux environment for semantic retrieval. Do not interpret an installed-runtime status as evidence that a model can run.
+
+## Dense on Intel macOS
+
+The verified ONNX Runtime 1.24.3 package has a native Apple Silicon macOS binding, but no `darwin/x64` binding. On an Intel Mac, native inference fails with a missing `onnxruntime_binding.node` even when `dense status` says ON. Lexical routing remains available.
+
+Keep `embeddings` set to `"off"` on Intel macOS. If you use Apple Silicon, check `node -p process.arch`: an x64 Node process uses the x64 runtime path rather than the native ARM64 binding. Use a compatible native Node installation rather than copying binaries between architectures.
 
 ## Eject refuses or was interrupted
 

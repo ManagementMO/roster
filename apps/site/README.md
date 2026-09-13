@@ -49,7 +49,7 @@ Starlight handles docs navigation, search, table of contents, and accessible tab
 
 ## Release switching
 
-Only after verifying an actual package publication, update `published`, `version`, `checked`, and the documented `revision` in `src/lib/site.ts`. `commandsFor` changes the entire execution strategy from the source entry point to an explicit global install of the centralized `packageName` (`@npmmo/roster` for the published CLI) followed by `roster` commands. Do not mix one-off npx init with an assumed global executable. Re-read version-sensitive guides, run checks, and regenerate the social image.
+Only after verifying an actual package publication, update `published`, `version`, `checked`, and the documented `revision` in `src/lib/site.ts`. `commandsFor` switches the whole execution strategy from the source entry point to pinned scoped npx commands. The published setup command downloads and initializes in one invocation; Windows uses `npx.cmd` without a PowerShell policy change. `Command.astro` shares the terminal choice across the homepage and guides, while global installation remains optional. Do not mix one-off npx init with an assumed global executable. Re-read version-sensitive guides, run checks, and regenerate the social image.
 
 Source-install commands intentionally set up a new checkout at the documented product revision. The first-run guide explains that `init --no-dense` skips the install offer but does not turn an available runtime off: source builds should explicitly set `embeddings` to `off` before starting clients when lexical-only operation is intended.
 

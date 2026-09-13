@@ -3,10 +3,10 @@ title: Command reference
 description: The implemented Roster CLI commands and flags, with release-aware installation examples.
 ---
 import Command from "../../../components/Command.astro";
-import { commands, release } from "../../../lib/site.js";
+import { release } from "../../../lib/site.js";
 import { claimSources } from "../../../lib/sources.js";
 
-{!release.published && <p>These examples use the source entry point. Run them from your built repository root. After a genuine global installation of the scoped package, the executable is <code>roster</code>.</p>}
+{release.published ? <p>These examples use the pinned scoped package through npx, so they work without a global installation. Choose Windows for the <code>npx.cmd</code> form; the terminal choice stays synchronized across these guides.</p> : <p>These examples use the source entry point. Run them from your built repository root.</p>}
 
 ## Help
 
@@ -63,7 +63,7 @@ The client normally launches this process from the synced entry. `--http` is not
 <Command name="denseStatus" />
 <Command name="denseEnable" />
 
-`dense` without a subcommand means `status`. `enable` installs the optional embedding runtime; it does not force configuration to permit embeddings or prove a model has warmed. There is no disable subcommand; use the `embeddings` config field. [Dense retrieval details](/docs/learning/#optional-dense-retrieval).
+`dense` without a subcommand means `status`, which checks installed package presence rather than native usability. `enable` installs the optional embedding runtime; it does not force configuration to permit embeddings or prove a model has warmed. The verified 0.0.2 runtime can report ON on Alpine/musl or x64 macOS even though native inference cannot load. There is no disable subcommand; use the `embeddings` config field. [Dense retrieval details](/docs/learning/#optional-dense-retrieval).
 
 ## Telemetry
 

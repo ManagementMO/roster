@@ -2,36 +2,23 @@
 title: Install & first run
 description: Install the scoped Roster CLI, inspect your configuration, and connect a single supported client.
 ---
-import { Code } from "@astrojs/starlight/components";
 import Command from "../../../components/Command.astro";
-import { release, packageName, futureInstall } from "../../../lib/site.js";
+import { release, packageName } from "../../../lib/site.js";
 
 <div class="docs-release">
   <p><strong>{release.published ? `Roster ${release.version} is published.` : "Roster is available from source. The npm package is not published yet."}</strong></p>
   <p>The selected package is <code>{packageName}</code>, with executable <code>roster</code>. Never use the unscoped npm package: it is an unrelated system-user utility. Registry state last checked {release.checked}.</p>
 </div>
 
-## Prepare the installation
+## Set up Roster
 
-Use **Node 22.17 or newer within Node 22.x, or Node 24.2 or newer**. Check your installed runtime with `node --version`. Affected older Windows/libuv builds are refused before local state changes; upgrade the runtime rather than weakening file-safety checks.
+Use **Node 22.17 or newer within Node 22.x, or Node 24.2 or newer**, with npm and npx installed. The standard Node installer includes both. Check your runtime with `node --version`; affected older Windows/libuv builds are refused before local state changes.
 
-{release.published ? <p>Install the scoped package globally so the <code>roster</code> executable remains available after installation.</p> : <><p>The source build also needs <strong>pnpm 11.9.0</strong> and Git. Check <code>pnpm --version</code>. If needed, install that pinned version through your normal package-manager setup.</p><p>Use a <strong>new directory</strong> for this sequence. Preserve existing checkouts and their changes. This source installation is pinned to the product revision described by these guides.</p></>}
+{release.published ? <p>Choose your terminal, copy the command, and run it. It downloads the pinned scoped package into npm’s cache and runs <code>init --no-dense</code>. No global installation or separate init command is needed.</p> : <><p>The source build also needs <strong>pnpm 11.9.0</strong> and Git. Use a <strong>new directory</strong> and preserve existing checkouts. This sequence is pinned to the revision described by these guides.</p></>}
 
 <Command name="prepare" />
 
-{!release.published && <p>The future npm path will be <code>{futureInstall}</code>. It is not an available installation option today. Once published, a global install will make the <code>roster</code> executable available; a one-off <code>npx</code> invocation does not.</p>}
-
-For a source installation, keep the checkout in a stable location. Source-based sync records its absolute executable path, so moving or deleting it can break the client's launcher.
-
-## Check the executable
-
-<p>{release.published ? "Check the installed executable in your terminal:" : "Run this from the repository root:"}</p>
-
-<Command name="help" />
-
-Roster supports `help` and `--help`, but **not `--version`**. If a command named `roster` already exists, check its package and path rather than assuming it is this project.
-
-{!release.published && <p>All commands in these guides currently use the source entry point. Continue running them from the repository root.</p>}
+{release.published ? <><p><strong>Look for the Day-0 receipt.</strong> Roster has discovered your setup and prepared private local state. It has not rewritten your client files or installed an embedding model.</p><p>The Windows command uses <code>npx.cmd</code> in either PowerShell or Command Prompt, without changing PowerShell’s execution policy. Your terminal choice follows you through these guides.</p></> : <p>Keep the built checkout in a stable location. Source-based launchers refer to its absolute executable path. Continue using the source entry point from that repository root.</p>}
 
 ## Discover without rewriting clients
 
@@ -39,9 +26,18 @@ Roster supports `help` and `--help`, but **not `--version`**. If a command named
 
 Imported server definitions can contain environment credentials. The local configuration and backups are private; do not paste their raw contents or receipt paths into chat or public issues.
 
-<Command name="init" />
+{!release.published && <Command name="init" />}
 
-Review the receipt for discovered clients, server counts, skill counts, and parse errors. Counts are inventory, not a measured tool-selection accuracy or token-savings benchmark.
+Review the receipt for discovered clients, server counts, skill counts, and parse errors. Counts are inventory, not a measured tool-selection accuracy or token-savings benchmark. If a client is missing, configure that client first, then repeat discovery using the command above.
+
+<details>
+<summary>Check the CLI or an existing installation</summary>
+
+<Command name="help" />
+
+Roster supports `help` and `--help`, but **not `--version`**. A bare command named `roster` can belong to another package. The pinned scoped commands in this guide select this project without relying on a global executable.
+
+</details>
 
 ## Keep the first run lexical
 
@@ -57,7 +53,7 @@ For example, if Cursor is your intended target:
 
 <Command name="sync" />
 
-Read the reported config path. Sync selects the first existing supported path for that client, imports the server definitions, backs up the original, and replaces its MCP server map with one Roster launcher. URL-only servers cause refusal before that config is changed.
+Use the client you actually want to connect: `claude-code`, `cursor`, `codex`, or `openclaw`. Read the reported config path before proceeding. Sync selects the first existing supported path for that client, imports the server definitions, backs up the original, and replaces its MCP server map with one Roster launcher. URL-only servers and unsupported client-specific settings cause refusal before mutation.
 
 Restart the client or its MCP connection. **The client launches `serve` over stdio.** You do not need to run a second Roster process in a terminal or start a hosted service.
 
@@ -70,5 +66,12 @@ Use the matching scoped eject command:
 <Command name="eject" />
 
 Dedicated configs restore byte-for-byte when unchanged since sync. Supported live-state files restore at key level while preserving later user changes. If eject refuses a conflict, inspect it; do not add `--force` as a routine workaround.
+
+{release.published && <details>
+<summary>Prefer a global installation?</summary>
+<p>This is optional. The npx commands above already work without it.</p>
+<Command name="globalInstall" />
+<p>After a successful global installation, you can use <code>roster</code> in place of the pinned npx prefix, or <code>roster.cmd</code> in Windows PowerShell. Check the package and path if a command with that name already exists. Do not use elevated permissions or force flags as an automatic workaround for an installation conflict.</p>
+</details>}
 
 **Next:** [Understand client paths, backups, and restoration](/docs/clients/).
