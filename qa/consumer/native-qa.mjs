@@ -114,19 +114,22 @@ const ZSH = !WIN && whereBinary("zsh").length ? whereBinary("zsh")[0] : null;
 function whoami() {
   if (WIN) {
     const groups = spawnSync("whoami.exe", ["/groups", "/fo", "csv"], { encoding: "utf8", windowsHide: true }).stdout ?? "";
+    // whoami /groups /fo csv columns: "Group Name","Type","SID","Attributes"
     const rows = groups.split(/\r?\n/).slice(1).filter(Boolean).map((l) => l.split('","').map((x) => x.replace(/^"|"$/g, "")));
-    const find = (sid) => rows.find((r) => r[1] === sid);
+    const find = (sid) => rows.find((r) => r[2] === sid);
     const admins = find("S-1-5-32-544");
-    const integrity = rows.find((r) => /^S-1-16-/.test(r[1] ?? ""));
+    const integrity = rows.find((r) => /^S-1-16-/.test(r[2] ?? ""));
     const priv = spawnSync("whoami.exe", ["/priv", "/fo", "csv"], { encoding: "utf8", windowsHide: true }).stdout ?? "";
     return {
       user: (spawnSync("whoami.exe", [], { encoding: "utf8", windowsHide: true }).stdout ?? "").trim(),
       administratorsGroup: admins ? { present: true, attributes: admins[3] ?? "", enabled: /Enabled group/i.test(admins[3] ?? "") && !/deny/i.test(admins[3] ?? "") } : { present: false },
-      integrityLevel: integrity ? `${integrity[0]} (${integrity[1]})` : "unknown",
+      integrityLevel: integrity ? `${integrity[0]} (${integrity[2]})` : "unknown",
+      integrityRawLine: (groups.split(/\r?\n/).find((l) => /S-1-16-/.test(l)) ?? "").trim(),
       elevatedHighIntegrity: /S-1-16-12288|S-1-16-16384/.test(groups),
       privilegeCount: priv.split(/\r?\n/).filter(Boolean).length - 1,
+      privileges: priv.split(/\r?\n/).slice(1).filter(Boolean).map((l) => l.split('","')[0].replace(/^"/, "")),
       hasSeDebug: /SeDebugPrivilege/.test(priv),
-      standardUser: Boolean(integrity && /S-1-16-8192/.test(integrity[1]) && !(admins && /Enabled group/i.test(admins[3] ?? "") && !/deny/i.test(admins[3] ?? ""))),
+      standardUser: Boolean(integrity && /S-1-16-8192/.test(integrity[2]) && !(admins && /Enabled group/i.test(admins[3] ?? "") && !/deny/i.test(admins[3] ?? ""))),
     };
   }
   return { user: os.userInfo().username, uid: process.getuid?.(), gid: process.getgid?.(), root: process.getuid?.() === 0, id: (spawnSync("id", [], { encoding: "utf8" }).stdout ?? "").trim() };
