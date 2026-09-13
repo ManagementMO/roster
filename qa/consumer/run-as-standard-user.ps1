@@ -15,17 +15,21 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $src = Split-Path -Parent $MyInvocation.MyCommand.Path
-# the workspace lives under the runner's own profile tree; give the standard user its own read-only copy instead
-$here = "C:\rqh"
-if (Test-Path $here) { Remove-Item -Recurse -Force $here }
+$suffix = -join ((48..57 + 97..122) | Get-Random -Count 6 | ForEach-Object { [char]$_ })
+$user = "rqa$suffix"
+# Uniquely named, fail-closed paths (short: MAX_PATH matters for the metachar / npx cases). Never
+# delete or reuse anything preexisting. The workspace lives under the runner's own profile tree, so
+# the standard user gets its own read-only copy of the harness directory.
+$here = "C:\rqh$suffix"
+$work = "C:\rq$suffix"
+foreach ($p in @($here, $work)) { if (Test-Path $p) { throw "refusing to reuse preexisting path $p" } }
+if (Test-Path $Out) { if ((Get-ChildItem -Force $Out | Measure-Object).Count -ne 0) { throw "refusing to write into non-empty $Out" } }
 Copy-Item -Recurse $src $here
 $harness = Join-Path $here "native-qa.mjs"
-$user = "rqa" + (-join ((48..57 + 97..122) | Get-Random -Count 6 | ForEach-Object { [char]$_ }))
 $bytes = New-Object byte[] 32
 [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
 $plain = ([Convert]::ToBase64String($bytes)).TrimEnd("=") + "!aZ9"
 $secure = ConvertTo-SecureString $plain -AsPlainText -Force
-$work = "C:\rq"      # short: MAX_PATH matters for the metachar / npx cases
 New-Item -ItemType Directory -Force -Path $work, $Out | Out-Null
 
 Write-Host "creating ephemeral standard user $user (no group beyond Users)"

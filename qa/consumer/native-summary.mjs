@@ -2,14 +2,20 @@
 // Aggregates native-qa evidence from every matrix row into one inventory.
 //   native-summary.mjs --matrix qa/consumer/native-matrix.json --artifacts <dir> --out <dir>
 // <dir> holds one sub-directory per downloaded artifact (native-<row id>/results.json).
-// A row without results.json is reported as NO EVIDENCE (never as a pass); the
-// exit code is non-zero if any case FAILED or any row produced no evidence.
+// Every row is re-judged with native-gate.mjs (finished marker, exact artifact, actual Node,
+// privilege facts, complete case inventory with narrow applicability). A row without
+// results.json is NO EVIDENCE; the exit code is non-zero unless every row passes its gate.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { gateRow } from "./native-gate.mjs";
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };
 const matrix = JSON.parse(fs.readFileSync(opt("matrix"), "utf8")).include;
+const casesDoc = JSON.parse(fs.readFileSync(opt("cases", path.join(HERE, "native-cases.json")), "utf8"));
+const EXPECTED_SHA = opt("expected-sha256", "3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0");
 const artifacts = path.resolve(opt("artifacts"));
 const out = path.resolve(opt("out", artifacts));
 fs.mkdirSync(out, { recursive: true });
@@ -20,9 +26,10 @@ for (const m of matrix) {
   const dir = path.join(artifacts, `native-${m.id}`);
   const file = path.join(dir, "results.json");
   const launch = path.join(dir, "std-user-launch.json");
-  const row = { ...m, evidence: fs.existsSync(file) ? "results.json" : "NO EVIDENCE", counts: {}, env: null, launch: fs.existsSync(launch) ? JSON.parse(fs.readFileSync(launch, "utf8")) : null };
+  const row = { ...m, evidence: fs.existsSync(file) ? "results.json" : "NO EVIDENCE", counts: {}, env: null, gate: null, launch: fs.existsSync(launch) ? JSON.parse(fs.readFileSync(launch, "utf8")) : null };
   if (row.evidence === "results.json") {
     const doc = JSON.parse(fs.readFileSync(file, "utf8"));
+    row.gate = gateRow(doc, { kind: m.kind, dense: m.dense, expectedSha256: EXPECTED_SHA, nodeLabel: m.node, harnessExit: doc.env?.exitCode }, casesDoc);
     row.env = { os: doc.env.os, arch: doc.env.arch, node: doc.env.node, libuv: doc.env.libuv, npm: doc.env.npm, user: doc.env.privileges?.user, integrity: doc.env.privileges?.integrityLevel ?? null, totalMemGiB: doc.env.totalMemGiB, harnessSha256: doc.env.harnessSha256, fixtureServerSha256: doc.env.fixtureServerSha256, tarballSha256: doc.env.artifact?.sha256 };
     for (const r of doc.results) {
       row.counts[r.status] = (row.counts[r.status] ?? 0) + 1;
@@ -32,13 +39,15 @@ for (const m of matrix) {
   rows.push(row);
 }
 
-const status = (r) => (r.evidence !== "results.json" ? "NO EVIDENCE" : r.counts.FAIL ? "FAIL" : r.counts.BLOCKED ? "PASS+BLOCKED" : "PASS");
+const status = (r) => (r.evidence !== "results.json" ? "NO EVIDENCE" : r.gate.ok ? (r.kind === "negative-control" ? "PASS (refusal)" : "PASS") : "FAIL");
 const supportedRows = rows.filter((r) => r.kind === "supported" || r.kind === "standard-user");
 const summary = {
   generatedAt: new Date().toISOString(),
   rows: rows.map((r) => ({ id: r.id, kind: r.kind, role: r.role, os: r.os, node: r.node, dense: r.dense, verdict: status(r), counts: r.counts, env: r.env, launch: r.launch })),
   totals: cases.reduce((a, c) => { a[c.status] = (a[c.status] ?? 0) + 1; return a; }, {}),
   failures: cases.filter((c) => c.status === "FAIL"),
+  gateProblems: Object.fromEntries(rows.filter((r) => r.gate && !r.gate.ok).map((r) => [r.id, r.gate.problems])),
+  rowsNotPassingGate: rows.filter((r) => !r.gate?.ok).map((r) => r.id),
   blocked: cases.filter((c) => c.status === "BLOCKED"),
   noEvidence: rows.filter((r) => r.evidence !== "results.json").map((r) => r.id),
   supportedPlatformRows: supportedRows.map((r) => `${r.id}: ${status(r)}`),
@@ -54,7 +63,10 @@ for (const r of rows) {
   const e = r.env ?? {};
   md.push(`| ${r.id} | ${r.kind} | ${r.os} | ${e.node ?? "—"} | ${e.libuv ?? "—"} | ${e.npm ?? "—"} | ${e.user ?? "—"}${e.integrity ? ` (${e.integrity.split(" ")[0]})` : ""} | ${e.totalMemGiB ?? "—"} | **${status(r)}** | ${r.counts.PASS ?? 0} | ${r.counts.FAIL ?? 0} | ${r.counts.BLOCKED ?? 0} | ${r.counts["NOT RUN"] ?? 0} |`);
 }
-md.push("", "## Failures", "");
+md.push("", "## Gate problems (row FAIL reasons: harness crash/partial, digest, node label, privilege, inventory, unexplained NOT RUN / BLOCKED)", "");
+if (!Object.keys(summary.gateProblems).length) md.push("none");
+for (const [row, probs] of Object.entries(summary.gateProblems)) for (const p of probs) md.push(`- **${row}**: ${p}`);
+md.push("", "## Failing cases", "");
 if (!summary.failures.length) md.push("none");
 for (const f of summary.failures) md.push(`- **${f.row}** \`${f.id}\` [${f.severity ?? "?"}]${f.category ? ` (${f.category})` : ""}: ${String(f.actual).split("\n")[0].slice(0, 400)}`);
 md.push("", "## Blocked", "");
@@ -69,7 +81,7 @@ md.push("", "## Per-case matrix", "", "| case | " + rows.map((r) => r.id).join("
 const ids = [...new Set(cases.map((c) => c.id))];
 const abbrev = { PASS: "P", FAIL: "**F**", BLOCKED: "B", "NOT RUN": "·" };
 for (const id of ids) md.push(`| ${id} | ${rows.map((r) => { const c = cases.find((x) => x.row === r.id && x.id === id); return c ? abbrev[c.status] ?? c.status : "∅"; }).join(" | ")} |`);
-md.push("", "Legend: P PASS · F FAIL · B BLOCKED · `·` NOT RUN (not applicable / not requested) · ∅ no evidence. Negative-control rows only ever PASS by refusing before mutation.");
+md.push("", "Legend: P PASS · F FAIL · B BLOCKED (only the enumerated Node ESM `*`-path limit is accepted by the gate) · `·` NOT RUN (only accepted when the applicability rule says the case does not apply to that row) · ∅ no evidence. Negative-control rows only ever PASS by refusing before mutation and never count as supported-platform coverage.");
 fs.writeFileSync(path.join(out, "native-summary.md"), md.join("\n"));
 process.stdout.write(md.join("\n") + "\n");
-process.exit(summary.failures.length || summary.noEvidence.length ? 1 : 0);
+process.exit(summary.rowsNotPassingGate.length ? 1 : 0);

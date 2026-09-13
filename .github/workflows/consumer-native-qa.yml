@@ -10,7 +10,7 @@ permissions:
   contents: read
 concurrency:
   group: consumer-native-qa-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 env:
   CANDIDATE_SHA256: 3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0
   CANDIDATE_URL: https://registry.npmjs.org/@npmmo/roster/-/roster-0.0.2.tgz
@@ -83,12 +83,16 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
+          set +e
           node qa/consumer/native-qa.mjs \
             --tarball "$RUNNER_TEMP/candidate/roster-0.0.2.tgz" \
             --expected-sha256 "$CANDIDATE_SHA256" \
             --out "$RUNNER_TEMP/qa-out" --work "$RUNNER_TEMP/w" \
             --node-label "${{ matrix.node }}" --mode "${{ matrix.kind == 'negative-control' && 'negative-control' || 'supported' }}" \
             ${{ matrix.dense && '--dense' || '' }}
+          code=$?
+          mkdir -p "$RUNNER_TEMP/qa-out"; echo "$code" > "$RUNNER_TEMP/qa-out/harness-exit.txt"
+          exit $code
       - name: native-qa (Windows, runner account)
         if: matrix.kind != 'standard-user' && matrix.platform == 'windows'
         id: qa_win
@@ -97,9 +101,15 @@ jobs:
         run: |
           $mode = if ("${{ matrix.kind }}" -eq "negative-control") { "negative-control" } else { "supported" }
           $dense = if ("${{ matrix.dense }}" -eq "true") { @("--dense") } else { @() }
-          New-Item -ItemType Directory -Force -Path C:\rw | Out-Null
-          node qa/consumer/native-qa.mjs --tarball "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" --expected-sha256 $env:CANDIDATE_SHA256 --out "$env:RUNNER_TEMP\qa-out" --work C:\rw --node-label "${{ matrix.node }}" --mode $mode @dense
-          exit $LASTEXITCODE
+          # short (MAX_PATH) but uniquely owned work dir; fail closed if it already exists
+          $work = "C:\rw" + (-join ((48..57 + 97..122) | Get-Random -Count 6 | ForEach-Object { [char]$_ }))
+          if (Test-Path $work) { throw "refusing to reuse preexisting $work" }
+          New-Item -ItemType Directory -Path $work | Out-Null
+          node qa/consumer/native-qa.mjs --tarball "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" --expected-sha256 $env:CANDIDATE_SHA256 --out "$env:RUNNER_TEMP\qa-out" --work $work --node-label "${{ matrix.node }}" --mode $mode @dense
+          $code = $LASTEXITCODE
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\qa-out" | Out-Null
+          Set-Content -NoNewline -Path "$env:RUNNER_TEMP\qa-out\harness-exit.txt" -Value "$code"
+          exit $code
 
       # ---- standard-user rows: ephemeral non-admin account INSIDE the VM ----
       - name: native-qa as an ephemeral Windows standard user
@@ -109,12 +119,17 @@ jobs:
         shell: pwsh
         run: |
           $dense = if ("${{ matrix.dense }}" -eq "true") { @("-Dense") } else { @() }
-          Copy-Item "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" C:\roster-0.0.2.tgz
-          New-Item -ItemType Directory -Force -Path C:\rqout | Out-Null
-          pwsh -NoProfile -File qa/consumer/run-as-standard-user.ps1 -Tarball C:\roster-0.0.2.tgz -ExpectedSha256 $env:CANDIDATE_SHA256 -Out C:\rqout -NodeLabel "${{ matrix.node }}" @dense
+          # uniquely owned, fail-closed staging paths (the std-user script creates its own work/harness dirs the same way)
+          $suffix = -join ((48..57 + 97..122) | Get-Random -Count 6 | ForEach-Object { [char]$_ })
+          $stage = "C:\rqt$suffix"; $outDir = "C:\rqo$suffix"
+          foreach ($p in @($stage, $outDir)) { if (Test-Path $p) { throw "refusing to reuse preexisting $p" } }
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          Copy-Item "$env:RUNNER_TEMP\candidate\roster-0.0.2.tgz" "$stage\roster-0.0.2.tgz"
+          pwsh -NoProfile -File qa/consumer/run-as-standard-user.ps1 -Tarball "$stage\roster-0.0.2.tgz" -ExpectedSha256 $env:CANDIDATE_SHA256 -Out $outDir -NodeLabel "${{ matrix.node }}" @dense
           $code = $LASTEXITCODE
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\qa-out" | Out-Null
-          Copy-Item -Recurse -Force C:\rqout\* "$env:RUNNER_TEMP\qa-out\"
+          if (Test-Path $outDir) { Copy-Item -Recurse -Force "$outDir\*" "$env:RUNNER_TEMP\qa-out\" }
+          Set-Content -NoNewline -Path "$env:RUNNER_TEMP\qa-out\harness-exit.txt" -Value "$code"
           exit $code
 
       - name: Upload evidence
@@ -129,19 +144,19 @@ jobs:
             ${{ runner.temp }}/qa-out/locks
             ${{ runner.temp }}/qa-out/std-user-launch.json
             ${{ runner.temp }}/qa-out/std-user.stderr.log
+            ${{ runner.temp }}/qa-out/harness-exit.txt
           if-no-files-found: warn
           retention-days: 30
-      - name: "Row verdict (honest: a failed harness exit fails the row)"
+      - name: "Row verdict (fail-closed gate: harness exit + finished marker + exact artifact + complete case inventory)"
         shell: bash
         run: |
-          echo "posix=${{ steps.qa_posix.outcome }} win=${{ steps.qa_win.outcome }} std=${{ steps.qa_std.outcome }}"
-          test -f "$RUNNER_TEMP/qa-out/results.json" || { echo "::error::no results.json produced"; exit 1; }
-          node -e '
-            const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
-            const c = {}; for (const r of d.results) c[r.status] = (c[r.status] ?? 0) + 1;
-            console.log(JSON.stringify(c)); for (const r of d.results) console.log(r.status.padEnd(8), r.id, r.category ? `[${r.category}]` : "");
-            process.exit(c.FAIL ? 1 : 0);
-          ' "$RUNNER_TEMP/qa-out/results.json"
+          echo "step outcomes: posix=${{ steps.qa_posix.outcome }} win=${{ steps.qa_win.outcome }} std=${{ steps.qa_std.outcome }}"
+          exit_code=$(cat "$RUNNER_TEMP/qa-out/harness-exit.txt" 2>/dev/null || echo 99)
+          node qa/consumer/native-gate.mjs \
+            --results "$RUNNER_TEMP/qa-out/results.json" \
+            --expected-sha256 "$CANDIDATE_SHA256" \
+            --kind "${{ matrix.kind }}" --node-label "${{ matrix.node }}" \
+            --harness-exit "$exit_code" ${{ matrix.dense && '--dense' || '' }}
 
   summary:
     name: Evidence inventory (missing rows are not passes)
@@ -155,8 +170,12 @@ jobs:
         with:
           pattern: native-*
           path: ${{ runner.temp }}/evidence
-      - name: Aggregate
-        run: node qa/consumer/native-summary.mjs --matrix qa/consumer/native-matrix.json --artifacts "$RUNNER_TEMP/evidence" --out "$RUNNER_TEMP/evidence" | tee -a "$GITHUB_STEP_SUMMARY" || echo "::warning::failures or missing evidence present (see summary)"
+      - name: Aggregate (re-gates every row; missing evidence / unexplained NOT RUN / BLOCKED are failures)
+        id: agg
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node qa/consumer/native-summary.mjs --matrix qa/consumer/native-matrix.json --expected-sha256 "$CANDIDATE_SHA256" --artifacts "$RUNNER_TEMP/evidence" --out "$RUNNER_TEMP/evidence" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v6
         with:
           name: native-summary
@@ -165,3 +184,7 @@ jobs:
             ${{ runner.temp }}/evidence/native-summary.json
           if-no-files-found: error
           retention-days: 30
+      - name: Overall verdict
+        run: |
+          echo "aggregate outcome: ${{ steps.agg.outcome }}"
+          test "${{ steps.agg.outcome }}" = "success"

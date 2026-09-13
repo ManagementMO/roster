@@ -1271,9 +1271,12 @@ if (!NEGATIVE) {
     if (routes.life) await serveCases(routes);
   }
 }
-ENV_FACTS.finishedAt = new Date().toISOString();
-writeResults();
 const tally = results.reduce((acc, r) => { const k = r.kind === "negative-control" && r.status === "PASS" ? "PASS (negative-control refusal)" : r.status; acc[k] = (acc[k] ?? 0) + 1; return acc; }, {});
+ENV_FACTS.finishedAt = new Date().toISOString();
+ENV_FACTS.finished = true;
+ENV_FACTS.exitCode = tally.FAIL ? 1 : 0;
+ENV_FACTS.recordedCases = results.map((r) => r.id);
+writeResults();
 log(`\nSUMMARY ${JSON.stringify(tally)}`);
 for (const r of results) log(`${r.status.padEnd(8)} ${r.id}${r.category ? `  [${r.category}]` : ""}  ${r.durationMs} ms`);
 process.exit(tally.FAIL ? 1 : 0);
