@@ -19,9 +19,9 @@ concurrency:
 
 env:
   APP_SHA: 76ef880844a3f6c613375e3d78e42537519a14ed
-  # SHA-256 of the local candidate tarball (pnpm 11.9.0, Node 24.14.1,
-  # frozen lockfile, `pnpm build` + `pnpm pack` in packages/cli at APP_SHA).
-  CANDIDATE_SHA256: 42feae801e590fcd412507b169d08cc14bd580e458845b507116ac3da26082ef
+  # SHA-256 of the Linux candidate (pnpm 11.9.0, Node 24.20.0). Its decompressed
+  # archive matches the local candidate byte-for-byte; zlib changes gzip output.
+  CANDIDATE_SHA256: e6e854508e71e3eef4a17ef88e8a019790735f65ed238e7b726c5e0434bf1fb0
 
 jobs:
   build:
@@ -49,7 +49,7 @@ jobs:
           echo "application SHA $APP_SHA; QA harness SHA $(git rev-parse HEAD)"
       - uses: ./.github/actions/setup
         with:
-          node-version: "24"
+          node-version: "24.20.0"
       - name: Validate the evidence gate
         run: node --test qa/consumer/result-gate.test.mjs
       - name: Build + pack @npmmo/roster, compare with recorded candidate
