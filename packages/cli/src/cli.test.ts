@@ -2005,6 +2005,29 @@ args = ["-y", "late-mcp"]
     expect(runningFromNpxCache(path.join(home, "my_npx_tools", "bin.js"))).toBe(false);
   });
 
+  it("launches the generated npx entry without requiring the client to enable a shell", () => {
+    const bin = path.join(home, "npx bin");
+    const script = path.join(bin, "npx-fixture.cjs");
+    fs.mkdirSync(bin);
+    fs.writeFileSync(script, "process.stdout.write(JSON.stringify(process.argv.slice(2)));\n");
+    fs.writeFileSync(path.join(bin, process.platform === "win32" ? "npx.cmd" : "npx"),
+      process.platform === "win32"
+        ? `@"${process.execPath}" "${script}" %*\r\n`
+        : `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`,
+      { mode: 0o755 });
+    const packageName = (JSON.parse(fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8")) as { name: string }).name;
+    const entry = rosterEntry(path.join(home, "cache", "_npx", "entry", "bundle", "bin.js"));
+    const result = spawnSync(entry.command, entry.args, {
+      encoding: "utf8", timeout: 10_000, shell: false,
+      env: { ...process.env, PATH: [bin, path.dirname(process.execPath), ...(process.platform === "win32"
+        ? [path.win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32")]
+        : ["/usr/bin", "/bin"])].join(path.delimiter) },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual(["-y", packageName, "serve"]);
+  });
+
   it("a UTF-8 BOM on a client config does not abort the sync — the server is still imported (D2)", () => {
     const configPath = path.join(home, ".claude.json");
     // Editors write a leading BOM; JSON.parse chokes on it. One BOM'd config
