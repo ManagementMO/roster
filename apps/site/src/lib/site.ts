@@ -12,12 +12,17 @@ export const description = "The local tool router for AI agents. Connect MCP ser
 export const source = (file: string) => `${repository}/blob/${release.revision}/${file}`;
 export const statusLabel = release.published ? `v${release.version} available` : "Open source. Pre-release.";
 
-export function commandsFor(state: { published: boolean; version: string; revision: string }) {
-  const prefix = state.published ? executable : "node packages/cli/dist/bin.js";
+export type CommandPlatform = "posix" | "windows";
+
+export function commandsFor(state: { published: boolean; version: string; revision: string }, platform: CommandPlatform = "posix") {
+  const suffix = platform === "windows" ? ".cmd" : "";
+  const spec = `${packageName}@${state.version}`;
+  const prefix = state.published ? `npx${suffix} --yes ${spec}` : "node packages/cli/dist/bin.js";
   return {
     prepare: state.published
-      ? `npm install --global ${packageName}@${state.version}`
-      : `git clone ${repository}.git roster-source\ncd roster-source\ngit checkout ${state.revision}\npnpm install --frozen-lockfile\npnpm build`,
+      ? `${prefix} init --no-dense`
+      : `git clone ${repository}.git roster-source\ncd roster-source\ngit checkout ${state.revision}\npnpm${suffix} install --frozen-lockfile\npnpm${suffix} build`,
+    globalInstall: `npm${suffix} install --global ${spec}`,
     help: `${prefix} --help`,
     init: `${prefix} init --no-dense`,
     receipt: `${prefix} receipt`,
@@ -41,13 +46,13 @@ export const setupPrompt = `Help me set up Roster, the local MCP tool-and-skill 
 
 Read ${repository} and its current installation/status documentation. This website describes revision ${release.revision.slice(0, 7)}. First identify any existing Roster installation by its package and path, using --help (there is no --version flag). Do not assume a command named roster belongs to this project.
 
-Check npm availability for ${packageName}. If it is published, use an explicit global install of that package and then the roster executable. If registry access is unavailable, report the actual lookup failure rather than assuming pre-release status, and offer the documented source build with Node 22.17 or newer within Node 22.x, or Node 24.2 or newer, and pnpm 11.9.0. Keep using node packages/cli/dist/bin.js from that checkout; a one-off npx run does not install a global command. Never use the unrelated unscoped npm package.
+Check npm availability for ${packageName}@${release.version}. If it is available, prefer the pinned scoped npx flow: ${commandsFor({ ...release, published: true }).prepare}. On Windows use ${commandsFor({ ...release, published: true }, "windows").prepare}. Keep the same pinned npx or npx.cmd prefix for follow-up commands; a one-off npx run does not install a global roster command. Offer a global installation only if I prefer it, rather than relying on an unrelated executable already on PATH. If registry access is unavailable, report the actual lookup failure rather than assuming pre-release status, and offer the documented source build with Node 22.17 or newer within Node 22.x, or Node 24.2 or newer, and pnpm 11.9.0. Keep using node packages/cli/dist/bin.js from that checkout. Never use the unrelated unscoped npm package.
 
 Ask which client and scope I want before changing configuration. Automated sync/eject writers support claude-code, cursor, codex, and openclaw only. Discovery is broader. Roster currently routes command-backed stdio MCP servers, not URL-only servers. Explain which existing file sync will select and what it will change. Do not touch unrelated clients or broaden the authorized scope.
 
 Explain that init --no-dense discovers configurations, imports server definitions (including env) into private local state, and prints a receipt; it does not rewrite client configurations. Run it only with my authorization. Keep credentials, raw client configuration, and receipt paths out of chat and logs. Inspect locally and summarize without secret values.
 
-Start with lexical retrieval. In a source checkout the embedding runtime may already be installed: set only embeddings to off in the existing ~/.roster/roster.json before starting a client, preserving all other fields. Explain optional dense enable, the approximately 385 MB runtime plus a first-use model download, and get separate permission before enabling or downloading either.
+Start with lexical retrieval. If a previous setup or source checkout already has the embedding runtime, set only embeddings to off in the existing ~/.roster/roster.json before starting a client, preserving all other fields. Explain optional dense enable, the approximately 385 MB runtime plus a first-use model download, and get separate permission before enabling or downloading either. Check native runtime compatibility before recommending dense retrieval; in 0.0.2, ON status confirms package presence, not successful inference, and the verified ONNX Runtime 1.24.3 cannot load on Alpine/musl or x64 macOS.
 
 Review the receipt and existing backups, then scope sync to the chosen --client. Sync backs up originals before replacing the MCP server map with a Roster launcher. The client normally launches serve over stdio; I do not need a separate hosted service. Transparent mode is the default. Explain five mode before enabling it: draft returns up to five candidates, then the agent chooses call; skills return instructions/resources, not automatic script execution.
 

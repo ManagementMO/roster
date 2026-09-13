@@ -14,7 +14,7 @@
 .setup-heading { grid-column: 1 / -1; text-align: center; margin-bottom: 4px; }
 .setup-heading h2 { font-size: clamp(30px, 3vw, 38px); letter-spacing: -.035em; font-weight: 550; line-height: 1.2; margin: 0; }
 .setup-heading p { color: var(--muted); font-size: 15px; margin: 12px 0 0; }
-.setup-section { background: var(--surface-soft); border-block: 1px solid var(--line); }
+.setup-section { background: var(--surface-soft); border-block: 1px solid var(--line); scroll-margin-top: 90px; }
 .setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 1080px; gap: 26px 32px; padding-block: 43px 30px; }
 .setup-grid > * { min-width: 0; }
 .agent-setup { scroll-margin-top: 100px; }

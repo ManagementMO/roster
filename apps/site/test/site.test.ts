@@ -12,19 +12,33 @@ describe("release-aware setup", () => {
     expect(commands.prepare).toContain(release.revision);
   });
 
-  it("uses the verified public release for the current installation sequence", () => {
+  it("downloads and initializes the verified release in one command", () => {
     const commands = commandsFor(release);
-    expect(commands.prepare).toBe("npm install --global @npmmo/roster@0.0.2");
-    expect(commands.help).toBe("roster --help");
-    expect(commands.init).toBe("roster init --no-dense");
+    expect(commands.prepare).toBe("npx --yes @npmmo/roster@0.0.2 init --no-dense");
+    expect(commands.help).toBe("npx --yes @npmmo/roster@0.0.2 --help");
+    expect(commands.init).toBe("npx --yes @npmmo/roster@0.0.2 init --no-dense");
   });
 
-  it("switches the whole command sequence to a documented global install after publication", () => {
+  it("keeps follow-up commands pinned without assuming a global executable", () => {
     const commands = commandsFor({ ...release, published: true, version: "0.1.0" });
-    expect(commands.prepare).toBe("npm install --global @npmmo/roster@0.1.0");
-    expect(commands.init).toBe("roster init --no-dense");
-    expect(commands.sync).toBe("roster sync --client cursor");
-    expect(commands.eject).toBe("roster eject --client cursor");
+    expect(commands.prepare).toBe("npx --yes @npmmo/roster@0.1.0 init --no-dense");
+    expect(commands.sync).toBe("npx --yes @npmmo/roster@0.1.0 sync --client cursor");
+    expect(commands.eject).toBe("npx --yes @npmmo/roster@0.1.0 eject --client cursor");
+    expect(commands.globalInstall).toBe("npm install --global @npmmo/roster@0.1.0");
+  });
+
+  it("uses Windows command shims without PowerShell policy changes or shell chaining", () => {
+    const commands = commandsFor({ ...release, published: true, version: "0.1.0" }, "windows");
+    expect(commands.prepare).toBe("npx.cmd --yes @npmmo/roster@0.1.0 init --no-dense");
+    expect(commands.sync).toBe("npx.cmd --yes @npmmo/roster@0.1.0 sync --client cursor");
+    expect(commands.eject).toBe("npx.cmd --yes @npmmo/roster@0.1.0 eject --client cursor");
+    expect(commands.globalInstall).toBe("npm.cmd install --global @npmmo/roster@0.1.0");
+  });
+
+  it("retains the source entry point for Windows when npm publication is unavailable", () => {
+    const commands = commandsFor({ ...release, published: false }, "windows");
+    expect(commands.prepare).toContain("pnpm.cmd install --frozen-lockfile");
+    expect(commands.init).toBe("node packages/cli/dist/bin.js init --no-dense");
   });
 
   it("gives agents explicit consent and privacy boundaries, not dangerous shortcuts", () => {

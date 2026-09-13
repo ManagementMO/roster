@@ -4,11 +4,11 @@ import Brand from "../components/Brand.astro";
 import Icon from "../components/Icon.astro";
 import ThemeProvider from "../components/ThemeProvider.astro";
 import ThemeSelect from "../components/ThemeSelect.astro";
-import CopyButton from "../components/CopyButton.astro";
+import Command from "../components/Command.astro";
 import AgentPrompt from "../components/AgentPrompt.astro";
 import ProductExperience from "../components/ProductExperience.astro";
 import Hero from "../components/Hero.astro";
-import { commands, description, repository, release, source, socialMeta } from "../lib/site.js";
+import { description, repository, release, source, socialMeta } from "../lib/site.js";
 const social = socialMeta(Astro.site);
 ---
 <!doctype html>
@@ -51,10 +51,10 @@ const social = socialMeta(Astro.site);
         <div id="how-it-works"><ProductExperience /></div>
       </section>
       <section class="setup-section" id="setup" aria-labelledby="setup-title"><div class="page-width setup-grid">
-        <div class="setup-heading"><h2 id="setup-title">Start with one client.</h2><p>{release.published ? "Install Roster, or hand the setup to your agent." : "Build from source, or hand the setup to your agent."}</p></div>
+        <div class="setup-heading"><h2 id="setup-title">{release.published ? "Set up with one command." : "Start from source."}</h2><p>{release.published ? "Download Roster and discover your setup. Your client files stay untouched." : "Build from source, or hand the setup to your agent."}</p></div>
         <div class="setup-copy">
-          <div class="source-install"><div class="install-heading"><span><Icon name="terminal-2" size={18} />{release.published ? "Install Roster" : "Install from source"}</span><CopyButton text={commands.prepare} label="Copy commands" /></div><textarea class="command-text" rows={release.published ? 1 : 6} wrap="off" readonly spellcheck="false" aria-label="Installation commands">{commands.prepare}</textarea></div>
-          <a class="text-link" href="/docs/installation/">First-run guide<Icon name="arrow-right" size={16} /></a><p class="setup-requirements">Node 22.17+ (22.x) or 24.2+. Source builds also need pnpm 11.9.0.</p>
+          <Command name="prepare" presentation="setup" />
+          <a class="text-link" href="/docs/installation/">First-run guide<Icon name="arrow-right" size={16} /></a><p class="setup-requirements">Node 22.17+ (22.x) or 24.2+. {release.published ? "No global install or model download required." : "Source builds also need pnpm 11.9.0."}</p>
         </div>
         <div class="agent-setup" id="agent-setup"><AgentPrompt /><a class="text-link" href="/docs/agent-setup/">Agent setup guide<Icon name="arrow-right" size={15} /></a></div>
         <div class="eject-note"><Icon name="arrow-back-up" size={20} /><p>Sync backs up first. Use <code>eject</code> to restore your configuration.</p><a class="text-link" href="/docs/clients/#leave-with-eject">How restoration works<Icon name="arrow-right" size={15} /></a></div>
