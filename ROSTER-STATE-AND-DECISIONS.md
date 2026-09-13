@@ -4,7 +4,7 @@
 > below passed without a release. Those entries remain as decision history; a
 > revised launch date has not been set.
 
-> **Current release preparation:** the candidate publishing target is `@npmmo/roster`, under the authenticated `npmmo` account. Access to the earlier `@roster` namespace was not established; its older references below are decision history, not authorization to publish there. The executable remains `roster`. The owner approved patched Node runtime requirements; final name/version/artifact approval, human review, and successful release verification are still required. See `docs/publishing.md` and `docs/release-readiness.md`.
+> **Release update (2026-09-13):** `@npmmo/roster@0.0.1` is published publicly under the `npmmo` account, with executable `roster`. The owner confirmed the required human review and authorized the exact verified artifact; fresh public npm/npx checks passed on Linux, Windows, and macOS within the recorded scope. Older `@roster/cli` references below are decision history, not the package to install. League signing, named scores, domains, and service deployment remain separate owner gates. Current evidence: `docs/release-readiness.md` and `docs/PROVENANCE.md`.
 
 > **What this document is:** the synthesis of the entire ideation → research → verification → red-team cycle (July 3–4, 2026), written for two readers: **Mo**, to finalize the open decisions, and **future agents**, to understand exactly where truth lives before touching anything.
 >

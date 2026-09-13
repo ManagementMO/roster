@@ -2,7 +2,7 @@
 
 This is a static Astro + Starlight workspace. The public story leads with the local tool router, local learning, user control, and reversible setup. Starting five is an optional mode, not the product's whole identity.
 
-- Product revision and release availability live in `src/lib/site.ts`. The documented baseline is public main `670c77e`; the original creative checkout remains separate.
+- Product revision and release availability live in `src/lib/site.ts`. Use its verified release references rather than stale baseline SHAs; the original creative checkout remains separate.
 - Keep package name, execution strategy, release state, repository URLs, and the agent handoff centralized. Never advertise the unscoped npm package.
 - `src/lib/sources.ts` is the compact claim-to-source map. Treat roadmap prose as plans unless implementation and evidence support it.
 - One MDX source per guide under `src/content/docs/docs`. Do not add Markdown exports, page-copy controls, or a full-docs export.

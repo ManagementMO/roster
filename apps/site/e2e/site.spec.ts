@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { commands } from "../src/lib/site.js";
 
 async function noOverflow(page: Page) {
   const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
@@ -114,7 +115,7 @@ test("copy commands and the agent prompt, with a usable denied-clipboard fallbac
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("Do not enable telemetry");
   await page.goto("/docs/installation/");
   await page.locator(".expressive-code .copy button").first().click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("pnpm install --frozen-lockfile");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(commands.prepare);
   await page.goto("/docs/agent-setup/");
   await page.evaluate(() => { Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.reject(new Error("denied")) } }); });
   await page.getByRole("button", { name: "Copy setup prompt", exact: true }).click();

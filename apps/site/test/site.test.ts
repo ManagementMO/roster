@@ -3,14 +3,20 @@ import { commandsFor, packageName, release, setupPrompt, socialMeta } from "../s
 import { capabilities, presets, initialDemoState, reduceDemo, exampleCall } from "../src/lib/demo.js";
 
 describe("release-aware setup", () => {
-  it("offers a usable source path while the scoped package is unpublished", () => {
-    expect(release.published).toBe(false);
+  it("keeps a usable source fallback when publication is unavailable", () => {
     expect(packageName).toBe("@npmmo/roster");
     const commands = commandsFor({ ...release, published: false });
     expect(commands.init).toBe("node packages/cli/dist/bin.js init --no-dense");
     expect(commands.sync).toBe("node packages/cli/dist/bin.js sync --client cursor");
     expect(commands.prepare).toContain("pnpm install --frozen-lockfile");
     expect(commands.prepare).toContain(release.revision);
+  });
+
+  it("uses the verified public release for the current installation sequence", () => {
+    const commands = commandsFor(release);
+    expect(commands.prepare).toBe("npm install --global @npmmo/roster@0.0.1");
+    expect(commands.help).toBe("roster --help");
+    expect(commands.init).toBe("roster init --no-dense");
   });
 
   it("switches the whole command sequence to a documented global install after publication", () => {

@@ -1,6 +1,6 @@
 ---
 title: Command reference
-description: The implemented Roster CLI commands and flags, with source-install examples that work before npm publication.
+description: The implemented Roster CLI commands and flags, with release-aware installation examples.
 ---
 import Command from "../../../components/Command.astro";
 import { commands, release } from "../../../lib/site.js";
@@ -79,7 +79,7 @@ Clears local drift quarantine for the provided capability ID. Review the change 
 
 ## Combine run
 
-For a self-contained repository fixture, not a real vendor benchmark:
+This self-contained example requires a Roster source checkout and must be run from its repository root: the suite and fixture files are not included in the npm package. It is a synthetic fixture, not a real vendor benchmark:
 
 <Command name="combine" />
 

@@ -1,8 +1,10 @@
 # Roster Release Readiness
 
-## Current candidate: verified and owner-authorized, publication pending
+## Published release: `@npmmo/roster@0.0.1`
 
-As of 2026-09-13, automated release verification and the required owner review are complete for `@npmmo/roster@0.0.1`. The owner explicitly authorized merging PR #39 and publishing the exact reviewed artifact with public access and the `latest` tag. Publication and fresh public-registry verification have not yet occurred; an npm dry-run is not a publication.
+The owner-authorized release was published by `npmmo` on 2026-09-13 at `03:22:01.502Z`, with public access and `latest` pointing to `0.0.1`. PR #39 merged as `0667eb6f5ed843fab6378d293fa9c0612a425cec`; its merge-commit CI and CodeQL checks passed before publication. Unauthenticated public-registry lookup and download confirmed the exact approved tarball, and fresh public npm/npx consumer verification passed. No website or other service was deployed.
+
+> **Documentation-only follow-up in preparation:** the live npm page exposed a README link-base defect in `0.0.1`. Its repository directory is `packages/cli`, so copied root-relative README links resolve beneath that directory and return GitHub 404s. The executable and installation checks remain green, and the approved `0.0.1` tarball is unchanged. The owner requested a `0.0.2` documentation-only candidate with absolute repository links, packaging regression coverage, unchanged executable bundles, and upgrade verification. That new artifact still requires its own publication approval.
 
 ### Identity and supported runtime
 
@@ -17,7 +19,7 @@ As of 2026-09-13, automated release verification and the required owner review a
 
 - Build, typecheck, lint, and the 552-test local suite passed. The package/install-copy changes also passed Astro checks, the site build, and internal link/asset checks; no website was deployed.
 - All checks on [PR #39's verified CI revision](https://github.com/ManagementMO/roster/actions/runs/34733552434) passed, including native Windows minimums, real packed dense installation/upgrade/inference, and cleanup. [CodeQL](https://github.com/ManagementMO/roster/actions/runs/34733552439), dependency audit, secret scanning, and the configured Semgrep check passed. Semgrep remains supporting evidence from an externally configured GitHub App.
-- The [same-artifact consumer run](https://github.com/ManagementMO/roster/actions/runs/34733726151) used the reviewed tarball in every leg, outside the clone, with disposable homes, prefixes, caches, and npm configuration:
+- The [pre-publication staging run](https://github.com/ManagementMO/roster/actions/runs/34733726151) and [post-publication public npm run](https://github.com/ManagementMO/roster/actions/runs/34735333024) used the same reviewed tarball in every leg, outside the clone, with disposable homes, prefixes, caches, and npm configuration. Both runs recorded the following per-environment results:
 
 | Consumer environment | PASS | FAIL | BLOCKED | Explicitly NOT RUN |
 | --- | ---: | ---: | ---: | ---: |
@@ -27,17 +29,19 @@ As of 2026-09-13, automated release verification and the required owner review a
 | Windows x64, Node 24.2.0 | 30 | 0 | 0 | 3 |
 | Windows x64, Node 24.20.0 | 30 | 0 | 0 | 3 |
 
-These are case observations, not counts of distinct product features. They cover local/global/npx installation, fresh shells, Unicode and moved paths, exact saved-launcher execution after moving and removing the npx cache, CLI/config lifecycle, real backend routing, skills/review withholding, drift, process cleanup, Combine separation, runtime provenance/repair, MiniLM, and the product's automatic dense-model path. Public registry availability was observed separately; install evidence in this run is staging parity, not public publication.
+These are case observations, not counts of distinct product features. They cover local/global/npx installation, fresh shells, Unicode and moved paths, exact saved-launcher execution after moving and removing the npx cache, CLI/config lifecycle, real backend routing, skills/review withholding, drift, process cleanup, Combine separation, runtime provenance/repair, MiniLM, and the product's automatic dense-model path. The earlier run is staging evidence. The later public run required successful unauthenticated registry access, `latest = 0.0.1`, matching SHA-256/SHA-512 integrity, and installs by name from public npm; all five legs had zero failed or blocked cases.
+
+The public install/launcher subset also passed on macOS arm64 with Node 24.14.1: 11 PASS and 1 explicitly NOT RUN for the unavailable previous-version upgrade. This Mac run covered real bash/sh shims, local and global installs, Unicode/moved paths, and exact npx launcher recovery after cache removal; it was not a second full functional matrix. The npm package page rendered its README and package metadata.
 
 - The previously failing ordinary POSIX descendant is now gone after EOF, and the native Windows npm/npx paths pass without a client-side shell workaround. A backend deliberately creating a separate session remains outside the POSIX process-group guarantee.
 - A dedicated [default-off packet-capture run](https://github.com/ManagementMO/roster/actions/runs/34734327864) verified the same artifact in a separate CI network namespace. Capture tooling ran privileged, but the CLI and backend ran as UID 1001. The positive control recorded 7 packets; init/receipt/telemetry/scoped sync/eject and transparent/five-mode MCP checks recorded 0 product packets, with byte-identical restoration. Both PCAP files were independently read after download. This captures the tested default behavior with a local fixture, not arbitrary network activity of third-party tools.
 - `npm publish <reviewed-tarball> --dry-run --access public --tag latest` passed. No package was uploaded by the dry-run.
 
-### Explicit limits and remaining actions
+### Explicit verification limits
 
 - Native GUI-client/account workflows and a non-admin Windows profile were not exercised. Windows packet capture was not performed.
 - A genuine previous-version upgrade cannot be tested before an earlier release exists. The main matrix could not create an unprivileged Linux network namespace; the separate packet-capture run created one with privileged tooling while running the product non-root and without external network interfaces.
-- The owner's review and narrowly scoped publication authorization are recorded in [PROVENANCE](PROVENANCE.md). The next actions are the approved merge, exact-artifact npm publication, and fresh public npm/npx verification.
+- The owner's review and narrowly scoped publication authorization are recorded in [PROVENANCE](PROVENANCE.md). The approved merge, exact-artifact publication, and fresh public npm/npx checks are complete; a later release requires its own version, reviewed artifact, verification, and owner authorization.
 - No League task was human-signed by this work, no named public score was authorized, no domain was registered, and no public service or telemetry endpoint was deployed.
 
 ## Historical evidence below
