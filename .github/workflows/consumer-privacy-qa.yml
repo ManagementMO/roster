@@ -1,0 +1,52 @@
+name: consumer-privacy-qa
+on:
+  push:
+    branches: ["devin/*-privacy-qa"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+env:
+  CANDIDATE_SHA256: e6e854508e71e3eef4a17ef88e8a019790735f65ed238e7b726c5e0434bf1fb0
+jobs:
+  capture:
+    name: Default-off packet capture with non-root consumer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.20.0"
+      - uses: actions/download-artifact@v7
+        with:
+          name: candidate-tarball
+          run-id: 34733726151
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/candidate
+      - name: Prepare an isolated consumer install
+        run: |
+          tarball="$RUNNER_TEMP/candidate/npmmo-roster-0.0.1.tgz"
+          printf '%s  %s\n' "$CANDIDATE_SHA256" "$tarball" | sha256sum --check --strict
+          node qa/privacy/probe.mjs prepare "$RUNNER_TEMP/privacy" "$tarball"
+          npm install --prefix "$RUNNER_TEMP/privacy/project" --cache "$RUNNER_TEMP/privacy/npm-cache" --omit=optional --no-audit --no-fund "$tarball"
+      - name: Install capture tooling
+        run: |
+          command -v tcpdump || (sudo apt-get update -qq && sudo apt-get install -y tcpdump)
+          command -v ip
+          command -v setpriv
+      - name: Capture defaults in a private network namespace
+        run: |
+          node_bin=$(command -v node)
+          sudo unshare --net -- "$node_bin" "$GITHUB_WORKSPACE/qa/privacy/probe.mjs" capture "$RUNNER_TEMP/privacy"
+      - name: Upload capture evidence only
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: default-off-packet-capture
+          path: |
+            ${{ runner.temp }}/privacy/canary.pcap
+            ${{ runner.temp }}/privacy/default-off.pcap
+            ${{ runner.temp }}/privacy/capture-summary.json
+          if-no-files-found: error
+          retention-days: 30
