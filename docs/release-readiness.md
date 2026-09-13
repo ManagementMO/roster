@@ -1,10 +1,33 @@
 # Roster Release Readiness
 
-## Published release: `@npmmo/roster@0.0.1`
+## Current published release: `@npmmo/roster@0.0.2`
+
+The documentation-only patch was published by `npmmo` on 2026-09-13 at `04:40:45.027Z`, with public access and `latest` pointing to `0.0.2`. The owner authorized the exact artifact and PR #41; the PR merged as `d7310f31f5f13d336d80321883b60dc1ccdd863b`, and its merge-commit [CI](https://github.com/ManagementMO/roster/actions/runs/34738269019) and [CodeQL](https://github.com/ManagementMO/roster/actions/runs/34738269067) passed before publication. No website or other service was deployed.
+
+- Published tarball SHA-256: `3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0`.
+- Package-source baseline: `1a4c51e36622cfc67534860b689c70e37a9ea8d5`. Both JavaScript bundles and `LICENSE` are byte-identical to `0.0.1`. The manifest differs only by version, and the README differs only by absolute repository link targets. Dependencies, runtime requirements, and runtime behavior did not change.
+- The new packaging gate first rejected the 12 relative README links, then passed with 17 absolute/anchor links. On the live npm `0.0.2` page, the documentation and MIT links were inspected and point to the correct repository-root files, which exist on GitHub.
+- The [candidate matrix](https://github.com/ManagementMO/roster/actions/runs/34737705600) and [public npm matrix](https://github.com/ManagementMO/roster/actions/runs/34738508013) used the exact selected archive. Both recorded these results, with no failed or blocked cases:
+
+| Consumer environment | PASS | FAIL | BLOCKED | Explicitly NOT RUN |
+| --- | ---: | ---: | ---: | ---: |
+| Linux x64, Node 22.17.0 | 32 | 0 | 0 | 1 |
+| Linux x64, Node 24.20.0 | 32 | 0 | 0 | 1 |
+| Windows x64, Node 22.17.0 | 31 | 0 | 0 | 2 |
+| Windows x64, Node 24.2.0 | 31 | 0 | 0 | 2 |
+| Windows x64, Node 24.20.0 | 31 | 0 | 0 | 2 |
+
+These are case observations, not distinct feature counts. A genuine public `0.0.1` to `0.0.2` upgrade passed on every leg: installation preserved Roster state, backups, and client config; the previously saved launcher worked; and scoped sync/eject restored the original bytes. The public install/launcher/upgrade subset also passed on macOS arm64 Node 24.14.1 with 12 PASS and no skipped cases. Unauthenticated public lookup and download confirmed the version, latest tag, SHA-256, SHA-512 integrity, and publisher. The public patch was compared again against the immutable public `0.0.1` artifact.
+
+Local verification included 553 tests, typecheck/lint, clean external installation with real dense inference, Astro checks/build/link checks, and 41 browser acceptance cases. No package or dependency safety controls were weakened. The supported CLI runtime remains `^22.17.0 || >=24.2.0`.
+
+The explicit limits remain: native GUI-client/account workflows, a non-admin Windows profile, and Windows packet capture were not exercised. The main matrix's unprivileged Linux namespace probe was unavailable; the separate packet-capture evidence below exercised the byte-identical runtime as a non-root user inside a namespace created by privileged tooling. The `0.0.2` work did not run a new packet capture or authorize League signing, named scores, domains, or service deployment.
+
+## First-release history: `@npmmo/roster@0.0.1`
 
 The owner-authorized release was published by `npmmo` on 2026-09-13 at `03:22:01.502Z`, with public access and `latest` pointing to `0.0.1`. PR #39 merged as `0667eb6f5ed843fab6378d293fa9c0612a425cec`; its merge-commit CI and CodeQL checks passed before publication. Unauthenticated public-registry lookup and download confirmed the exact approved tarball, and fresh public npm/npx consumer verification passed. No website or other service was deployed.
 
-> **Documentation-only follow-up in preparation:** the live npm page exposed a README link-base defect in `0.0.1`. Its repository directory is `packages/cli`, so copied root-relative README links resolve beneath that directory and return GitHub 404s. The executable and installation checks remain green, and the approved `0.0.1` tarball is unchanged. The owner requested a `0.0.2` documentation-only candidate with absolute repository links, packaging regression coverage, unchanged executable bundles, and upgrade verification. That new artifact still requires its own publication approval.
+> **Historical documentation defect:** the live `0.0.1` npm page resolved copied root-relative README links beneath `packages/cli`, producing GitHub 404s. The owner-approved `0.0.2` documentation-only patch above fixes the link targets. The `0.0.1` tarball itself remains unchanged.
 
 ### Identity and supported runtime
 

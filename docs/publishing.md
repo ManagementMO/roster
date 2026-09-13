@@ -10,9 +10,11 @@ before publication. A passing source build alone is not a release approval.
 The first release, **`@npmmo/roster@0.0.1`**, was published publicly on
 **2026-09-13**, and the installed executable remains **`roster`**. Its reviewed
 artifact and public-install evidence are recorded in `docs/release-readiness.md`.
-Do not attempt to publish `0.0.1` again: a later release needs a new version and
-its own reviewed artifact and owner authorization. The scope belongs to the npm
-user `npmmo`; verify that exact account with `npm whoami` before publishing.
+The current patch is `0.0.2`, published on the same date to correct npm README
+link targets without changing runtime bundles. Do not attempt to publish either
+version again: a later release needs a new version, its own reviewed artifact,
+and owner authorization. The scope belongs to the npm user `npmmo`; verify that
+exact account with `npm whoami` before publishing.
 
 The earlier choice, `@roster/cli`, is not the publication target. The authenticated
 `npmmo` account was not listed as a member of `@roster`. A package lookup returning
