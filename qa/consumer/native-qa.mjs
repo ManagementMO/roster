@@ -456,10 +456,10 @@ const textOf = (res) => (res.error ? `ERROR ${res.error.code}: ${res.error.messa
 // ---------------------------------------------------------------------------
 function findProcesses(marker) {
   if (WIN) {
-    const r = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*${marker}*' -and $_.ProcessId -ne ${process.pid} } | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress`], { encoding: "utf8", timeout: 90_000, windowsHide: true });
+    const r = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*${marker}*' -and $_.ProcessId -ne ${process.pid} } | Select-Object ProcessId,ParentProcessId,Name,CommandLine,@{n='Created';e={$_.CreationDate.ToString('o')}} | ConvertTo-Json -Compress`], { encoding: "utf8", timeout: 90_000, windowsHide: true });
     const text = (r.stdout ?? "").trim(); if (!text) return [];
     let parsed; try { parsed = JSON.parse(text); } catch { return []; }
-    return [].concat(parsed).filter((p) => !/Get-CimInstance/.test(p.CommandLine ?? "")).map((p) => ({ pid: p.ProcessId, ppid: p.ParentProcessId, cmd: p.CommandLine }));
+    return [].concat(parsed).filter((p) => !/Get-CimInstance/.test(p.CommandLine ?? "")).map((p) => ({ pid: p.ProcessId, ppid: p.ParentProcessId, cmd: p.CommandLine, name: p.Name, created: p.Created ?? null }));
   }
   const r = spawnSync("ps", ["-eo", "pid,ppid,args"], { encoding: "utf8" });
   return (r.stdout ?? "").split("\n").slice(1).filter((l) => l.includes(marker) && !l.includes("ps -eo")).map((l) => { const m = l.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/); return m ? { pid: Number(m[1]), ppid: Number(m[2]), cmd: m[3] } : null; }).filter(Boolean);
@@ -484,6 +484,17 @@ function liveDescendants(rootPid) {
   const out = []; const queue = [rootPid]; const seen = new Set();
   while (queue.length) { const p = queue.shift(); for (const row of table) if (row.ppid === p && !seen.has(row.pid)) { seen.add(row.pid); queue.push(row.pid); if (pidAlive(row.pid)) out.push(row); } }
   return out;
+}
+/**
+ * Is `row` (a snapshot from findProcesses) still THAT process? On Windows a pid is
+ * recycled within seconds (our own tasklist/powershell probes reuse them), so a bare
+ * pid check is not identity: require the same creation timestamp in the live table.
+ */
+function sameProcessAlive(row, table = null) {
+  if (!pidAlive(row.pid)) return false;
+  if (!WIN) return true;
+  const now = (table ?? findProcesses("")).find((p) => p.pid === row.pid);
+  return Boolean(now && (!row.created || now.created === row.created));
 }
 async function waitGone(marker, ms) { const deadline = Date.now() + ms; let live = liveMarked(marker); while (live.length && Date.now() < deadline) { await sleep(500); live = liveMarked(marker); } return live; }
 function killMarked(marker) { for (const p of findProcesses(marker)) { try { WIN ? spawnSync("taskkill", ["/PID", String(p.pid), "/T", "/F"], { windowsHide: true }) : process.kill(p.pid, "SIGKILL"); } catch { /* gone */ } } }
@@ -1071,11 +1082,11 @@ async function serveCases(routes) {
     note(`liveness positive control: router pid ${c.pid} has ${kids.length} live descendants (pids ${kids.map((p) => p.pid).join(",")}); fixture by marker=${live.length}; fs by sandbox arg=${liveMarked(fx.sandbox).length}`);
     assert(live.length >= 1 && kids.length >= 3 && liveMarked(fx.sandbox).length >= 1, `positive-control liveness failed: expected ≥3 live backend children, saw ${kids.length}`);
     const exit = await c.eof(30_000);
-    const deadline = Date.now() + 15_000; let remaining = kids.filter((p) => pidAlive(p.pid));
-    while (remaining.length && Date.now() < deadline) { await sleep(500); remaining = kids.filter((p) => pidAlive(p.pid)); }
+    const deadline = Date.now() + 15_000; let remaining = kids.filter((p) => sameProcessAlive(p));
+    while (remaining.length && Date.now() < deadline) { await sleep(500); const table = findProcesses(""); remaining = kids.filter((p) => sameProcessAlive(p, table)); }
     remaining.push(...(await waitGone(fx.marker, 5_000)).filter((p) => !remaining.some((r) => r.pid === p.pid)));
-    if (remaining.length) { killMarked(fx.marker); for (const p of remaining) { try { process.kill(p.pid, "SIGKILL"); } catch { /* gone */ } } }
-    assert(exit.code === 0 && remaining.length === 0, `exit ${JSON.stringify(exit)}; live after EOF: ${remaining.map((p) => p.pid).join(",")}`, { severity: "high" });
+    if (remaining.length) { note(`survivors after EOF (pid, name, created, cmd): ${remaining.map((p) => `${p.pid} ${p.name ?? ""} ${p.created ?? ""} ${trimTo(sanitize(p.cmd ?? ""), 160)}`).join(" || ")}`); killMarked(fx.marker); for (const p of remaining) { try { process.kill(p.pid, "SIGKILL"); } catch { /* gone */ } } }
+    assert(exit.code === 0 && remaining.length === 0, `exit ${JSON.stringify(exit)}; live after EOF (same pid AND same creation time): ${remaining.map((p) => p.pid).join(",")}`, { severity: "high" });
     return { actual: `${init.serverInfo?.name} ${init.serverInfo?.version}: ${tools.length} tools; fs write/read + memory create ok; pagination followed; ${kids.length} backend processes alive during session (pids confirmed by kill(0)/tasklist) → all absent ≤15 s after EOF; exit ${JSON.stringify(exit)}` };
   });
 
