@@ -59,7 +59,9 @@ const FS_SERVER_SPEC = "@modelcontextprotocol/server-filesystem@2026.8.31";
 const MEM_SERVER_SPEC = "@modelcontextprotocol/server-memory@2026.8.31";
 function fail0(m) { process.stderr.write(`native-qa: ${m}\n`); process.exit(2); }
 
-fs.rmSync(OUT, { recursive: true, force: true });
+// never delete a caller-owned directory: refuse if OUT already holds evidence
+// (the standard-user launcher pre-creates OUT and redirects the child's stdio there)
+for (const p of ["results.json", "env.json", "cases"]) if (fs.existsSync(path.join(OUT, p))) fail0(`refusing to overwrite existing evidence at ${path.join(OUT, p)}`);
 fs.mkdirSync(path.join(OUT, "cases"), { recursive: true });
 fs.mkdirSync(WORK, { recursive: true });
 
@@ -148,6 +150,7 @@ const ENV_FACTS = {
   nodeExecPath: process.execPath,
   libuv: process.versions.uv,
   v8: process.versions.v8,
+  libc: process.platform === "linux" ? (() => { const g = versionOf("getconf", ["GNU_LIBC_VERSION"]); return /glibc/.test(g) ? g : versionOf("ldd", ["--version"]).split("\n")[0]; })() : process.platform === "darwin" ? `libSystem (Darwin ${os.release()})` : "msvcrt/ucrt (Windows)",
   npm: versionOf(process.execPath, [NPM_CLI, "--version"]),
   shells: WIN
     ? { cmd: versionOf("cmd.exe", ["/c", "ver"]), powershell: versionOf("powershell.exe", ["-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"]), pwsh: PWSH_DIRS.length ? versionOf("pwsh.exe", ["-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"]) : "not found" }
@@ -595,36 +598,58 @@ async function caseNegativeControl() {
 // ';' is the Windows PATH separator: a prefix containing it cannot be a PATH entry, so it gets its own
 // controlled case on win32 (N-INST-win-semicolon-path-npm-limitation) instead of hiding inside this one
 const META_DIR = WIN ? "q &(x)!^$'ü-ロ" : "q &(x)!^;$'ü-ロ?|<>\"";
+// what npm's cmd-shim lifecycle scripts survive on Windows (spaces, Unicode, $ ') — used only after the control below proves
+// that npm itself, with no Roster involved, cannot run an install script whose .bin lives under the full set
+const META_DIR_WIN_NPM = "q $'ü-ロ";
+/** control: a local project (no registry, no Roster) whose postinstall runs a .bin from its own dependency, inside dirName. */
+function binScriptControl(root, dirName) {
+  const proj = path.join(root.root, dirName); fs.mkdirSync(path.join(proj, "dep"), { recursive: true });
+  fs.writeFileSync(path.join(proj, "dep", "package.json"), JSON.stringify({ name: "ctldep", version: "1.0.0", bin: { ctldep: "bin.js" } }));
+  fs.writeFileSync(path.join(proj, "dep", "bin.js"), "#!/usr/bin/env node\nconsole.log('ctldep ok');\n");
+  fs.writeFileSync(path.join(proj, "package.json"), JSON.stringify({ name: "ctlpkg", version: "1.0.0", private: true, dependencies: { ctldep: "file:dep" }, scripts: { postinstall: "ctldep" } }));
+  const r = npm(["install", "--no-package-lock", "--foreground-scripts"], { cwd: proj, env: envFor(root) });
+  r.ok = r.exitCode === 0 && /ctldep ok/.test(r.stdout);
+  r.why = trimTo((r.stderr.match(/not recognized[^\n]*|was unexpected at this time[^\n]*|npm error command failed[^\n]*/) ?? [""])[0], 160);
+  return r;
+}
 async function caseInstallRoutes(routes) {
   await testCase("N-INST-win-semicolon-path-npm-limitation", { area: "install", title: "Global install into a Windows prefix whose path contains ';' (the PATH separator): npm prepends <prefix>\\…\\node_modules\\.bin to the lifecycle-script PATH, so any dependency whose install script needs a .bin executable (better-sqlite3 → prebuild-install) fails; minimal no-Roster control in the same and in a ';'-free path", expected: "public install into the ';' prefix fails (or, if it succeeds, roster --help works); control project with a postinstall that needs its own .bin fails identically in a ';' path and succeeds in the same path without ';' → BLOCKED (environment), not a product verdict", applicability: "win32 only (';' is a legal path character on POSIX and is covered by N-INST-metachar-global-shells there)" }, async () => {
     if (!WIN) notRun("';' is not the PATH separator on POSIX; covered by N-INST-metachar-global-shells");
     const root = makeRoot(`sc-${rand()}`, { prefixName: "p a;b" });
     const inst = installGlobal(root);
-    // control: a local project whose postinstall runs a .bin from its own dependency (no registry, no Roster)
-    const mkControl = (dirName) => {
-      const proj = path.join(root.root, dirName); fs.mkdirSync(path.join(proj, "dep"), { recursive: true });
-      fs.writeFileSync(path.join(proj, "dep", "package.json"), JSON.stringify({ name: "ctldep", version: "1.0.0", bin: { ctldep: "bin.js" } }));
-      fs.writeFileSync(path.join(proj, "dep", "bin.js"), "#!/usr/bin/env node\nconsole.log('ctldep ok');\n");
-      fs.writeFileSync(path.join(proj, "package.json"), JSON.stringify({ name: "ctlpkg", version: "1.0.0", private: true, dependencies: { ctldep: "file:dep" }, scripts: { postinstall: "ctldep" } }));
-      return npm(["install", "--no-package-lock", "--foreground-scripts"], { cwd: proj, env: envFor(root) });
-    };
-    const semi = mkControl("c a;b");
-    const plain = mkControl("c a-b");
-    note(`public install exit ${inst.exitCode}; control postinstall via .bin: ';' path exit ${semi.exitCode} (${trimTo((semi.stderr.match(/not recognized[^\n]*|npm error command failed[^\n]*/) ?? [""])[0], 160)}), ';'-free path exit ${plain.exitCode} (${trimTo(plain.stdout.match(/ctldep ok/)?.[0] ?? plain.stderr, 120)})`);
+    const semi = binScriptControl(root, "c a;b");
+    const plain = binScriptControl(root, "c a-b");
+    note(`public install exit ${inst.exitCode}; control postinstall via .bin: ';' path exit ${semi.exitCode} (${semi.why}), ';'-free path exit ${plain.exitCode} (${plain.ok ? "ctldep ok" : trimTo(plain.stderr, 120)})`);
     if (inst.ok) {
       const r = exec(process.execPath, [inst.binJs, "--help"], { cwd: root.elsewhere, env: envFor(root) });
       assert(r.exitCode === 0 && /roster init/.test(r.stdout), `installed into a ';' prefix but roster --help exit ${r.exitCode}`);
-      return { actual: `npm ${ENV_FACTS.npm} installed ${PKG_SPEC} into a ';' prefix and roster --help works; control ';' exit ${semi.exitCode}, plain exit ${plain.exitCode}` };
+      const bs = path.join(inst.pkgDir, "node_modules", "better-sqlite3");
+      const builtLocally = exists(path.join(bs, "build", "Release", "obj")) || exists(path.join(bs, "build", "better_sqlite3.vcxproj")) || exists(path.join(bs, "build", "config.gypi"));
+      note(`better-sqlite3 binary origin in this prefix: ${builtLocally ? "compiled locally by npm's `prebuild-install || node-gyp rebuild` fallback (prebuild-install not found on the split PATH, per the control)" : "prebuilt binary (no node-gyp build tree)"}`);
+      return { actual: `npm ${ENV_FACTS.npm} installed ${PKG_SPEC} into a ';' prefix and roster --help works; control ';' exit ${semi.exitCode}, plain exit ${plain.exitCode}; better-sqlite3 ${builtLocally ? "compiled locally by node-gyp fallback" : "from prebuilt binary"}` };
     }
-    if (semi.exitCode !== 0 && plain.exitCode === 0 && /ctldep ok/.test(plain.stdout)) blocked(`npm on Windows joins the lifecycle-script PATH with ';', so a prefix containing ';' splits <prefix>\\node_modules\\.bin and install scripts cannot find their .bin executables (better-sqlite3's prebuild-install → node-gyp fallback); the no-Roster control fails identically in a ';' path and succeeds without ';'; product not installable here`);
+    if (!semi.ok && plain.ok) blocked(`npm on Windows joins the lifecycle-script PATH with ';', so a prefix containing ';' splits <prefix>\\node_modules\\.bin and install scripts cannot find their .bin executables (better-sqlite3's prebuild-install → node-gyp fallback); the no-Roster control fails identically in a ';' path and succeeds without ';'; product not installable here`);
     fail(`public install into a ';' prefix failed (exit ${inst.exitCode}) but the control did not isolate the cause: control ';' exit ${semi.exitCode}, plain exit ${plain.exitCode}: ${trimTo(inst.stderr.split("\n").filter((l) => /npm error/.test(l)).slice(0, 6).join(" | "), 400)}`, { severity: "medium" });
   });
 
-  await testCase("N-INST-metachar-global-shells", { area: "install", title: "Fresh public global install into a prefix AND a HOME whose path has spaces, Unicode and shell metacharacters; `roster` resolved by each real shell via PATH; init/sync/eject in that home", expected: `npm -g install exit 0; ${SHELLS.join("/")} run 'roster --help' exit 0; init/sync/eject succeed with metachar HOME/ROSTER_HOME` }, async () => {
-    const root = makeRoot(`m-${rand()}`, { prefixName: `p ${META_DIR}`, homeName: `h ${META_DIR}` });
+  await testCase("N-INST-metachar-global-shells", { area: "install", title: "Fresh public global install into a prefix AND a HOME whose path has spaces, Unicode and shell metacharacters; `roster` resolved by each real shell via PATH; init/sync/eject in that home", expected: `npm -g install exit 0; ${SHELLS.join("/")} run 'roster --help' exit 0; init/sync/eject succeed with metachar HOME/ROSTER_HOME`, applicability: `full set "${META_DIR}" everywhere; on win32 only, if npm's own cmd-shim lifecycle scripts fail in the full-set prefix for a no-Roster control package, the PREFIX is reduced to "${META_DIR_WIN_NPM}" (recorded in the category) while HOME/ROSTER_HOME keep the full set` }, async () => {
+    let root = makeRoot(`m-${rand()}`, { prefixName: `p ${META_DIR}`, homeName: `h ${META_DIR}` });
+    let inst = installGlobal(root);
+    let prefixNote = "";
+    if (!inst.ok && WIN) {
+      // isolate: can npm (no Roster) run ANY install script whose .bin sits under this prefix? and under the reduced set?
+      const full = binScriptControl(root, `c ${META_DIR}`);
+      const reduced = binScriptControl(root, `c ${META_DIR_WIN_NPM}`);
+      note(`public install exit ${inst.exitCode}: ${trimTo(inst.stderr.split("\n").filter((l) => /npm error/.test(l)).slice(0, 4).join(" | "), 300)}`);
+      note(`no-Roster control (postinstall via .bin): full metachar dir exit ${full.exitCode} (${full.why}); reduced "${META_DIR_WIN_NPM}" dir exit ${reduced.exitCode} (${reduced.ok ? "ctldep ok" : trimTo(reduced.stderr, 120)})`);
+      if (!full.ok && reduced.ok) {
+        root = makeRoot(`m-${rand()}`, { prefixName: `p ${META_DIR_WIN_NPM}`, homeName: `h ${META_DIR}` });
+        inst = installGlobal(root);
+        prefixNote = `; prefix reduced to "${META_DIR_WIN_NPM}" (npm/cmd-shim lifecycle scripts fail for any package in the full set — control failed identically); HOME/ROSTER_HOME kept the full set`;
+      }
+    }
     routes.meta = root;
-    const inst = installGlobal(root);
-    if (!inst.ok) return { status: "FAIL", severity: "medium", actual: `npm could not install into a metachar prefix: exit ${inst.exitCode}: ${trimTo(inst.stderr, 300)}`, repro: `npm i -g ${PKG_SPEC} --prefix '<dir>/p ${META_DIR}'`, notes: ["npm (not roster) refused the prefix path; roster-in-metachar-HOME is covered below only if npm cooperates"] };
+    if (!inst.ok) return { status: "FAIL", severity: "medium", actual: `npm could not install into a metachar prefix "${path.basename(root.prefix)}": exit ${inst.exitCode}: ${trimTo(inst.stderr, 300)}`, repro: `npm i -g ${PKG_SPEC} --prefix '<dir>/${path.basename(root.prefix)}'`, notes: ["npm (not roster) refused the prefix path; roster-in-metachar-HOME is covered below only if npm cooperates"] };
     const fx = seedFixtures(root);
     const env = envFor(root, { PATH_PREPEND: [inst.binDir] });
     const shellResults = [];
@@ -649,7 +674,7 @@ async function caseInstallRoutes(routes) {
     assert(exit.code === 0, `serve exit ${JSON.stringify(exit)}`);
     const e = shell(SHELLS.at(-1), shellLine(SHELLS.at(-1), ["roster", "eject", "--client", "cursor"]), { cwd: root.elsewhere, env });
     assert(e.exitCode === 0 && fs.readFileSync(fx.files.cursor).equals(fx.bytes.cursor), `eject via ${SHELLS.at(-1)}: exit ${e.exitCode}; byte-identical=${fs.readFileSync(fx.files.cursor).equals(fx.bytes.cursor)}`);
-    return { actual: `prefix+home "${META_DIR}": shells ${shellResults.join(" ")}; init imported 4; sync/eject byte-identical; saved launcher ${launcher.command} …${launcher.args.at(-1)} served ${tools.length} tools, exit 0` };
+    return { actual: `prefix "${path.basename(root.prefix)}" + home "h ${META_DIR}": shells ${shellResults.join(" ")}; init imported 4; sync/eject byte-identical; saved launcher ${launcher.command} …${launcher.args.at(-1)} served ${tools.length} tools, exit 0${prefixNote}`, category: prefixNote ? "win32: prefix reduced (npm cmd-shim limitation, control failed identically)" : undefined };
   });
 
   await testCase("N-INST-star-path-node-limitation", { area: "install", title: "Global install into a prefix whose path contains '*': documents that Node's ESM exports-pattern resolver mangles such paths for ANY package (minimal repro without Roster), so the product cannot be exercised there", expected: "npm install exit 0; `roster --help` fails with ERR_MODULE_NOT_FOUND naming a path where '*' was substituted; the no-Roster control package fails identically → BLOCKED (environment), not a product verdict", applicability: "POSIX only ('*' is illegal in Windows paths)" }, async () => {
