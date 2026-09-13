@@ -6,7 +6,7 @@ A static Astro + Starlight site for Roster's local MCP tool router. A compact, c
 
 The verified product revision and publication state are centralized in `src/lib/site.ts`. The website's original public baseline was `670c77e0c6d1ada1d1569363d88d3b0380b762e8`, while the original creative checkout was at `f50e873`; the website was built in a separate worktree so uncommitted root package changes and film projects stayed intact. Its initial change contained website source and assets, root convenience scripts, a baseline test-runner peer pin, and the shared lockfile.
 
-`@roster/cli` returned a public npm 404 and the GitHub repository had no releases when checked on 2026-09-07. The actual CLI preview was later published as `@npmmo/roster@0.0.1` on 2026-09-13 after owner review, then verified through fresh public installs. Nothing in a website build publishes the package or deploys a service.
+`@roster/cli` returned a public npm 404 and the GitHub repository had no releases when checked on 2026-09-07. The actual CLI preview was later published as `@npmmo/roster@0.0.1` on 2026-09-13 after owner review, then verified through fresh public installs. The documentation-only `0.0.2` patch corrected the npm README links, retained byte-identical runtime bundles, and passed public install/upgrade verification. Nothing in a website build publishes the package or deploys a service.
 
 ## Run locally
 

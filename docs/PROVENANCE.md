@@ -34,6 +34,8 @@ The owner explicitly confirmed completion of the required line-by-line review an
 
 The approved publication completed on 2026-09-13 after the owner's npm browser authentication. Unauthenticated public-registry download matched the approved artifact; fresh public npm/npx consumer checks passed on Linux, Windows, and macOS within the recorded scope.
 
+The owner separately authorized PR #41 and the documentation-only `@npmmo/roster@0.0.2` artifact with SHA-256 `3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0`, public access, and the `latest` tag. Publication completed on 2026-09-13 after the owner's npm browser authentication. Both runtime bundles and the license are byte-identical to the reviewed `0.0.1` release; the changes are the manifest version and README link targets. Public distribution, live npm links, and native installs/upgrades were verified. This is a documentation-patch authorization, not a claim of an additional independent security audit.
+
 The automated security-scan and consumer-verification report is recorded in [release readiness](release-readiness.md), including CI links, native consumer evidence, and the default-off packet capture.
 
 If anything on this page ever stops being true, that's a bug in the project, not in the page. File it.

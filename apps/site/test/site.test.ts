@@ -14,7 +14,7 @@ describe("release-aware setup", () => {
 
   it("uses the verified public release for the current installation sequence", () => {
     const commands = commandsFor(release);
-    expect(commands.prepare).toBe("npm install --global @npmmo/roster@0.0.1");
+    expect(commands.prepare).toBe("npm install --global @npmmo/roster@0.0.2");
     expect(commands.help).toBe("roster --help");
     expect(commands.init).toBe("roster init --no-dense");
   });
