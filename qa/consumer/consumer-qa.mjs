@@ -10,7 +10,7 @@
 // LOCALAPPDATA/TEMP, npm cache/prefix/userconfig, ROSTER_TEST_HOME/ROSTER_HOME.
 //
 //   node consumer-qa.mjs --out DIR --tarball roster-cli-0.0.2.tgz \
-//        --registry http://127.0.0.2:4873/ --node-label 24 --repo <checkout> [--dense] [--only a,b]
+//        --registry http://127.0.0.1:4873/ --node-label 24 --repo <checkout> [--dense] [--only a,b]
 //
 // Nothing here imports repository code. Only data files (Combine suites) are
 // read from --repo.
@@ -32,8 +32,8 @@ const flag = (name) => argv.includes(`--${name}`);
 
 const OUT = path.resolve(opt("out", path.join(os.tmpdir(), "roster-consumer-qa-run")));
 const TARBALL = path.resolve(opt("tarball"));
-const REGISTRY = opt("registry", "http://127.0.0.2:4873/");
-if (new URL(REGISTRY).protocol !== "http:" || new URL(REGISTRY).hostname !== "127.0.0.2") throw new Error("consumer staging registry must be loopback-only");
+const REGISTRY = opt("registry", "http://127.0.0.1:4873/");
+if (new URL(REGISTRY).protocol !== "http:" || new URL(REGISTRY).hostname !== "127.0.0.1") throw new Error("consumer staging registry must be loopback-only");
 const NODE_LABEL = opt("node-label", process.version);
 const REPO = opt("repo") ? path.resolve(opt("repo")) : null;
 const ONLY = opt("only") ? new Set(opt("only").split(",")) : null;
@@ -778,7 +778,7 @@ async function caseRegistryStaging() {
     const served = Buffer.from(await (await fetch(dist.tarball)).arrayBuffer());
     const servedSha = sha256(served);
     assert(servedSha === TARBALL_SHA256, `served sha ${servedSha} != candidate ${TARBALL_SHA256}`);
-    assert(new URL(dist.tarball).hostname === "127.0.0.2" || new URL(dist.tarball).hostname === "localhost", `tarball URL not loopback: ${dist.tarball}`);
+    assert(new URL(dist.tarball).hostname === "127.0.0.1" || new URL(dist.tarball).hostname === "localhost", `tarball URL not loopback: ${dist.tarball}`);
     return { actual: `versions=${JSON.stringify(versions)} dist-tags=${JSON.stringify(packument["dist-tags"])} servedSha256=${servedSha} integrity=${dist.integrity} (candidate integrity ${TARBALL_INTEGRITY})` };
   });
 }
@@ -853,7 +853,7 @@ async function caseLocalInstallTarball(routes) {
 }
 
 async function caseLocalInstallRegistry(routes) {
-  await testCase("INST-local-registry", { area: "install", route: "npm local-project (staging registry)", title: "npm install @npmmo/roster@0.0.2 by name from the loopback staging registry", expected: "lock resolves to 127.0.0.2 registry with candidate integrity" }, async () => {
+  await testCase("INST-local-registry", { area: "install", route: "npm local-project (staging registry)", title: "npm install @npmmo/roster@0.0.2 by name from the loopback staging registry", expected: "lock resolves to 127.0.0.1 registry with candidate integrity" }, async () => {
     const root = makeRoot("local-registry");
     routes.localRegistry = root;
     const env = envFor(root);

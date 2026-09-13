@@ -90,7 +90,7 @@ if (cmd === "start") {
     "    proxy: npmjs",
     "server:",
     "  keepAliveTimeout: 60",
-    `listen: 127.0.0.2:${port}`,
+    `listen: 127.0.0.1:${port}`,
     "security:",
     "  api:",
     "    legacy: true",
@@ -111,7 +111,7 @@ if (cmd === "start") {
   });
   child.unref();
   fs.writeFileSync(path.join(dir, "verdaccio.pid"), String(child.pid));
-  const url = `http://127.0.0.2:${port}/`;
+  const url = `http://127.0.0.1:${port}/`;
   await waitReady(url, 60_000);
 
   // Test-owned publisher identity (random password, token kept in --dir only).
@@ -124,7 +124,7 @@ if (cmd === "start") {
   const body = await res.json();
   if (!res.ok || !body.token) throw new Error(`could not create staging user: ${res.status}`);
   const publisherRc = path.join(conf, "publisher.npmrc");
-  fs.writeFileSync(publisherRc, `//127.0.0.2:${port}/:_authToken=${body.token}\nregistry=${url}\n@npmmo:registry=${url}\n`, { mode: 0o600 });
+  fs.writeFileSync(publisherRc, `//127.0.0.1:${port}/:_authToken=${body.token}\nregistry=${url}\n@npmmo:registry=${url}\n`, { mode: 0o600 });
 
   run(npmCmd, ["publish", tarball, "--registry", url, `--@npmmo:registry=${url}`, "--userconfig", publisherRc, "--ignore-scripts"], { cwd: dir, env: { ...toolEnv, npm_config_cache: path.join(dir, "publish-cache") } });
 
