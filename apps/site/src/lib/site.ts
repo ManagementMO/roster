@@ -3,9 +3,9 @@ export const packageName = "@npmmo/roster";
 export const executable = "roster";
 export const release = {
   published: true,
-  version: "0.0.1",
+  version: "0.0.2",
   checked: "2026-09-13",
-  revision: "4046baf4bc2deeb7bb6cfe42dab879fcd7578a95",
+  revision: "c930932c2bec9a0db4faa6039d87ef9f22946c3f",
 } as const;
 
 export const description = "The local tool router for AI agents. Connect MCP servers and approved skills, learn from on-device outcomes, and keep your toolkit under your control.";
