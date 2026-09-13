@@ -18,8 +18,8 @@ export const claimSources = {
   methodology: source("docs/methodology.md"),
   provenance: source("docs/PROVENANCE.md"),
   status: source("STATUS-FOR-MO.md"),
-  verification: source("docs/verification/2026-08-17-m0-e2e.md"),
-  denseVerification: source("docs/verification/2026-08-17-dense-live.md"),
+  verification: source("docs/release-readiness.md"),
+  denseVerification: source("docs/release-readiness.md"),
   limitations: source("docs/lab/notes-gap-experiments.md"),
   certification: source("apps/league/src/artifact.ts"),
 };

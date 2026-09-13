@@ -4,9 +4,9 @@ A static Astro + Starlight site for Roster's local MCP tool router. A compact, c
 
 ## Baseline
 
-The product content describes public revision `670c77e0c6d1ada1d1569363d88d3b0380b762e8`. The original creative checkout was at `f50e873`; this website was built in a separate worktree so its uncommitted root package changes and film projects stayed intact. The change contains website source and assets, root convenience scripts, a baseline test-runner peer pin, and the shared lockfile.
+The verified product revision and publication state are centralized in `src/lib/site.ts`. The website's original public baseline was `670c77e0c6d1ada1d1569363d88d3b0380b762e8`, while the original creative checkout was at `f50e873`; the website was built in a separate worktree so uncommitted root package changes and film projects stayed intact. Its initial change contained website source and assets, root convenience scripts, a baseline test-runner peer pin, and the shared lockfile.
 
-`@roster/cli` returned a public npm 404 and the GitHub repository had no releases when checked on 2026-09-07. Nothing in a website build publishes the package.
+`@roster/cli` returned a public npm 404 and the GitHub repository had no releases when checked on 2026-09-07. The actual CLI preview was later published as `@npmmo/roster@0.0.1` on 2026-09-13 after owner review, then verified through fresh public installs. Nothing in a website build publishes the package or deploys a service.
 
 ## Run locally
 
@@ -49,7 +49,7 @@ Starlight handles docs navigation, search, table of contents, and accessible tab
 
 ## Release switching
 
-Only after verifying an actual package publication, update `published`, `version`, `checked`, and the documented `revision` in `src/lib/site.ts`. `commandsFor` changes the entire execution strategy from the source entry point to an explicit global install of the centralized `packageName` (`@npmmo/roster` for this release candidate) followed by `roster` commands. Do not mix one-off npx init with an assumed global executable. Re-read version-sensitive guides, run checks, and regenerate the social image.
+Only after verifying an actual package publication, update `published`, `version`, `checked`, and the documented `revision` in `src/lib/site.ts`. `commandsFor` changes the entire execution strategy from the source entry point to an explicit global install of the centralized `packageName` (`@npmmo/roster` for the published CLI) followed by `roster` commands. Do not mix one-off npx init with an assumed global executable. Re-read version-sensitive guides, run checks, and regenerate the social image.
 
 Source-install commands intentionally set up a new checkout at the documented product revision. The first-run guide explains that `init --no-dense` skips the install offer but does not turn an available runtime off: source builds should explicitly set `embeddings` to `off` before starting clients when lexical-only operation is intended.
 

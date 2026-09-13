@@ -12,7 +12,7 @@ import { scanSkillLibrary } from "@roster/playbook";
 import { BackendManager, RosterServer } from "@roster/router";
 import { describe, expect, it } from "vitest";
 import { capabilities, exampleCall, presets } from "../src/lib/demo.js";
-import { commands } from "../src/lib/site.js";
+import { commandsFor, release } from "../src/lib/site.js";
 
 const root = fileURLToPath(new URL("../../..", import.meta.url));
 
@@ -95,6 +95,7 @@ describe("website examples against the actual product", () => {
   });
 
   it("runs the documented source CLI sequence in a disposable home and restores exact bytes", () => {
+    const commands = commandsFor({ ...release, published: false });
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "roster-site-cli-"));
     const configDir = path.join(home, ".cursor");
     fs.mkdirSync(configDir);
