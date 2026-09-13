@@ -1,0 +1,36 @@
+name: site-command-qa
+on:
+  push:
+    branches: ["qa/site-one-command-check"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: ${{ matrix.id }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - { id: linux-sh, os: ubuntu-24.04, shell: sh }
+          - { id: windows-powershell, os: windows-2025, shell: powershell }
+          - { id: windows-cmd, os: windows-2025, shell: cmd }
+          - { id: windows-arm-powershell, os: windows-11-arm, shell: powershell }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.20.0"
+      - name: Run the exact copied command sequence
+        shell: bash
+        run: node qa/site-command-check.mjs "${{ matrix.shell }}" "$RUNNER_TEMP/site-command-results"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: site-command-${{ matrix.id }}
+          path: ${{ runner.temp }}/site-command-results
+          if-no-files-found: error
+          retention-days: 30
