@@ -66,8 +66,16 @@ jobs:
           echo "byte_identical=$([ "$h" = "$CANDIDATE_SHA256" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           { echo "{\"appSha\":\"$APP_SHA\",\"qaHarnessSha\":\"$(git rev-parse HEAD)\",\"node\":\"$(node -v)\",\"pnpm\":\"$(pnpm -v)\",\"tarball\":\"$(basename "$f")\",\"sha256\":\"$h\",\"coordinatorCandidateSha256\":\"$CANDIDATE_SHA256\",\"byteIdentical\":$([ "$h" = "$CANDIDATE_SHA256" ] && echo true || echo false)}"; } > "$RUNNER_TEMP/candidate/build-identity.json"
           cat "$RUNNER_TEMP/candidate/build-identity.json"
+          node -p 'JSON.stringify(process.versions)' > "$RUNNER_TEMP/candidate/toolchain.json"
+          tar -tzvf "$f" > "$RUNNER_TEMP/candidate/tar-listing.txt"
+          for entry in bundle/bin.js bundle/index.js package.json README.md LICENSE; do
+            content_hash=$(tar -xzOf "$f" "package/$entry" | sha256sum | cut -d' ' -f1)
+            printf '%s  %s\n' "$content_hash" "$entry" >> "$RUNNER_TEMP/candidate/contents.sha256"
+          done
+          gzip -dc "$f" | sha256sum > "$RUNNER_TEMP/candidate/uncompressed.sha256"
           [ "$h" = "$CANDIDATE_SHA256" ] || { echo "::error::built tarball is not byte-identical to the coordinator candidate" >&2; exit 1; }
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: candidate-tarball
           path: ${{ runner.temp }}/candidate
