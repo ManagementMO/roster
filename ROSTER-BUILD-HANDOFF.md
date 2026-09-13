@@ -6,6 +6,8 @@
 >
 > **Prepared:** July 3, 2026. All research was verified as of that date. The original **July 28, 2026** launch target passed without a release; no revised launch date has been set. Dated milestones below are retained as historical planning context, not current promises.
 
+> **Release-preparation amendment:** the candidate package is `@npmmo/roster`, with executable `roster`, and the approved supported-runtime range is Node `^22.17.0 || >=24.2.0`. Affected Windows/libuv versions are refused before local state changes, never accommodated by weakened file-identity checks. POSIX shutdown owns an isolated backend process group and must terminate its ordinary non-detached descendants without signalling unrelated processes. Windows npm and saved npx launchers must execute through a platform-correct path. These changes require fresh consumer evidence and security-critical human review before the owner's publication action; they do not waive the laws below.
+
 ---
 
 > **⚠️ VELOCITY DISCIPLINE (binding law — owner-endorsed 2026-07-04).** Agentic development makes code cheap and spec bugs fast: agents faithfully implement whatever is written here, so a wrong spec ships wrong software at 10× speed — and every cut scope-item will *feel* restorable in a weekend. That is the trap: for a measurement product, "everything exists, half unvalidated" is the worst failure mode. Three rules, no exceptions:
@@ -38,7 +40,7 @@ Success = a stranger runs one command, sees their own token waste in 60 seconds,
 
 **Adoption laws (non-negotiable, master doc §7.6):** agnostic across ALL MCP clients; <60s install; no account/API key/cloud; transparent passthrough by default (progressive trust: observe → route → learn → share); `eject` restores everything byte-for-byte; telemetry is local-first and opt-in (Go model); seven day-one utilities independent of the League.
 
-**Name:** **ROSTER** (finalized by the owner 2026-07-04; interim name was the two-word basketball one, styled **StartingFive**). CLI binary: `roster`. The publishable npm package is selected as `@roster/cli` because the unscoped `roster` name is occupied by an unrelated package; the lowercase phrase "the starting five" survives only as the feature term for the ≤5 served tools. GitHub-org, domain, @handle, and USPTO clearance remain pre-launch human work — **do not register or publish anything without the owner's approval.**
+**Name:** **ROSTER** (finalized by the owner 2026-07-04; interim name was the two-word basketball one, styled **StartingFive**). CLI binary: `roster`. The publishable npm package is selected as `@npmmo/roster` because the unscoped `roster` name is occupied by an unrelated package; the lowercase phrase "the starting five" survives only as the feature term for the ≤5 served tools. GitHub-org, domain, @handle, and USPTO clearance remain pre-launch human work — **do not register or publish anything without the owner's approval.**
 
 **Beachhead (updated 2026-07-04):** dual — **OpenClaw** (378K stars, 3.2M MAU; their #1 pain is *skills* bloat — ~70+52+25 skills injected into every system prompt — which Roster's Playbook now addresses directly via their shipped allowlist mechanism) **+ Cursor/Codex** (the exact MCP tool-bloat pain, zero native tool search). Then r/mcp, then Show HN on spec day. Product scope is universal by owner decision: MCP tools *and* SKILL.md skills, for every client (Claude Code, Codex, Gemini CLI, Cursor, OpenClaw, Hermes, VS Code…).
 
@@ -241,8 +243,8 @@ Latency: `draft` <50ms local (embedding search over ≤2,000 tools); passthrough
 8. **Velocity discipline (owner-endorsed law, 2026-07-04):** specs are amended before code, every time; the no-restore list (`ROSTER-STATE-AND-DECISIONS.md` §4.3) is locked regardless of how cheap restoration looks; releases are gated on "validated-only ships." Plan and report work in **founder-verification hours**, not code hours — code cost ≈ 0, so anything consuming human signing/review/outreach is the real expense.
 
 ## 12. Pre-launch checklist
-[ ] Name cleared — **Roster family** (`@roster/cli` package selected; GitHub org; domains getroster.dev / roster.tools; @handle; USPTO 9/42) — owner task, agent prepares the sweep report
-[ ] `npx -y @roster/cli init` cold-run tested on clean macOS/Linux/Windows VMs
+[ ] Name cleared — **Roster family** (`@npmmo/roster` package selected; GitHub org; domains getroster.dev / roster.tools; @handle; USPTO 9/42) — owner task, agent prepares the sweep report
+[ ] `npx -y @npmmo/roster init` cold-run tested on clean macOS/Linux/Windows VMs
 [ ] Eject torture-tested (mutated configs, partial syncs, all dialects)
 [ ] Combine 200-run reproduced twice; methodology.md matches implementation exactly
 [ ] Every number in the exposé traces to `lab-results.json`; vendors get right-of-reply notes; ToS reviewed for any live-probed hosted server (DeWitt caution)
@@ -285,7 +287,7 @@ THE PRODUCT IN ONE BREATH: one MCP endpoint fronts all the user's tool servers; 
 
 NON-NEGOTIABLE LAWS (from the owner):
 - Tool/API routing only. Never model routing.
-- Adoption first: <60s from `npx -y @roster/cli init` to the Day-0 receipt; no account, no API key, no cloud; transparent passthrough is the default mode; `roster eject` must restore every client config byte-for-byte, always.
+- Adoption first: <60s from `npx -y @npmmo/roster init` to the Day-0 receipt; no account, no API key, no cloud; transparent passthrough is the default mode; `roster eject` must restore every client config byte-for-byte, always.
 - Privacy: args/results/prompts never leave the machine, never enter logs or telemetry. Telemetry is opt-in, local-first, schema-published.
 - Integrity: no fabricated numbers anywhere — receipts are labeled estimates, league stats carry n and confidence intervals, every public number traces to a run artifact.
 - Stop and ask the owner before: registering anything, publishing anything, deploying any public endpoint, or naming third-party servers in public artifacts.

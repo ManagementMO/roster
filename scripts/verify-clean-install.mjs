@@ -215,7 +215,7 @@ const tarEntries = (tarball) =>
 try {
   // 1. Pack through the real publish lifecycle (prepack builds + bundles).
   await step("pnpm pack produces a tarball", () => {
-    run("pnpm", ["--filter", "@roster/cli", "pack", "--pack-destination", packDir], { cwd: repo });
+    run("pnpm", ["--filter", "@npmmo/roster", "pack", "--pack-destination", packDir], { cwd: repo });
     const [tarball] = fs.readdirSync(packDir).filter((f) => f.endsWith(".tgz"));
     if (!tarball) throw new Error("no tarball produced");
     return tarball;
@@ -256,6 +256,7 @@ try {
   //    that does not exist on the registry.
   await step("published manifest declares only published dependencies", () => {
     const manifest = JSON.parse(run("tar", ["-xzOf", tarball, "package/package.json"]));
+    if (manifest.name !== "@npmmo/roster") throw new Error(`unexpected publish target: ${manifest.name}`);
     const deps = Object.keys({
       ...manifest.dependencies,
       ...manifest.optionalDependencies,
@@ -357,7 +358,7 @@ try {
     ".bin",
     process.platform === "win32" ? "roster.cmd" : "roster",
   );
-  const binJs = path.join(project, "node_modules", "@roster", "cli", "bundle", "bin.js");
+  const binJs = path.join(project, "node_modules", "@npmmo", "roster", "bundle", "bin.js");
   if (!fs.existsSync(binShim)) throw new Error(`npm created no platform CLI shim at ${binShim}`);
   if (!fs.existsSync(binJs)) throw new Error(`installed package has no executable bundle at ${binJs}`);
   const env = {

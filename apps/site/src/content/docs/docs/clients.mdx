@@ -4,6 +4,7 @@ description: Connect a supported MCP client with a scoped, backed-up sync and un
 ---
 import Command from "../../../components/Command.astro";
 import { claimSources } from "../../../lib/sources.js";
+import { packageName } from "../../../lib/site.js";
 
 Connect one client first. Roster works as a local stdio MCP server; your client launches the process and communicates over its standard input and output.
 
@@ -36,7 +37,7 @@ Backups live under `~/.roster/backups/`. Preserve them. They contain original co
 
 ## Who starts serve?
 
-The client normally starts the launcher written by sync. A source install uses Node and an absolute path to that installation. A verified global installation uses `roster serve`. An npm-cache invocation, after publication, writes the scoped `npx -y @roster/cli serve` form so a pruned cache can be resolved again.
+<p>The client normally starts the launcher written by sync. Source and global installs pin Node and the installation's absolute CLI path. An npm-cache invocation writes the scoped <code>{`npx -y ${packageName} serve`}</code> form so a pruned cache can be resolved again; on Windows the recorded entry includes an explicit command-shell launcher rather than relying on the client to interpret a batch shim.</p>
 
 Changing `mode` in `~/.roster/roster.json` affects the next server process. Restart or reconnect the client after changing it. `sync --five` is not the mode-setting command.
 

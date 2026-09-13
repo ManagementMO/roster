@@ -23,10 +23,11 @@ Four parts, one product:
 
 ## Quickstart
 
-> **Not yet published.** The original July 28, 2026 target passed without a release; no revised launch date has been set. Roster is not on npm yet. The selected package name is `@roster/cli` (the unscoped `roster` name is occupied by an unrelated package); the installed executable remains `roster`. The commands below are the planned install path rather than commands that work today.
+> **Initial CLI preview.** The package is `@npmmo/roster`; the installed executable remains `roster`. The unrelated unscoped `roster` package is not this project. Publication approval and release evidence are tracked in [release readiness](docs/release-readiness.md).
 
 ```sh
-npx -y @roster/cli init   # detect clients, import supported servers, print your Day-0 receipt
+npm install --global @npmmo/roster
+roster init       # detect clients, import supported servers, print your Day-0 receipt
 roster sync       # swap N config entries for one (originals backed up first)
 roster serve      # run the router
 roster eject      # put every config back exactly as found (byte-for-byte for dedicated files)
@@ -55,13 +56,12 @@ The League is the show; these earn the install without it:
 - **Your content never leaves.** Prompts, tool arguments, and results are never uploaded, persisted to the outcome database, or logged.
 - **Telemetry is OFF by default and opt-in only.** `roster telemetry status|on|off` controls it; the published schema in [docs/telemetry-schema.md](docs/telemetry-schema.md) defines exactly what could ever be sent — coarse outcome events only, with hard exclusions for prompts, args, results, embeddings, hostnames, and paths. Aggregates publish only past k-anonymity thresholds. Full schema: [docs/telemetry-schema.md](docs/telemetry-schema.md). The upload endpoint does not exist yet, so today nothing leaves your machine even if you opt in. Before launch, the OFF default gets verified by packet capture.
 
-## Status: pre-release
+## Status: initial CLI preview
 
-**Under active construction (July 2026). Nothing here is released, and nothing unvalidated will ship.**
+The CLI, the public League, and hosted surfaces have separate release gates. [Release readiness](docs/release-readiness.md) records the candidate evidence and remaining owner actions; passing repository tests is not a claim that every client or environment has been verified.
 
-- The original **July 28, 2026** launch target passed without a release; a revised date remains an owner decision.
-- **Not on npm yet.** The package name is selected as `@roster/cli` (registry-available when checked on 2026-08-14); the CLI binary is `roster`. Publication and the remaining organization/domain/trademark clearance are still owner-controlled launch work.
-- **No domains registered, nothing hosted.** The League generator exists and can build locally from the committed artifact, but the public League website, deployment, badges, and named signed scores are not finished or published. No telemetry endpoint exists.
+- **Package identity:** `@npmmo/roster`, with executable `roster`. Every publication requires the reviewed artifact, public-registry verification, and owner approval. The earlier `@roster/cli` choice was not an owned publication namespace for the authenticated release account.
+- **League and hosted surfaces:** the League generator can build locally from the committed artifact, but named public scores remain gated on human-signed verifiers. Publishing the CLI does not publish the League, register a domain, or create a telemetry endpoint.
 - What exists today: a pnpm/TypeScript monorepo (`packages/router`, `coach`, `cli`, `combine`, `playbook`, `shared`) with CI, built against the milestones in [ROSTER-BUILD-HANDOFF.md](ROSTER-BUILD-HANDOFF.md). Strategy and decision records: [ROSTER.md](ROSTER.md), [ROSTER-STATE-AND-DECISIONS.md](ROSTER-STATE-AND-DECISIONS.md).
 - Day-to-day build status: [STATUS-FOR-MO.md](STATUS-FOR-MO.md) · design docs: [docs/](docs/).
 

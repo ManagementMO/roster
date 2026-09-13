@@ -1992,14 +1992,14 @@ args = ["-y", "late-mcp"]
    * fetchable by name, so the self-healing npx form is the only durable answer.
    */
   it("writes a self-healing npx entry when running from an npx cache, never a PATH shim", () => {
-    const npxBin = path.join(home, "cache", "_npx", "abc123", "node_modules", "@roster", "cli", "bundle", "bin.js");
+    const npxBin = path.join(home, "cache", "_npx", "abc123", "node_modules", "@npmmo", "roster", "bundle", "bin.js");
     expect(runningFromNpxCache(npxBin)).toBe(true);
     expect(rosterEntry(npxBin)).toEqual(process.platform === "win32"
-      ? { command: path.win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "cmd.exe"), args: ["/d", "/s", "/c", "npx", "-y", "@roster/cli", "serve"] }
-      : { command: "npx", args: ["-y", "@roster/cli", "serve"] });
+      ? { command: path.win32.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "cmd.exe"), args: ["/d", "/s", "/c", "npx", "-y", "@npmmo/roster", "serve"] }
+      : { command: "npx", args: ["-y", "@npmmo/roster", "serve"] });
 
     // A real installation is unaffected and still gets an absolute, stable path.
-    const installed = path.join(home, "lib", "node_modules", "@roster", "cli", "bundle", "bin.js");
+    const installed = path.join(home, "lib", "node_modules", "@npmmo", "roster", "bundle", "bin.js");
     expect(runningFromNpxCache(installed)).toBe(false);
     expect(rosterEntry(installed)).toEqual({ command: process.execPath, args: [installed, "serve"] });
 

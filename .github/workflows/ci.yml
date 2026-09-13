@@ -130,7 +130,7 @@ jobs:
       # A Windows-only esbuild entrypoint regression was previously caught only
       # after publication work, so Linux coverage is not a substitute here.
       - name: Pack, install elsewhere, and run the real binary
-        run: node scripts/verify-clean-install.mjs
+        run: node scripts/verify-clean-install.mjs --dense
 
   combine:
     name: Combine · ${{ matrix.suite }}

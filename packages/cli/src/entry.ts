@@ -59,7 +59,7 @@ export function verifiedRosterAliases(): SpawnEntry[] {
 }
 
 /** The published package name; the only name safe to hand to `npx`. */
-export const PACKAGE_NAME = "@roster/cli";
+export const PACKAGE_NAME = "@npmmo/roster";
 
 /**
  * Are we running out of an `npx` cache rather than a real installation?

@@ -3,12 +3,13 @@ title: Troubleshooting
 description: Resolve source-install, client launcher, dense retrieval, skill discovery, and eject problems without weakening safeguards.
 ---
 import Command from "../../../components/Command.astro";
+import { packageName } from "../../../lib/site.js";
 
 Start with the exact command, client, and non-sensitive error class. Keep raw configurations, credentials, receipt paths, and private tool results out of public reports.
 
 ## The package cannot be found
 
-The selected package is `@roster/cli`. Check the [current installation and publication status](/docs/installation/). If it is not published, use the source path rather than changing the command to the unrelated unscoped package.
+<p>The selected package is <code>{packageName}</code>. Check the <a href="/docs/installation/">current installation and publication status</a>. If it is not published, use the source path rather than changing the command to the unrelated unscoped package.</p>
 
 A registry error is not a reason to run an unknown package with a similar name.
 
