@@ -35,6 +35,11 @@ private and are bundled into it. The tarball contains the executable and library
 bundles, package manifest, README, and license; it must not contain credentials,
 local Roster state, scratch artifacts, or unpublished workspace dependencies.
 
+The root README is copied into the CLI package. Repository links in that README
+must be absolute: npm resolves relative links beneath `repository.directory`,
+which is `packages/cli`, not the repository root. The clean-install gate rejects
+relative README links so another publication cannot repeat the `0.0.1` link defect.
+
 The supported CLI runtime range is `^22.17.0 || >=24.2.0`. Affected older Windows
 libuv builds are refused before local state changes; the file-integrity checks
 must not be disabled or relaxed as a publishing workaround.

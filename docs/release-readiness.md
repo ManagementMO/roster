@@ -4,6 +4,8 @@
 
 The owner-authorized release was published by `npmmo` on 2026-09-13 at `03:22:01.502Z`, with public access and `latest` pointing to `0.0.1`. PR #39 merged as `0667eb6f5ed843fab6378d293fa9c0612a425cec`; its merge-commit CI and CodeQL checks passed before publication. Unauthenticated public-registry lookup and download confirmed the exact approved tarball, and fresh public npm/npx consumer verification passed. No website or other service was deployed.
 
+> **Documentation-only follow-up in preparation:** the live npm page exposed a README link-base defect in `0.0.1`. Its repository directory is `packages/cli`, so copied root-relative README links resolve beneath that directory and return GitHub 404s. The executable and installation checks remain green, and the approved `0.0.1` tarball is unchanged. The owner requested a `0.0.2` documentation-only candidate with absolute repository links, packaging regression coverage, unchanged executable bundles, and upgrade verification. That new artifact still requires its own publication approval.
+
 ### Identity and supported runtime
 
 - Package: `@npmmo/roster@0.0.1`; executable: `roster`; authenticated publishing account: `npmmo`.

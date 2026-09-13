@@ -321,6 +321,15 @@ try {
     return `${deps.length} deps, bin → ${manifest.bin.roster}, README + metadata present`;
   });
 
+  await step("README links are independent of the npm repository subdirectory", () => {
+    const readme = run("tar", ["-xzOf", tarball, "package/README.md"]);
+    const links = [...readme.matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]);
+    if (!links.length) throw new Error("README link validation found no links to inspect");
+    const relative = links.filter((href) => !/^(?:https?:\/\/|mailto:|#)/i.test(href));
+    if (relative.length) throw new Error(`npm would resolve README links beneath repository.directory: ${relative.join(", ")}`);
+    return `${links.length} links use absolute URLs or local anchors`;
+  });
+
   // 3. @roster/cli is the ONLY thing a user should ever see. No internal
   //    package name may survive anywhere in the shipped bytes.
   await step("no internal package name appears anywhere in the tarball", () => {
