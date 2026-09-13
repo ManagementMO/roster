@@ -1,0 +1,87 @@
+name: consumer-public-qa
+on:
+  push:
+    branches: ["devin/*-public-qa"]
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  CANDIDATE_SHA256: 3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0
+jobs:
+  public-artifact:
+    name: Fetch and verify the public release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.20.0"
+      - name: Verify evidence-gate behavior
+        run: node --test qa/consumer/result-gate.test.mjs
+      - name: Fetch and constrain the public patch without credentials
+        run: |
+          node qa/consumer/fetch-public.mjs "$RUNNER_TEMP/public-candidate"
+          node qa/consumer/compare-candidate.mjs "$RUNNER_TEMP/public-candidate/npmmo-roster-0.0.2.tgz"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: public-candidate
+          path: ${{ runner.temp }}/public-candidate
+          if-no-files-found: error
+          retention-days: 30
+  consumers:
+    name: Public npm · ${{ matrix.platform }} node${{ matrix.node }}
+    needs: public-artifact
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, platform: linux, node: "22.17.0" }
+          - { os: ubuntu-latest, platform: linux, node: "24.20.0" }
+          - { os: windows-latest, platform: windows, node: "22.17.0" }
+          - { os: windows-latest, platform: windows, node: "24.2.0" }
+          - { os: windows-latest, platform: windows, node: "24.20.0" }
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/download-artifact@v7
+        with:
+          name: public-candidate
+          path: ${{ runner.temp }}/candidate
+      - name: Linux tracing tools
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: command -v strace || (sudo apt-get update -qq && sudo apt-get install -y strace)
+      - name: Public npm and npx consumer matrix
+        id: qa
+        continue-on-error: true
+        run: |
+          $tarball = "$env:RUNNER_TEMP/candidate/npmmo-roster-0.0.2.tgz"
+          $hash = (Get-FileHash -Algorithm SHA256 $tarball).Hash.ToLower()
+          if ($hash -ne $env:CANDIDATE_SHA256) { throw "public candidate hash mismatch" }
+          node qa/consumer/consumer-qa.mjs --out "$env:RUNNER_TEMP/qa-out" --tarball "$tarball" --node-label "${{ matrix.node }}" --repo "$env:GITHUB_WORKSPACE" --dense
+          $qaExit = $LASTEXITCODE
+          "exit_code=$qaExit" >> $env:GITHUB_OUTPUT
+          exit $qaExit
+      - name: Upload public consumer evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: public-consumer-${{ matrix.platform }}-node${{ matrix.node }}
+          path: |
+            ${{ runner.temp }}/qa-out/results.json
+            ${{ runner.temp }}/qa-out/env.json
+            ${{ runner.temp }}/qa-out/cases
+            ${{ runner.temp }}/candidate/public-identity.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require complete public consumer evidence
+        if: always()
+        run: node qa/consumer/result-gate.mjs "$env:RUNNER_TEMP/qa-out/results.json"
