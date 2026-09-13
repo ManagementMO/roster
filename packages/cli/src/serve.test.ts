@@ -18,6 +18,10 @@ const BIN = path.join(REPO, "packages", "cli", "dist", "bin.js");
 const alive = (pid: number): boolean => {
   try {
     process.kill(pid, 0);
+    if (process.platform === "linux") {
+      const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+      return stat.slice(stat.lastIndexOf(")") + 2, stat.lastIndexOf(")") + 3) !== "Z";
+    }
     return true;
   } catch {
     return false;
@@ -58,12 +62,19 @@ afterEach(() => {
 });
 
 /** Spawn `roster serve` over a real backend; resolve once it reports serving. */
-async function startServe(opts: { stubborn?: boolean; initialize?: boolean; badInitialize?: boolean } = {}): Promise<{ roster: ChildProcess; backendPidFile: string; shuttingDown: () => boolean }> {
+async function startServe(opts: { stubborn?: boolean; initialize?: boolean; badInitialize?: boolean; descendant?: boolean } = {}): Promise<{ roster: ChildProcess; backendPidFile: string; descendantPidFile: string; shuttingDown: () => boolean }> {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "roster-serve-"));
   homes.push(home);
   const rosterHome = path.join(home, ".roster");
   fs.mkdirSync(rosterHome, { recursive: true });
   const backendPidFile = path.join(home, "backend.pid");
+  const descendantPidFile = path.join(home, "descendant.pid");
+  const descendantCode = `
+    const fs = require("node:fs");
+    process.on("SIGTERM", () => {});
+    setInterval(() => {}, 1000);
+    fs.writeFileSync(${JSON.stringify(descendantPidFile)}, String(process.pid));
+  `;
 
   // A real MCP stdio backend that records its PID on boot and otherwise idles.
   const backend = path.join(home, "backend.mjs");
@@ -72,6 +83,7 @@ async function startServe(opts: { stubborn?: boolean; initialize?: boolean; badI
     backend,
     `
     import { createRequire } from "node:module";
+    import { spawn } from "node:child_process";
     import fs from "node:fs";
     const require_ = createRequire(${JSON.stringify(path.join(REPO, "packages/router/package.json"))});
     const { Server } = await import(${sdkReq});
@@ -86,6 +98,7 @@ async function startServe(opts: { stubborn?: boolean; initialize?: boolean; badI
       process.on("SIGTERM", () => {});
       setInterval(() => {}, 1000);
     }
+    if (${opts.descendant === true}) spawn(process.execPath, ["-e", ${JSON.stringify(descendantCode)}], { stdio: "ignore" });
     if (${opts.initialize !== false}) await server.connect(new StdioServerTransport());
     else process.stdin.resume();
     fs.writeFileSync(${JSON.stringify(backendPidFile)}, String(process.pid));
@@ -114,11 +127,42 @@ async function startServe(opts: { stubborn?: boolean; initialize?: boolean; badI
     err += d.toString();
   });
   // Boot is complete when it reports serving AND the backend has recorded its pid.
-  const ready = await waitFor(() => (opts.initialize === false || /serving .* in transparent mode/.test(err)) && fs.existsSync(backendPidFile), 20_000);
+  const ready = await waitFor(() => (opts.initialize === false || /serving .* in transparent mode/.test(err)) && fs.existsSync(backendPidFile) && (!opts.descendant || fs.existsSync(descendantPidFile)), 20_000);
   expect(ready, `serve did not become ready; stderr:\n${err}`).toBe(true);
   backendPids.add(Number(fs.readFileSync(backendPidFile, "utf8")));
-  return { roster, backendPidFile, shuttingDown: () => err.includes("shutting down") };
+  if (opts.descendant) backendPids.add(Number(fs.readFileSync(descendantPidFile, "utf8")));
+  return { roster, backendPidFile, descendantPidFile, shuttingDown: () => err.includes("shutting down") };
 }
+
+describe.skipIf(process.platform === "win32")("owned POSIX backend descendants", () => {
+  it.each([true, false])("reaps a descendant that ignores SIGTERM after EOF (initialized: %s)", async (initialize) => {
+    const { roster, backendPidFile, descendantPidFile } = await startServe({ stubborn: true, initialize, descendant: true });
+    const backendPid = Number(fs.readFileSync(backendPidFile, "utf8"));
+    const descendantPid = Number(fs.readFileSync(descendantPidFile, "utf8"));
+    expect(alive(descendantPid)).toBe(true);
+    roster.stdin?.write(`${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {
+      protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "descendant-fixture", version: "1" },
+    } })}\n`);
+    roster.stdin?.end();
+    expect(await waitFor(() => roster.exitCode !== null || roster.signalCode !== null, 7_000)).toBe(true);
+    expect(roster.exitCode).toBe(0);
+    expect(await waitFor(() => !alive(backendPid), 1_000)).toBe(true);
+    expect(await waitFor(() => !alive(descendantPid), 1_000), "the backend descendant must not survive shutdown").toBe(true);
+  }, 15_000);
+
+  it("reaps the owned tree on SIGTERM without signalling an unrelated process", async () => {
+    const unrelated = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
+    kids.push(unrelated);
+    await new Promise<void>((resolve, reject) => { unrelated.once("spawn", resolve); unrelated.once("error", reject); });
+    const { roster, descendantPidFile } = await startServe({ stubborn: true, descendant: true });
+    const descendantPid = Number(fs.readFileSync(descendantPidFile, "utf8"));
+    roster.kill("SIGTERM");
+    expect(await waitFor(() => roster.exitCode !== null || roster.signalCode !== null, 7_000)).toBe(true);
+    expect(roster.exitCode).toBe(143);
+    expect(alive(unrelated.pid as number), "shutdown must only target the owned process group").toBe(true);
+    expect(await waitFor(() => !alive(descendantPid), 1_000)).toBe(true);
+  }, 15_000);
+});
 
 // POSIX-only: these spawn a real MCP backend over stdio and drive shutdown with
 // stdin EOF + SIGINT/SIGTERM. On Windows the stdio-spawned backend and Unix

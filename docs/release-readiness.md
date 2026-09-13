@@ -1,5 +1,13 @@
 # Roster Release Readiness
 
+## Consumer release gate for candidate `13a9c9f`
+
+The later clean-consumer verification supersedes the earlier release-ready assessment below. The candidate is not cleared for publication: Linux shutdown can leave an ordinary non-detached backend descendant alive; Windows dense installation fails when npm is launched without Windows-aware process resolution; and Node 22.13.1 on Windows reports incompatible path/descriptor device identities, causing guarded reads to refuse unchanged files. The native Windows evidence is retained in [consumer run 34724166403](https://github.com/ManagementMO/roster/actions/runs/34724166403) and [diagnostic run 34724751753](https://github.com/ManagementMO/roster/actions/runs/34724751753).
+
+The approved release baseline is Node 22.17 or newer within Node 22.x, or Node 24.2 or newer. File-identity, symlink, and mutation checks must not be relaxed to accommodate affected runtimes. Release validation must cover the patched Windows minimum, the real npm execution path, and POSIX process-group cleanup that terminates owned non-detached descendants without signalling unrelated processes. A backend that deliberately creates a separate session is outside that process-group guarantee.
+
+Fresh consumer results, the security-critical human review, npm scope ownership, and the final owner publication approval remain release gates. The historical checks below do not close these newer findings, and no named League scores may be signed by an agent.
+
 Last verified: 2026-08-21 (fresh isolated worktree, full local gate, real-server probes, and live GitHub/npm checks)
 
 Repository: [ManagementMO/roster](https://github.com/ManagementMO/roster)
