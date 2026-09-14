@@ -41,7 +41,7 @@ const run = (name, args, timeout = 600_000) => {
 };
 let client;
 let transport;
-const expectedVersion = process.env.EXPECTED_PACKAGE_VERSION ?? "0.0.3";
+const expectedVersion = process.env.EXPECTED_PACKAGE_VERSION ?? "0.0.4";
 const upgradeFrom = offlineRoot ? undefined : process.env.ROSTER_UPGRADE_FROM || undefined;
 try {
   fs.writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "roster-portability-consumer", private: true, type: "module" }));
@@ -96,9 +96,19 @@ try {
     report.upgrade = { from: upgradeFrom, to: expectedVersion, preservedFiles: snapshots.size };
   }
   if (!offlineRoot) run("dense-enable", [bin, "dense", "enable"], 900_000);
+  const expectedStatus = expectedBackend === "wasm" ? /READY \(WASM CPU fallback/ : /READY \(native/;
   const status = run("dense-status", [bin, "dense", "status"]);
-  assert.match(status, expectedBackend === "wasm" ? /READY \(WASM CPU fallback/ : /READY \(native/);
-  if (!offlineRoot) assert(!fs.existsSync(path.join(runtime, "cache", "wasm")), "readiness must not download model artifacts");
+  assert.match(status, expectedStatus);
+  if (!offlineRoot) {
+    const runtimeManifest = path.join(runtime, "node_modules", "@huggingface", "transformers", "package.json");
+    fs.unlinkSync(runtimeManifest);
+    assert(!fs.existsSync(runtimeManifest));
+    run("dense-repair", [bin, "dense", "enable"], 900_000);
+    assert(fs.existsSync(runtimeManifest), "repair did not restore the owned runtime manifest");
+    assert.match(run("dense-status-after-repair", [bin, "dense", "status"]), expectedStatus);
+    report.repairVerified = true;
+    assert(!fs.existsSync(path.join(runtime, "cache", "wasm")), "readiness must not download model artifacts");
+  }
   fs.copyFileSync(path.join(runtime, "package-lock.json"), path.join(output, "dense-package-lock.json"));
   const configured = JSON.parse(fs.readFileSync(rosterConfig, "utf8"));
   configured.embeddings = "auto";

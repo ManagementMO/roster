@@ -551,6 +551,14 @@ try {
       assertPatchedRuntime();
       return "source URL, archive integrity, and installed bytes verified";
     });
+    await step("explicit enable repairs a removed runtime manifest without stale resolution", () => {
+      const removed = path.join(runtime, "node_modules", "@huggingface", "transformers", "package.json");
+      fs.unlinkSync(removed);
+      roster("dense", "enable");
+      if (!fs.existsSync(removed)) throw new Error("repair did not restore the runtime manifest");
+      assertPatchedRuntime();
+      return "manifest restored and fresh-process backend verification succeeded";
+    });
     await step("explicit enable upgrades an existing vulnerable runtime and lockfile", () => {
       const legacy = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
       legacy.overrides["adm-zip"] = "0.6.0";

@@ -27,14 +27,22 @@ export function embeddingRuntimeEntries(fromFile: string, modulesDir: string | n
 
 export function probeEmbeddingRuntime(entries: readonly string[], timeout = 15_000): EmbeddingRuntimeStatus {
   if (!entries.length) return { state: "missing", detail: "embedding runtime is not installed" };
+  return runRuntimeProbe({ entries }, timeout);
+}
+
+export function probeOwnedEmbeddingRuntime(modulesDir: string, timeout = 15_000): EmbeddingRuntimeStatus {
+  return runRuntimeProbe({ entries: [], ownedModulesDir: modulesDir }, timeout);
+}
+
+function runRuntimeProbe(data: { entries: readonly string[]; ownedModulesDir?: string }, timeout: number): EmbeddingRuntimeStatus {
   const result = spawnSync(process.execPath, ["--input-type=commonjs", "--eval", embeddingWorkerSource()], {
-    input: JSON.stringify({ mode: "probe", entries }), encoding: "utf8", timeout, maxBuffer: 64 * 1024, windowsHide: true,
+    input: JSON.stringify({ mode: "probe", ...data }), encoding: "utf8", timeout, maxBuffer: 64 * 1024, windowsHide: true,
   });
   if (result.error || result.status !== 0) return { state: "unavailable", detail: (result.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT" ? "runtime readiness probe timed out" : "runtime readiness probe failed" };
   try {
     const status = JSON.parse(result.stdout) as EmbeddingRuntimeStatus;
     if (status.state === "ready" && ["native", "wasm"].includes(status.backend)) return status;
-    if (status.state === "unavailable" && typeof status.detail === "string") return status;
+    if ((status.state === "unavailable" || status.state === "missing") && typeof status.detail === "string") return status;
   } catch { }
   return { state: "unavailable", detail: "runtime readiness probe returned an invalid response" };
 }

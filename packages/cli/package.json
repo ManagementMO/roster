@@ -1,6 +1,6 @@
 {
   "name": "@npmmo/roster",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Roster — the tool router for AI agents. One MCP endpoint, the right five tools per task.",
   "keywords": [
     "mcp",

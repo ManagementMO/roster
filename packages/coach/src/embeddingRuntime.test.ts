@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ownedEmbeddingRuntimeEntry, probeEmbeddingRuntime, probeEmbeddingRuntimeAsync } from "./embeddingRuntime.js";
+import { ownedEmbeddingRuntimeEntry, probeEmbeddingRuntime, probeEmbeddingRuntimeAsync, probeOwnedEmbeddingRuntime } from "./embeddingRuntime.js";
 
 let root: string;
 let entry: string;
@@ -23,6 +23,7 @@ describe("bounded embedding-runtime readiness", () => {
   it("executes a backend probe without calling the model pipeline or creating a cache", async () => {
     expect(probeEmbeddingRuntime([entry])).toEqual({ state: "ready", backend: "native" });
     expect(await probeEmbeddingRuntimeAsync([entry])).toEqual({ state: "ready", backend: "native" });
+    expect(probeOwnedEmbeddingRuntime(path.join(root, "node_modules"))).toEqual({ state: "ready", backend: "native" });
     expect(fs.readdirSync(root)).toEqual(["node_modules"]);
   });
 
@@ -38,6 +39,7 @@ describe("bounded embedding-runtime readiness", () => {
     fs.writeFileSync(entry, "while (true) {};");
     expect(probeEmbeddingRuntime([entry], 100)).toEqual({ state: "unavailable", detail: "runtime readiness probe timed out" });
     expect(await probeEmbeddingRuntimeAsync([entry], 100)).toEqual({ state: "unavailable", detail: "runtime readiness probe timed out" });
+    expect(probeOwnedEmbeddingRuntime(path.join(root, "node_modules"), 100)).toEqual({ state: "unavailable", detail: "runtime readiness probe timed out" });
   });
 
   it("does not report an installed ancestor as an owned runtime", () => {
@@ -45,6 +47,16 @@ describe("bounded embedding-runtime readiness", () => {
     fs.mkdirSync(path.join(modules, "@huggingface", "transformers"), { recursive: true });
     fs.writeFileSync(path.join(modules, "@huggingface", "transformers", "package.json"), JSON.stringify({ main: "missing.cjs" }));
     expect(ownedEmbeddingRuntimeEntry(modules)).toBeNull();
+    expect(probeOwnedEmbeddingRuntime(modules)).toHaveProperty("state", "missing");
+  });
+
+  it("does not execute an entrypoint that escapes the owned package", () => {
+    const outside = path.join(root, "outside.cjs");
+    const marker = path.join(root, "executed");
+    fs.writeFileSync(outside, `require("node:fs").writeFileSync(${JSON.stringify(marker)}, "unexpected");`);
+    fs.writeFileSync(path.join(path.dirname(entry), "package.json"), JSON.stringify({ main: outside }));
+    expect(probeOwnedEmbeddingRuntime(path.join(root, "node_modules"))).toHaveProperty("state", "missing");
+    expect(fs.existsSync(marker)).toBe(false);
   });
 
   it("rejects an invalid probe response instead of trusting partial stdout", () => {
