@@ -98,6 +98,10 @@ Default stack: Node ≥20 + official MCP TS SDK (2026-07-28 RC line; beta SDKs s
 
 ## 6. Component specs
 
+**Native-runtime portability and website deployment amendment (2026-09-14, owner-authorized work):** retain the native embedding path where usable, and add a local WebAssembly worker fallback using the already-included Transformers.js/ONNX Web dependency where native bindings cannot load. Preserve the existing model-selection, task-prefix, dimensionality, serialization, lazy-loading, idle-unload, and disposal rules. Worker runtime assets must load from the installed package rather than a CDN; only explicitly opted-in public model downloads are allowed. Cache model artifacts privately and atomically; do not persist embedding inputs or expose worker output on the MCP stdout channel. Readiness and installation success must be established by a bounded backend execution probe without fetching model weights, not package-file presence. Missing, broken, timed-out, and unsupported runtimes must remain explicit and preserve lexical service. The new artifact must pass fresh package/platform verification before release; this amendment is not a publication record.
+
+The owner also authorized production deployment of the existing static Astro website to the Vercel project `roster` in `managementmos-projects`. Vercel initially assigned `roster-seven-sable.vercel.app`; the owner then selected `roster-router.vercel.app` because `roster.vercel.app` was occupied. The preferred domain is attached to the project, production uses `SITE_URL=https://roster-router.vercel.app`, and the native GitHub integration deploys `main` automatically. Build the website from the workspace with the pinned pnpm version, publish only its static output, retain the existing design and one-command setup, and verify public HTTPS, navigation, search, assets, and copied commands. No analytics service, database, paid upgrade, League signing, or restoration of cut features is authorized by this deployment work.
+
 ### 6.1 Router
 **Meta-tools exposed in five mode:**
 ```json

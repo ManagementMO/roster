@@ -71,7 +71,7 @@ async function offerDenseRuntime(flags: Set<string>): Promise<void> {
   const result = installDenseRuntime();
   process.stdout.write(
     result.ok
-      ? "semantic search enabled — it warms up in the background on first use.\n"
+      ? `embedding runtime ready (${result.backend === "wasm" ? "WASM CPU fallback" : "native"}) — the model warms when embeddings are enabled.\n`
       : `could not install the embedding runtime: ${result.detail}\n  Roster keeps working in lexical mode; retry with \`roster dense enable\`.\n`,
   );
 }
@@ -144,7 +144,7 @@ async function main(): Promise<number> {
       // bypass npm's reconciliation. Independently installed runtimes stay owned
       // by their installer.
       if (isDenseAvailable() && !ownedRuntime) {
-        process.stdout.write("semantic search is already enabled\n");
+        process.stdout.write(`${denseStatusLine()}\n`);
         return 0;
       }
       process.stdout.write(ownedRuntime
@@ -153,7 +153,7 @@ async function main(): Promise<number> {
       const result = installDenseRuntime();
       process.stdout.write(
         result.ok
-          ? `semantic search enabled → ${result.detail}\n`
+          ? `embedding runtime ready (${result.backend === "wasm" ? "WASM CPU fallback" : "native"}) → ${result.detail}\nModel warmup occurs when embeddings are enabled.\n`
           : `could not install the embedding runtime: ${result.detail}\n`,
       );
       return result.ok ? 0 : 1;

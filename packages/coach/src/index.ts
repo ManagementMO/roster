@@ -23,4 +23,5 @@ export {
   truncateAndNormalize,
   type EmbeddingsProvider,
 } from "./embeddings.js";
+export { embeddingRuntimeEntries, ownedEmbeddingRuntimeEntry, probeEmbeddingRuntime, type EmbeddingBackend, type EmbeddingRuntimeStatus } from "./embeddingRuntime.js";
 export { hashArgs, hashNeed, sha256Hex, stableStringify } from "./util.js";

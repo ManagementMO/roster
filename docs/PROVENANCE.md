@@ -36,6 +36,10 @@ The approved publication completed on 2026-09-13 after the owner's npm browser a
 
 The owner separately authorized PR #41 and the documentation-only `@npmmo/roster@0.0.2` artifact with SHA-256 `3f42c2d5c0648b9c3a64fbb7eadedf27dd507f1f9d6a0e8731d10fcc385895a0`, public access, and the `latest` tag. Publication completed on 2026-09-13 after the owner's npm browser authentication. Both runtime bundles and the license are byte-identical to the reviewed `0.0.1` release; the changes are the manifest version and README link targets. Public distribution, live npm links, and native installs/upgrades were verified. This is a documentation-patch authorization, not a claim of an additional independent security audit.
 
+The owner separately authorized the npx-first frontend changes and their push/merge after green checks, followed by production website deployment through the installed Vercel tooling on 2026-09-14. The owner selected `roster-router.vercel.app` when the preferred `roster.vercel.app` was found occupied. Vercel project `roster` is linked to `ManagementMO/roster` with `main` as its production branch. PR #44 merged as `eb72a0ae6b217d293c97e9eccf6296d64fbac9fd`; Vercel then deployed that commit automatically from Git. The preferred domain, production-origin metadata, sitemap, custom 404, and 43 production browser cases were verified. This is website-deployment authorization and automated evidence, not a new CLI publication, League signature, or independent human security-review attestation.
+
+The owner also approved work on a native-first/WASM fallback and truthful dense-runtime readiness. The resulting `0.0.3` candidate remains subject to its own artifact verification and release approval; the prior reviewed `0.0.1`/documentation-only `0.0.2` authorization does not certify new runtime code.
+
 The automated security-scan and consumer-verification report is recorded in [release readiness](release-readiness.md), including CI links, native consumer evidence, and the default-off packet capture.
 
 If anything on this page ever stops being true, that's a bug in the project, not in the page. File it.

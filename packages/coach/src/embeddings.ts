@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { createWasmPipeline, embeddingRuntimeEntries, probeEmbeddingRuntimeAsync } from "./embeddingRuntime.js";
 
 /**
  * The retrieval ladder's dense rung. Everything here is OPTIONAL by design:
@@ -108,11 +109,10 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
 
   static async isAvailable(): Promise<boolean> {
     try {
-      await loadTransformers();
-      return true;
-    } catch {
-      return false;
-    }
+      const runtime = await loadTransformers();
+      if (typeof runtime.pipeline === "function") return true;
+    } catch { }
+    return (await probeEmbeddingRuntimeAsync(embeddingRuntimeEntries(import.meta.filename, denseRuntimeDir))).state === "ready";
   }
 
   async embed(texts: readonly string[], kind: EmbedKind = "document"): Promise<Float32Array[]> {
@@ -144,10 +144,14 @@ export class TransformersEmbeddings implements EmbeddingsProvider {
   private async loadPipeline(): Promise<RawPipeline> {
     if (this.pipe) return this.pipe;
     if (this.disposed) throw new Error("embeddings provider disposed");
-    const { pipeline } = await loadTransformers();
-    this.pipe = (await pipeline("feature-extraction", this.modelId, {
-      dtype: "q8",
-    })) as unknown as RawPipeline;
+    const runtime = await loadTransformers().catch(() => null);
+    this.pipe = runtime && typeof runtime.pipeline === "function"
+      ? await runtime.pipeline("feature-extraction", this.modelId, { dtype: "q8" }) as unknown as RawPipeline
+      : await createWasmPipeline(
+        embeddingRuntimeEntries(import.meta.filename, denseRuntimeDir),
+        this.modelId,
+        path.join(denseRuntimeDir ? path.resolve(denseRuntimeDir, "..") : path.join(os.homedir(), ".roster"), "cache", "wasm"),
+      );
     this.touchIdleTimer();
     return this.pipe;
   }

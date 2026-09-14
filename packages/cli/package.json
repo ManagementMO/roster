@@ -1,6 +1,6 @@
 {
   "name": "@npmmo/roster",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Roster — the tool router for AI agents. One MCP endpoint, the right five tools per task.",
   "keywords": [
     "mcp",
@@ -13,7 +13,7 @@
     "llm-tools",
     "cli"
   ],
-  "homepage": "https://github.com/ManagementMO/roster#readme",
+  "homepage": "https://roster-router.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ManagementMO/roster.git",
