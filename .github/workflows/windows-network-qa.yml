@@ -1,0 +1,39 @@
+name: windows-network-qa
+on:
+  push:
+    branches: [qa/windows-network-candidate]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  trace:
+    name: Network trace · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os: [windows-2025, windows-11-arm]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.20.0'
+      - uses: actions/download-artifact@v7
+        with:
+          name: portability-candidate
+          run-id: 34817322876
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/candidate
+      - name: Capture owned-process network events with a positive control
+        shell: pwsh
+        run: ./qa/windows-network.ps1 -Tarball "$env:RUNNER_TEMP/candidate/package.tgz" -ExpectedSha256 338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e -Output "$env:RUNNER_TEMP/network-results"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: network-${{ matrix.os }}
+          path: ${{ runner.temp }}/network-results
+          if-no-files-found: error
+          retention-days: 30
