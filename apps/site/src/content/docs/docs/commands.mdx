@@ -63,7 +63,7 @@ The client normally launches this process from the synced entry. `--http` is not
 <Command name="denseStatus" />
 <Command name="denseEnable" />
 
-`dense` without a subcommand means `status`, which checks installed package presence rather than native usability. `enable` installs the optional embedding runtime; it does not force configuration to permit embeddings or prove a model has warmed. The verified 0.0.2 runtime can report ON on Alpine/musl or x64 macOS even though native inference cannot load. There is no disable subcommand; use the `embeddings` config field. [Dense retrieval details](/docs/learning/#optional-dense-retrieval).
+`dense` without a subcommand means `status`. It executes a bounded local backend probe without downloading model weights. `READY` identifies a usable native or WASM backend; it does not mean a model is warm or configuration permits embeddings. `enable` installs or reconciles the optional runtime, then resolves and verifies it in a fresh process, including after repair. When native bindings cannot load, the local WASM worker supports the verified Alpine/musl and Intel macOS cases. There is no disable subcommand; use the `embeddings` config field. [Dense retrieval details](/docs/learning/#optional-dense-retrieval).
 
 ## Telemetry
 

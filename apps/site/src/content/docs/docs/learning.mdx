@@ -31,7 +31,7 @@ The current approach has limits, including single-centroid learning and imperfec
 
 ## Optional dense retrieval
 
-Check whether the optional runtime is installed:
+Check whether the optional runtime can execute a local backend probe:
 
 <Command name="denseStatus" />
 
@@ -43,9 +43,9 @@ The runtime is approximately **385 MB** in the recorded clean-install measuremen
 
 A fresh packaged installation does not automatically install this optional peer dependency. The enabled runtime is stored under `~/.roster/runtime`. A runtime already available through a source workspace can also be used.
 
-**If you previously set `embeddings` to `"off"`, `dense enable` does not change that field.** After consenting to model use, set it to `"auto"` in the existing config, preserve the other fields, and restart your client's router process. `dense status` reports installed package presence, not native compatibility, model readiness, or whether configuration permits embeddings.
+**If you previously set `embeddings` to `"off"`, `dense enable` does not change that field.** After consenting to model use, set it to `"auto"` in the existing config, preserve the other fields, and restart your client's router process. `dense status` runs a bounded local backend probe without fetching model weights. `READY` means the reported backend can execute; it does not mean a model is warm or configuration permits embeddings.
 
-**Native runtime limits:** verification of 0.0.2 with Transformers 4.2.0 and ONNX Runtime 1.24.3 found that Alpine/musl cannot load the glibc binary, and x64 macOS has no shipped native binding. Installation can report success and status can say ON while inference is unavailable. Normal lexical routing still works. See the [Alpine](/docs/troubleshooting/#dense-on-alpine-or-musl) and [Intel macOS](/docs/troubleshooting/#dense-on-intel-macos) notes.
+**Native first, portable fallback:** Roster uses native inference when available and a local WASM worker when native bindings cannot load. This covers the verified Alpine/musl and Intel macOS cases that failed in 0.0.2. Worker runtime assets come from the installed package, not a CDN. The owned runtime's WASM model cache lives under `~/.roster/runtime/cache/wasm`; it stores public model artifacts, not embedding inputs. Once the model files are present, fresh-process offline inference is supported in the tested configurations. Missing or unusable backends preserve lexical routing. See the [Alpine](/docs/troubleshooting/#dense-on-alpine-or-musl) and [Intel macOS](/docs/troubleshooting/#dense-on-intel-macos) notes.
 
 The default model selection uses EmbeddingGemma on machines with at least 8 GiB RAM and MiniLM below that. Drafts keep using lexical results while warmup is incomplete or unavailable. These are local embedding models, not a choice of which AI agent model handles your conversation.
 

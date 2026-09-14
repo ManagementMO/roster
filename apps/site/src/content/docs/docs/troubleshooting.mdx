@@ -57,6 +57,12 @@ Transparent mode is the default. [Enable five mode](/docs/modes/#enable-five-mod
 
 Roster does not automatically switch modes when a context threshold is reached.
 
+## Codex asks to approve draft or call
+
+A client can require approval for five-mode meta-tools. The generic `call` tool may invoke a mutating backend, so it must not be treated as universally read-only. A noninteractive Codex run with approval policy `never` cannot answer a required approval prompt.
+
+Use the client's documented approval flow for the actions and context you intend to allow. The recorded Codex acceptance tests used invocation-scoped approvals for disposable fixtures; that is not a recommendation to auto-approve every production call or disable global safeguards.
+
 ## My draft seems unrelated
 
 Describe the next action more specifically. Check that the expected backend connected and that the capability is not drift-quarantined. Sparse lexical matches can be filled by rating-based fallback, so a full lineup is not proof that every candidate is relevant.
@@ -71,21 +77,27 @@ Read any trust findings locally. Symlinks and incomplete scans can withhold a sk
 
 ## Dense says enabled, but I want lexical only
 
-`dense status` reports installed package presence, not successful native inference. To keep the router lexical, set `embeddings` to `"off"` and restart the client connection. This is particularly important in a source workspace or an existing setup with the runtime already installed.
+In 0.0.4, `dense status` probes backend execution. A `READY` result is not a configuration toggle or a model-warmup result. To keep the router lexical, set `embeddings` to `"off"` and restart the client connection. This is particularly important in a source workspace or an existing setup with the runtime already installed.
 
-Conversely, `dense enable` does not change an `"off"` config or prove a model is warm. See [the retrieval guide](/docs/learning/).
+Conversely, `dense enable` does not change an `"off"` config or prove a model is warm. A missing or unusable runtime keeps routing lexical. See [the retrieval guide](/docs/learning/).
+
+## Repair reports a missing runtime after npm succeeds
+
+Version 0.0.3 could retain an earlier missing-package lookup inside the installing Node process. After npm restored a removed runtime manifest, that stale lookup could produce a false repair failure even though a fresh `dense status` process reported READY.
+
+Use the pinned 0.0.4 commands in this guide. The post-install check now resolves and probes the owned runtime in a fresh process. A genuine missing or unusable backend still reports failure and preserves lexical routing; do not clear unrelated state or weaken file-safety checks.
 
 ## Dense on Alpine or musl
 
-In 0.0.2, the optional ONNX runtime expects glibc loaders that Alpine/musl does not provide. `dense enable` can finish successfully and status can report ON, but inference fails with `ERR_DLOPEN_FAILED` and a missing `ld-linux-*.so` library.
+The 0.0.2 native runtime could report ON before failing with `ERR_DLOPEN_FAILED` and a missing glibc loader. Upgrade to the pinned 0.0.4 commands in these guides: the local WASM worker handles the verified stock-Alpine x64 and ARM64 configurations without adding glibc compatibility packages.
 
-Normal routing falls back to lexical retrieval. Keep `embeddings` set to `"off"` on Alpine, or use a compatible glibc-based Linux environment for semantic retrieval. Do not interpret an installed-runtime status as evidence that a model can run.
+Check for `READY (WASM CPU fallback; model readiness is not checked)`. The model still needs its separately authorized first-use download, or a complete existing cache. If the backend is unavailable, stay lexical and inspect the reported error; do not copy binaries or disable safeguards. ARMv7 dense support has not been established by these checks.
 
 ## Dense on Intel macOS
 
-The verified ONNX Runtime 1.24.3 package has a native Apple Silicon macOS binding, but no `darwin/x64` binding. On an Intel Mac, native inference fails with a missing `onnxruntime_binding.node` even when `dense status` says ON. Lexical routing remains available.
+The verified ONNX Runtime 1.24.3 package has a native Apple Silicon binding but no `darwin/x64` binding. Roster 0.0.4 uses the local WASM worker on the tested Intel Mac configurations instead of treating installed package files as successful inference.
 
-Keep `embeddings` set to `"off"` on Intel macOS. If you use Apple Silicon, check `node -p process.arch`: an x64 Node process uses the x64 runtime path rather than the native ARM64 binding. Use a compatible native Node installation rather than copying binaries between architectures.
+On Apple Silicon, check `node -p process.arch`: x64 Node takes the x64 path, while a compatible ARM64 Node can use the native backend. Use the appropriate Node installation rather than copying binaries between architectures. You can always keep `embeddings` set to `"off"` if you prefer lexical-only operation.
 
 ## Eject refuses or was interrupted
 

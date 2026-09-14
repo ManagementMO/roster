@@ -15,6 +15,8 @@ This is a static Astro + Starlight workspace. The public story leads with the lo
 
 From the repository root: `pnpm site:dev`, `pnpm site:build`, `pnpm site:check`. Run `pnpm build` before `pnpm --filter @roster/site test`, which includes built-CLI fixture checks. Lint: `pnpm --filter @roster/site lint`. Link/asset check after building: `pnpm --filter @roster/site verify:links`. Browser acceptance: `pnpm --filter @roster/site test:browser`, using an isolated installed Chrome instance and a production preview on port 4323.
 
+Astro 7 permits one preview process per project, even when another port is requested. If a test preview is already running, verify that it serves the current build and point the test configuration at that URL, or stop only the preview you own before restarting. Do not force-replace an unrelated server. Production-origin metadata needs separate checks from the local no-origin case.
+
 Biome's full Astro parser is enabled only in this workspace so template references are understood. The product's existing test runner keeps its original Vite 7 peer pinned at the root rather than inheriting Astro's Vite 8.
 
 No `SITE_URL` means no fabricated canonical origin or sitemap. Starlight's skipped-sitemap warning is expected locally. Configure the owner's real origin only for deployment preparation. No publication, package release, human certification, or telemetry endpoint is part of this website build.

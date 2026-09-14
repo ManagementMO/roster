@@ -20,7 +20,7 @@ export const claimSources = {
   status: source("STATUS-FOR-MO.md"),
   verification: source("docs/release-readiness.md"),
   denseVerification: source("docs/release-readiness.md"),
-  denseCompatibility: `${repository}/actions/runs/34748960570`,
+  denseCompatibility: `${repository}/actions/runs/34880565720`,
   limitations: source("docs/lab/notes-gap-experiments.md"),
   certification: source("apps/league/src/artifact.ts"),
 };
