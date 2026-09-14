@@ -1,6 +1,32 @@
 # Roster Release Readiness
 
-## Current published release: `@npmmo/roster@0.0.3`
+## Current published release: `@npmmo/roster@0.0.4`
+
+The owner reviewed PR #46 and approved only the exact follow-up artifact for public npm with the `latest` tag. The PR merged as `4acea57165d530f72d22ff602ce4b578c48a66ef`; merge-commit [CI](https://github.com/ManagementMO/roster/actions/runs/34881747699) and [CodeQL](https://github.com/ManagementMO/roster/actions/runs/34881747698) passed. Publication completed under `npmmo` at `2026-09-14T18:39:30.602Z` after the owner's browser confirmation.
+
+- Public tarball SHA-256: `cc253de572a0cfe875ffaf846ba1611eccbc4476c0190a3c56382b896bd2ca04`.
+- Public SHA-512 integrity: `sha512-W7421CxODb7UO8DiZrUK4+ozyUO90oGCqgqgMKGvrwTORxJD/QdoQRBovQ2Wk3Cw5x7+2i2AtQHl/8j2zLQHCg==`.
+- Unauthenticated lookup/download confirmed the version, `latest` tag, publisher, and exact approved bytes. The five package members match the locally tested archive; no rebuild was substituted for publication.
+- The repair fix resolves the owned package inside the fresh bounded post-install probe, avoiding Node metadata cached before npm changes files. Three regressions failed before the fix and passed afterward; local verification passed 572 tests, source/test typechecks, lint, clean installation, and deliberate repair.
+- The [pre-release matrix](https://github.com/ManagementMO/roster/actions/runs/34880565720) passed all 19 configurations and all **19 required manifest repairs**. Its 25 audited reports include six offline reruns and six upgrades from public `0.0.2` or `0.0.3`, with real base/need vectors and exact restoration. Missing, failed, or skipped required repair evidence was not accepted.
+- [Windows default-configuration ETW tracing](https://github.com/ManagementMO/roster/actions/runs/34881078655) passed on x64/ARM64 with 8/12 positive-control events, zero Roster/local-fixture events, and no unattributed events. This is scoped network-event evidence, not packet-payload inspection or a claim about arbitrary configured backends.
+- Signed-in Codex CLI `0.154.0` repeated transparent read, five-mode read, intentional error recovery, and five-mode write/read successfully against the exact candidate binary. Final unknown values, backend call records, and stored test data were independently checked; [the sanitized record](verification/2026-09-14-codex-004-acceptance.json) contains no credentials or personal configuration.
+
+The [public npm/npx campaign](https://github.com/ManagementMO/roster/actions/runs/34882236571) passed all required checks: **157 PASS, 0 FAIL, 0 BLOCKED, and 8 explicitly NOT RUN case observations**. The repair cases that failed in `0.0.3` now passed, as did all five genuine public `0.0.3` upgrades, saved-launcher journeys, and exact restoration checks.
+
+| Public consumer | PASS | Explicitly NOT RUN |
+| --- | ---: | ---: |
+| Linux x64, Node 22.17.0 | 32 | 1 |
+| Linux x64, Node 24.20.0 | 32 | 1 |
+| Windows x64, Node 22.17.0 | 31 | 2 |
+| Windows x64, Node 24.2.0 | 31 | 2 |
+| Windows x64, Node 24.20.0 | 31 | 2 |
+
+The unrun cases are the unavailable unprivileged Linux network namespace and the Windows cases that this particular strace/namespace instrument does not implement. They are not counted as passes; the separate Windows ETW and Alpine network-removal evidence above has its own stated scope. The same campaign passed the exact copied commands in Linux sh, macOS sh, Windows CMD, Windows PowerShell, and ARM64 PowerShell. A separate fresh macOS ARM64 public npx setup/help/scoped-sync/eject run also passed with matching integrity, unchanged client configuration after init, no optional runtime installation, telemetry OFF, and exact restoration.
+
+The supported CLI runtime remains `^22.17.0 || >=24.2.0`. Claude model-driven acceptance remains blocked by account credit; Cursor/OpenClaw GUI journeys, ARMv7 dense support, and the recorded upstream unusual-path limits are not claimed resolved. No dependency safeguard, permission policy, League signing rule, or telemetry default was weakened.
+
+## Publication history: `@npmmo/roster@0.0.3`
 
 The owner reviewed PR #45, including the new runtime/cache code, and authorized the exact archive for public npm with the `latest` tag. PR #45 merged as `d8aab038c3b32c378f792004f54899c18ed81c61`; merge-commit [CI](https://github.com/ManagementMO/roster/actions/runs/34870885068) and [CodeQL](https://github.com/ManagementMO/roster/actions/runs/34870885089) passed. Publication completed under `npmmo` on 2026-09-14 at `17:01:00.227Z` after the owner's browser authentication. Unauthenticated download verified the exact approved SHA-256 `338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e`, SHA-512 integrity, version, publisher, and latest tag.
 
@@ -8,7 +34,7 @@ The [public consumer campaign](https://github.com/ManagementMO/roster/actions/ru
 
 **Known `0.0.3` repair limitation:** after a package manifest is removed, an earlier lookup can remain cached inside the installing Node process. npm restores the package, but the post-install resolver can still report failure. A fresh-process check resolved the restored runtime and reported READY. This was reproduced locally with a filesystem-only fixture; related regressions also showed why a changed entrypoint must not reuse pre-install resolution. It is a repair/metadata-refresh issue, not a claim that ordinary installation or the verified Codex flows failed. Inspect the result with a fresh `roster dense status` process; do not disable safeguards or delete unrelated state.
 
-The owner authorized preparation of a **`0.0.4` correction**, resolving the owned package inside the fresh bounded post-install probe. Three regression cases first failed against the prior implementation, then passed with the correction; local verification passed 572 tests, typechecks/lint, and clean packed installation with deliberate manifest repair. Packed public-`0.0.3` upgrades, repair, real vector backfill, and exact restoration also passed on native macOS ARM64 and stock Alpine ARM64/WASM. The packaged pre-release matrix now exercises manifest repair before inference. Broader native verification must pass before publication. `0.0.4` is not yet public and requires its own verified-artifact approval. The published `0.0.3` archive remains unchanged.
+The owner authorized the separately reviewed **`0.0.4` correction** described above. It resolves and verifies the repaired package in a fresh bounded process and adds the previously missed repair case to pre-publication verification. The published `0.0.3` archive and its failed repair evidence remain unchanged.
 
 ## Publication history: `@npmmo/roster@0.0.2`
 
