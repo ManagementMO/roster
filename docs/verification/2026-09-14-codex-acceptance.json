@@ -1,0 +1,63 @@
+{
+  "verifiedAt": "2026-09-14T16:34:35.276Z",
+  "client": "Codex CLI",
+  "clientVersion": "0.154.0",
+  "package": "@npmmo/roster@0.0.3",
+  "candidateTarballSha256": "338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e",
+  "binarySha256": "c3d9547cfc2364bb2910fcba1388085df08af71a72b1a41bd906634f43e059d0",
+  "scope": "Signed-in CLI with ephemeral sessions, command-scoped fixture-only MCP configuration, user config.toml ignored, and shell/browser/app/plugin tools disabled. Five-mode draft/call approvals applied only to the authorized fixture for each invocation.",
+  "observations": [
+    "Initial tool-host-disabled and approval-policy-never harness attempts were rejected, then corrected without changing product annotations or saved permissions.",
+    "Success requires actual backend call records, the unknown verification value in the final agent response, and independently checked stored state for the write/read case.",
+    "Claude MCP initialization connected, but its model-driven request was blocked by account billing; no Claude end-to-end success is claimed.",
+    "This verifies native Codex CLI flows, not Cursor/OpenClaw GUI workflows."
+  ],
+  "results": [
+    {
+      "scenario": "basic-read",
+      "mode": "transparent",
+      "status": "PASS",
+      "returnedUnknownVerificationValue": true,
+      "backendCalls": 1,
+      "calls": [
+        { "server": "roster", "tool": "fixture__read_verification_value", "status": "completed" }
+      ]
+    },
+    {
+      "scenario": "basic-read",
+      "mode": "five",
+      "status": "PASS",
+      "returnedUnknownVerificationValue": true,
+      "backendCalls": 1,
+      "calls": [
+        { "server": "roster", "tool": "draft", "status": "completed" },
+        { "server": "roster", "tool": "call", "status": "completed" }
+      ]
+    },
+    {
+      "scenario": "recovery",
+      "mode": "transparent",
+      "status": "PASS",
+      "returnedUnknownVerificationValue": true,
+      "backendCalls": 2,
+      "calls": [
+        { "server": "roster", "tool": "fixture__read_verification_value", "status": "failed" },
+        { "server": "roster", "tool": "fixture__read_verification_value", "status": "completed" }
+      ]
+    },
+    {
+      "scenario": "write-read",
+      "mode": "five",
+      "status": "PASS",
+      "returnedUnknownVerificationValue": true,
+      "backendCalls": 2,
+      "calls": [
+        { "server": "roster", "tool": "draft", "status": "completed" },
+        { "server": "roster", "tool": "call", "status": "completed" },
+        { "server": "roster", "tool": "draft", "status": "completed" },
+        { "server": "roster", "tool": "call", "status": "completed" }
+      ],
+      "persistedFixtureStateVerified": true
+    }
+  ]
+}

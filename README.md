@@ -25,6 +25,8 @@ Four parts, one product:
 
 > **Initial CLI preview.** The package is `@npmmo/roster`; the installed executable remains `roster`. The unrelated unscoped `roster` package is not this project. Publication approval and release evidence are tracked in [release readiness](https://github.com/ManagementMO/roster/blob/main/docs/release-readiness.md).
 
+For one-copy setup without a global install, including Windows commands, use the [installation guide](https://roster-router.vercel.app/docs/installation/).
+
 ```sh
 npm install --global @npmmo/roster
 roster init       # detect clients, import supported servers, print your Day-0 receipt

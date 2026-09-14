@@ -23,6 +23,10 @@ Write strict NodeNext ESM TypeScript and retain `.js` extensions in relative imp
 
 Vitest discovers `*.test.ts` beneath package/app `src` and `test` directories. Add regression tests beside the affected module, keep tests hermetic with temporary directories or in-memory services, and close clients/databases in hooks. No coverage threshold is configured. For routing, config-lifecycle, or scoring changes, also run the relevant built probe in `docs/verification/` or suite in `suites/`.
 
+For optional embedding/runtime changes, use `scripts/verify-dense-consumer.mjs` and `.github/workflows/dense-portability-qa.yml` in addition to unit tests. Readiness alone is not model-inference evidence: require real base/need vectors and exact restoration from an installed tarball. Offline reruns must use a new query so an existing database vector cannot create a false pass. Keep one verified tarball hash across the platform matrix.
+
+Real account-backed client tests require owner authorization. Use disposable fixtures and invocation-scoped client settings, not personal configuration or copied credentials. Codex's normal tool host is required; generic five-mode calls may need explicit fixture-only approval in noninteractive runs. Do not mislabel production `call` as read-only or disable global safeguards to make a test pass.
+
 ## Commit & Pull Request Guidelines
 
 Match the history's conventional subjects: `fix(cli): ...`, `feat: ...`, `docs: ...`, or `chore(ci): ...`; use an imperative summary and a scope when helpful. Pull requests should explain behavior and risk, link the issue, list commands run, and include screenshots for League HTML changes. Keep CI green across lint, multi-platform build/tests, integration probes, dependency audit, and secret scanning. Never commit credentials, local Roster state, or generated scratch artifacts.

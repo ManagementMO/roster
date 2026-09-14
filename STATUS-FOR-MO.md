@@ -1,10 +1,12 @@
 # Roster — status & decision board for Mo
 
-## Current release update — 2026-09-13
+## Current release update — 2026-09-14
 
 `@npmmo/roster@0.0.2` is the current public npm release, with the `roster` executable and the owner-approved Node runtime baseline. PR #39 delivered the reviewed `0.0.1` runtime; PR #41 merged as `d7310f3` and corrected the npm README link targets in `0.0.2` without changing either runtime bundle. Public install and real `0.0.1` upgrade checks passed. The owner's completed human review, exact-artifact authorization, native verification, packet capture, and successful public npm/npx checks are recorded in [release readiness](docs/release-readiness.md) and [PROVENANCE](docs/PROVENANCE.md).
 
-This is the CLI preview release, not a League or hosted-service launch. No named League score was signed or published, no domain was registered, and no website or telemetry endpoint was deployed. Native GUI-client workflows and a non-admin Windows profile remain outside the recorded verification scope.
+The marketing/documentation website is now live at **https://roster-router.vercel.app**, on Vercel project `roster`. Its native GitHub integration creates branch previews and updates production from `main`; PR #44's merge triggered and verified a real production deployment. The one-command website flow is merged, and 43 production browser cases passed. No named League score, signing attestation, telemetry endpoint, paid upgrade, or additional analytics/database service was added.
+
+The expanded native campaign closed the genuine Windows non-admin x64/ARM64 gap and exposed optional dense-runtime failures on Alpine/musl and Intel macOS. The owner-approved native-first/WASM-worker fix now has a verified `0.0.3` candidate: 568 tests, all 19 portability configurations, six network-removed Alpine reruns, five public-version upgrades, Windows x64/ARM64 process-attributed network traces, and four signed-in Codex end-to-end scenarios passed. Public npm is still `0.0.2`; the new artifact awaits its release approval. Claude connected over MCP but its model request was blocked by account credit, and the owner chose to focus on Codex. Cursor/OpenClaw GUI flows, ARMv7 dense support, and the recorded upstream unusual-path limitations are not claimed resolved. See [release readiness](docs/release-readiness.md) for exact hashes and scope.
 
 ## Historical decision board — 2026-08-21
 

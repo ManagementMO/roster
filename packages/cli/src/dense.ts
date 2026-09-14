@@ -1,7 +1,7 @@
 import type { SpawnSyncReturns } from "node:child_process";
+import { embeddingRuntimeEntries, ownedEmbeddingRuntimeEntry, probeEmbeddingRuntime, type EmbeddingBackend, type EmbeddingRuntimeStatus } from "@roster/coach";
 import crossSpawn from "cross-spawn";
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { ensurePrivateDir, PRIVATE_FILE, rosterHome } from "./paths.js";
 import { atomicWriteFileSync } from "./rosterfile.js";
@@ -11,7 +11,7 @@ import { readRegularFileNoFollow } from "./safeFile.js";
  * Optional semantic search, installed on request.
  *
  * `@huggingface/transformers` drags in ~385 MB (onnxruntime-node 212 MB,
- * onnxruntime-web 130 MB — a browser build a Node CLI can never use — and
+ * onnxruntime-web 130 MB — the portable fallback for missing native bindings — and
  * sharp). Declaring it a normal `optionalDependency` made every `npx -y
  * @roster/cli` a 424 MB / 70s-on-home-broadband download before the tool
  * printed a single line, which flatly contradicts the promise that Roster
@@ -61,18 +61,20 @@ export function isDenseInstalledIn(modulesDir: string): boolean {
  * on where the CLI is installed, while the owned directory is ours to assert.
  */
 export function isDenseAvailable(): boolean {
-  if (isDenseInstalledIn(denseModulesDir())) return true;
-  try {
-    createRequire(import.meta.filename).resolve(DENSE_PACKAGE);
-    return true;
-  } catch {
-    return false;
-  }
+  return denseRuntimeStatus().state === "ready";
+}
+
+export function denseRuntimeStatus(): EmbeddingRuntimeStatus {
+  const status = probeEmbeddingRuntime(embeddingRuntimeEntries(import.meta.filename, denseModulesDir()));
+  return status.state === "missing" && isDenseInstalledIn(denseModulesDir())
+    ? { state: "unavailable", detail: "installed runtime entry cannot be resolved" }
+    : status;
 }
 
 export interface DenseInstallResult {
   ok: boolean;
   detail: string;
+  backend?: EmbeddingBackend;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -149,15 +151,19 @@ export function installDenseRuntime(
     const stderr = (result.stderr ?? "").toString().trim().split("\n").slice(-3).join(" ");
     return { ok: false, detail: stderr || `npm exited ${result.status}` };
   }
-  return isDenseInstalledIn(denseModulesDir())
-    ? { ok: true, detail: dir }
-    : { ok: false, detail: "npm reported success but the runtime is still not resolvable" };
+  const entry = ownedEmbeddingRuntimeEntry(denseModulesDir());
+  if (!entry) return { ok: false, detail: "npm reported success but the runtime is still not resolvable" };
+  const status = probeEmbeddingRuntime([entry]);
+  return status.state === "ready"
+    ? { ok: true, detail: dir, backend: status.backend }
+    : { ok: false, detail: `runtime installed but unusable (${status.detail}); Roster keeps working in lexical mode` };
 }
 
 export function denseStatusLine(): string {
-  return isDenseAvailable()
-    ? "semantic search: ON (embedding runtime installed)"
-    : `semantic search: OFF (lexical only) — enable with \`roster dense enable\` (~${DENSE_APPROX_MB} MB, local only)`;
+  const status = denseRuntimeStatus();
+  if (status.state === "ready") return `embedding runtime: READY (${status.backend === "wasm" ? "WASM CPU fallback" : "native"}; model readiness is not checked)`;
+  if (status.state === "unavailable") return `embedding runtime: UNAVAILABLE (lexical only) — ${status.detail}; repair with \`roster dense enable\``;
+  return `semantic search: OFF (lexical only) — enable with \`roster dense enable\` (~${DENSE_APPROX_MB} MB, local only)`;
 }
 
 /**

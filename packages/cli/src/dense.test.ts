@@ -16,6 +16,7 @@ import {
 } from "./dense.js";
 
 const BIN = fileURLToPath(new URL("../dist/bin.js", import.meta.url));
+const ORT_FIXTURE = 'exports.env = { wasm: {} }; exports.Tensor = class { constructor(type, data, dims) { this.type = type; this.data = data; this.dims = dims; } }; exports.InferenceSession = { async create() { return { async run(feeds) { return { result: feeds.value }; }, async release() {} }; } };';
 
 let home: string;
 beforeEach(() => {
@@ -38,6 +39,10 @@ function plantFakeRuntime(): void {
     JSON.stringify({ name: "@huggingface/transformers", version: "4.2.0", main: "index.js" }),
   );
   fs.writeFileSync(path.join(pkgDir, "index.js"), "module.exports = { pipeline: () => {} };\n");
+  const ort = path.join(pkgDir, "node_modules", "onnxruntime-node");
+  fs.mkdirSync(ort, { recursive: true });
+  fs.writeFileSync(path.join(ort, "package.json"), JSON.stringify({ main: "index.cjs" }));
+  fs.writeFileSync(path.join(ort, "index.cjs"), ORT_FIXTURE);
 }
 
 describe("optional dense runtime", () => {
@@ -49,10 +54,48 @@ describe("optional dense runtime", () => {
     expect(isDenseInstalledIn(denseModulesDir())).toBe(true);
   });
 
-  it("counts the Roster-owned copy as available and says so", () => {
+  it("reports runtime readiness without claiming search or a model is already active", () => {
     plantFakeRuntime();
     expect(isDenseAvailable()).toBe(true);
-    expect(denseStatusLine()).toMatch(/ON/);
+    expect(denseStatusLine()).toMatch(/READY/);
+    expect(denseStatusLine()).not.toMatch(/search: ON/);
+  });
+
+  it("rejects npm success when the installed native runtime cannot load", () => {
+    const result = installDenseRuntime(() => {
+      plantFakeRuntime();
+      fs.writeFileSync(path.join(denseModulesDir(), "@huggingface", "transformers", "index.js"), 'throw Object.assign(new Error("native binding missing"), { code: "ERR_DLOPEN_FAILED" });');
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/unusable|unavailable|cannot load/);
+  });
+
+  it("rejects a package manifest that has no usable inference interface", () => {
+    const result = installDenseRuntime(() => {
+      plantFakeRuntime();
+      fs.writeFileSync(path.join(denseModulesDir(), "@huggingface", "transformers", "index.js"), "module.exports = {};\n");
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("reports the portable backend only after it executes the readiness probe", () => {
+    const result = installDenseRuntime(() => {
+      plantFakeRuntime();
+      const pkgDir = path.join(denseModulesDir(), "@huggingface", "transformers");
+      fs.writeFileSync(path.join(pkgDir, "index.js"), 'throw new Error("native binding unavailable");');
+      fs.writeFileSync(path.join(pkgDir, "transformers.web.js"), 'exports.env = {}; exports.pipeline = async () => {};');
+      const ort = path.join(pkgDir, "node_modules", "onnxruntime-web");
+      fs.mkdirSync(path.join(ort, "dist"), { recursive: true });
+      fs.writeFileSync(path.join(ort, "package.json"), JSON.stringify({ main: "dist/ort.node.min.js" }));
+      fs.writeFileSync(path.join(ort, "dist", "ort.node.min.js"), ORT_FIXTURE);
+      fs.writeFileSync(path.join(ort, "dist", "ort-wasm-simd-threaded.mjs"), "export default {};");
+      fs.writeFileSync(path.join(ort, "dist", "ort-wasm-simd-threaded.wasm"), "fixture");
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok, result.detail).toBe(true);
+    expect(result).toHaveProperty("backend", "wasm");
   });
 
   it("the OFF message names the size and the exact command to enable it", () => {
@@ -205,7 +248,12 @@ describe("optional dense runtime", () => {
       fs.writeFileSync(${JSON.stringify(captured)}, JSON.stringify(args));
       const target = path.join(prefix, "node_modules", "@huggingface", "transformers");
       fs.mkdirSync(target, { recursive: true });
-      fs.writeFileSync(path.join(target, "package.json"), JSON.stringify({ name: "@huggingface/transformers", version: "4.2.0" }));
+      fs.writeFileSync(path.join(target, "package.json"), JSON.stringify({ name: "@huggingface/transformers", version: "4.2.0", main: "index.js" }));
+      fs.writeFileSync(path.join(target, "index.js"), "exports.pipeline = () => {};");
+      const ort = path.join(target, "node_modules", "onnxruntime-node");
+      fs.mkdirSync(ort, { recursive: true });
+      fs.writeFileSync(path.join(ort, "package.json"), JSON.stringify({ main: "index.cjs" }));
+      fs.writeFileSync(path.join(ort, "index.cjs"), ${JSON.stringify(ORT_FIXTURE)});
     `);
     fs.writeFileSync(path.join(bin, process.platform === "win32" ? "npm.cmd" : "npm"),
       process.platform === "win32"
