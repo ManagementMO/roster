@@ -14,9 +14,9 @@ describe("release-aware setup", () => {
 
   it("downloads and initializes the verified release in one command", () => {
     const commands = commandsFor(release);
-    expect(commands.prepare).toBe("npx --yes @npmmo/roster@0.0.2 init --no-dense");
-    expect(commands.help).toBe("npx --yes @npmmo/roster@0.0.2 --help");
-    expect(commands.init).toBe("npx --yes @npmmo/roster@0.0.2 init --no-dense");
+    expect(commands.prepare).toBe("npx --yes @npmmo/roster@0.0.4 init --no-dense");
+    expect(commands.help).toBe("npx --yes @npmmo/roster@0.0.4 --help");
+    expect(commands.init).toBe("npx --yes @npmmo/roster@0.0.4 init --no-dense");
   });
 
   it("keeps follow-up commands pinned without assuming a global executable", () => {
@@ -48,6 +48,13 @@ describe("release-aware setup", () => {
     expect(setupPrompt).toContain("--no-dense");
     expect(setupPrompt).not.toMatch(/npx (?:-y )?roster\b/);
     expect(setupPrompt).toContain("Do not enable telemetry");
+  });
+
+  it("distinguishes a usable backend from model readiness in the agent handoff", () => {
+    expect(setupPrompt).toContain("READY");
+    expect(setupPrompt).toContain("native or WASM");
+    expect(setupPrompt).toContain("not model readiness");
+    expect(setupPrompt).not.toContain("ON status confirms package presence");
   });
 
   it("does not invent a production origin", () => {

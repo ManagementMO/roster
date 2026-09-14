@@ -30,6 +30,7 @@ Line-by-line reviews of the security-critical paths are recorded here only after
 |------|------|----------|--------|
 | 2026-09-13 | Security-critical paths listed above and the complete changes in PR #39 | Mo (owner; completion explicitly confirmed in the release approval) | `377e3bba91c3fe8653034d92eae27254ba73dac2` |
 | 2026-09-14 | PR #45, including the new runtime/cache code | Mo (owner; confirmed by choosing the reviewed-release approval) | `b090411850e8574f115aba7064f65acc5b9b9896` |
+| 2026-09-14 | PR #46's fresh-process post-install repair verification | Mo (owner; confirmed by choosing the separate reviewed-release approval) | `85fe550c223ed8a55957b0aa1c96bf8b77f922b0` |
 
 The owner explicitly confirmed completion of the required line-by-line review and authorized Devin to merge PR #39 and publish `@npmmo/roster@0.0.1` on the owner's behalf. That authorization is limited to the reviewed tarball with SHA-256 `e6e854508e71e3eef4a17ef88e8a019790735f65ed238e7b726c5e0434bf1fb0`, public access, and the `latest` tag. It does not authorize League signing, named scores, or service deployment. This entry records the owner's attestation; it does not claim an additional independent human audit.
 
@@ -43,7 +44,7 @@ The owner approved work on a native-first/WASM fallback and truthful dense-runti
 
 After reviewing PR #45, including the new runtime/cache code, the owner explicitly chose the reviewed-release approval: merge after green checks and publish only SHA-256 `338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e` as public `@npmmo/roster@0.0.3` with the `latest` tag. PR #45 merged as `d8aab038c3b32c378f792004f54899c18ed81c61`; merge CI and CodeQL passed. Publication completed at `2026-09-14T17:01:00.227Z` following the owner's npm browser confirmation. Unauthenticated registry download matched the approved archive exactly. This records the owner's attestation, not an additional independent human audit.
 
-The broader public-consumer run then exposed the documented repair-only stale-resolution defect. The owner chose preparation of a `0.0.4` correction rather than suppressing the failed check. That follow-up is not yet published or covered by a new artifact approval; the public `0.0.3` archive is unchanged.
+The broader public-consumer run exposed the documented repair-only stale-resolution defect. The owner chose a `0.0.4` correction rather than suppressing the failure. After reviewing PR #46, the owner separately approved merge and publication of only SHA-256 `cc253de572a0cfe875ffaf846ba1611eccbc4476c0190a3c56382b896bd2ca04` as public `@npmmo/roster@0.0.4` with the `latest` tag. The PR merged as `4acea57165d530f72d22ff602ce4b578c48a66ef`; merge CI and CodeQL passed. Publication completed at `2026-09-14T18:39:30.602Z` after the owner's npm browser confirmation, and unauthenticated download matched the approved archive. The 19-configuration pre-release matrix required real manifest repair in every online row, followed by inference and restoration checks. This records the owner's review/authorization, not an additional independent human audit. The `0.0.3` archive and failure evidence remain unchanged.
 
 The automated security-scan and consumer-verification report is recorded in [release readiness](release-readiness.md), including CI links, native consumer evidence, and the default-off packet capture.
 

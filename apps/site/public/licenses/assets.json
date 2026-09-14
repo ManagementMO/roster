@@ -156,7 +156,7 @@
   {
     "asset": "social.png",
     "source": "scripts/render-assets.mjs and local identity assets",
-    "sha256": "89fc11abe563f45e35afddd9cde561280bbd59102033769bda2053ec499ab633",
+    "sha256": "7c5285f79a47033250418b7e56aba55421f87928214727b197393cc2dce52ba4",
     "method": "Rendered from local vectors in isolated Chrome.",
     "license": "Roster artwork; font and vendor licenses are recorded separately."
   },

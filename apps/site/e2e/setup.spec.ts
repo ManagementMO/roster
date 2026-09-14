@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const posix = "npx --yes @npmmo/roster@0.0.2 init --no-dense";
-const windows = "npx.cmd --yes @npmmo/roster@0.0.2 init --no-dense";
+const posix = "npx --yes @npmmo/roster@0.0.4 init --no-dense";
+const windows = "npx.cmd --yes @npmmo/roster@0.0.4 init --no-dense";
 
 test("the homepage copies one scoped command that also initializes Roster", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -25,9 +25,9 @@ test("Windows command choice stays consistent through the installation guide", a
   await page.locator('[data-command="prepare"] .copy button:visible').click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(windows);
   await page.locator('[data-command="sync"] .copy button:visible').click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npx.cmd --yes @npmmo/roster@0.0.2 sync --client cursor");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npx.cmd --yes @npmmo/roster@0.0.4 sync --client cursor");
   await page.locator('[data-command="eject"] .copy button:visible').click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npx.cmd --yes @npmmo/roster@0.0.2 eject --client cursor");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npx.cmd --yes @npmmo/roster@0.0.4 eject --client cursor");
 });
 
 test("the setup selector works with a keyboard and denied clipboard access", async ({ page }) => {

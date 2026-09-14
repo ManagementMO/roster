@@ -3,9 +3,9 @@ export const packageName = "@npmmo/roster";
 export const executable = "roster";
 export const release = {
   published: true,
-  version: "0.0.2",
-  checked: "2026-09-13",
-  revision: "c930932c2bec9a0db4faa6039d87ef9f22946c3f",
+  version: "0.0.4",
+  checked: "2026-09-14",
+  revision: "587c8ae05e748d788bed265ddd3b1767b238a99c",
 } as const;
 
 export const description = "The local tool router for AI agents. Connect MCP servers and approved skills, learn from on-device outcomes, and keep your toolkit under your control.";
@@ -52,9 +52,9 @@ Ask which client and scope I want before changing configuration. Automated sync/
 
 Explain that init --no-dense discovers configurations, imports server definitions (including env) into private local state, and prints a receipt; it does not rewrite client configurations. Run it only with my authorization. Keep credentials, raw client configuration, and receipt paths out of chat and logs. Inspect locally and summarize without secret values.
 
-Start with lexical retrieval. If a previous setup or source checkout already has the embedding runtime, set only embeddings to off in the existing ~/.roster/roster.json before starting a client, preserving all other fields. Explain optional dense enable, the approximately 385 MB runtime plus a first-use model download, and get separate permission before enabling or downloading either. Check native runtime compatibility before recommending dense retrieval; in 0.0.2, ON status confirms package presence, not successful inference, and the verified ONNX Runtime 1.24.3 cannot load on Alpine/musl or x64 macOS.
+Start with lexical retrieval. If a previous setup or source checkout already has the embedding runtime, set only embeddings to off in the existing ~/.roster/roster.json before starting a client, preserving all other fields. Explain optional dense enable, the approximately 385 MB runtime plus a first-use model download, and get separate permission before enabling or downloading either. Dense status executes a local backend probe without fetching model weights. READY confirms a usable native or WASM backend, not model readiness or permission to use embeddings. Version 0.0.4 also resolves the newly installed or repaired runtime in a fresh process so stale package lookups cannot determine the installation result. The local WASM worker covers the verified Alpine/musl and Intel macOS cases where native bindings cannot load. Missing or unusable runtimes keep routing lexical; do not claim that every architecture has been verified.
 
-Review the receipt and existing backups, then scope sync to the chosen --client. Sync backs up originals before replacing the MCP server map with a Roster launcher. The client normally launches serve over stdio; I do not need a separate hosted service. Transparent mode is the default. Explain five mode before enabling it: draft returns up to five candidates, then the agent chooses call; skills return instructions/resources, not automatic script execution.
+Review the receipt and existing backups, then scope sync to the chosen --client. Sync backs up originals before replacing the MCP server map with a Roster launcher. The client normally launches serve over stdio; I do not need a separate hosted service. Transparent mode is the default. Explain five mode before enabling it: draft returns up to five candidates, then the agent chooses call; skills return instructions/resources, not automatic script execution. Respect the client's approval requirements. The generic call tool can invoke mutating backends, so do not label it read-only or disable global safeguards to avoid a prompt.
 
 Explain eject before proceeding. Dedicated configs restore byte-for-byte if unchanged since sync. Supported live-state files restore the original servers at key level while preserving later user changes. Do not use forced restoration or trust overrides. Do not enable telemetry. Preserve the checkout while source-based launchers refer to it. Verify the selected setup without running unrelated backend actions or claiming the whole task is solved. Report what changed and the matching scoped eject command.`;
 
