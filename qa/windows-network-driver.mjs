@@ -25,7 +25,16 @@ if (phase === "prepare") {
   const npm = path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
   run([npm, "install", tarball, "--no-audit", "--no-fund"]);
   assert.equal(JSON.parse(fs.readFileSync(path.join(pkg, "package.json"), "utf8")).version, "0.0.3");
-  console.log(JSON.stringify({ prepared: true, tarballSha256: expectedSha, node: process.version, arch: process.arch }));
+  const baseHome = path.join(root, "default-state");
+  const initialized = spawnSync(process.execPath, [bin, "init", "--no-dense"], { cwd: project, env: { ...env, ROSTER_HOME: baseHome, ROSTER_TEST_HOME: home }, encoding: "utf8", timeout: 30_000 });
+  assert.equal(initialized.status, 0, initialized.stderr);
+  const base = JSON.parse(fs.readFileSync(path.join(baseHome, "roster.json"), "utf8"));
+  assert.equal(base.telemetry.enabled, false);
+  assert.equal(base.embeddings, "auto");
+  assert(!fs.existsSync(path.join(baseHome, "runtime")));
+  assert.throws(() => createRequire(path.join(pkg, "package.json")).resolve("@huggingface/transformers"));
+  fs.writeFileSync(path.join(root, "base-config.json"), JSON.stringify(base));
+  console.log(JSON.stringify({ prepared: true, tarballSha256: expectedSha, node: process.version, arch: process.arch, telemetry: false, embeddings: base.embeddings, runtimeInstalled: false }));
 } else {
   const req = createRequire(path.join(pkg, "package.json"));
   const { Client } = await import(pathToFileURL(req.resolve("@modelcontextprotocol/sdk/client/index.js")).href);
@@ -38,8 +47,9 @@ if (phase === "prepare") {
     const pidFile = path.join(state, "backend-pid");
     const server = path.join(state, "fixture.mjs");
     fs.writeFileSync(server, `import fs from "node:fs";fs.writeFileSync(${JSON.stringify(pidFile)},String(process.pid));let b="";const s=(id,result)=>process.stdout.write(JSON.stringify({jsonrpc:"2.0",id,result})+"\\n");process.stdin.on("data",d=>{b+=d;let i;while((i=b.indexOf("\\n"))>=0){const l=b.slice(0,i);b=b.slice(i+1);if(!l.trim())continue;const m=JSON.parse(l);if(m.method==="initialize")s(m.id,{protocolVersion:"2025-06-18",capabilities:{tools:{}},serverInfo:{name:"fixture",version:"1"}});else if(m.method==="tools/list")s(m.id,{tools:[{name:"read_value",description:"Read the local fixture value",inputSchema:{type:"object",properties:{}}}]});else if(m.method==="tools/call")s(m.id,{content:[{type:"text",text:"local-fixture-ok"}]});else if(m.id!==undefined)s(m.id,{});}});`);
-    fs.writeFileSync(path.join(state, "roster.json"), JSON.stringify({ version: 1, mode, embeddings: "off", telemetry: { enabled: false }, skillSources: [], servers: { fixture: { command: process.execPath, args: [server], importedFrom: ["network-fixture"] } } }));
-    const transport = new StdioClientTransport({ command: process.execPath, args: [bin, "serve", `--${mode}`], cwd: project, env: { ...env, ROSTER_HOME: state, ROSTER_NO_FETCH: "1" }, stderr: "ignore" });
+    const base = JSON.parse(fs.readFileSync(path.join(root, "base-config.json"), "utf8"));
+    fs.writeFileSync(path.join(state, "roster.json"), JSON.stringify({ ...base, mode, skillSources: [], servers: { fixture: { command: process.execPath, args: [server], importedFrom: ["network-fixture"] } } }));
+    const transport = new StdioClientTransport({ command: process.execPath, args: [bin, "serve", `--${mode}`], cwd: project, env: { ...env, ROSTER_HOME: state }, stderr: "ignore" });
     const client = new Client({ name: "network-fixture", version: "1" });
     try {
       await client.connect(transport, { timeout: 30_000 });
