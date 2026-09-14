@@ -43,6 +43,7 @@ assets/brand/**/verification/website-first-browser-run/
 apps/site/.astro/
 apps/site/playwright-report/
 apps/site/test-results/
+.vercel/
 
 # Downloaded stock audio for the earlier Diffusion experiments is acquired
 # separately under its source license; keep the scripts and source notes.
@@ -68,3 +69,4 @@ packages/cli/README.md
 # vitest CI reporter output
 test-results.junit.xml
 packages/cli/LICENSE
+.env*

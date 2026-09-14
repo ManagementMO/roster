@@ -90,10 +90,16 @@ python3 apps/site/scripts/import-film-assets.py /absolute/path/to/roster/videos/
 
 Normal builds do not need the film directory. Source paths, hashes, and license information are retained alongside the copied assets.
 
-## Static deployment preparation
+## Production deployment
 
-The owner must choose a real origin. Set `SITE_URL` to that origin when building. Without it, the site deliberately omits canonical URLs, adds noindex metadata, and emits no sitemap. Starlight's skipped-sitemap warning is expected in that local configuration.
+The Vercel project `roster` in `managementmos-projects` is connected natively to the GitHub repository `ManagementMO/roster`. Its production branch is `main`: pushes to `main` trigger production builds, while non-production branches receive Vercel previews. Merge reviewed changes after CI passes; the Vercel Git integration does not itself wait for unrelated GitHub checks. No separate token-bearing GitHub Actions deployment workflow is needed.
 
-With an origin configured, canonical/social URLs become absolute and the sitemap is generated. Serve `dist/` from the domain root with directory index support and `404.html` as the not-found response. Keep the hashed `_astro/` files and Pagefind assets intact. Use HTTPS for clipboard support; manual copying remains available when clipboard permission is denied.
+The production domain is **https://roster-router.vercel.app**. It is attached to the project, not just a single deployment, so later production builds update it automatically. The unrelated `roster.vercel.app` was already occupied. Existing project-generated aliases are retained rather than reassigned or removed.
 
-Building or previewing does not deploy anything. Domain/brand clearance, hosting, package publication, human security review, and any later League signing remain separate owner-controlled actions.
+Build settings are versioned in the repository-root `vercel.json`: install with the frozen lockfile, run `pnpm site:build`, and publish only `apps/site/dist`. Keep the Vercel root at the repository root so workspace dependencies, the reviewed vendor archive, and shared brand assets remain available. The project uses Node 24.x and `ENABLE_EXPERIMENTAL_COREPACK=1` for production and preview so the repository's `pnpm@11.9.0` pin is respected.
+
+Production `SITE_URL` is `https://roster-router.vercel.app`. This produces the matching canonical/social URLs and sitemap. Local builds without `SITE_URL` deliberately omit canonical URLs, add noindex metadata, and emit no sitemap; Starlight's skipped-sitemap warning is expected there. Keep the hashed `_astro/` files and Pagefind assets intact, and verify the custom 404 and HTTPS clipboard behavior after deployment.
+
+Use `vercel link --project roster --scope managementmos-projects` from the repository root when a local checkout needs the existing project link. Generated `.vercel/` metadata and environment files remain gitignored. Do not expose tokens, disable preview protection, or add analytics/database services as part of routine deployment.
+
+Building or previewing locally does not deploy anything. Website deployment does not publish the CLI package or authorize League signing; those remain separate owner-controlled actions.
