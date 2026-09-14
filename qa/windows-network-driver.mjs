@@ -24,7 +24,7 @@ if (phase === "prepare") {
   fs.writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "roster-network-fixture", private: true }));
   const npm = path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
   run([npm, "install", tarball, "--no-audit", "--no-fund"]);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(pkg, "package.json"), "utf8")).version, "0.0.3");
+  assert.equal(JSON.parse(fs.readFileSync(path.join(pkg, "package.json"), "utf8")).version, "0.0.4");
   const baseHome = path.join(root, "default-state");
   const initialized = spawnSync(process.execPath, [bin, "init", "--no-dense"], { cwd: project, env: { ...env, ROSTER_HOME: baseHome, ROSTER_TEST_HOME: home }, encoding: "utf8", timeout: 30_000 });
   assert.equal(initialized.status, 0, initialized.stderr);

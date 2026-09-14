@@ -1,7 +1,7 @@
 name: windows-network-qa
 on:
   push:
-    branches: [qa/windows-network-candidate]
+    branches: [qa/windows-network-004]
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,12 +24,12 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: portability-candidate
-          run-id: 34817322876
+          run-id: 34880565720
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ runner.temp }}/candidate
       - name: Capture owned-process network events with a positive control
         shell: pwsh
-        run: ./qa/windows-network.ps1 -Tarball "$env:RUNNER_TEMP/candidate/package.tgz" -ExpectedSha256 338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e -Output "$env:RUNNER_TEMP/network-results"
+        run: ./qa/windows-network.ps1 -Tarball "$env:RUNNER_TEMP/candidate/package.tgz" -ExpectedSha256 cc253de572a0cfe875ffaf846ba1611eccbc4476c0190a3c56382b896bd2ca04 -Output "$env:RUNNER_TEMP/network-results"
       - uses: actions/upload-artifact@v6
         if: always()
         with:
