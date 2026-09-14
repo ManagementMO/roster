@@ -22,7 +22,7 @@ const sha = "a".repeat(64);
 const gate = fileURLToPath(new URL("./result-gate.mjs", import.meta.url));
 const fixture = () => ({
   env: { platform: "linux", finishedAt: "2026-09-13T00:00:00.000Z", tarballSha256: sha },
-  results: ids.map((id) => ({ id, status: "PASS", artifact: { package: "@npmmo/roster@0.0.3", tarballSha256: sha } })),
+  results: ids.map((id) => ({ id, status: "PASS", artifact: { package: "@npmmo/roster@0.0.4", tarballSha256: sha } })),
 });
 function run(report) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "roster-evidence-gate-"));

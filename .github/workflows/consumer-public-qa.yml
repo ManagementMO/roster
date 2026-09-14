@@ -1,12 +1,12 @@
 name: consumer-public-qa
 on:
   push:
-    branches: ["qa/npmmo-003-public-check"]
+    branches: ["qa/npmmo-004-public-check"]
   workflow_dispatch:
 permissions:
   contents: read
 env:
-  CANDIDATE_SHA256: 338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e
+  CANDIDATE_SHA256: cc253de572a0cfe875ffaf846ba1611eccbc4476c0190a3c56382b896bd2ca04
 jobs:
   public-artifact:
     name: Fetch and verify the public release
@@ -61,7 +61,7 @@ jobs:
         id: qa
         continue-on-error: true
         run: |
-          $tarball = "$env:RUNNER_TEMP/candidate/npmmo-roster-0.0.3.tgz"
+          $tarball = "$env:RUNNER_TEMP/candidate/npmmo-roster-0.0.4.tgz"
           $hash = (Get-FileHash -Algorithm SHA256 $tarball).Hash.ToLower()
           if ($hash -ne $env:CANDIDATE_SHA256) { throw "public candidate hash mismatch" }
           node qa/consumer/consumer-qa.mjs --out "$env:RUNNER_TEMP/qa-out" --tarball "$tarball" --node-label "${{ matrix.node }}" --repo "$env:GITHUB_WORKSPACE" --dense

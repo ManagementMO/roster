@@ -9,7 +9,7 @@
 // evidence. Every consumer process gets an isolated HOME/USERPROFILE/APPDATA/
 // LOCALAPPDATA/TEMP, npm cache/prefix/userconfig, ROSTER_TEST_HOME/ROSTER_HOME.
 //
-//   node consumer-qa.mjs --out DIR --tarball roster-cli-0.0.3.tgz \
+//   node consumer-qa.mjs --out DIR --tarball roster-cli-0.0.4.tgz \
 //        --node-label 24 --repo <checkout> [--dense] [--only a,b]
 //
 // Nothing here imports repository code. Only data files (Combine suites) are
@@ -39,7 +39,7 @@ const ONLY = opt("only") ? new Set(opt("only").split(",")) : null;
 const DENSE = flag("dense");
 const WORK = path.resolve(opt("work", path.join(OUT, "work")));
 const PKG = "@npmmo/roster";
-const PKG_SPEC = "@npmmo/roster@0.0.3";
+const PKG_SPEC = "@npmmo/roster@0.0.4";
 const FS_SERVER_SPEC = "@modelcontextprotocol/server-filesystem@2026.8.31";
 const MEM_SERVER_SPEC = "@modelcontextprotocol/server-memory@2026.8.31";
 const ADM_ZIP_SOURCE = "https://codeload.github.com/cthackers/adm-zip/tar.gz/7d90dea2bfd35bc4761d6c8cf822f26b59aeef77";
@@ -745,27 +745,27 @@ async function caseRegistryPublic() {
     // beats `--registry`, so the lookup keeps the scope option explicit
     // (and is cross-checked with a direct HTTPS GET against registry.npmjs.org).
     const env = envFor(root);
-    const direct = await fetch(`${REGISTRY}@npmmo%2froster/0.0.3`, { headers: { accept: "application/json" } });
+    const direct = await fetch(`${REGISTRY}@npmmo%2froster/0.0.4`, { headers: { accept: "application/json" } });
     const r = npm(["view", PKG_SPEC, "version", "--registry", REGISTRY, `--@npmmo:registry=${REGISTRY}`, "--json"], { cwd: root.project, env });
     assert(direct.status === 200 && r.exitCode === 0, `public release unavailable: HTTP ${direct.status}, npm exit ${r.exitCode}`);
-    assert(JSON.parse(r.stdout) === "0.0.3", `unexpected public version: ${r.stdout}`);
+    assert(JSON.parse(r.stdout) === "0.0.4", `unexpected public version: ${r.stdout}`);
     return { actual: `${PKG_SPEC} is available from public npm without credentials; unscoped roster was not installed` };
   });
 }
 
 async function caseRegistryArtifact() {
-  await testCase("REG-public-artifact-parity", { area: "registry", title: "Public npm serves the exact approved runtime release", expected: "public 0.0.3, latest tag, SHA-256, and integrity match the reviewed archive" }, async () => {
+  await testCase("REG-public-artifact-parity", { area: "registry", title: "Public npm serves the exact approved runtime release", expected: "public 0.0.4, latest tag, SHA-256, and integrity match the reviewed archive" }, async () => {
     const packument = await (await fetch(`${REGISTRY}@npmmo%2froster`)).json();
-    const dist = packument.versions?.["0.0.3"]?.dist;
-    assert(dist, "public npm does not serve 0.0.3");
+    const dist = packument.versions?.["0.0.4"]?.dist;
+    assert(dist, "public npm does not serve 0.0.4");
     const url = new URL(dist.tarball);
     assert(url.protocol === "https:" && url.hostname === "registry.npmjs.org", `unexpected public tarball URL: ${dist.tarball}`);
-    assert(packument["dist-tags"]?.latest === "0.0.3", "latest tag does not point to the approved version");
+    assert(packument["dist-tags"]?.latest === "0.0.4", "latest tag does not point to the approved version");
     const served = Buffer.from(await (await fetch(url)).arrayBuffer());
     const servedSha = sha256(served);
     assert(servedSha === TARBALL_SHA256, `served sha ${servedSha} != candidate ${TARBALL_SHA256}`);
     assert(sha512b64(served) === dist.integrity && dist.integrity === TARBALL_INTEGRITY, "public artifact integrity mismatch");
-    return { actual: `public 0.0.3; latest=0.0.3; servedSha256=${servedSha}; integrity=${dist.integrity}` };
+    return { actual: `public 0.0.4; latest=0.0.4; servedSha256=${servedSha}; integrity=${dist.integrity}` };
   });
 }
 
@@ -778,7 +778,7 @@ function assertNoWorkspaceLeak(pkgDir) {
   assert(!fs.lstatSync(pkgDir).isSymbolicLink(), `@npmmo/roster is a symlink → ${real}`);
   if (REPO) assert(!real.startsWith(REPO), `@npmmo/roster resolves into the repository clone: ${real}`);
   const pj = readJson(path.join(pkgDir, "package.json"));
-  assert(pj.name === PKG && pj.version === "0.0.3", `installed ${pj.name}@${pj.version}`);
+  assert(pj.name === PKG && pj.version === "0.0.4", `installed ${pj.name}@${pj.version}`);
   assert(exists(path.join(pkgDir, "bundle", "bin.js")), "bundle/bin.js missing");
   const bundle = fs.readFileSync(path.join(pkgDir, "bundle", "index.js"), "utf8") + fs.readFileSync(path.join(pkgDir, "bundle", "bin.js"), "utf8");
   const bareRosterImports = [...bundle.matchAll(/from\s+["'](@roster\/[a-z]+)["']/g)].map((m) => m[1]);
@@ -839,7 +839,7 @@ async function caseLocalInstallTarball(routes) {
 }
 
 async function caseLocalInstallRegistry(routes) {
-  await testCase("INST-local-registry", { area: "install", route: "npm local-project (public npm)", title: "npm install @npmmo/roster@0.0.3 by name from the public npm registry", expected: "lock resolves to public npm with the approved artifact integrity" }, async () => {
+  await testCase("INST-local-registry", { area: "install", route: "npm local-project (public npm)", title: "npm install @npmmo/roster@0.0.4 by name from the public npm registry", expected: "lock resolves to public npm with the approved artifact integrity" }, async () => {
     const root = makeRoot("local-registry");
     routes.localRegistry = root;
     const env = envFor(root);
@@ -857,7 +857,7 @@ async function caseLocalInstallRegistry(routes) {
 }
 
 async function caseGlobalInstall(routes) {
-  await testCase("INST-global-prefix", { area: "install", route: "npm global (user prefix)", title: "npm install -g @npmmo/roster@0.0.3 --prefix <user prefix>; real `roster` shim from fresh shells and multiple cwds", expected: "exit 0; roster/roster.cmd/roster.ps1 resolve via PATH in bash/sh (Linux) or cmd/powershell/pwsh (Windows) from several working directories" }, async () => {
+  await testCase("INST-global-prefix", { area: "install", route: "npm global (user prefix)", title: "npm install -g @npmmo/roster@0.0.4 --prefix <user prefix>; real `roster` shim from fresh shells and multiple cwds", expected: "exit 0; roster/roster.cmd/roster.ps1 resolve via PATH in bash/sh (Linux) or cmd/powershell/pwsh (Windows) from several working directories" }, async () => {
     const root = makeRoot("global");
     routes.global = root;
     const env = envFor(root);
@@ -1011,7 +1011,7 @@ async function caseReinstallMovedPrefix(routes) {
 }
 
 async function caseNpxEphemeral(routes) {
-  await testCase("INST-npx-ephemeral", { area: "install", route: "npx ephemeral (public npm)", title: "Genuine `npx -y @npmmo/roster@0.0.3 --help` with a fresh cache from fresh shells", expected: "npx fetches from the public npm registry into <cache>/_npx and prints help; also `npm exec -y`" }, async () => {
+  await testCase("INST-npx-ephemeral", { area: "install", route: "npx ephemeral (public npm)", title: "Genuine `npx -y @npmmo/roster@0.0.4 --help` with a fresh cache from fresh shells", expected: "npx fetches from the public npm registry into <cache>/_npx and prints help; also `npm exec -y`" }, async () => {
     const root = makeRoot("npx");
     routes.npx = root;
     const env = envFor(root);
@@ -1098,13 +1098,13 @@ async function caseNpxSyncJourney(routes) {
 }
 
 async function caseUpgrade() {
-  await testCase("INST-version-upgrade", { area: "install", route: "public 0.0.2 to public 0.0.3", title: "Upgrade a genuine public 0.0.2 install without changing local state or breaking its saved launcher", expected: "0.0.2 installs from public npm; candidate upgrade preserves state/backups/client config; the old launcher and scoped eject still work" }, async () => {
+  await testCase("INST-version-upgrade", { area: "install", route: "public 0.0.3 to public 0.0.4", title: "Upgrade a genuine public 0.0.3 install without changing local state or breaking its saved launcher", expected: "0.0.3 installs from public npm; candidate upgrade preserves state/backups/client config; the old launcher and scoped eject still work" }, async () => {
     const root = makeRoot("version-upgrade");
     const env = envFor(root);
-    const prior = npm(["install", "-g", "@npmmo/roster@0.0.2", "--prefix", root.prefix, "--registry", "https://registry.npmjs.org/", "--@npmmo:registry=https://registry.npmjs.org/"], { cwd: root.elsewhere, env });
-    assert(prior.exitCode === 0, `public 0.0.2 install failed: ${prior.exitCode}`);
+    const prior = npm(["install", "-g", "@npmmo/roster@0.0.3", "--prefix", root.prefix, "--registry", "https://registry.npmjs.org/", "--@npmmo:registry=https://registry.npmjs.org/"], { cwd: root.elsewhere, env });
+    assert(prior.exitCode === 0, `public 0.0.3 install failed: ${prior.exitCode}`);
     const manifestPath = path.join(globalPkgDir(root.prefix), "package.json");
-    assert(readJson(manifestPath).version === "0.0.2", "upgrade baseline is not the genuine 0.0.2 package");
+    assert(readJson(manifestPath).version === "0.0.3", "upgrade baseline is not the genuine 0.0.3 package");
     const fx = seedFixtures(root);
     const roster = rosterRunner(root);
     assert(roster(["init", "--no-dense"]).exitCode === 0, "prior-version init failed");
@@ -1116,7 +1116,7 @@ async function caseUpgrade() {
     const clientBefore = sha256(fs.readFileSync(fx.files.cursor));
     const upgraded = npm(["install", "-g", TARBALL, "--prefix", root.prefix], { cwd: root.elsewhere, env });
     assert(upgraded.exitCode === 0, `candidate upgrade failed: ${upgraded.exitCode}`);
-    assert(readJson(manifestPath).version === "0.0.3", "upgrade did not install the candidate version");
+    assert(readJson(manifestPath).version === "0.0.4", "upgrade did not install the candidate version");
     assert(JSON.stringify(snapshot()) === before, "npm upgrade mutated Roster state or backups");
     assert(sha256(fs.readFileSync(fx.files.cursor)) === clientBefore, "npm upgrade rewrote the client config");
     const client = new McpClient(entry.command, entry.args, { cwd: root.elsewhere, env: envFor(root, { PATH_PREPEND: [globalBinDir(root.prefix)] }) }).start();
@@ -1133,7 +1133,7 @@ async function caseUpgrade() {
     assert(roster(["sync", "--client", "cursor"]).exitCode === 0, "post-upgrade sync failed");
     assert(roster(["eject", "--client", "cursor"]).exitCode === 0, "post-upgrade eject failed");
     assert(sha256(fs.readFileSync(fx.files.cursor)) === fx.hashes.cursor, "post-upgrade eject did not restore the original bytes");
-    return { actual: `public 0.0.2 → public 0.0.3; state, backups, and client config unchanged by install; old saved launcher served ${tools.length} tools and exited 0; scoped sync/eject restored exact bytes` };
+    return { actual: `public 0.0.3 → public 0.0.4; state, backups, and client config unchanged by install; old saved launcher served ${tools.length} tools and exited 0; scoped sync/eject restored exact bytes` };
   });
 }
 

@@ -29,12 +29,12 @@ const env = {
   } : { PATH: [path.dirname(process.execPath), "/usr/bin", "/bin"].join(":"), USER: os.userInfo().username, LOGNAME: os.userInfo().username, TMPDIR: temp }),
   HOME: home, ROSTER_HOME: path.join(home, ".roster"), ROSTER_TEST_HOME: home, npm_config_cache: cache, npm_config_userconfig: npmrc, CI: "1", NO_COLOR: "1",
 };
-const prefix = `${win ? "npx.cmd" : "npx"} --yes @npmmo/roster@0.0.3`;
+const prefix = `${win ? "npx.cmd" : "npx"} --yes @npmmo/roster@0.0.4`;
 const commands = { setup: `${prefix} init --no-dense`, help: `${prefix} --help`, sync: `${prefix} sync --client cursor`, eject: `${prefix} eject --client cursor` };
 const clientFile = path.join(home, ".cursor", "mcp.json");
 const original = JSON.stringify({ mcpServers: { fixture: { command: process.execPath, args: ["--version"] } } }, null, 2) + "\n";
 fs.writeFileSync(clientFile, original, { mode: 0o600 });
-const report = { platform: process.platform, arch: process.arch, node: process.version, shell, package: "@npmmo/roster@0.0.3", commands: [], startedAt: new Date().toISOString(), status: "FAIL" };
+const report = { platform: process.platform, arch: process.arch, node: process.version, shell, package: "@npmmo/roster@0.0.4", commands: [], startedAt: new Date().toISOString(), status: "FAIL" };
 const run = (name) => {
   const command = commands[name];
   const executable = shell === "sh" ? "/bin/sh" : shell === "powershell" ? "powershell.exe" : "cmd.exe";
@@ -65,8 +65,8 @@ try {
   report.restored = true;
   const locks = fs.readdirSync(path.join(cache, "_npx")).map((name) => path.join(cache, "_npx", name, "package-lock.json")).filter((file) => fs.existsSync(file));
   const packages = locks.flatMap((file) => Object.entries(JSON.parse(fs.readFileSync(file, "utf8")).packages ?? {}).filter(([key]) => key === "node_modules/@npmmo/roster" || key.endsWith("/node_modules/@npmmo/roster")).map(([, value]) => value));
-  const expected = "sha512-oaeeJnhfHRmDiiZyvtlwbqOxYIS2O/SsN/YdYi6G6vMM5FB1sQHFdFbSH6ZQABTwlXJ0pMSLNMmYP2ssqgIiaQ==";
-  assert(packages.some((entry) => entry.version === "0.0.3" && entry.integrity === expected));
+  const expected = "sha512-W7421CxODb7UO8DiZrUK4+ozyUO90oGCqgqgMKGvrwTORxJD/QdoQRBovQ2Wk3Cw5x7+2i2AtQHl/8j2zLQHCg==";
+  assert(packages.some((entry) => entry.version === "0.0.4" && entry.integrity === expected));
   report.integrity = expected;
   report.status = "PASS";
 } catch (error) {

@@ -4,8 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const name = "@npmmo/roster";
-const version = "0.0.3";
-const expectedSha = "338e8a7e8b2d929be402e942acca26c22ce67837029e5950122970c5d820969e";
+const version = "0.0.4";
+const expectedSha = "cc253de572a0cfe875ffaf846ba1611eccbc4476c0190a3c56382b896bd2ca04";
 const directory = path.resolve(process.argv[2]);
 const response = await fetch("https://registry.npmjs.org/@npmmo%2froster", { redirect: "error", signal: AbortSignal.timeout(60_000) });
 assert.equal(response.status, 200, `approved public release unavailable: HTTP ${response.status}`);
@@ -26,6 +26,6 @@ assert.equal(sha256, expectedSha);
 assert.equal(integrity, manifest.dist.integrity);
 const record = { name, version, latest: packument["dist-tags"].latest, sha256, integrity, tarball: url.href, publishedAt: packument.time?.[version], publisher: manifest._npmUser?.name, checkedAt: new Date().toISOString() };
 fs.mkdirSync(directory, { recursive: true });
-fs.writeFileSync(path.join(directory, "npmmo-roster-0.0.3.tgz"), archive);
+fs.writeFileSync(path.join(directory, "npmmo-roster-0.0.4.tgz"), archive);
 fs.writeFileSync(path.join(directory, "public-identity.json"), JSON.stringify(record, null, 2));
 console.log(JSON.stringify(record, null, 2));

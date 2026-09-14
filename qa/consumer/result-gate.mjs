@@ -21,7 +21,7 @@ const rows = new Map(report.results.map((result) => [result.id, result]));
 if (rows.size !== expected.length || report.results.length !== expected.length) throw new Error("consumer case inventory differs from the required matrix");
 const failures = expected.filter((id) => {
   const result = rows.get(id);
-  return !result || result.artifact?.package !== "@npmmo/roster@0.0.3" ||
+  return !result || result.artifact?.package !== "@npmmo/roster@0.0.4" ||
     result.artifact?.tarballSha256 !== process.env.CANDIDATE_SHA256 ||
     (result.status !== "PASS" && !(result.status === "NOT RUN" && allowedSkips.has(id)));
 });
