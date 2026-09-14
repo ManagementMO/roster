@@ -7,6 +7,7 @@ async function embeddingWorkerMain(requireModule: NodeRequire): Promise<void> {
   const data = (parentPort ? workerData : JSON.parse(fs.readFileSync(0, "utf8"))) as {
     mode: "probe" | "embed";
     entries: string[];
+    ownedModulesDir?: string;
     modelId?: string;
     cacheDir?: string;
   };
@@ -72,6 +73,14 @@ async function embeddingWorkerMain(requireModule: NodeRequire): Promise<void> {
   let nativeError = "NOT_INSTALLED";
   let wasmError = "NOT_INSTALLED";
   if (data.mode === "probe") {
+    if (data.ownedModulesDir) {
+      try {
+        const root = fs.realpathSync(path.join(data.ownedModulesDir, "@huggingface", "transformers"));
+        const entry = fs.realpathSync(createRequire(path.join(data.ownedModulesDir, "resolve-from.js")).resolve("@huggingface/transformers"));
+        const relative = path.relative(root, entry);
+        data.entries = relative && !relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative) ? [entry] : [];
+      } catch { data.entries = []; }
+    }
     for (const entry of data.entries) {
       try {
         await loadNative(entry);

@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { ownedEmbeddingRuntimeEntry } from "@roster/coach";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -144,6 +145,47 @@ describe("optional dense runtime", () => {
     const before = fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8");
     expect(installDenseRuntime(spawnStub).ok).toBe(true);
     expect(fs.readFileSync(path.join(denseRuntimeDir(), "package.json"), "utf8")).toBe(before);
+  });
+
+  it("accepts a repaired runtime after a missing-manifest lookup in the installing process", () => {
+    plantFakeRuntime();
+    const pkg = path.join(denseModulesDir(), "@huggingface", "transformers");
+    fs.mkdirSync(path.join(pkg, "dist"));
+    fs.renameSync(path.join(pkg, "index.js"), path.join(pkg, "dist", "restored.cjs"));
+    fs.unlinkSync(path.join(pkg, "package.json"));
+    expect(ownedEmbeddingRuntimeEntry(denseModulesDir())).toBeNull();
+    const result = installDenseRuntime(() => {
+      fs.writeFileSync(path.join(pkg, "package.json"), JSON.stringify({ name: "@huggingface/transformers", main: "dist/restored.cjs" }));
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok, result.detail).toBe(true);
+    expect(result.backend).toBe("native");
+  });
+
+  it("verifies a replacement entrypoint instead of a cached removed entrypoint", () => {
+    plantFakeRuntime();
+    const pkg = path.join(denseModulesDir(), "@huggingface", "transformers");
+    expect(ownedEmbeddingRuntimeEntry(denseModulesDir())).toBe(fs.realpathSync(path.join(pkg, "index.js")));
+    const result = installDenseRuntime(() => {
+      fs.renameSync(path.join(pkg, "index.js"), path.join(pkg, "replacement.cjs"));
+      fs.writeFileSync(path.join(pkg, "package.json"), JSON.stringify({ name: "@huggingface/transformers", main: "replacement.cjs" }));
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok, result.detail).toBe(true);
+    expect(result.backend).toBe("native");
+  });
+
+  it("does not bless a cached healthy entrypoint when the new manifest selects a broken one", () => {
+    plantFakeRuntime();
+    const pkg = path.join(denseModulesDir(), "@huggingface", "transformers");
+    expect(ownedEmbeddingRuntimeEntry(denseModulesDir())).not.toBeNull();
+    const result = installDenseRuntime(() => {
+      fs.writeFileSync(path.join(pkg, "broken.cjs"), "module.exports = {};\n");
+      fs.writeFileSync(path.join(pkg, "package.json"), JSON.stringify({ name: "@huggingface/transformers", main: "broken.cjs" }));
+      return { status: 0, stdout: "", stderr: "", pid: 1, output: [], signal: null };
+    });
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/unusable/);
   });
 
   it("uses the canonical npm prefix when ROSTER_HOME contains a directory alias", () => {

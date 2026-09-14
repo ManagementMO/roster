@@ -56,16 +56,16 @@ jobs:
         include:
           - { id: linux-x64-node22, os: ubuntu-24.04, node: '22.17.0', backend: native }
           - { id: linux-x64-node24, os: ubuntu-24.04, node: '24.20.0', backend: native }
-          - { id: linux-arm64-node24, os: ubuntu-24.04-arm, node: '24.20.0', backend: native }
+          - { id: linux-arm64-node24, os: ubuntu-24.04-arm, node: '24.20.0', backend: native, upgrade: '0.0.2' }
           - { id: linux-arm64-node26, os: ubuntu-26.04-arm, node: '26.8.1', backend: native }
           - { id: macos-intel-node22, os: macos-15-intel, node: '22.23.2', backend: wasm }
-          - { id: macos-intel-node24, os: macos-26-intel, node: '24.20.0', backend: wasm, upgrade: '0.0.2' }
+          - { id: macos-intel-node24, os: macos-26-intel, node: '24.20.0', backend: wasm, upgrade: '0.0.3' }
           - { id: macos-arm64-node24, os: macos-15, node: '24.20.0', backend: native }
           - { id: macos-arm64-node26, os: macos-26, node: '26.8.1', backend: native }
           - { id: windows-x64-node22, os: windows-2025, node: '22.17.0', backend: native }
           - { id: windows-x64-node24-min, os: windows-2025, node: '24.2.0', backend: native }
-          - { id: windows-x64-node24, os: windows-2025, node: '24.20.0', backend: native, upgrade: '0.0.2' }
-          - { id: windows-arm64-node24, os: windows-11-arm, node: '24.20.0', backend: native, upgrade: '0.0.2' }
+          - { id: windows-x64-node24, os: windows-2025, node: '24.20.0', backend: native, upgrade: '0.0.3' }
+          - { id: windows-arm64-node24, os: windows-11-arm, node: '24.20.0', backend: native, upgrade: '0.0.3' }
           - { id: windows-arm64-node26, os: windows-11-arm, node: '26.8.1', backend: native }
     steps:
       - uses: actions/checkout@v7
@@ -101,8 +101,8 @@ jobs:
         include:
           - { arch: amd64, os: ubuntu-24.04, node: '22', image: 'node@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32' }
           - { arch: arm64, os: ubuntu-24.04-arm, node: '22', image: 'node@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32' }
-          - { arch: amd64, os: ubuntu-24.04, node: '24', image: 'node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf', upgrade: '0.0.2' }
-          - { arch: arm64, os: ubuntu-24.04-arm, node: '24', image: 'node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf', upgrade: '0.0.2' }
+          - { arch: amd64, os: ubuntu-24.04, node: '24', image: 'node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf', upgrade: '0.0.3' }
+          - { arch: arm64, os: ubuntu-24.04-arm, node: '24', image: 'node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf', upgrade: '0.0.3' }
           - { arch: amd64, os: ubuntu-24.04, node: '26', image: 'node@sha256:2d984a15c9b54fd0aeb608b8e0d0d83529eb34d2966db27a1fb4f1edc3d298a3' }
           - { arch: arm64, os: ubuntu-24.04-arm, node: '26', image: 'node@sha256:2d984a15c9b54fd0aeb608b8e0d0d83529eb34d2966db27a1fb4f1edc3d298a3' }
     steps:

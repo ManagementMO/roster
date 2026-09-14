@@ -1,5 +1,5 @@
 import type { SpawnSyncReturns } from "node:child_process";
-import { embeddingRuntimeEntries, ownedEmbeddingRuntimeEntry, probeEmbeddingRuntime, type EmbeddingBackend, type EmbeddingRuntimeStatus } from "@roster/coach";
+import { embeddingRuntimeEntries, probeEmbeddingRuntime, probeOwnedEmbeddingRuntime, type EmbeddingBackend, type EmbeddingRuntimeStatus } from "@roster/coach";
 import crossSpawn from "cross-spawn";
 import fs from "node:fs";
 import path from "node:path";
@@ -151,9 +151,8 @@ export function installDenseRuntime(
     const stderr = (result.stderr ?? "").toString().trim().split("\n").slice(-3).join(" ");
     return { ok: false, detail: stderr || `npm exited ${result.status}` };
   }
-  const entry = ownedEmbeddingRuntimeEntry(denseModulesDir());
-  if (!entry) return { ok: false, detail: "npm reported success but the runtime is still not resolvable" };
-  const status = probeEmbeddingRuntime([entry]);
+  const status = probeOwnedEmbeddingRuntime(denseModulesDir());
+  if (status.state === "missing") return { ok: false, detail: "npm reported success but the runtime is still not resolvable" };
   return status.state === "ready"
     ? { ok: true, detail: dir, backend: status.backend }
     : { ok: false, detail: `runtime installed but unusable (${status.detail}); Roster keeps working in lexical mode` };
