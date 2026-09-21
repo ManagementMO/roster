@@ -72,7 +72,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: portability-candidate
           path: ${{ runner.temp }}/candidate
@@ -107,7 +107,7 @@ jobs:
           - { arch: arm64, os: ubuntu-24.04-arm, node: '26', image: 'node@sha256:2d984a15c9b54fd0aeb608b8e0d0d83529eb34d2966db27a1fb4f1edc3d298a3' }
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: portability-candidate
           path: ${{ runner.temp }}/candidate
