@@ -49,12 +49,12 @@
     "prepack": "pnpm run build && node -e \"const f=require('node:fs');f.copyFileSync('../../README.md','README.md');f.copyFileSync('../../LICENSE','LICENSE')\""
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "ajv": "^8.17.0",
     "better-sqlite3": "^12.11.1",
     "cross-spawn": "7.0.6",
-    "smol-toml": "^1.8.0",
-    "yaml": "^2.6.0"
+    "smol-toml": "^1.9.1",
+    "yaml": "^2.9.1"
   },
   "peerDependencies": {
     "@huggingface/transformers": "^4.2.0"
